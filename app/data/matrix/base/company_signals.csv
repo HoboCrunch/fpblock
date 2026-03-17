@@ -1,0 +1,195 @@
+signal_id,company_name,signal_type,description,date,source
+S001,ZODIA CUSTODY,news,Zodia Custody became the first global custodian to support AUDM stablecoin custody,,company_news_cache
+S002,SG FORGE,partnership,SG-FORGE partnered with Deutsche Börse Group to integrate CoinVertible stablecoins into traditional finance,,company_news_cache
+S003,TAURUS,partnership,"Taurus expanded partnership with Scorechain for integrated blockchain analytics on February 26, 2026",2026-02-26,company_news_cache
+S004,BITGO,funding,"BitGo raised $212.8M in its IPO, the first crypto listing of 2026",,company_news_cache
+S005,KOMAINU,funding,Komainu deepens strategic partnership with Blockstream Capital Partners via derivatives team acquisition,,company_news_cache
+S006,CIRCLE,news,Circle's Q4 2025 earnings beat drove shares up 23% on strong USDC demand,,company_news_cache
+S007,SOCIETE GENERALE-FORGE,product_launch,"SG-FORGE launched EUR CoinVertible on XRP Ledger on February 18, 2026",2026-02-18,company_news_cache
+S008,GK8 BY GALAXY,award,GK8 by Galaxy won Best Global Self-Custody Solution Provider 2025 at FinTech Awards,,company_news_cache
+S009,PAXOS LABS,product_launch,Paxos Labs launched privacy-preserving USAD stablecoin on Aleo mainnet,,company_news_cache
+S010,SIGMA PRIME,partnership,Sigma Prime partnered with Lunar Strategy to integrate security audits into Web3 marketing,,company_news_cache
+S011,S&P GLOBAL RATINGS,funding,"S&P Global Ratings issued preliminary investment-grade ratings to Ledn's Bitcoin-secured debt on February 9, 2026",2026-02-09,company_news_cache
+S012,APOLLO,news,Apollo agreed to acquire up to 90M Morpho governance tokens for DeFi influence,,company_news_cache
+S013,WBTC,news,WBTC expanded to 21 blockchains for enhanced DeFi utility,,company_news_cache
+S014,KRAKEN,funding,"Kraken announced acquisition of NinjaTrader, largest TradFi-crypto deal, advancing multi-asset trading",,company_news_cache
+S015,BITCOIN SUISSE AG,product_launch,"Bitcoin Suisse released its Crypto Outlook 2026 report, predicting industry growth",,company_news_cache
+S016,BPCE,product_launch,"BPCE launched crypto trading to 2 million customers in December 2025, expanding to 12 million by 2026",,company_news_cache
+S017,OPENZEPPELIN,partnership,Stellar Development Foundation partners with OpenZeppelin through 2026 for Stellar Library and security tools,,company_news_cache
+S018,CERTORA,award,"Certora awarded Ethereum Foundation grant on February 5, 2026, for zkEVM autoprecompiles verification",2026-02-05,company_news_cache
+S019,SPIKO,product_launch,Spiko deployed tokenized US and EU T-Bills money market funds on Arbitrum blockchain,,company_news_cache
+S020,DOWGO,news,DOWGO tokenizes real-world assets like treasury bills and private credit on-chain for institutional and retail investors,,company_news_cache
+S021,GRAYSCALE,news,"Grayscale expanded its 2026 crypto watchlist to 36 assets, adding AI and DePIN tokens",,company_news_cache
+S022,BLOCK ANALITICA,news,Block Analitica builds risk models and analytics dashboards for DeFi protocols like MakerDAO to manage on-chain financial risk in real time,,company_news_cache
+S023,PLUME NETWORK,news,"PLUME token surged 25% on March 8, 2026, with trading volume exceeding market cap",2026-03-08,company_news_cache
+S024,KEYROCK,product_launch,Keyrock launched its US entity to expand global digital asset services,,company_news_cache
+S025,21SHARES,news,"21Shares published its 2026 State of Crypto report on December 11, 2025",2025-12-11,company_news_cache
+S026,DYDX,product_launch,DYdX community launched three-month token buyback program from Nov 2025 to Jan 2026,,company_news_cache
+S027,LAGRANGE LABS,product_launch,"Lagrange launched DeepProve, the world's fastest zkML library for verifiable AI inference, on February 23, 2026",2026-02-23,company_news_cache
+S028,CYSIC,product_launch,"Cysic AI marketplace launched week of March 9, 2026; mainnet goes live March 31",2026-03-09,company_news_cache
+S029,GNOSIS,news,"Gnosis executed a hard fork on December 22, 2025, recovering $9.4M in stolen user funds",2025-12-22,company_news_cache
+S030,CENTRIFUGE,product_launch,"Centrifuge launched a $100M tokenized credit strategy with Resolv on Aave on February 25, 2026",2026-02-25,company_news_cache
+S031,PENNY BY B2C2,product_launch,"B2C2 launched PENNY in October 2025 for instant, zero-fee stablecoin swaps",,company_news_cache
+S032,IMMUNEFI,product_launch,"Immunefi launched its governance token IMU on January 22, 2026",2026-01-22,company_news_cache
+S033,MIDEN,funding,"Miden raised $25M seed funding led by a16z crypto, spinning out from Polygon",,company_news_cache
+S034,LAGOON.FINANCE,news,Lagoon Finance manages $123M+ TVL across 70+ vaults on 18+ chains,,company_news_cache
+S035,BYBIT,news,"Bybit transformed into ""The New Financial Platform"" in 2026, expanding beyond crypto exchange into global financial infrastructure",,company_news_cache
+S036,SPACECOMPUTER,funding,SpaceComputer secured $10M in seed funding for satellite blockchain infrastructure,,company_news_cache
+S037,AMBER GROUP,news,"Amber International announced $25.5M private placement on June 30, 2025",2025-06-30,company_news_cache
+S038,ZIRCUIT,product_launch,"Zircuit Finance launched an institutional-grade onchain yield platform targeting 8–11% APR on February 17, 2026",2026-02-17,company_news_cache
+S039,HACKEN,product_launch,Hacken released its 2025 Security Report revealing $3.95B in Web3 losses,,company_news_cache
+S040,ESPRESSO SYSTEMS,news,"Espresso completed permissionless Proof-of-Stake transition on March 4, 2026",2026-03-04,company_news_cache
+S041,OBOL,product_launch,Obol announced Pluto Multi-Client DV launch for 2026,,company_news_cache
+S042,CERTOTA,award,"Certora awarded Ethereum Foundation grant for zkEVM autoprecompiles verification on Feb 5, 2026",,company_news_cache
+S043,MATTER LABS (ZKSYNC),funding,Matter Labs secured $200 million Series C funding to accelerate zkSync development,,company_news_cache
+S044,ZIRCUIT L2,product_launch,"Zircuit Finance, an institutional-grade yield platform, launched on February 17, 2026",2026-02-17,company_news_cache
+S045,CHRONICLE,partnership,Chronicle partnered with Centrifuge as primary oracle for tokenized assets in early 2026,,company_news_cache
+S046,CONSENSYS,funding,ConsenSys hired JPMorgan and Goldman Sachs for a mid-2026 IPO,,company_news_cache
+S047,BABYLON,partnership,BTCVaults & Aave integration in April 2026 enables native BTC collateral on Aave V4,,company_news_cache
+S048,MAMORI,funding,Mamori.xyz raised US$5 million in seed funding led by Blockchain Capital,,company_news_cache
+S049,ICON TRADING,news,ICON Amsterdam reported record 2025 performance and planned U.S. expansion for 2026,,company_news_cache
+S050,PARITY TECHNOLOGIES,news,"Parity Technologies announced Polkadot's new DOT issuance model and Dynamic Allocation Pool (DAP) on March 1, 2026",2026-03-01,company_news_cache
+S051,EULER LABS,news,Euler Labs' founding CEO Michael Bentley stepped down to refocus on institutions,,company_news_cache
+S052,OFFCHAIN LABS,news,Offchain Labs increased ARB holdings as Arbitrum surpassed $20B TVL,,company_news_cache
+S053,REILABS,news,No recent news for ReiLabs; they build ZK cryptography tooling and proving systems for secure blockchain computation.[web:0],,company_news_cache
+S054,ZENITH,partnership,"Zenith announced its public debut on March 6, 2026, launching an Ethereum execution environment integrated with Canton Network",2026-03-06,company_news_cache
+S055,KILN,product_launch,Kiln powers Safe's launch of SG-FORGE Euro stablecoin yield platform,,company_news_cache
+S056,AKTIONARIAT,product_launch,"Aktionariat launched Investor Page for Tokenized Shares on February 19, 2026",2026-02-19,company_news_cache
+S057,GAIB,news,"GAIB published its 2026 roadmap on January 9, focusing on GPU tokenization expansion and robotics financing",,company_news_cache
+S058,FLASHBOTS X,news,Flashbots deprecated centralized block builders and migrated to BuilderNet,,company_news_cache
+S059,BITWISE ASSET MANAGEMENT,product_launch,Bitwise launched Chainlink ETF (CLNK) on NYSE Arca in January 2026,,company_news_cache
+S060,BREVIS,product_launch,Brevis launched ProverNet mainnet in January 2026,,company_news_cache
+S061,DE GAULLE FLEURANCE,news,De Gaulle Fleurance ranked Band 3 in Chambers FinTech 2026 for FinTech Legal (France),,company_news_cache
+S062,SCROLL,news,"Scroll is projected to mature into a stable, production-ready zkEVM with strong developer mindshare by 2026",,company_news_cache
+S063,ZISK,news,Polygon co-founder Jordi Baylina spun out Zisk from zkEVM team in June 2025,,company_news_cache
+S064,LUMIS,news,"I cannot find any recent news, announcements, or milestones for Lumis in the provided search results",,company_news_cache
+S065,FLASHBOTS,funding,Flashbots secures $60M Series B funding led by Paradigm to enhance SUAVE platform,,company_news_cache
+S066,AVANTGARDE FINANCE,partnership,Avantgarde Finance partnered with Cork Protocol for Protected Loops in RWA vaults,,company_news_cache
+S067,WORLD FOUNDATION,partnership,World App integrates native WLD economy with Mini Apps for daily utility and exchange,,company_news_cache
+S068,BOUNDLESS,news,"Boundless became the largest fully decentralized ZK proof network, with 80-100x higher throughput",,company_news_cache
+S069,FRANKENCOIN ASSOCIATION,partnership,"Frankencoin Association partnered with Mt-Pelerin, Zeal, and Gnosis Pay for ZCHF payments on September 24, 2025",2025-09-24,company_news_cache
+S070,NETHERMIND,news,Octane Security's AI discovered and Nethermind patched a critical consensus layer vulnerability in March 2025,,company_news_cache
+S071,PROPY,news,Propy secured a $100M credit facility in February 2026 to automate real estate closings and acquire title companies,,company_news_cache
+S072,DOGEOS,partnership,"I cannot find information about a company called ""DOGEOS"" as a stablecoin protocol in the provided search results. The search results mention ""DogeOS"" as a proposed zero-knowledge proof integration for Dogecoin, not as a separate stablecoin company. No recent announcements or milestones for a stablecoin protocol named ""DOG",,company_news_cache
+S073,MORPHO,news,Apollo Global's February 2026 agreement to acquire up to 9% of MORPHO tokens,,company_news_cache
+S074,OWN,partnership,"I cannot find any recent news, announcements, product launches, partnerships, or milestones for a company called ""OWN"" in the provided search results from 2025-2026",,company_news_cache
+S075,UNISWAP LABS,news,"Uniswap Labs' UNIfication proposal, approved by governance, activates fees and burns UNI tokens",,company_news_cache
+S076,LINEA,news,Linea achieved Type-1 zkEVM in Q1 2026 for full Ethereum equivalence,,company_news_cache
+S077,AAVE LABS,product_launch,Aave V4 launched on mainnet in Q1 2026 with Hub-and-Spoke architecture,,company_news_cache
+S078,EVERSTAKE,partnership,"Everstake partnered with Cometh on January 7, 2026, to enable fiat-to-staking for EU institutions under MiCA",2026-01-07,company_news_cache
+S079,IVAULT,news,IVault (IVT) shows significant organic growth in its peer-to-peer marketplace app,,company_news_cache
+S080,PONOS TECHNOLOGY,product_launch,Ponos Technology launched ZK-proof accelerator chips for Ethereum scaling in Q1 2026,,company_news_cache
+S081,FLUID,partnership,"Venus Flux launched on BNB Chain on February 26, 2026, partnering Fluid with Venus Protocol",2026-02-26,company_news_cache
+S082,ZKM,news,No notable ZKM developments from 2025-2026; ZKM provides a universal ZK proof layer enabling verifiable settlement across any chain,,company_news_cache
+S083,COW DAO,product_launch,"CoW Protocol launched on Ink in February 2026, expanding MEV-protected trading",,company_news_cache
+S084,SHUTTER NETWORK,news,"Shutter Network published a blog on the ""Holy Trinity"" of Ethereum censorship resistance featuring encrypted mempools",,company_news_cache
+S085,OLYMPIX,news,OLYMPIX is an AI-powered smart contract security platform that detects vulnerabilities during development in real time,,company_news_cache
+S086,ARBITRUM,product_launch,"ArbOS ""Dia"" upgrade launched in January 2026, enhancing scalability and gas predictability",,company_news_cache
+S087,COLIBRI.STATELESS,news,No notable recent developments for Colibri.stateless in 2025-2026; it is a stateless Ethereum client eliminating local state storage for reduced hardware needs,,company_news_cache
+S088,WORLD LIBERTY FINANCIAL,product_launch,"World Swap Platform launched on February 12, 2026, for forex and remittances",2026-02-12,company_news_cache
+S089,DIGITAL FINANCE GROUP (DFG),news,DFG established a Bitcoin reserve as a key part of its balance sheet strategy,,company_news_cache
+S090,INFURA/DIN,product_launch,"DIN launched its AVS mainnet on EigenLayer in November 2025, decentralizing RPC infrastructure",,company_news_cache
+S091,SEI LABS,news,Sei Network announced migration to EVM-only architecture scheduled for April 2026,,company_news_cache
+S092,SPARK,product_launch,Spark launched Spark Prime and Institutional Lending suite,,company_news_cache
+S093,BOTANIX,product_launch,Botanix launched its mainnet in July 2025 with a decentralized 16-node federation,,company_news_cache
+S094,LOEB & LOEB,product_launch,Loeb & Loeb published insights on Fidelity's stablecoin launch and NYSE's tokenized securities platform in 2026,,company_news_cache
+S095,0XBOW,news,0xbow closed a $3.5M seed round led by Starbloom Capital in November 2025,,company_news_cache
+S096,EVVM.ORG,news,EVVM.ORG provides gasless micropayments via payment channels and meta-transaction infrastructure on Ethereum,,company_news_cache
+S097,KLEROS; SEER,product_launch,Kleros launched Kleros 2.0 Beta in 2025 for scalable dispute resolution,,company_news_cache
+S098,KLEROS,product_launch,"Kleros launched Kleros 2.0 Beta, a more affordable and scalable dispute resolution protocol",,company_news_cache
+S099,CAFE,product_launch,CAFE's core product audits smart contracts to identify vulnerabilities before deployment,,company_news_cache
+S100,REDBELLY NETWORK / THE UNIVERSITY OF SYDNEY,news,Redbelly Network unveiled its Decentralisation Roadmap in October 2025,,company_news_cache
+S101,DRAGONFLY,news,Dragonfly Capital closed its $650M fourth fund in early 2026 amid crypto VC downturn,,company_news_cache
+S102,ANOMA,news,Anoma merged latest code changes into main branch on 19 February 2026,,company_news_cache
+S103,BITMART,product_launch,BitMart US launched nationwide zero-fee crypto exchange operations across all 50 states,,company_news_cache
+S104,TELLOR,news,"Tellor upgraded mainnet to v6.1.2 on March 2, 2026, improving protocol reliability",2026-03-02,company_news_cache
+S105,PERPL,news,No recent news for PERPL; it offers decentralized perpetuals exchange for high-performance on-chain derivatives trading,,company_news_cache
+S106,MOONWELL,news,Moonwell proposed $2.68M recovery plan for cbETH liquidations in February 2026,,company_news_cache
+S107,ZYFAI,news,Zyfai reported +51.13% yield outperformance in its February 2026 yield report,,company_news_cache
+S108,CORPUS.CORE GMBH / COLIBRI.STATELESS,news,"CORPUS.CORE GMBH builds a high-performance, stateless Ethereum execution client for protocol-layer diversity",,company_news_cache
+S109,CURVY,news,Curve Finance proposed a $6.6M CRV grant for 2026 upgrades like Llamalend v2 and FXSwap,,company_news_cache
+S110,LID,news,LID Protocol offers liquid staking wrappers enabling token staking with retained liquidity,,company_news_cache
+S111,WALLETCONNECT,partnership,WalletConnect announced WalletConnect Pay partnership with Ingenico for 40 million payment terminals in 2026,,company_news_cache
+S112,OASIS NETWORK - FOUNDING ENGINEER,news,"Oasis Network's ROSE token surged 105% from December 2025 to January 2026, fueled by privacy AI infrastructure advances and institutional demand",,company_news_cache
+S113,HTTPS://GITHUB.COM/REAMLABS/REAM,news,REAM achieved Minimum Viable Beacon Client in Q4 2025,,company_news_cache
+S114,BELEM CAPITAL,news,Belem Capital absorbed MEV Capital's 10-expert institutional team in February 2026,,company_news_cache
+S115,FILECOIN,product_launch,"Filecoin launched Onchain Cloud in November 2025, introducing programmable cloud with verifiable storage",,company_news_cache
+S116,ENSCRIBE,partnership,"No recent news, announcement, product launch, partnership, or milestone for ENSCRIBE found in 2025-2026. ENSCRIBE provides a blockchain notarization platform creating immutable on-chain proof of authenticity for legal and enterprise documents",,company_news_cache
+S117,ETHEREUM FOUNDATION,news,"The Ethereum Foundation unveiled its 2026 protocol roadmap with three core development tracks: Scale, Improve UX, and Harden the L1",,company_news_cache
+S118,CREDA NETWORK,news,No recent news or milestones for CREDA NETWORK in 2025-2026. CREDA NETWORK provides decentralized credit scoring for AI agents and DeFi undercollateralized lending,,company_news_cache
+S119,TEZOS,news,"Tezos activated the Tallinn upgrade on January 24, 2026, slashing block time to 6 seconds",2026-01-24,company_news_cache
+S120,OPTIMUM,funding,Optimum raised $11M in seed funding to build a high-performance memory layer for blockchains,,company_news_cache
+S121,AERODROME FINANCE / DROMOS LABS,product_launch,Dromos Labs announced Aero cross-chain DEX merger of Aerodrome and Velodrome for Q2 2026 launch,,company_news_cache
+S122,ROCKLOGIC GMBH,news,"RockLogic announced ""Stake in ETH"" on January 31, 2025",2025-01-31,company_news_cache
+S123,ETHSTORAGE,product_launch,"EthStorage launched its mainnet on October 14, 2025",2025-10-14,company_news_cache
+S124,COVALENTHQ.COM,product_launch,Covalent launched the industry's first MCP server for blockchain data via GoldRush API in Q2 2025,,company_news_cache
+S125,STEREUM SERVICES FLEXCO,news,Stereum is an open-source Ethereum node management platform that simplifies validator and staking node setup for solo stakers and institutional operators,,company_news_cache
+S126,EUROPEAN ALUMINIUM,news,No notable crypto/fintech developments for European Aluminium in 2025-2026; they produce low-carbon aluminium via advanced recycling for green technologies,,company_news_cache
+S127,MONAD FOUNDATION,news,"Chainlink bridged cbBTC to Monad on March 4, 2026, unlocking $5B Bitcoin liquidity for DeFi",2026-03-04,company_news_cache
+S128,ENVIO,news,Envio HyperIndex converts on-chain events into queryable GraphQL databases for EVM chains,,company_news_cache
+S129,AVAIL,product_launch,"Avail launched Nexus Mainnet on 28 November 2025, unifying liquidity across Ethereum, Solana, and 10+ chains",,company_news_cache
+S130,DGRS LABS,partnership,"No recent news, announcement, product launch, partnership, or milestone for DGRS LABS in 2025-2026. DGRS LABS builds custom on-chain infrastructure and smart contract systems for Web3 protocols and enterprises",,company_news_cache
+S131,ZERO GRAVITY LABS (0G.AI),product_launch,0G launched $20M Apollo Accelerator with Stanford veterans in February 2026,,company_news_cache
+S132,SESSION,news,"Session offers decentralized, end-to-end encrypted messaging without requiring phone numbers or personal data",,company_news_cache
+S133,0X / MATCHA,product_launch,0x launched Cross-Chain API Beta for agentic swaps across 15+ blockchains,,company_news_cache
+S134,GOLDSKY (AND ALSO ERPC OPEN-SOURCE),news,"Goldsky reported earnings for nine months ended September 30, 2025, with sales of CNY 424.65 million",2025-09-30,company_news_cache
+S135,TOKAMAK NETWORK / HASHED OPEN RESEARCH,partnership,"Based on the search results provided, I cannot find specific recent news, announcements, product launches, partnerships, or milestones for Tokamak Network or Hashed Open Research from 2025-2026.
+
+The search results contain information about Hashed's 2025 report and 2026 predictions regarding stablecoins, AI agents, and privacy trends",,company_news_cache
+S136,BOUNCE TECH,news,Bounce Finance concluded a Kweichow Moutai RWA auction in August 2025,,company_news_cache
+S137,BELEM CAPITAL AND ROCKAWAYX,news,"Solmate announced term sheet to acquire RockawayX on December 4, 2025",2025-12-04,company_news_cache
+S138,IEXEC,partnership,IExec collaborated with ChainGPT on a privacy-focused Web3 AI agents blueprint,,company_news_cache
+S139,SYNDICATE,partnership,Syndicate partnered with Dromos Labs to bring Aerodrome to Syndicate Network in 2026,,company_news_cache
+S140,SKALE LABS,product_launch,SKALE launched an AI-Focused Layer 3 on Base in December 2025,,company_news_cache
+S141,AMBIRE,product_launch,"Ambire Wallet's Rewards Season 2 launched on December 15, 2025, with 20M $WALLET tokens",2025-12-15,company_news_cache
+S142,ANYENK,regulatory,No recent news for Anyenk; they build blockchain infrastructure for enterprise data verification and compliance.[web:0],,company_news_cache
+S143,FLUENCE,partnership,"Fluence partners with TON to optimize compute for blockchain startups, forecasting 50% revenue growth in 2026",,company_news_cache
+S144,SENTIENT,product_launch,"Sentient launched Arena, an AI agent benchmarking platform backed by Pantera and Franklin Templeton",,company_news_cache
+S145,SPACE ID,news,SPACE ID is expanding into AI agent identity infrastructure and data systems for AI-native finance,,company_news_cache
+S146,CRYSTALITY,news,No recent news for CRYSTALITY; they provide blockchain solutions for transparent enterprise supply-chain and asset provenance,,company_news_cache
+S147,ZKWHISTLEBLOWER,news,"ZKWhistleblower enables anonymous, verifiable whistleblowing using zero-knowledge proofs on-chain",,company_news_cache
+S148,STRATO,news,I cannot find recent news about Strato's enterprise blockchain infrastructure in the provided search results,,company_news_cache
+S149,DUNE,partnership,Dune announced dbt Connector and Databricks partnership at DuneCon25,,company_news_cache
+S150,OPENFORT,news,OPENFORT provides blockchain account abstraction infrastructure for seamless embedded wallets in Web3 games,,company_news_cache
+S151,QUARKCHAIN,product_launch,"QuarkChain launched a redesigned website and announced Devconnect plans on November 6, 2025",2025-11-06,company_news_cache
+S152,NEVERLOCAL,news,No recent news for NEVERLOCAL; they advance theoretical and applied foundations of zero-knowledge proof systems,,company_news_cache
+S153,MASK NETWORK,news,"Mask Network now leads consumer development for Lens Protocol, boosting MASK utility",,company_news_cache
+S154,CAMBRIAN,product_launch,"Cambrian Network released Q1 2026 Agentic Finance report, highlighting $50M in AI-driven DeFi agent payments",,company_news_cache
+S155,ENTERPRISE ETHEREUM ALLIANCE,news,"EEA announced Privacy Working Group on February 24, 2026, advancing enterprise Ethereum privacy solutions",2026-02-24,company_news_cache
+S156,BLOCKSIGHT.DEV & AMGI STUDIOS,product_launch,"AMGI Studios launched ""My Pet Hooligan"" game on Studio Chain Layer 2 blockchain",,company_news_cache
+S157,エーアイ.コム,product_launch,"Ai.com officially launched with Super Bowl ad on February 8, 2026",2026-02-08,company_news_cache
+S158,SAGA,partnership,"Saga partnered with Chrono Labs to launch KEX, an AI agent launchpad",,company_news_cache
+S159,ALEPH CLOUD,product_launch,Aleph Cloud plans Public GPU Marketplace launch in Q1 2026 for AI/ML compute,,company_news_cache
+S160,PROTOCOL GUILD,news,"In 2025, Protocol Guild marked Ethereum's 10th anniversary of zero downtime",,company_news_cache
+S161,ELATA BIOSCIENCES,news,ELATA BIOSCIENCES uses blockchain-based coordination to fund and govern early-stage neuroscience and drug discovery research,,company_news_cache
+S162,KAITO AI,partnership,KAITO AI partnered with Polymarket to launch Attention Markets in early March 2026,,company_news_cache
+S163,GEO,news,No recent notable developments for GEO; it builds a decentralized open knowledge graph protocol incentivizing on-chain structured data contributions.[web:0],,company_news_cache
+S164,PROTOCOL LABS FILECOIN IMPACT FUND (PLFIF),news,PLFIF allocated $3.22M across 16 infrastructure projects in ProPGF Batch 2,,company_news_cache
+S165,NOMAD CAPITAL; BUIDLPAD,funding,"Buidlpad raised over $105M in 2025 via community sales, with Vaults locking $20M in first phase",,company_news_cache
+S166,SECUREUM,partnership,"I found no recent news, announcements, product launches, partnerships, or milestones for Secureum in the provided search results from 2025-2026",,company_news_cache
+S167,IMPERIAL COLLEGE LONDON / FLASHBOTS,news,Flashbots presented MEV strategies for modular blockchain scalability at EthCC 2025 in Cannes,,company_news_cache
+S168,EUROPEAN CRYPTO INITIATIVE,news,"EUCI submitted response on Qualified Electronic Ledgers under eIDAS 2, advocating for public blockchains in Europe’s digital trust framework",,company_news_cache
+S169,SWARMS,news,"Swarms listed on Biconomy exchange on July 5, 2025",2025-07-05,company_news_cache
+S170,OAK RESEARCH,product_launch,"OAK Research released its ""Crypto Outlook 2025: The future is now"" report, supported by Deloitte",,company_news_cache
+S171,COINFELLO,news,"CoinFello debuted its onchain AI agent at ETHDenver on February 18, 2026",2026-02-18,company_news_cache
+S172,FLIGHT3,news,"Flight3 celebrated its 4th anniversary with $10M+ revenue and expanded to offices in London, Lisbon, and Cape Town",,company_news_cache
+S173,ANGEL INVESTOR & ADVISOR AT LARGE,news,"No recent news or milestones for ""ANGEL INVESTOR & ADVISOR AT LARGE"" in 2025-2026",,company_news_cache
+S174,LEADERSHIP COACHING | ZUZA ZUBER,partnership,"I cannot find any recent news, announcements, product launches, partnerships, or milestones for ""LEADERSHIP COACHING | ZUZA ZUBER"" in the provided search results or broader fintech/crypto developments from 2025-2026",,company_news_cache
+S175,THEDAO SECURITY FUND & GIVETH,product_launch,TheDAO Security Fund launched with $220M from 2016 unclaimed ETH to fund Ethereum security grants,,company_news_cache
+S176,DAO LEADERSHIP,news,"I cannot find any recent news, announcements, or milestones for a company called ""DAO LEADERSHIP"" in the provided search results",,company_news_cache
+S177,POAP,partnership,Warner Music Group announced first-ever partnership with POAP for NFT event mementos,,company_news_cache
+S178,ADAN,news,Adan published its 2025 study on Web3 & crypto adoption in France and Europe with Deloitte and Ipsos,,company_news_cache
+S179,YAP GLOBAL,news,YAP Global appointed Otto Jacobsson as CEO amid stablecoin market surpassing $300B,,company_news_cache
+S180,WASDER,partnership,"I cannot find any recent news, announcements, product launches, partnerships, or milestones for WASDER in the provided search results",,company_news_cache
+S181,INDEPENDENT RESEARCHER,news,"No recent news or milestones for ""INDEPENDENT RESEARCHER"" in 2025-2026; they contribute original research to blockchain, cryptography, and distributed systems",,company_news_cache
+S182,WEB3 COMMS,news,No recent news found for WEB3 COMMS; they specialize in Web3/blockchain brand strategy consulting for protocols and startups,,company_news_cache
+S183,DUCT TAPE / ETHPRAGUE,news,"ETHPrague 2026 moves to Municipal House, Prague's iconic Art Nouveau landmark, May 8-10",,company_news_cache
+S184,WACHSMAN,partnership,"Wachsman announced a strategic partnership with Washington advisory firm DiRoma Eck & Co. on Aug 07, 2025",,company_news_cache
+S185,WEB3 AUTHOR,news,"I cannot find any information about ""WEB3 AUTHOR"" in the provided search results or my knowledge base",,company_news_cache
+S186,ZUITZERLAND,partnership,No recent news for ZUITZERLAND; it hosts crypto community events fostering Web3 collaboration and networking.,,company_news_cache
+S187,ETHBELGIUM,news,,,company_news_cache
+S188,NONE,news,,,company_news_cache
+S189,INDEPENDENT,news,,,company_news_cache
+S190,RESEARCHER,news,,,company_news_cache
+S191,INDEPENDANT,news,,,company_news_cache
+S192,ACCEPT ALL,news,,,company_news_cache

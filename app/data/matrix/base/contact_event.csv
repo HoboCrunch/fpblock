@@ -1,0 +1,13 @@
+contact_id,event_id,participation_type,track,notes
+C001,E001,speaker,,,
+C002,E001,speaker,,,
+C003,E001,speaker,Built on Ethereum,,
+C004,E001,target,,,
+C005,E001,target,,,
+C006,E001,target,,,
+C007,E001,target,,,
+C007,E002,target,,,
+C011,E001,sponsor_rep,,,
+C012,E001,sponsor_rep,,,
+C013,E001,sponsor_rep,,,
+C014,E001,sponsor_rep,,,

@@ -1,0 +1,147 @@
+[
+  {
+    "name": "AMI NAGATA",
+    "channel": "linkedin",
+    "outreach_message": "Ami — when an institution hands Zodia custody of its assets, the settlement rails underneath that relationship carry the same weight as the custody promise itself. A failure in the infrastructure layer isn't a software bug; it's a permanent, irrecoverable event for a client whose trust was institutional-grade. At FP Block, we built the Kolme framework so custodians can run dedicated application chains they fully control — not shared infrastructure where another team's upgrade window is their risk. Would you have 20 minutes for a conversation at EthCC in Cannes this June?"
+  },
+  {
+    "name": "SYLVAIN PRIGENT",
+    "channel": "linkedin",
+    "outreach_message": "Sylvain — SG-Forge has done something genuinely difficult: issuing regulated security tokens on public infrastructure under full banking supervision. The legal exposure of that model sits precisely at the seam between the regulatory perimeter you control and the settlement substrate you don't. A minting error or forced upgrade on shared infrastructure isn't a rollback; it's a securities incident. FP Block's Kolme framework gives issuers like SG-Forge a dedicated chain with full sovereignty over execution — interoperable with public networks but not subject to their governance. Worth 20 minutes at EthCC Cannes in June to compare notes?"
+  },
+  {
+    "name": "RYAN SAUGE",
+    "channel": "linkedin",
+    "outreach_message": "Ryan — Taurus serves banks, and banks have a single tolerance for infrastructure failure when holding client assets: zero. The question that keeps growing as tokenization scales is not whether your custody logic is sound, but whether the rails your custody logic runs on are ones you actually control. FP Block built the Kolme framework so institutions can operate a dedicated application chain — same interoperability with Ethereum and the broader ecosystem, none of the shared-infrastructure governance risk. If you'll be in Cannes for EthCC this June, we'd value 20 minutes with you."
+  },
+  {
+    "name": "JAKE RO",
+    "channel": "linkedin",
+    "outreach_message": "Jake — at the scale BitGo operates, the infrastructure underneath the custody logic is itself a systemic risk variable. Hundreds of billions in assets under custody means a forced network upgrade, a sequencer decision, or a shared-chain congestion event isn't an inconvenience — it's a potential settlement failure with cascading consequences. FP Block built Kolme so custodians can own the entire execution environment, not just the keys. We'd welcome 20 minutes with you at EthCC in Cannes this June to talk through what application-specific infrastructure looks like at institutional scale."
+  },
+  {
+    "name": "SEBASTIAN WIDMANN",
+    "channel": "linkedin",
+    "outreach_message": "Sebastian — Komainu sits at an unusual intersection: the institutional credibility of Nomura, the hardware expertise of Ledger, and the market access of CoinShares, all wrapped in regulated custody. The one variable that doesn't fully sit inside that consortium is the execution environment where client assets settle. Compliance and insurance cover a lot, but neither undoes a permanent on-chain event caused by infrastructure you don't govern. FP Block's Kolme framework lets custodians run sovereign application chains with full control over the settlement substrate while staying interoperable with Ethereum and Cosmos. Would you have 20 minutes at EthCC in Cannes this June?"
+  },
+  {
+    "name": "PATRICK HANSEN",
+    "channel": "linkedin",
+    "outreach_message": "Patrick — USDC's position as regulated financial infrastructure means every policy and compliance decision Circle makes is only as durable as the execution layer it lives on. The regulatory clarity you've worked to establish doesn't extend to the shared infrastructure where USDC actually settles — and when that layer makes decisions, Circle inherits the consequences. FP Block's Kolme framework lets stablecoin issuers operate on dedicated chains they fully govern, preserving all the interoperability that drives USDC's utility without ceding control of the rails. Would 20 minutes at EthCC in Cannes this June be useful?"
+  },
+  {
+    "name": "STERLING BARNETT",
+    "channel": "linkedin",
+    "outreach_message": "Sterling — the systemic importance of USDC creates an unusual problem: Circle's compliance posture is rigorous, but the moment USDC settles on infrastructure Circle doesn't govern, the legal permanence of any error belongs to the issuer, not the network. At the volumes USDC moves, the cost of a single irreversible infrastructure-level event isn't contained by the compliance framework around it. FP Block built Kolme so issuers can run the execution environment under their own governance — interoperable with Ethereum and the broader ecosystem, but sovereign where it counts. Would you have 20 minutes at EthCC Cannes in June to dig into this?"
+  },
+  {
+    "name": "JULIAN GRIGO",
+    "channel": "linkedin",
+    "outreach_message": "Julian — Safe's multi-signature architecture is one of the most battle-tested account models in the ecosystem, and the assets it secures reflect that trust directly. The part of the risk surface that a multi-sig model doesn't fully address is the execution environment the account lives on — when the substrate beneath a Safe instance behaves unexpectedly, the permanence of the outcome falls entirely on the locked assets. FP Block's Kolme framework is built for teams operating at this level of criticality: a dedicated application chain with full execution sovereignty, interoperable with Ethereum but not beholden to its shared governance. Happy to walk through the architecture with you for 20 minutes at EthCC in Cannes this June."
+  },
+  {
+    "name": "ANYA",
+    "channel": "linkedin",
+    "outreach_message": "Anya — GK8's air-gapped cold vault model is built on the premise that the most dangerous attack surface is the one connected to the outside. The corollary that's harder to solve is what happens when the execution layer your vault interacts with during settlement decisions is one you don't control — not an external attack, but an infrastructure-level event that's just as permanent. FP Block's Kolme framework lets institutions own the full settlement substrate, not just the signing layer. We'd welcome 20 minutes with you at EthCC in Cannes this June to talk through how application-specific chains complement a defense-in-depth custody model."
+  },
+  {
+    "name": "CHUNDA MCCAIN",
+    "channel": "linkedin",
+    "outreach_message": "Chunda — Paxos has navigated the hardest part of regulated stablecoin issuance: building NYDFS-compliant infrastructure for USDP and PYUSD in an environment where regulators hold issuers responsible for outcomes, not networks. The part that remains exposed is the execution layer those instruments settle on — if shared infrastructure produces an irreversible event, the legal and reputational weight lands on the regulated issuer, not the protocol. FP Block's Kolme framework gives issuers a dedicated chain with full governance over settlement execution while remaining interoperable with Ethereum and the broader ecosystem. Would 20 minutes at EthCC in Cannes this June make sense?"
+  },
+  {
+    "name": "JEAN-MARC STENGER",
+    "channel": "linkedin",
+    "outreach_message": "Jean-Marc — SG-Forge's work on security token issuance under full banking supervision sets a standard the industry is still catching up to. What's worth examining as that model scales is the governance gap between the regulatory perimeter Societe Generale controls and the public execution layer where those tokens actually live. A network-level decision that affects a regulated security isn't a technical event — it's a banking event, and the liability chain runs back to the issuer. FP Block built Kolme so regulated issuers can close that gap with a dedicated chain under their own governance, without sacrificing interoperability with public markets. Would you have 20 minutes at EthCC in Cannes this June?"
+  },
+  {
+    "name": "SHEALTIELANZ",
+    "channel": "twitter",
+    "outreach_message": "Lighthouse underpins a massive fraction of staked ETH — which means the correctness assumptions baked into consensus-client code carry a weight that no application-layer audit can fully capture. At FP Block we build application-specific chains through our Kolme framework, and the questions we think about most are the ones that sit below the contract layer. Would love 20 minutes at EthCC Cannes in June if you're open to it."
+  },
+  {
+    "name": "KIRK BAIRD",
+    "channel": "linkedin",
+    "outreach_message": "Kirk — Sigma Prime's audit work covers a critical gap: the contracts protocols deploy are only as safe as the assumptions their auditors are permitted to make about the execution environment. When audits scope to the contract layer, they inherit everything beneath it as a trusted given — and that trust boundary is where the most durable risks live. FP Block's Kolme framework is designed to give protocol teams infrastructure they fully own, so the substrate assumptions in an audit are actually verifiable, not inherited. Worth 20 minutes at EthCC in Cannes this June to compare how we think about that boundary?"
+  },
+  {
+    "name": "ANDREW O'NEILL",
+    "channel": "linkedin",
+    "outreach_message": "Andrew — S&P's credit ratings on digital asset instruments carry the full weight of the institution's credibility, which means the infrastructure assumptions embedded in those assessments matter as much as the financial ones. When a rated instrument settles on shared execution infrastructure, the rating implicitly inherits that infrastructure's governance risk — congestion, forced upgrades, sequencer decisions. FP Block's Kolme framework is built for exactly this layer: giving issuers and infrastructure operators sovereign execution environments that rating agencies can evaluate with the same rigor as traditional counterparty risk. Would 20 minutes at EthCC in Cannes this June be a useful conversation?"
+  },
+  {
+    "name": "YOICHI HIRAI",
+    "channel": "twitter",
+    "outreach_message": "Yoichi — ZK circuit audits are uniquely unforgiving because the proof system is the security boundary, and errors there don't surface until they're exploited. The piece that's harder to scope is what happens when correct circuits run on infrastructure with assumptions the audit didn't cover. At FP Block we build dedicated application chains via Kolme — worth 20 minutes at EthCC Cannes in June to talk about where the substrate risk surface begins?"
+  },
+  {
+    "name": "YUCHEN SONG",
+    "channel": "twitter",
+    "outreach_message": "Yuchen — WBTC's value proposition is entirely a custody promise: the BTC backing is real, 1:1, and verifiable. What the model doesn't fully contain is the execution layer where the wrapped representation lives — an infrastructure-level event on that side is a BTC-backed liability that doesn't reverse. At FP Block we built Kolme for exactly this class of risk: application chains with full execution sovereignty. Would 20 minutes at EthCC Cannes in June make sense?"
+  },
+  {
+    "name": "CHRISTINE MOY",
+    "channel": "linkedin",
+    "outreach_message": "Christine — Apollo's move into tokenized credit and RWA funds is one of the more consequential bets in institutional finance right now. The risk surface that doesn't map cleanly onto traditional credit risk frameworks is the execution layer those instruments settle on: shared infrastructure with its own governance, congestion dynamics, and upgrade cycles. A legal or settlement error on that layer isn't a fund ops problem — it's a structured product problem with institutional counterparties on both sides. FP Block's Kolme framework gives issuers and asset managers a dedicated chain with full execution sovereignty, interoperable with Ethereum and Cosmos. Would 20 minutes at EthCC in Cannes this June be worth your time?"
+  },
+  {
+    "name": "NOID",
+    "channel": "twitter",
+    "outreach_message": "Kraken's reputation is built on being the most security-conscious exchange in the room — which means infrastructure decisions that sit below your own systems carry outsized reputational weight if they go wrong. At FP Block we built Kolme so teams with that standard of care can run dedicated application chains instead of inheriting shared-infrastructure risk. Worth 20 minutes at EthCC Cannes in June?"
+  },
+  {
+    "name": "WOLFGANG VITALE",
+    "channel": "linkedin",
+    "outreach_message": "Wolfgang — Bitcoin Suisse's range across brokerage, custody, staking, and structured products under Swiss regulation means compliance isn't a single checklist — it's a continuous operational posture across every infrastructure layer those products touch. The gap that's hardest to manage is settlement infrastructure that sits outside the regulatory perimeter but carries the same legal consequence when something goes wrong. FP Block's Kolme framework lets regulated firms run dedicated application chains with full execution sovereignty, interoperable with the networks clients need but governed internally. Would 20 minutes at EthCC in Cannes this June make sense?"
+  },
+  {
+    "name": "JOSÉ LUU",
+    "channel": "linkedin",
+    "outreach_message": "José — BPCE's scale means that digital asset and tokenization initiatives carry the same legal and regulatory weight as any other banking operation, regardless of how novel the infrastructure underneath them is. The challenge that doesn't resolve cleanly through internal controls is settlement on public execution layers your compliance team didn't approve and can't govern. FP Block built Kolme for exactly this situation: regulated institutions that need the reach of public networks but require sovereign control over the execution environment. Would 20 minutes at EthCC in Cannes this June be a useful conversation?"
+  },
+  {
+    "name": "NAHIM TERRAZAS",
+    "channel": "twitter",
+    "outreach_message": "Nahim — OpenZeppelin's libraries are the foundation under a significant fraction of deployed protocol value, which means correctness decisions there have systemic reach that no single protocol audit captures. The layer beneath the library is where we work: at FP Block, Kolme gives protocol teams dedicated application chains so the execution environment is as verifiable as the code running on it. Would love 20 minutes at EthCC Cannes in June."
+  },
+  {
+    "name": "PAMINA GEORGIEV",
+    "channel": "twitter",
+    "outreach_message": "Pamina — formal verification proves a contract behaves according to its spec, but the spec inherits the execution environment as a given. When the substrate beneath a verified contract introduces unexpected behavior — congestion, upgrade-forced state changes — the proof doesn't travel with it. At FP Block we build dedicated application chains through Kolme so the infrastructure assumptions in a verification engagement are actually owned and stable. Would 20 minutes at EthCC Cannes in June be worth it?"
+  },
+  {
+    "name": "ALICEANDBOB",
+    "channel": "twitter",
+    "outreach_message": "Certora's formal verification closes the gap between what code says and what it does — but there's a tier of risk that sits below the proof: the execution environment the verified contract runs on. If that layer behaves in ways outside the verification scope, the mathematical guarantee doesn't extend there. At FP Block, Kolme lets teams own the full substrate so what gets verified stays verified. Worth 20 minutes at EthCC Cannes in June?"
+  },
+  {
+    "name": "ERNESTO GARCÍA",
+    "channel": "twitter",
+    "outreach_message": "Ernesto — privacy properties in protocol design are only as durable as the execution layer they run on; a substrate with observable ordering or forced transparency breaks guarantees that the code itself upholds. OpenZeppelin's decisions about how to handle that boundary in library code have ecosystem-wide reach. At FP Block we build dedicated application chains through Kolme so teams can enforce execution-layer properties, not just contract-layer ones. Worth 20 minutes at EthCC Cannes in June?"
+  },
+  {
+    "name": "AMXX",
+    "channel": "twitter",
+    "outreach_message": "OpenZeppelin's core protocol work shapes the defaults that most of the ecosystem builds on top of — which means assumptions baked into that layer compound across every protocol that inherits them. The substrate beneath the contracts is where those assumptions either hold or don't. At FP Block, Kolme is built for teams thinking at this level: dedicated application chains where protocol-layer guarantees extend to the execution environment. Would 20 minutes at EthCC Cannes in June be useful?"
+  },
+  {
+    "name": "DEFINIKOLA",
+    "channel": "twitter",
+    "outreach_message": "Nikola — risk models for live protocols are only as good as the execution environment they run in; a model calibrated against normal network behavior has a blind spot for congestion-driven liquidation delays or sequencer ordering that front-runs its own outputs. At FP Block we built Kolme so risk infrastructure like Block Analitica's can operate on dedicated chains where execution is sovereign and observable. Would 20 minutes at EthCC Cannes in June make sense?"
+  },
+  {
+    "name": "ROMAIN MENETRIER",
+    "channel": "linkedin",
+    "outreach_message": "Romain — Dowgo's model of bringing treasury bills and private credit instruments to institutional and retail investors carries a legal and operational responsibility that doesn't sit entirely within your platform: the settlement infrastructure underneath those tokenized assets has its own governance, upgrade cycles, and failure modes. An error at that layer — a mis-minted position, a forced state change — isn't a platform incident, it's a regulated instrument incident with counterparties on the other side. FP Block's Kolme framework gives RWA platforms a dedicated application chain with full execution sovereignty while preserving interoperability with public markets. Worth 20 minutes at EthCC in Cannes this June?"
+  },
+  {
+    "name": "ZACH PANDL",
+    "channel": "twitter",
+    "outreach_message": "Zach — Grayscale's regulated AUM products operate under the assumption that institutional-grade custody and compliance rigor are the primary risk variables. The one that doesn't fully map onto traditional asset management frameworks is the execution infrastructure where those products settle: its governance isn't yours, and its failure mode is permanent. At FP Block, Kolme is built for asset managers who need sovereign infrastructure without sacrificing ecosystem connectivity. Would 20 minutes at EthCC Cannes in June be worth it?"
+  },
+  {
+    "name": "NICOLAS ASSOUAD",
+    "channel": "linkedin",
+    "outreach_message": "Nicolas — Spiko's model of tokenizing EU-regulated money market funds and T-bills is one of the cleanest expressions of regulated RWA issuance: permissioned access, compliant instruments, institutional-grade counterparties. The part of the risk surface that doesn't resolve through regulatory compliance is the execution layer those instruments settle on — shared infrastructure with its own governance that the regulatory perimeter around Spiko's products doesn't cover. A settlement error there is a regulated fund error. FP Block's Kolme framework lets issuers run dedicated application chains under their own governance while staying interoperable with the networks they need. Would 20 minutes at EthCC in Cannes this June be a useful conversation?"
+  }
+]

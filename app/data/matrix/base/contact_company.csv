@@ -1,0 +1,15 @@
+contact_id,company_id,role,role_type,founder_status,is_primary,source
+C001,CO001,Director,technical,,true,speakers
+C002,CO002,Founder,founder,founder,true,speakers
+C003,CO003,Engineer,technical,,true,speakers
+C004,CO004,Core Developer,technical,,true,jb-sheet
+C005,CO004,Researcher,technical,,true,jb-sheet
+C006,CO004,Solidity Language Coordinator,technical,,true,jb-sheet
+C007,CO005,Co-founder & CEO,executive,cofounder,true,jb-sheet
+C008,CO006,Founder,founder,founder,true,eli-sheet
+C009,CO007,Founder,founder,founder,true,eli-sheet
+C010,CO008,Founder,founder,founder,true,eli-sheet
+C011,CO005,HR Manager,other,,false,apollo
+C012,CO005,Business Development Manager Latam,sales,,false,apollo
+C013,CO005,Technical Lead,technical,,false,apollo
+C014,CO005,Global Retail Business Development Manager,sales,,false,apollo

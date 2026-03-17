@@ -1,0 +1,167 @@
+name,org,channel,contact,message,icp_score
+DAVID PEARCE,CONSENSYS,twitter,https://x.com/WhileyDave,"MetaMask + Infura + Linea under one roof means architectural assumptions at any layer compound across all of them. We built Kolme for exactly that blast-radius problem. [link] if you're at Cannes",83
+DAVID PEARCE,CONSENSYS,linkedin,http://www.linkedin.com/in/david-pearce-8592647,"David — when you're operating MetaMask, Infura, and Linea together, a wrong assumption at one layer doesn't stay contained. The decisions that compound across those surfaces are the ones that become structurally expensive to revisit. FP Block's Kolme framework gives teams dedicated execution with full ecosystem reach — specifically for systems where the blast radius of getting it wrong is too large to absorb. Worth 20 minutes at Cannes? [link]",83
+DAVID PEARCE,CONSENSYS,email,david.pearce@consensys.net,"Subject: ConsenSys infra decisions that compound
+
+David,
+
+Running MetaMask, Infura, and Linea together means architectural choices at any one layer carry forward into all the others — and at that depth, a wrong assumption stops being an incident and starts being a structural pattern.
+
+FP Block built the Kolme framework for teams at that layer: dedicated execution with full interoperability, so the critical infrastructure stays owned rather than inherited.
+
+JB will be at Cannes and would value comparing notes. [link]",83
+FISHER YU,BABYLON,linkedin,https://www.linkedin.com/in/mingchaoyu/?originalSubdomain=au,"Fisher — non-custodial BTC staking is one of the few designs where a slashing bug or protocol error isn't recoverable. The assets are real, the consequences are permanent, and the infrastructure choices you're making now are load-bearing for everything that runs on top. FP Block built Kolme for that standard — teams that need owned execution because inheriting shared infrastructure risk isn't an option. Happy to find 20 minutes at Cannes. [link]",83
+FISHER YU,BABYLON,email,fisher.yu@babylonlabs.io,"Subject: Babylon's infra — where permanent consequences live
+
+Fisher,
+
+Non-custodial BTC staking means every slashing event and protocol edge case has a permanent, unrecoverable consequence for real holders. That's a fundamentally different accountability standard than most infrastructure teams operate under.
+
+FP Block's Kolme framework gives teams like yours dedicated execution with full isolation — so the infrastructure underneath the staking logic is owned, not borrowed from a shared environment.
+
+JB will be at Cannes and would love 20 minutes. [link]",83
+ANDY M. LEE,MAMORI,twitter,https://x.com/andymooselee,"Transaction guardrails are only as good as the infrastructure they run on — if the environment is shared, the boundary is borrowed. We built Kolme so the teams Mamori protects own their execution layer. [link] if you're at Cannes",83
+GIO,PARITY TECHNOLOGIES,twitter,https://x.com/gioyik,"Substrate runtime bugs don't fail one protocol — they can halt every chain that trusted your foundation. That's a different kind of accountability. Kolme is built for that layer. [link] if you're at Cannes",83
+TERENCE TSAO,OFFCHAIN LABS,twitter,https://x.com/terencechain,"Decentralizing the sequencer is the move that turns 'we shipped this' into 'we own this' permanently — the decisions made now will be load-bearing for a long time. That's exactly the constraint Kolme was designed for. [link] if you're at Cannes",82
+TERENCE TSAO,OFFCHAIN LABS,linkedin,http://www.linkedin.com/in/terencetsao,"Terence — decentralizing Arbitrum's sequencing is the kind of architectural decision that doesn't have a clean rollback path. The choices made now about execution ownership will carry forward for every team building on top. FP Block's Kolme framework gives teams dedicated execution without giving up ecosystem reach — built specifically for systems where the gap between 'shipped' and 'owned' is where the real cost accumulates. Worth 20 minutes at Cannes? [link]",82
+GREG SWIRSKI,REILABS,twitter,https://x.com/gswirski,"ZK cryptography is one of the few places where a correctness error isn't just a bug — it's a permanent break in the trust everything downstream was built on. Kolme is for teams where 'fix it later' isn't on the table. [link] if you're at Cannes",82
+NORBERT VADAS,ZENITH,linkedin,https://www.linkedin.com/in/norbert-vadas-1b32b9242/,"Norbert — tokenizing real-world assets means the legal and financial structure you put in place today outlasts any individual transaction. Errors aren't rolled back, they're litigated or absorbed. FP Block's Kolme framework gives teams operating at that permanence standard their own dedicated infrastructure — so the execution layer matches the accountability of the assets it's settling. Happy to connect at Cannes. [link]",82
+NORBERT VADAS,ZENITH,email,norbert@gevulot.com,"Subject: Infrastructure that matches RWA permanence standards
+
+Norbert,
+
+Tokenizing real-world assets means the structure you build is legally and financially binding from day one — errors don't get rolled back, they get inherited.
+
+FP Block's Kolme framework gives teams in that position dedicated execution with full isolation, so the infrastructure carrying those obligations is owned, not shared.
+
+JB will be at Cannes and would value 20 minutes. [link]",82
+ANNE-GRACE KLECZEWSKI,MME LEGAL,linkedin,https://www.linkedin.com/in/anne-grace-kleczewski-789baa81/,"Anne-Grace — advising on token structuring and crypto compliance means the guidance you give becomes part of a record that's very hard to revise. Legal errors in this space carry persistent consequences for your clients and for the firm. FP Block works with the infrastructure teams you advise — and Kolme is built for the same standard: systems where getting it wrong isn't an option. Would love 20 minutes at Cannes. [link]",82
+LASZLO SZABO,KILN,linkedin,https://www.linkedin.com/in/laszlo-szabo-/,"Laszlo — enterprise staking infrastructure means your clients are trusting you with assets where a slashing event or contract vulnerability doesn't have an undo. The institutions depending on Kiln's tooling need white-glove execution, not shared infrastructure risk. FP Block built Kolme for that standard — dedicated execution with full interoperability, because the stakes don't allow for inherited failures. Worth 20 minutes at Cannes? [link]",82
+LASZLO SZABO,KILN,email,laszlo@kiln.fi,"Subject: Kiln's staking infra — owned execution matters here
+
+Laszlo,
+
+Enterprise staking means institutional clients are trusting you with assets where a single slashing event or contract bug carries permanent, irreversible consequences. That's a different risk profile than most infrastructure providers are built for.
+
+FP Block's Kolme framework gives teams running at that level their own dedicated execution environment — isolated, not shared — while keeping full interoperability with the broader ecosystem.
+
+JB will be at Cannes and would love to compare notes. [link]",82
+HARRY KALODNER,OFFCHAIN LABS,linkedin,https://www.linkedin.com/in/hkalodner,"Harry — Arbitrum's fraud proof system is one of the most consequential pieces of L2 architecture in production. The decisions baked into that design are now load-bearing for billions in locked assets, and revisiting them requires coordinated upgrades across a live system. FP Block built Kolme for teams at that layer — dedicated execution with full ecosystem reach, for systems where the cost of a wrong assumption compounds over time. Happy to find 20 minutes at Cannes. [link]",82
+HARRY KALODNER,OFFCHAIN LABS,email,harry@offchainlabs.com,"Subject: Arbitrum's architecture decisions that don't revisit cleanly
+
+Harry,
+
+The fraud proof design and sequencer choices baked into Arbitrum are now load-bearing for billions in locked assets — the kind of decisions that require coordinated multi-party upgrades to revisit, if they can be revisited at all.
+
+FP Block built Kolme for teams operating at that layer: dedicated execution, full isolation, full ecosystem reach.
+
+JB will be in Cannes and would love 20 minutes. [link]",82
+KOLBY MOROZ LIEBL,OFFCHAIN LABS,linkedin,https://www.linkedin.com/in/kolbyml/,"Kolby — the sequencer decentralization work at Arbitrum is exactly where 'how we built this' becomes 'how everyone has to live with this.' The execution ownership decisions made now will be inherited by every team building on top. FP Block's Kolme framework is designed for that constraint — dedicated execution that matches the permanence of what's being built. Worth 20 minutes at Cannes? [link]",82
+KOLBY MOROZ LIEBL,OFFCHAIN LABS,email,kliebl@offchainlabs.com,"Subject: Sequencer decentralization — the decisions that compound
+
+Kolby,
+
+Decentralizing the Arbitrum sequencer means the execution ownership model you're designing now will be inherited by every protocol and team building on top of it. Those are not decisions that get revised quietly.
+
+FP Block's Kolme framework gives teams at that layer their own dedicated execution environment — without trading away interoperability with the broader ecosystem.
+
+JB will be at Cannes and would value 20 minutes. [link]",82
+MURAT ÖGAT,AKTIONARIAT,linkedin,https://www.linkedin.com/in/muratogat/,"Murat — tokenizing Swiss equity means the shareholder registry infrastructure you're building carries real legal weight from the moment it's deployed. A bug or misconfiguration isn't just a technical incident, it's a compliance event with persistent consequences. FP Block's Kolme framework is built for systems where the legal and financial permanence of the output demands ownership of the execution environment. Happy to find 20 minutes at Cannes. [link]",82
+MURAT ÖGAT,AKTIONARIAT,email,murat@aktionariat.com,"Subject: Aktionariat's equity infrastructure — where compliance meets permanence
+
+Murat,
+
+Tokenizing equity for Swiss SMEs means the shareholder registry you're maintaining has real legal binding — errors aren't rolled back, they're reconciled through compliance processes.
+
+FP Block built Kolme for infrastructure teams operating at that standard: owned execution, full isolation, so the legal permanence of the output matches the reliability of the environment running it.
+
+JB will be at Cannes and would love 20 minutes. [link]",82
+ANNE-LORINNE MOGNETTI,MME LEGAL,linkedin,https://www.linkedin.com/in/anne-lorinne-mognetti/?originalSubdomain=ch,"Anne-Lorinne — structuring tokens and advising on crypto compliance at MME means your guidance shapes infrastructure decisions that clients treat as settled. Legal errors in that context aren't correctable footnotes, they're persistent liability. FP Block works alongside teams building at that permanence standard — Kolme is designed for systems where the cost of getting it wrong follows you. Would love 20 minutes at Cannes. [link]",82
+ANNE-LORINNE MOGNETTI,MME LEGAL,email,annelorinne.mognetti@mme.ch,"Subject: MME's clients — infrastructure that matches legal permanence
+
+Anne-Lorinne,
+
+Token structuring and regulatory compliance advice becomes part of a client's foundation — the guidance gets built on top of, and errors in that layer carry consequences that are difficult to contain after the fact.
+
+FP Block works with the teams whose infrastructure carries those obligations, and Kolme is designed for exactly that standard: owned execution, because the permanence of the output demands it.
+
+JB will be at Cannes and would love to find 20 minutes. [link]",82
+KONY KWONG,GAIB,twitter,https://x.com/konyk001,"Tokenizing AI compute as a yield-bearing asset is being defined in real-time — the legal and financial structure GAIB sets now will be very hard to revisit later. Kolme is built for teams in that window. [link] if you're at Cannes",82
+ALBICODES,FLASHBOTS X,twitter,https://x.com/albicodes,"MEV research reveals the gap between what a protocol says it does and what actually happens when builders optimize — and the cost of that gap is borne by users who trusted it. We built Kolme so teams own the execution environment rather than inherit someone else's ordering assumptions. [link] if you're at Cannes",82
+HONG KIM,BITWISE ASSET MANAGEMENT,twitter,https://x.com/hongkim__,"Managing regulated ETFs means the structural decisions you make about how assets are held and reported outlast any individual market cycle. Kolme gives regulated asset managers infrastructure ownership that matches that standard. [link] if you're at Cannes",82
+HONG KIM,BITWISE ASSET MANAGEMENT,linkedin,http://www.linkedin.com/in/hongkimm,"Hong — managing regulated crypto ETFs at institutional scale means every structural decision about custody, reporting, and settlement carries fiduciary weight long after it's made. FP Block's Kolme framework gives regulated asset managers their own dedicated execution environment — so the infrastructure underneath the fund matches the ownership standard the assets require. Worth 20 minutes at Cannes? [link]",82
+HONG KIM,BITWISE ASSET MANAGEMENT,email,hong@bitwiseinvestments.com,"Subject: Bitwise ETF infra — ownership that matches fiduciary standards
+
+Hong,
+
+Running regulated crypto index funds means the structural decisions around custody, settlement, and reporting are load-bearing well beyond launch day — they carry fiduciary implications that don't go away.
+
+FP Block's Kolme framework gives regulated asset managers dedicated execution infrastructure to match that accountability standard.
+
+JB will be at Cannes and would love 20 minutes. [link]",82
+ALAN LI,BREVIS,twitter,https://x.com/brevis_zk,"Every protocol that builds on Brevis is implicitly trusting that your proofs are correct — permanently, for decisions already settled. A coprocessor where correctness is the entire product guarantee needs owned execution. That's what Kolme is for. [link] if you're at Cannes",82
+AKAKI MAMAGEISHVILI,OFFCHAIN LABS,linkedin,"https://www.linkedin.com/in/akaki-mamageishvili-%F0%9F%87%BA%F0%9F%87%A6-b40824b3/","Akaki — the research and protocol design going into Arbitrum's decentralized sequencing will set the execution ownership model for billions in live assets. Those decisions get inherited downstream and don't revisit cleanly. FP Block built Kolme for teams operating at that layer — dedicated execution with full ecosystem interoperability. Worth 20 minutes at Cannes? [link]",82
+AKAKI MAMAGEISHVILI,OFFCHAIN LABS,email,amamageishvili@offchainlabs.com,"Subject: Arbitrum sequencing decisions — permanence starts here
+
+Akaki,
+
+The protocol design choices behind Arbitrum's sequencer decentralization will be inherited by every team building on top — and at the scale of assets currently locked, those aren't decisions that get revised without significant coordination.
+
+FP Block built Kolme for teams working at that layer: owned execution, full isolation, full ecosystem reach.
+
+JB will be at Cannes and would value 20 minutes. [link]",82
+JULIE BADER,DE GAULLE FLEURANCE,linkedin,https://www.linkedin.com/in/julie-bader-311134a2/,"Julie — advising regulated entities on crypto compliance means your structuring work becomes part of their foundation. Legal errors at that layer don't stay contained — they carry persistent liability for clients and reputational risk for the firm. FP Block works alongside the infrastructure teams your clients rely on, and Kolme is designed for the same permanence standard: owned execution, because the consequences of getting it wrong don't go away. Worth 20 minutes at Cannes? [link]",82
+JULIE BADER,DE GAULLE FLEURANCE,email,jbader@dgfla.com,"Subject: De Gaulle Fleurance clients — infrastructure that carries legal weight
+
+Julie,
+
+Digital asset compliance advice shapes infrastructure decisions that clients treat as settled law — and errors at that layer carry liability that's difficult to contain once the structures are live.
+
+FP Block works with the teams building at that permanence standard, and Kolme is designed to give them owned execution that matches the accountability of the assets involved.
+
+JB will be at Cannes and would love to find 20 minutes. [link]",82
+RAZA ZAIDI,SCROLL,twitter,https://x.com/razacodes,"Proof failures on a live L2 don't produce a rollback — they produce locked capital and a trust event that's very hard to walk back. Kolme is built for teams where correctness stops being a preference and becomes a baseline. [link] if you're at Cannes",80
+RAZA ZAIDI,SCROLL,linkedin,http://www.linkedin.com/in/razac,"Raza — building a ZK-based L2 means proof system failures carry a very specific kind of cost: not a rollback, but frozen user funds and a trust event that's hard to recover from. FP Block built Kolme for teams that need the performance of dedicated execution while keeping full interoperability with the broader ecosystem — specifically for systems where correctness is the baseline, not a feature. Worth 20 minutes at Cannes? [link]",80
+RAZA ZAIDI,SCROLL,email,raza.zaidi@nn-group.com,"Subject: Scroll's proving system — where correctness becomes a baseline
+
+Raza,
+
+A ZK-based L2 is one of the few systems where a proof failure doesn't produce a recoverable error state — it produces locked capital and a trust event that affects every user who bridged in.
+
+FP Block built Kolme for teams operating at that standard: dedicated execution with full isolation, because inheriting shared infrastructure risk isn't acceptable when the cost of failure is permanent.
+
+JB will be at Cannes and would love to compare notes. [link]",80
+JORDI BAYLINA,ZISK,twitter,https://x.com/jbaylina,"Spinning out to keep ZisK independent wasn't a speed decision, it was an ownership decision — you chose to control the proving system rather than be a feature inside someone else's roadmap. That instinct is exactly what Kolme is built around. [link] if you're at Cannes",80
+JORDI BAYLINA,ZISK,linkedin,http://www.linkedin.com/in/jbaylina,"Jordi — taking ZisK independent is one of the clearest examples of choosing ownership over convenience in this space. A proving system that sits inside someone else's roadmap isn't really yours anymore, and you made the harder call. FP Block's Kolme framework is built on the same conviction: teams building critical proving infrastructure need to own the execution environment, not borrow it. Would love 20 minutes at Cannes to compare notes. [link]",80
+JORDI BAYLINA,ZISK,email,jordi@baylina.cat,"Subject: ZisK spinout — ownership as a design decision
+
+Jordi,
+
+Taking ZisK independent from Polygon wasn't just about velocity — it was a deliberate choice to own the proving system rather than have it absorbed into someone else's priorities. That kind of decision is hard to make and harder to reverse.
+
+FP Block's Kolme framework is built on the same logic: dedicated execution for teams where the proving infrastructure is too critical to share.
+
+JB will be at Cannes and would love 20 minutes. [link]",80
+IVA,LUMIS,linkedin,https://www.linkedin.com/in/ivikkk/,"Ivan — institutional portfolio management means errors in execution or risk modeling carry direct, unrecoverable losses for clients. That's a different accountability standard than most infrastructure is built to support. FP Block's Kolme framework gives asset management platforms dedicated execution with full isolation — so the infrastructure layer matches the fiduciary weight of the assets it's managing. Happy to connect at Cannes. [link]",80
+IVA,LUMIS,email,ivan@lumis.fi,"Subject: Lumis execution infrastructure — where errors are permanent
+
+Ivan,
+
+Institutional portfolio management means execution failures and risk model errors carry direct, unrecoverable capital losses for clients. That's a fundamentally different accountability standard than most infrastructure providers are designed for.
+
+FP Block's Kolme framework gives platforms like Lumis dedicated execution with full isolation — so the infrastructure underneath matches the permanence of the assets it's managing.
+
+JB will be at Cannes and would love 20 minutes. [link]",80
+SANDY PENG,SCROLL,linkedin,https://linkedin.com/in/sandy-peng-14a44b16b,"Sandy — co-founding a ZK-based L2 means the architectural decisions made at the proving and bridge layer carry forward permanently for every user who bridges in. Getting those wrong doesn't produce a patch cycle, it produces a trust event. FP Block built Kolme for teams that need dedicated execution to match that standard — without giving up interoperability with the broader ecosystem. Worth 20 minutes at Cannes? [link]",80
+SANDY PENG,SCROLL,email,sandy@scroll.io,"Subject: Scroll's bridge and proof architecture — decisions that carry forward
+
+Sandy,
+
+The bridge and ZK proof design choices baked into Scroll will be inherited by every user and protocol that builds on top — and at the point where those systems are live with real capital, errors don't produce rollbacks. They produce frozen funds and hard trust conversations.
+
+FP Block built Kolme for teams at that layer: owned execution, full isolation, full ecosystem reach.
+
+JB will be at Cannes and would love 20 minutes. [link]",80
+ED FELTEN,OFFCHAIN LABS,linkedin,https://www.linkedin.com/in/ed-felten-275171/,"Ed — the fraud proof architecture at the core of Arbitrum is one of the few pieces of L2 infrastructure where a design error doesn't just affect throughput. It affects the finality guarantee that billions in assets are depending on. FP Block built Kolme for teams at that layer — dedicated execution with full interoperability, for systems where the consequences of being wrong are permanent and very visible. Worth 20 minutes at Cannes? [link]",82
+JONATHAN HAN,EULER LABS,linkedin,https://www.linkedin.com/in/jonathan-h-92570279,"Jonathan — after the 2023 exploit, Euler rebuilt with a level of rigor that most lending protocols skip. Modular, permissionless markets are powerful precisely because the design bears all the weight — there's no operator backstop when misconfiguration drains a pool. FP Block built Kolme for teams that operate at that standard: dedicated execution, owned infrastructure, because shared environments introduce the kind of surface area that ends careers. Worth 20 minutes at Cannes? [link]",82
+LUIS CORREIA,FLASHBOTS,linkedin,https://linkedin.com/in/luis-correia-4a9b99292,"Luis — SUAVE and the block builder infrastructure Flashbots runs touches billions in transaction value every day, and the ordering assumptions baked into that system determine who bears the cost when things don't go as designed. FP Block's Kolme framework is built for teams at that layer: dedicated execution ownership so the infrastructure running critical ordering logic isn't shared with the systems it's affecting. Worth 20 minutes at Cannes? [link]",80

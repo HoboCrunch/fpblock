@@ -1,0 +1,61 @@
+; Domain: gofpblock.com
+; Exported (y-m-d hh:mm:ss): 2026-03-09 18:21:21
+;
+; This file is intended for use for informational and archival
+; purposes ONLY and MUST be edited before use on a production
+; DNS server.
+;
+; In particular, you must update the SOA record with the correct
+; authoritative name server and contact e-mail address information,
+; and add the correct NS records for the name servers which will
+; be authoritative for this domain.
+;
+; For further information, please consult the BIND documentation
+; located on the following website:
+;
+; http://www.isc.org/
+;
+; And RFC 1035:
+;
+; http://www.ietf.org/rfc/rfc1035.txt
+;
+; Please note that we do NOT offer technical support for any use
+; of this zone data, the BIND name server, or any other third-
+; party DNS software.
+;
+; Use at your own risk.
+
+
+$ORIGIN gofpblock.com.
+
+; SOA Record
+@	3600	 IN 	SOA	ns31.domaincontrol.com.	dns.jomax.net. (
+					2026030918
+					28800
+					7200
+					604800
+					3600
+					) 
+
+; A Record
+@	600	 IN 	A	216.150.1.1
+
+; TXT Record
+@	3600	 IN 	TXT	"v=spf1 include:spf.messagingengine.com ?all"
+krs._domainkey	3600	 IN 	TXT	"k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDheEY0KepDV+w3HYKemEdlukyO4t3h6QiFr8nDGYvVoSGFna0s1NOAt56P0dA+klcWAsUMHvuSuR00UCwrvaF9zHba6wjRjakbpaya7K/mEVuRPSCtRkUBTOE8vGiJ6K1P+x1nvPjyi/Op0JN6DHKlrvKFli8+HylVL9rPc2cR0QIDAQAB"
+
+; CNAME Record
+fm1._domainkey	3600	 IN 	CNAME	fm1.gofpblock.com.dkim.fmhosted.com.
+fm2._domainkey	3600	 IN 	CNAME	fm2.gofpblock.com.dkim.fmhosted.com.
+fm3._domainkey	3600	 IN 	CNAME	fm3.gofpblock.com.dkim.fmhosted.com.
+mesmtp._domainkey	3600	 IN 	CNAME	mesmtp.gofpblock.com.dkim.fmhosted.com.
+www	3600	 IN 	CNAME	a44b473e19d6f495.vercel-dns-016.com.
+
+; NS Record
+@	3600	 IN 	NS	ns31.domaincontrol.com.
+@	3600	 IN 	NS	ns32.domaincontrol.com.
+
+; MX Record
+@	3600	 IN 	MX	10	in1-smtp.messagingengine.com.
+@	3600	 IN 	MX	20	in2-smtp.messagingengine.com.
+

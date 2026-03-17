@@ -1,0 +1,2918 @@
+{
+  "wonderland.xyz": null,
+  "tangem.com": [
+    {
+      "id": "6426ecdffd3a21000128f62c",
+      "first_name": "Volodymyr",
+      "title": "HR Manager",
+      "org": "Tangem"
+    },
+    {
+      "id": "5dc2b05652bf2b00e4102118",
+      "first_name": "Matheus",
+      "title": "Business Development Manager Latam",
+      "org": "Tangem"
+    },
+    {
+      "id": "65ba3700edac000001d1e7e2",
+      "first_name": "Alex",
+      "title": "Technical Lead",
+      "org": "Tangem"
+    },
+    {
+      "id": "68d096fcb815db00019b9ecd",
+      "first_name": "Lee",
+      "title": "Global Retail Business Development Manager",
+      "org": "Tangem"
+    },
+    {
+      "id": "66fd5ceaa837d000016a6df6",
+      "first_name": "Ana",
+      "title": "Brand Campaigns Lead",
+      "org": "Tangem"
+    },
+    {
+      "id": "5cc954f9a3ae619d95765554",
+      "first_name": "Anatolii",
+      "title": "Lead Software Architect",
+      "org": "Tangem"
+    },
+    {
+      "id": "5e6f5e9b02aa5e00e0219415",
+      "first_name": "Max",
+      "title": "Head of Design",
+      "org": "Tangem"
+    },
+    {
+      "id": "64bb8501b98575000100f590",
+      "first_name": "Sergei",
+      "title": "Head of Customer Service",
+      "org": "Tangem"
+    },
+    {
+      "id": "54a212a07468692e71d6890a",
+      "first_name": "Darya",
+      "title": "Chief Commercial Officer (CCO)",
+      "org": "Tangem"
+    },
+    {
+      "id": "642301ed20fc3c0001c0b364",
+      "first_name": "Stepan",
+      "title": "Head of Communications",
+      "org": "Tangem"
+    }
+  ],
+  "pharos.xyz": [
+    {
+      "id": "66965313f376bc00012be41b",
+      "first_name": "Janesh",
+      "title": "Head of Technical Project",
+      "org": "Pharos Network"
+    },
+    {
+      "id": "611da884514b7a00010dd62c",
+      "first_name": "Michelle",
+      "title": "Chief Marketing Officer",
+      "org": "Pharos Network"
+    },
+    {
+      "id": "67c066b382a9ab0001d6eaf5",
+      "first_name": "Chris",
+      "title": "Head of BD",
+      "org": "Pharos Network"
+    },
+    {
+      "id": "67e90ac6ba7c900001dbfaf6",
+      "first_name": "Alex",
+      "title": "Co-Founder",
+      "org": "Pharos Network"
+    },
+    {
+      "id": "6103a1c775be8f000175d3fd",
+      "first_name": "Yvonne",
+      "title": "Marketing Lead, APAC",
+      "org": "Pharos Network"
+    },
+    {
+      "id": "661143de4b16d60007fd95c9",
+      "first_name": "Mush",
+      "title": "Community Lead",
+      "org": "Pharos Network"
+    },
+    {
+      "id": "683985672cb524000128ef2d",
+      "first_name": "Wish",
+      "title": "Co-Founder",
+      "org": "Pharos Network"
+    },
+    {
+      "id": "6735d0c79b72b40001c567ec",
+      "first_name": "Ajeet",
+      "title": "Project Manager",
+      "org": "Pharos Network"
+    }
+  ],
+  "cakewallet.com": null,
+  "trezor.io": [
+    {
+      "id": "66f6955967ab0c00017b4cf5",
+      "first_name": "Danny",
+      "title": "Chief Commercial Officer (CCO)",
+      "org": "Trezor"
+    },
+    {
+      "id": "60bfb5e8d5e8250001b52691",
+      "first_name": "Matej",
+      "title": "Chief Executive Officer",
+      "org": "Trezor"
+    },
+    {
+      "id": "621dbc293fad0000018c57d9",
+      "first_name": "Marta",
+      "title": "Affiliate Marketing Lead",
+      "org": "Trezor"
+    },
+    {
+      "id": "66f7097a26871400012286a3",
+      "first_name": "Lauri",
+      "title": "Product Marketing Lead",
+      "org": "Trezor"
+    },
+    {
+      "id": "54a7a17674686968291cce46",
+      "first_name": "Hynek",
+      "title": "Product Manager",
+      "org": "Trezor"
+    },
+    {
+      "id": "54a2295274686930c2ab1912",
+      "first_name": "Tomas",
+      "title": "Chief Technology Officer",
+      "org": "Trezor"
+    },
+    {
+      "id": "63e1f62a23f0ab00015089c6",
+      "first_name": "Rahul",
+      "title": "Director of Product",
+      "org": "Trezor"
+    },
+    {
+      "id": "6295d18c8976ec00012536df",
+      "first_name": "Michal",
+      "title": "Product Manager",
+      "org": "Trezor"
+    },
+    {
+      "id": "57df5dc5a6da980acde2149f",
+      "first_name": "Billy",
+      "title": "Content Lead",
+      "org": "Trezor"
+    },
+    {
+      "id": "5e7407d63fb15d000158fda9",
+      "first_name": "Stepan",
+      "title": "Supply Chain Lead",
+      "org": "Trezor"
+    }
+  ],
+  "world.org": [
+    {
+      "id": "5d4a69c080f93ea2c700554f",
+      "first_name": "Haig",
+      "title": "Chief of Staff to CEO",
+      "org": "World"
+    },
+    {
+      "id": "678a3b372a2aad000128b596",
+      "first_name": "Federico",
+      "title": "Lead Product Designer",
+      "org": "World"
+    },
+    {
+      "id": "665eea3ea81f450001e04164",
+      "first_name": "Grady",
+      "title": "Campus Growth Lead",
+      "org": "World"
+    },
+    {
+      "id": "62deb5b7f8bd170001c0420a",
+      "first_name": "Martin",
+      "title": "Lead Accountant",
+      "org": "World"
+    },
+    {
+      "id": "6133145c52e620000134dbe7",
+      "first_name": "Kyle",
+      "title": "Campus Growth Lead",
+      "org": "World"
+    },
+    {
+      "id": "5e7320c52dedd40001fafc69",
+      "first_name": "Michael",
+      "title": "General Manager",
+      "org": "World"
+    },
+    {
+      "id": "6861dbee8760af0001f3047d",
+      "first_name": "Joriel",
+      "title": "Account Manager",
+      "org": "World"
+    },
+    {
+      "id": "57d47a41a6da985386bd5e0d",
+      "first_name": "Karn",
+      "title": "Senior Product Manager, World ID",
+      "org": "World"
+    },
+    {
+      "id": "55bf8fb973696411ea923300",
+      "first_name": "Thiri",
+      "title": "Head of Growth & Partnerships",
+      "org": "World"
+    },
+    {
+      "id": "6743b6cb8151b500013fc6c9",
+      "first_name": "Bagas",
+      "title": "Supervisor",
+      "org": "World"
+    }
+  ],
+  "lido.fi": [
+    {
+      "id": "54a5327d7468693209739484",
+      "first_name": "Kean",
+      "title": "Head of Institutional Relations",
+      "org": "Lido Finance"
+    },
+    {
+      "id": "60b09049a2d04200018be880",
+      "first_name": "Galen",
+      "title": "Head of Marketing",
+      "org": "Lido Finance"
+    },
+    {
+      "id": "6826b9bf6410cd0001a286c7",
+      "first_name": "Kasper",
+      "title": "Marketing Lead",
+      "org": "Lido Finance"
+    },
+    {
+      "id": "611658cac70232000122c1a0",
+      "first_name": "Ivan",
+      "title": "VP of Engineering at Lido",
+      "org": "Lido Finance"
+    },
+    {
+      "id": "604f84d69836150001850709",
+      "first_name": "Dmitrii",
+      "title": "Product Lead",
+      "org": "Lido Finance"
+    },
+    {
+      "id": "62d970eda4cadd000179280b",
+      "first_name": "Dmitry",
+      "title": "Blockchain Tech Lead",
+      "org": "Lido Finance"
+    },
+    {
+      "id": "57d5ac04a6da9853d62cb451",
+      "first_name": "Armin",
+      "title": "Liquidity Lead",
+      "org": "Lido Finance"
+    },
+    {
+      "id": "64572bb206bb1f0001f9c8a2",
+      "first_name": "Will",
+      "title": "Head of Node Operator Mechanisms",
+      "org": "Lido Finance"
+    },
+    {
+      "id": "5f0c02c02e1dc10001fd6ba1",
+      "first_name": "Jakov",
+      "title": "Chief Vault Officer - Lido Earn",
+      "org": "Lido Finance"
+    },
+    {
+      "id": "56be606ef3e5bb3bd6000c6e",
+      "first_name": "Dixon",
+      "title": "Senior Product Manager Related to Search Terms in Your Query, OnChain & Defi",
+      "org": "Lido Finance"
+    }
+  ],
+  "latitude.sh": [
+    {
+      "id": "60f9b5137a384d0001b3eca0",
+      "first_name": "Marcella",
+      "title": "HR Manager",
+      "org": "Latitude.sh"
+    },
+    {
+      "id": "60db4fc5671e9e0001c3d29c",
+      "first_name": "Rafael",
+      "title": "Head of Finance for Latitude.sh (Acquired by Megaport \u2013 ASX: MP1, Nov 2025)",
+      "org": "Latitude.sh"
+    },
+    {
+      "id": "607142fd8e98950001fa4bc7",
+      "first_name": "Thales",
+      "title": "Network Operations Tech Lead",
+      "org": "Latitude.sh"
+    },
+    {
+      "id": "63da1c6377961300016e0eeb",
+      "first_name": "Richard",
+      "title": "Head of North America",
+      "org": "Latitude.sh"
+    },
+    {
+      "id": "5e8bb8abc049cc0001332be7",
+      "first_name": "Rafael",
+      "title": "Sales Manager",
+      "org": "Latitude.sh"
+    },
+    {
+      "id": "60d9f39c896fb00001b90dce",
+      "first_name": "Vinicius",
+      "title": "Head of Operations",
+      "org": "Latitude.sh"
+    },
+    {
+      "id": "686378b5bf38f70001636b4b",
+      "first_name": "Ricardo",
+      "title": "Head of Business Strategy & Procurement | Driving Cost Efficiency, Innovation & Growth",
+      "org": "Latitude.sh"
+    },
+    {
+      "id": "55e58657f3e5bb1e94000f5f",
+      "first_name": "Leonardo",
+      "title": "Engineering Manager",
+      "org": "Latitude.sh"
+    },
+    {
+      "id": "62f4e553b735f100017b7b69",
+      "first_name": "Eduardo",
+      "title": "CTO",
+      "org": "Latitude.sh"
+    },
+    {
+      "id": "607337e018d58a0001b6ce30",
+      "first_name": "Brian",
+      "title": "Head of Procurement and Capacity Planning",
+      "org": "Latitude.sh"
+    }
+  ],
+  "canton.network": [
+    {
+      "id": "66f5c26d9384f500012669a8",
+      "first_name": "Amy",
+      "title": "Board Member, General Director of the Canton Foundation",
+      "org": "Canton Network"
+    },
+    {
+      "id": "5e60004329e5b20001e26fb6",
+      "first_name": "Jatin",
+      "title": "Developer Relations Manager",
+      "org": "Canton Network"
+    },
+    {
+      "id": "614d4a31bf1c8000017754fe",
+      "first_name": "Pedro",
+      "title": "Community Manager",
+      "org": "Canton Network"
+    }
+  ],
+  "sgforge.com": [
+    {
+      "id": "54eb9f6d746869444c9a4a00",
+      "first_name": "Stephanie",
+      "title": "Chief Strategy & Global Policy Officer",
+      "org": "Societe Generale - FORGE"
+    },
+    {
+      "id": "54a3d1577468692fa23f4015",
+      "first_name": "Jean-Marc",
+      "title": "Chief Executive Officer",
+      "org": "Societe Generale - FORGE"
+    },
+    {
+      "id": "6321bab0a3aead00018affb6",
+      "first_name": "Sylvain",
+      "title": "Co-founder & CPO | Societe Generale - Forge",
+      "org": "Societe Generale - FORGE"
+    },
+    {
+      "id": "57df5b18a6da980b4a08b48e",
+      "first_name": "David",
+      "title": "Deputy CEO Soci\u00e9t\u00e9 G\u00e9n\u00e9rale Forge",
+      "org": "Societe Generale - FORGE"
+    },
+    {
+      "id": "54a2ee167468693318023d47",
+      "first_name": "Emilien",
+      "title": "Project Director",
+      "org": "Societe Generale - FORGE"
+    },
+    {
+      "id": "5ec22bffaef8b300c253cc50",
+      "first_name": "Stephane",
+      "title": "Co-founder",
+      "org": "Societe Generale - FORGE"
+    },
+    {
+      "id": "57d74429a6da985b7f748b89",
+      "first_name": "Alexandre",
+      "title": "Head of Operations",
+      "org": "Societe Generale - FORGE"
+    },
+    {
+      "id": "57d37c62f651252c2172a54f",
+      "first_name": "Julien",
+      "title": "Tech Lead",
+      "org": "Societe Generale - FORGE"
+    },
+    {
+      "id": "57e20386a6da9808de0fc4fe",
+      "first_name": "Ugo",
+      "title": "Financial Director",
+      "org": "Societe Generale - FORGE"
+    }
+  ],
+  "aztec.network": [
+    {
+      "id": "54a6eab474686962206e1b04",
+      "first_name": "Shezada",
+      "title": "Managing Director",
+      "org": "Aztec"
+    },
+    {
+      "id": "611a9608ce48070001c4508e",
+      "first_name": "Claire",
+      "title": "Chief Marketing Officer",
+      "org": "Aztec"
+    },
+    {
+      "id": "610a851ae266030001578cd6",
+      "first_name": "Kelsey",
+      "title": "Head of Comms, Aztec",
+      "org": "Aztec"
+    },
+    {
+      "id": "6076be39cab3530001545337",
+      "first_name": "David",
+      "title": "Product Marketing Lead",
+      "org": "Aztec"
+    },
+    {
+      "id": "57d45f9da6da9853c6d186b5",
+      "first_name": "Hannah",
+      "title": "Social Media Lead",
+      "org": "Aztec"
+    },
+    {
+      "id": "66f52ce55823750001216e2d",
+      "first_name": "Sonal",
+      "title": "Head of Events",
+      "org": "Aztec"
+    },
+    {
+      "id": "57db1efea6da984bd8763590",
+      "first_name": "Harry",
+      "title": "Business Development Manager",
+      "org": "Aztec"
+    },
+    {
+      "id": "67c592a138e1bf0001f430b5",
+      "first_name": "Justin",
+      "title": "Director of Finance",
+      "org": "Aztec"
+    },
+    {
+      "id": "5b678a22f874f727cfe19f5c",
+      "first_name": "Jake",
+      "title": "Product Marketing Manager",
+      "org": "Aztec"
+    },
+    {
+      "id": "631f0da4feec9300014f1375",
+      "first_name": "Innokentii",
+      "title": "Security Team Lead",
+      "org": "Aztec"
+    }
+  ],
+  "tron.network": [
+    {
+      "id": "686d370ee6d4a50001021c45",
+      "first_name": "Justin",
+      "title": "Founder",
+      "org": "TRON DAO"
+    },
+    {
+      "id": "6675b37518cda500013a76fe",
+      "first_name": "Sal",
+      "title": "Ecosystem Development Partnership Manager",
+      "org": "TRON DAO"
+    },
+    {
+      "id": "5b8966bff874f72940e51a0a",
+      "first_name": "Yeweon",
+      "title": "PR Lead",
+      "org": "TRON DAO"
+    },
+    {
+      "id": "5f4bece3ef7c010001e7b1fa",
+      "first_name": "Raymond",
+      "title": "Treasury Manager",
+      "org": "TRON DAO"
+    },
+    {
+      "id": "5ffe6e9a9a284e00012c7974",
+      "first_name": "Sprina",
+      "title": "Marketing Director",
+      "org": "TRON DAO"
+    },
+    {
+      "id": "5b40b7f9a6da984b698f8aac",
+      "first_name": "William",
+      "title": "PR Manager",
+      "org": "TRON DAO"
+    },
+    {
+      "id": "5d962329a3ae61eb6a902d7b",
+      "first_name": "Samson",
+      "title": "Finance Operation Lead",
+      "org": "TRON DAO"
+    },
+    {
+      "id": "5fc601aa70c28f0001bd9d0b",
+      "first_name": "Bryce",
+      "title": "Streamer Operations & Partnerships Manager",
+      "org": "TRON DAO"
+    },
+    {
+      "id": "57d42614a6da98536ed7d043",
+      "first_name": "Zhongao",
+      "title": "Head of Partnerships, Ecosystem",
+      "org": "TRON DAO"
+    },
+    {
+      "id": "6731c5f5734b8e00013ffea3",
+      "first_name": "Steven",
+      "title": "Ecosystem Development Manager",
+      "org": "TRON DAO"
+    }
+  ],
+  "aave.com": [
+    {
+      "id": "63d7b9b2b61cc100013c8fbb",
+      "first_name": "Lory",
+      "title": "EU Director, Aave Labs | CEO, Push Ireland",
+      "org": "Aave Labs"
+    },
+    {
+      "id": "60fe9d03d7c06b000101798a",
+      "first_name": "Stani",
+      "title": "Founder & CEO",
+      "org": "Aave Labs"
+    },
+    {
+      "id": "611cd1e448846600017c56b1",
+      "first_name": "Radi",
+      "title": "VP of People",
+      "org": "Aave Labs"
+    },
+    {
+      "id": "61096ab1c48ba7000107ab91",
+      "first_name": "Nicole",
+      "title": "Chief Compliance Officer",
+      "org": "Aave Labs"
+    },
+    {
+      "id": "54a320a97468693825048356",
+      "first_name": "Sebastian",
+      "title": "Director, Institutional & DeFi Business",
+      "org": "Aave Labs"
+    },
+    {
+      "id": "60b9f20da0c1f10001b82916",
+      "first_name": "Josh",
+      "title": "SVP Engineering",
+      "org": "Aave Labs"
+    },
+    {
+      "id": "66f96da1d1c6fd00015891c3",
+      "first_name": "Jeremy",
+      "title": "VP, Product",
+      "org": "Aave Labs"
+    },
+    {
+      "id": "66bc8d64d9affe00016b17ce",
+      "first_name": "Nicholas",
+      "title": "VP Finance (Avara Group)",
+      "org": "Aave Labs"
+    },
+    {
+      "id": "68504bcdb5621b0001daa928",
+      "first_name": "Mario",
+      "title": "Director, Product",
+      "org": "Aave Labs"
+    },
+    {
+      "id": "54ec4b31746869444ca3f578",
+      "first_name": "Linda",
+      "title": "Chief Legal & Policy Officer",
+      "org": "Aave Labs"
+    }
+  ],
+  "gnosis.io": [
+    {
+      "id": "54a2ea5e7468693fda415e46",
+      "first_name": "Rocio",
+      "title": "Talent Acquisition Manager",
+      "org": "Gnosis"
+    },
+    {
+      "id": "54a517c97468692fa239b97c",
+      "first_name": "Lorenza",
+      "title": "Talent Acquisition Lead",
+      "org": "Gnosis"
+    },
+    {
+      "id": "557045267369641160bf1100",
+      "first_name": "Alessandra",
+      "title": "Head of Lincensing and Regulatory Affairs (Global)",
+      "org": "Gnosis"
+    },
+    {
+      "id": "67205d8ce93b310001b4c9c1",
+      "first_name": "Vanshika",
+      "title": "Developer Relations Manager",
+      "org": "Gnosis"
+    },
+    {
+      "id": "66f67eb9a2d8f500013dea64",
+      "first_name": "Sharon",
+      "title": "Lead, Gnosis Business & Payments (non-cards)",
+      "org": "Gnosis"
+    },
+    {
+      "id": "562e3c1aa6da985d9c001204",
+      "first_name": "Ondrej",
+      "title": "Head of Growth",
+      "org": "Gnosis"
+    },
+    {
+      "id": "66d903d73e15dc0001d8bec1",
+      "first_name": "Deep",
+      "title": "Head of Gnosis App",
+      "org": "Gnosis"
+    },
+    {
+      "id": "57d381d3f651252bfdd65d3f",
+      "first_name": "Fernanda",
+      "title": "Head of HR",
+      "org": "Gnosis"
+    },
+    {
+      "id": "64bf968bd6bb0700016e8e65",
+      "first_name": "Amir",
+      "title": "Product Lead",
+      "org": "Gnosis"
+    },
+    {
+      "id": "610d2e95cc3b0500019ba45a",
+      "first_name": "Chandresh",
+      "title": "Social Media Manager",
+      "org": "Gnosis"
+    }
+  ],
+  "ledger.com": [
+    {
+      "id": "611b55856f5b7f00015cfc11",
+      "first_name": "Pascal",
+      "title": "Chairman & CEO",
+      "org": "Ledger"
+    },
+    {
+      "id": "6655a49fcfa197000195cddd",
+      "first_name": "Vincent",
+      "title": "Director of Product Security",
+      "org": "Ledger"
+    },
+    {
+      "id": "6103a7aabaed2d000132eb3a",
+      "first_name": "Charles",
+      "title": "CTO",
+      "org": "Ledger"
+    },
+    {
+      "id": "57ddc284a6da987b2ca17922",
+      "first_name": "Thomas",
+      "title": "Regional Technical Account Manager",
+      "org": "Ledger"
+    },
+    {
+      "id": "60c4425ab2d4e7000189ebf5",
+      "first_name": "Charlotte",
+      "title": "Head of Talent Development",
+      "org": "Ledger"
+    },
+    {
+      "id": "686dfdd31005b90001979e06",
+      "first_name": "Cristina",
+      "title": "Affiliation Key Account Manager",
+      "org": "Ledger"
+    },
+    {
+      "id": "5ca9d558578def09746e1a1d",
+      "first_name": "Takatoshi",
+      "title": "Head of APAC",
+      "org": "Ledger"
+    },
+    {
+      "id": "60fea984bfc91e0001fcaaef",
+      "first_name": "Clayton",
+      "title": "Foundations Business Development Director",
+      "org": "Ledger"
+    },
+    {
+      "id": "54ebb7d4746869444c212f15",
+      "first_name": "John",
+      "title": "Director of Service Delivery Management",
+      "org": "Ledger"
+    },
+    {
+      "id": "6168f92709a0050001d1fab1",
+      "first_name": "Anthony",
+      "title": "Engineering Manager",
+      "org": "Ledger"
+    }
+  ],
+  "walrus.xyz": [
+    {
+      "id": "60ff2cae70a0d70001d884de",
+      "first_name": "Daniel",
+      "title": "Head of Finance",
+      "org": "Walrus Foundation"
+    },
+    {
+      "id": "5c66482cf3e5bb456d9918ea",
+      "first_name": "Kiefer",
+      "title": "Head of Integrated Marketing",
+      "org": "Walrus Foundation"
+    },
+    {
+      "id": "54a30bc07468693cdd4f7950",
+      "first_name": "Milana",
+      "title": "Head of Legal",
+      "org": "Walrus Foundation"
+    },
+    {
+      "id": "5fb64de6536c5b0001f453b3",
+      "first_name": "Daniel",
+      "title": "Strategic Adoption and Programs Lead",
+      "org": "Walrus Foundation"
+    },
+    {
+      "id": "682f52c3c25c550001571fa9",
+      "first_name": "Ben",
+      "title": "Head of Global Physical Security - Director",
+      "org": "Walrus Foundation"
+    }
+  ],
+  "yapglobal.com": [
+    {
+      "id": "60e3317108ce160001768518",
+      "first_name": "Vinita",
+      "title": "Communications Manager",
+      "org": "YAP Global"
+    },
+    {
+      "id": "625139dd5e92b90001291332",
+      "first_name": "Debra",
+      "title": "Associate Director, Head of Growth",
+      "org": "YAP Global"
+    },
+    {
+      "id": "57d872caa6da9846d704d36b",
+      "first_name": "Christopher",
+      "title": "Associate Director",
+      "org": "YAP Global"
+    },
+    {
+      "id": "60d393eb8d27b90001cc26ec",
+      "first_name": "Andrew",
+      "title": "Account Manager",
+      "org": "YAP Global"
+    },
+    {
+      "id": "6167bef14d4243000146e1dc",
+      "first_name": "Alex",
+      "title": "Account Manager Related to Search Terms in Your Query",
+      "org": "YAP Global"
+    },
+    {
+      "id": "6198b285eba972000138bf41",
+      "first_name": "Emma",
+      "title": "Account Manager",
+      "org": "YAP Global"
+    },
+    {
+      "id": "5e74f68a426ed80001e684a8",
+      "first_name": "Vasundhara",
+      "title": "Account Manager",
+      "org": "YAP Global"
+    },
+    {
+      "id": "5fdeacaa9d2d640001b6a460",
+      "first_name": "Shajar",
+      "title": "Operations Manager",
+      "org": "YAP Global"
+    },
+    {
+      "id": "5ab0295ca6da98c02929466e",
+      "first_name": "Sean",
+      "title": "Account Director",
+      "org": "YAP Global"
+    },
+    {
+      "id": "64018b40bec07a00010fda6e",
+      "first_name": "Jon",
+      "title": "Senior Account Manager",
+      "org": "YAP Global"
+    }
+  ],
+  "quicknode.com": [
+    {
+      "id": "60db6c5b5784ee0001e5029e",
+      "first_name": "Hannah",
+      "title": "Senior Director of People",
+      "org": "Quicknode"
+    },
+    {
+      "id": "66f4fca3c886b10001fa1245",
+      "first_name": "Laurence",
+      "title": "VP of Cloud Infrastructure",
+      "org": "Quicknode"
+    },
+    {
+      "id": "60cb99551f3f320001dd6ef7",
+      "first_name": "Luc",
+      "title": "Director - Devex & Marketplace Engineering",
+      "org": "Quicknode"
+    },
+    {
+      "id": "66fa9c9674f7370001e88eef",
+      "first_name": "Amy",
+      "title": "Head of Customer Success",
+      "org": "Quicknode"
+    },
+    {
+      "id": "56fc7a92f3e5bb5d05002080",
+      "first_name": "Lou",
+      "title": "Global Head of Institutional and Chain Sales",
+      "org": "Quicknode"
+    },
+    {
+      "id": "66f41d59d0097300015c8cf3",
+      "first_name": "Cameron",
+      "title": "Director of Emerging Sales",
+      "org": "Quicknode"
+    },
+    {
+      "id": "606c1b55b5f6f50001c6481a",
+      "first_name": "Jordan",
+      "title": "VP of Ecosystem",
+      "org": "Quicknode"
+    },
+    {
+      "id": "66f189f28339410001303a5d",
+      "first_name": "Alexander",
+      "title": "CEO &Co-Founder",
+      "org": "Quicknode"
+    },
+    {
+      "id": "66ed9ff1e7797500019505a5",
+      "first_name": "Jason",
+      "title": "VP of Partnerships & Ecosystem Growth",
+      "org": "Quicknode"
+    },
+    {
+      "id": "66f44685fbe0e400012a06ea",
+      "first_name": "Dmitry",
+      "title": "Co-Founder",
+      "org": "Quicknode"
+    }
+  ],
+  "xstocks.fi": null,
+  "defisaver.com": null,
+  "merkl.xyz": [
+    {
+      "id": "670603f73d70d600018a1f6d",
+      "first_name": "Mariane",
+      "title": "HR Manager Part-time",
+      "org": "Merkl"
+    },
+    {
+      "id": "66f4318547af530001b8721b",
+      "first_name": "Pablo",
+      "title": "Co-Founder and CEO",
+      "org": "Merkl"
+    },
+    {
+      "id": "640c3e50ec6fcd00013b7717",
+      "first_name": "Martin",
+      "title": "Sales and Operation Lead",
+      "org": "Merkl"
+    },
+    {
+      "id": "624ae70d3dba850001614386",
+      "first_name": "Clement",
+      "title": "Lead Fullstack Engineer",
+      "org": "Merkl"
+    },
+    {
+      "id": "6239f708b34d0d000178d02a",
+      "first_name": "Alexis",
+      "title": "DeFi Ops & Account Manager",
+      "org": "Merkl"
+    },
+    {
+      "id": "54a3fdb87468693b8c031b23",
+      "first_name": "Xavier",
+      "title": "Head of Product",
+      "org": "Merkl"
+    },
+    {
+      "id": "5e8a339d55c0db000122fece",
+      "first_name": "Leo",
+      "title": "DevOps Lead",
+      "org": "Merkl"
+    }
+  ],
+  "zircuit.com": [
+    {
+      "id": "6318820ed470170001d675b4",
+      "first_name": "Mirko",
+      "title": "Ecosystem Lead",
+      "org": "Zircuit"
+    },
+    {
+      "id": "68f74243e3a59300012efae5",
+      "first_name": "Krishna",
+      "title": "Co-Founder",
+      "org": "Zircuit"
+    },
+    {
+      "id": "68760290d72caf0001b90aab",
+      "first_name": "Angel",
+      "title": "Co-Founder",
+      "org": "Zircuit"
+    },
+    {
+      "id": "57e1fc00a6da9808c21667e1",
+      "first_name": "Martin",
+      "title": "Co-Founder",
+      "org": "Zircuit"
+    },
+    {
+      "id": "6640b70eeb7b200001ea032f",
+      "first_name": "Joshua",
+      "title": "Director of Product & Ecosystem",
+      "org": "Zircuit"
+    },
+    {
+      "id": "54a299367468693fda0bf62e",
+      "first_name": "Martinet",
+      "title": "Cofounder",
+      "org": "Zircuit"
+    },
+    {
+      "id": "56414bfda6da98695a0006cd",
+      "first_name": "Jan",
+      "title": "Co-Founder",
+      "org": "Zircuit"
+    },
+    {
+      "id": "5e7e0f4df999ae00017d59ab",
+      "first_name": "Pavel",
+      "title": "Lead Security Engineer",
+      "org": "Zircuit"
+    }
+  ],
+  "envio.dev": null,
+  "plexusrs.com": [
+    {
+      "id": "640de0cc3641a20001ffac13",
+      "first_name": "Shaun",
+      "title": "Founder",
+      "org": "Plexus Resource Solutions"
+    },
+    {
+      "id": "637e280fd0cbbe0001962f3b",
+      "first_name": "Zeth",
+      "title": "Founder",
+      "org": "Plexus Resource Solutions"
+    },
+    {
+      "id": "5f0c7313da62be012ed0a578",
+      "first_name": "William",
+      "title": "Team Lead",
+      "org": "Plexus Resource Solutions"
+    },
+    {
+      "id": "6579940516d74d00016dfa37",
+      "first_name": "Sarah",
+      "title": "Marketing and Brand Manager @ Plexus Crypto Recruitment",
+      "org": "Plexus Resource Solutions"
+    },
+    {
+      "id": "63b559c45ae2d800018e2096",
+      "first_name": "Sanjit",
+      "title": "Learning & Development Manager",
+      "org": "Plexus Resource Solutions"
+    },
+    {
+      "id": "54a7af85746869705a3f584c",
+      "first_name": "Nicola",
+      "title": "Head of Learning and Development",
+      "org": "Plexus Resource Solutions"
+    }
+  ],
+  "ivault.io": [
+    {
+      "id": "60943ef7afc9b20001cd9e16",
+      "first_name": "Arman",
+      "title": "Chief Executive Officer",
+      "org": "ivault AG"
+    },
+    {
+      "id": "66214fdf83ee700007578390",
+      "first_name": "Celine",
+      "title": "Director of Public Relations",
+      "org": "ivault AG"
+    },
+    {
+      "id": "6836ecd78563ba00015dc564",
+      "first_name": "Anton",
+      "title": "Head of Sales and Business Development",
+      "org": "ivault AG"
+    },
+    {
+      "id": "672e154d4418e60001b07eca",
+      "first_name": "Guelay",
+      "title": "Account-Manager",
+      "org": "ivault AG"
+    }
+  ],
+  "monerium.com": [
+    {
+      "id": "67c947cbd965b500019a2ba2",
+      "first_name": "Sveinn",
+      "title": "Co-founder & Chair",
+      "org": "Monerium"
+    },
+    {
+      "id": "60cadbd9d528510001b6f28a",
+      "first_name": "Arni",
+      "title": "Chief Product Officer",
+      "org": "Monerium"
+    },
+    {
+      "id": "55bf4c657369644a7b581a00",
+      "first_name": "Margus",
+      "title": "CTO",
+      "org": "Monerium"
+    },
+    {
+      "id": "66fa9d5234ff8c0001a51aec",
+      "first_name": "Hjoertur",
+      "title": "Co-Founder",
+      "org": "Monerium"
+    }
+  ],
+  "etherlink.com": [
+    {
+      "id": "68f82f125beeee0001f1a4cc",
+      "first_name": "Shaan",
+      "title": "Founder",
+      "org": "ETHERLINK SOLUTIONS"
+    }
+  ],
+  "chainpatrol.com": [
+    {
+      "id": "5dcd8a964dabf60001569753",
+      "first_name": "Gulfan",
+      "title": "Senior Reporting Manager",
+      "org": "ChainPatrol"
+    },
+    {
+      "id": "5fcd1a60b3b6060001afe68b",
+      "first_name": "Nikita",
+      "title": "Founder",
+      "org": "ChainPatrol"
+    },
+    {
+      "id": "6456511d05c98c0001c58b7b",
+      "first_name": "Juan",
+      "title": "Partnerships & Growth Lead",
+      "org": "ChainPatrol"
+    },
+    {
+      "id": "64fdb8eae1ac920001fda57f",
+      "first_name": "Conor",
+      "title": "Sales Manager",
+      "org": "ChainPatrol"
+    },
+    {
+      "id": "57d3bf0ea6da98537ec9ed8d",
+      "first_name": "Davide",
+      "title": "Director of Operations and Finance",
+      "org": "ChainPatrol"
+    },
+    {
+      "id": "5b38d569a6da980c06b20166",
+      "first_name": "Umar",
+      "title": "CTO, Co-Founder",
+      "org": "ChainPatrol"
+    },
+    {
+      "id": "6481b8aba691570001d33ace",
+      "first_name": "Dylan",
+      "title": "Operations Manager",
+      "org": "ChainPatrol"
+    },
+    {
+      "id": "67691917b5b44f00011d3d6c",
+      "first_name": "Marco",
+      "title": "Reporting Manager",
+      "org": "ChainPatrol"
+    },
+    {
+      "id": "6695efc5fb0cdc0001bfe377",
+      "first_name": "Brian",
+      "title": "Reporting Operations Jr. Manager",
+      "org": "ChainPatrol"
+    },
+    {
+      "id": "619a1f1acfd0390001fb574b",
+      "first_name": "Maria",
+      "title": "Brand Protection Manager",
+      "org": "ChainPatrol"
+    }
+  ],
+  "dedaub.com": [
+    {
+      "id": "67206cb36c0bdd00010d866e",
+      "first_name": "Giorgio",
+      "title": "Marketing Director",
+      "org": "Dedaub"
+    },
+    {
+      "id": "54a753657468696829380d2a",
+      "first_name": "Neville",
+      "title": "Director / Security Researcher",
+      "org": "Dedaub"
+    },
+    {
+      "id": "614bf0dd6fc0870001811415",
+      "first_name": "Ivan",
+      "title": "Strategic Partnerships & BD Lead",
+      "org": "Dedaub"
+    }
+  ],
+  "nethermind.io": [
+    {
+      "id": "66f3cebdc79e5e0001160840",
+      "first_name": "Nitin",
+      "title": "Head of Financial Institutions",
+      "org": "Nethermind"
+    },
+    {
+      "id": "62e0d393bdf3670001e5f40d",
+      "first_name": "Antonio",
+      "title": "Chief Growth Officer",
+      "org": "Nethermind"
+    },
+    {
+      "id": "57e14ffda6da987d9c47a43b",
+      "first_name": "Ilona",
+      "title": "Global Head of Talent Acquisition",
+      "org": "Nethermind"
+    },
+    {
+      "id": "66ec45e21ec73a0001c3fb44",
+      "first_name": "Tomasz",
+      "title": "Founder",
+      "org": "Nethermind"
+    },
+    {
+      "id": "693aaad7b725b8000108ae2b",
+      "first_name": "Kirill",
+      "title": "Head of Product \u2022 AI Products in Web3",
+      "org": "Nethermind"
+    },
+    {
+      "id": "672f97cd6f90290001e69290",
+      "first_name": "Delane",
+      "title": "Regional Managing Director",
+      "org": "Nethermind"
+    },
+    {
+      "id": "60670e5a0fff030001ecfbcc",
+      "first_name": "Lesa",
+      "title": "Senior Content Marketing Manager",
+      "org": "Nethermind"
+    },
+    {
+      "id": "5ada0ec0a6da9861ab173f7b",
+      "first_name": "David",
+      "title": "Senior Blockchain Project Manager",
+      "org": "Nethermind"
+    },
+    {
+      "id": "61999b0ddec6a100013cc473",
+      "first_name": "Milica",
+      "title": "Event Manager",
+      "org": "Nethermind"
+    },
+    {
+      "id": "5f54f0cc9bfb7c000197e46d",
+      "first_name": "Nathan",
+      "title": "Head of Hardware",
+      "org": "Nethermind"
+    }
+  ],
+  "ambire.com": [
+    {
+      "id": "66f49eeaeca8180001f2d12b",
+      "first_name": "Dimo",
+      "title": "Co-Founder",
+      "org": "Ambire"
+    },
+    {
+      "id": "61125953b160a100011e18f3",
+      "first_name": "Emil",
+      "title": "Product Lead of Ambire Wallet",
+      "org": "Ambire"
+    },
+    {
+      "id": "5ffa98afe6a4340001546029",
+      "first_name": "Ivan",
+      "title": "Head of Marketing",
+      "org": "Ambire"
+    },
+    {
+      "id": "6882192988a88800012f5061",
+      "first_name": "Ivo",
+      "title": "CEO",
+      "org": "Ambire"
+    },
+    {
+      "id": "5d1ea9b4f65125a8018acc1a",
+      "first_name": "Ambire",
+      "title": "Director",
+      "org": "Ambire"
+    }
+  ],
+  "nexusmutual.io": [
+    {
+      "id": "66f3010edb6af90001b146d5",
+      "first_name": "Phil",
+      "title": "Head of Marketing",
+      "org": "Nexus Mutual"
+    },
+    {
+      "id": "64369bb9d48a8c00010da219",
+      "first_name": "Ralf",
+      "title": "Head of Business Development",
+      "org": "Nexus Mutual"
+    },
+    {
+      "id": "6909da3bb8047b00012b6170",
+      "first_name": "Roxana",
+      "title": "Chief Technology Officer",
+      "org": "Nexus Mutual"
+    },
+    {
+      "id": "60cb711367d5700001fa2e67",
+      "first_name": "Ricky",
+      "title": "COO",
+      "org": "Nexus Mutual"
+    },
+    {
+      "id": "61077af2d540400001c2309d",
+      "first_name": "Hugh",
+      "title": "Founder",
+      "org": "Nexus Mutual"
+    },
+    {
+      "id": "60b88e9429c8f00001ec9b8f",
+      "first_name": "Ania",
+      "title": "Chief Legal Officer",
+      "org": "Nexus Mutual"
+    },
+    {
+      "id": "66f323680228150001578e36",
+      "first_name": "Kayleigh",
+      "title": "Director of Operations",
+      "org": "Nexus Mutual"
+    },
+    {
+      "id": "613501076b06d20001e7c73c",
+      "first_name": "Nxm",
+      "title": "Chief Executive Officer",
+      "org": "Nexus Mutual"
+    }
+  ],
+  "oasis.net": [
+    {
+      "id": "5f5b772c64feb000014914ca",
+      "first_name": "Marko",
+      "title": "Head of AI",
+      "org": "Oasis"
+    },
+    {
+      "id": "5e6c88a567274800014e72d3",
+      "first_name": "Diana",
+      "title": "Events Lead",
+      "org": "Oasis"
+    },
+    {
+      "id": "57e192fea6da987da424fc34",
+      "first_name": "Patrik",
+      "title": "Ecosystem Growth Manager",
+      "org": "Oasis"
+    },
+    {
+      "id": "633c164696551a0001628791",
+      "first_name": "Dominika",
+      "title": "Head of Marketing",
+      "org": "Oasis"
+    },
+    {
+      "id": "614f2b55da71c200015d4a07",
+      "first_name": "Stefanescu",
+      "title": "Head of Community",
+      "org": "Oasis"
+    },
+    {
+      "id": "63b3ad386e684c0001037b9e",
+      "first_name": "Justin",
+      "title": "Chinese Community Manager",
+      "org": "Oasis"
+    },
+    {
+      "id": "54a5d0627468693676bd40aa",
+      "first_name": "Jernej",
+      "title": "Director",
+      "org": "Oasis"
+    },
+    {
+      "id": "5f0bd493d01d0d0001a0e2e2",
+      "first_name": "Tadej",
+      "title": "Director of Engineering",
+      "org": "Oasis"
+    },
+    {
+      "id": "66f9968d89884e00018b6a63",
+      "first_name": "Vishal",
+      "title": "India Community Manager",
+      "org": "Oasis"
+    },
+    {
+      "id": "635949c6e07d030001418d34",
+      "first_name": "Grigoriy",
+      "title": "Lead Community Manager",
+      "org": "Oasis"
+    }
+  ],
+  "santiment.net": [
+    {
+      "id": "605a00f140e922000153ff64",
+      "first_name": "Dmitry",
+      "title": "Head of Business Development",
+      "org": "Santiment AG"
+    },
+    {
+      "id": "66de7915448acb0001742603",
+      "first_name": "Suzanne",
+      "title": "Institutional Director",
+      "org": "Santiment AG"
+    },
+    {
+      "id": "66f7b51907b2c400019d4136",
+      "first_name": "Maksim",
+      "title": "Founder, CEO",
+      "org": "Santiment AG"
+    },
+    {
+      "id": "691dc1fdcabd190001ca9565",
+      "first_name": "Iryna",
+      "title": "Product Lead",
+      "org": "Santiment AG"
+    },
+    {
+      "id": "66eec080ecb893000156454a",
+      "first_name": "David",
+      "title": "Director of Operations and Business Development",
+      "org": "Santiment AG"
+    },
+    {
+      "id": "57d76f05a6da984f9601e0d3",
+      "first_name": "Ilya",
+      "title": "R&D Team Lead",
+      "org": "Santiment AG"
+    },
+    {
+      "id": "61b453e4776a7e0001ec5623",
+      "first_name": "Larry",
+      "title": "Data Anomaly Lead",
+      "org": "Santiment AG"
+    },
+    {
+      "id": "57da12bda6da985b67d7965d",
+      "first_name": "Petra",
+      "title": "Managing Director",
+      "org": "Santiment AG"
+    },
+    {
+      "id": "5ab32b3ba6da987036fac1ad",
+      "first_name": "Kelvin",
+      "title": "Community Manager",
+      "org": "Santiment AG"
+    },
+    {
+      "id": "66c4a248812a90000153d054",
+      "first_name": "Maksim",
+      "title": "Frontend Team Lead",
+      "org": "Santiment AG"
+    }
+  ],
+  "veridise.com": [
+    {
+      "id": "672e43f389e4c80001185c37",
+      "first_name": "Stas",
+      "title": "VP of Business Development",
+      "org": "Veridise"
+    },
+    {
+      "id": "60f56bb2253a4c0001593ba9",
+      "first_name": "Mikko",
+      "title": "VP of Marketing",
+      "org": "Veridise"
+    },
+    {
+      "id": "6426c0cdf6a624000126bf11",
+      "first_name": "Andreea",
+      "title": "VP of Engineering",
+      "org": "Veridise"
+    },
+    {
+      "id": "54a7574c74686965d9efae2b",
+      "first_name": "Kostas",
+      "title": "Chief Technology Officer",
+      "org": "Veridise"
+    },
+    {
+      "id": "54c280ec74686916393deb9f",
+      "first_name": "Shankara",
+      "title": "Chief Research Officer",
+      "org": "Veridise"
+    },
+    {
+      "id": "66f66667df59ce0001d5d6ce",
+      "first_name": "Jon",
+      "title": "Chief Executive Officer",
+      "org": "Veridise"
+    },
+    {
+      "id": "54a5439e7468693b8cf6468a",
+      "first_name": "Nikos",
+      "title": "Product Manager, SaaS Platform",
+      "org": "Veridise"
+    },
+    {
+      "id": "66878696aea94e00018c5b20",
+      "first_name": "Evgeniy",
+      "title": "Lead Security Analyst",
+      "org": "Veridise"
+    },
+    {
+      "id": "641052e5d644430001ed6d70",
+      "first_name": "Benjamin",
+      "title": "Vice President of Research and Development",
+      "org": "Veridise"
+    },
+    {
+      "id": "5ac1e372a6da981c50fdac8c",
+      "first_name": "Bryan",
+      "title": "VP Engineering",
+      "org": "Veridise"
+    }
+  ],
+  "thegraph.com": [
+    {
+      "id": "5ac962fda6da9840a9c38edc",
+      "first_name": "Reem",
+      "title": "Ecosystem Lead",
+      "org": "The Graph"
+    },
+    {
+      "id": "54a759d674686975f87dd32c",
+      "first_name": "Andrew",
+      "title": "Enterprise Strategy & Governance Lead",
+      "org": "The Graph"
+    },
+    {
+      "id": "557148de73696457ab523900",
+      "first_name": "Pedro",
+      "title": "Technical Program Manager",
+      "org": "The Graph"
+    },
+    {
+      "id": "57e0cb23a6da987dd4240c7f",
+      "first_name": "Lisa",
+      "title": "Event Lead",
+      "org": "The Graph"
+    },
+    {
+      "id": "6556f4584a4333000125619b",
+      "first_name": "Yuval",
+      "title": "Director of FP&A",
+      "org": "The Graph"
+    },
+    {
+      "id": "54aaaca77468690b7557a011",
+      "first_name": "Ahmed",
+      "title": "Grants Lead @ Advocates DAO",
+      "org": "The Graph"
+    },
+    {
+      "id": "5e6b7a100c062100016f724b",
+      "first_name": "Pranav",
+      "title": "Director of Integrity",
+      "org": "The Graph"
+    },
+    {
+      "id": "687b2f4c823b6d0001168d9d",
+      "first_name": "Abhinav",
+      "title": "Community Lead",
+      "org": "The Graph"
+    },
+    {
+      "id": "640f60700463cb000134cb8d",
+      "first_name": "Kate",
+      "title": "Project Manager & Program Coordinator at InfraDAO",
+      "org": "The Graph"
+    },
+    {
+      "id": "65b3950d55fce00001d41eba",
+      "first_name": "Andy",
+      "title": "Community-Manager",
+      "org": "The Graph"
+    }
+  ],
+  "zisk.technology": null,
+  "fx.aladdin.club": null,
+  "crossmint.com": [
+    {
+      "id": "66f424adb48592000129426a",
+      "first_name": "Rodri",
+      "title": "Co-Founder & Janitor",
+      "org": "Crossmint"
+    },
+    {
+      "id": "54a5665374686938ac24ed94",
+      "first_name": "Miguel",
+      "title": "Executive Director, Crossmint Europe",
+      "org": "Crossmint"
+    },
+    {
+      "id": "6645e0b73995ae0001e63ffe",
+      "first_name": "Ken",
+      "title": "Head of Stablecoin & Fintech",
+      "org": "Crossmint"
+    },
+    {
+      "id": "54a6e34274686975f8147201",
+      "first_name": "Ryan",
+      "title": "GTM Lead",
+      "org": "Crossmint"
+    },
+    {
+      "id": "557107b97369647092290100",
+      "first_name": "Connor",
+      "title": "Head of Marketing",
+      "org": "Crossmint"
+    },
+    {
+      "id": "610d5e75dbdc8b0001ccf28d",
+      "first_name": "Brett",
+      "title": "Head of Marketing",
+      "org": "Crossmint"
+    },
+    {
+      "id": "610e3fa2136f20000179fc32",
+      "first_name": "Mario",
+      "title": "Head of Customer Success Engineering and Technical Support",
+      "org": "Crossmint"
+    },
+    {
+      "id": "5644b8f7a6da98659700c8ea",
+      "first_name": "Agustin",
+      "title": "Product Lead",
+      "org": "Crossmint"
+    },
+    {
+      "id": "62f686cfe745440001d85f46",
+      "first_name": "Penelope",
+      "title": "Technical Program Manager",
+      "org": "Crossmint"
+    },
+    {
+      "id": "54a2098474686935be642607",
+      "first_name": "Yesica",
+      "title": "Finance Senior Manager",
+      "org": "Crossmint"
+    }
+  ],
+  "bitgo.com": [
+    {
+      "id": "5c337d1ea3ae61ca1f52292c",
+      "first_name": "Abel",
+      "title": "Head of APAC",
+      "org": "BitGo"
+    },
+    {
+      "id": "66ddd965863b6a00016504a5",
+      "first_name": "Albin",
+      "title": "Director of Sales",
+      "org": "BitGo"
+    },
+    {
+      "id": "5d5f5999a3ae61693fa23ae3",
+      "first_name": "Brett",
+      "title": "Director - Institutional Sales",
+      "org": "BitGo"
+    },
+    {
+      "id": "617843ef29c4a30001d9915c",
+      "first_name": "Ivy",
+      "title": "Senior Growth Marketing Manager",
+      "org": "BitGo"
+    },
+    {
+      "id": "610a1c317afa600001934780",
+      "first_name": "Sukriti",
+      "title": "Sr DS Manager | Nit-kkr",
+      "org": "BitGo"
+    },
+    {
+      "id": "6048912f66a56d00019b99e6",
+      "first_name": "Bob",
+      "title": "Director",
+      "org": "BitGo"
+    },
+    {
+      "id": "68677fdff2c6570001eb4f11",
+      "first_name": "Carlos",
+      "title": "Strategic Account Manager",
+      "org": "BitGo"
+    },
+    {
+      "id": "68607743e24a4100011ae1a5",
+      "first_name": "Mary",
+      "title": "Head of Business Operations",
+      "org": "BitGo"
+    },
+    {
+      "id": "68178ff3d5bff500017d6a71",
+      "first_name": "Carl",
+      "title": "Director of Product Marketing",
+      "org": "BitGo"
+    },
+    {
+      "id": "606b4dadde9d2300017ad88b",
+      "first_name": "Astin",
+      "title": "Ecosystem and Listings Lead",
+      "org": "BitGo"
+    }
+  ],
+  "coinfello.com": [
+    {
+      "id": "67eb603422a5bc000155274e",
+      "first_name": "Minchi",
+      "title": "COO & Co-Founder",
+      "org": "CoinFello"
+    },
+    {
+      "id": "68dc3ff4ef86380001801d28",
+      "first_name": "Jacob",
+      "title": "Founder & CEO",
+      "org": "CoinFello"
+    },
+    {
+      "id": "5e0530a6e276e800019261eb",
+      "first_name": "Rachel",
+      "title": "Head of Design",
+      "org": "CoinFello"
+    },
+    {
+      "id": "66f57060a9e4aa0001f929e2",
+      "first_name": "Brett",
+      "title": "CTO",
+      "org": "CoinFello"
+    }
+  ],
+  "kleros.io": [
+    {
+      "id": "66f0aa5b76c7650001099993",
+      "first_name": "Federico",
+      "title": "Founder & CEO",
+      "org": "Kleros"
+    },
+    {
+      "id": "5ffbdc9bbb1d0f0001ff1ed3",
+      "first_name": "Clement",
+      "title": "CTO",
+      "org": "Kleros"
+    },
+    {
+      "id": "5d59e3f6a3ae614eefe7d23b",
+      "first_name": "Marcos",
+      "title": "Business Development Manager",
+      "org": "Kleros"
+    },
+    {
+      "id": "5be4bbfbf65125c696a19a02",
+      "first_name": "David",
+      "title": "HR and Administrative Manager",
+      "org": "Kleros"
+    },
+    {
+      "id": "54a219e47468693318f9b50c",
+      "first_name": "Fortunato",
+      "title": "Product Manager",
+      "org": "Kleros"
+    },
+    {
+      "id": "54a797d8746869705a9ae743",
+      "first_name": "Santiago",
+      "title": "Backend Lead Developer",
+      "org": "Kleros"
+    },
+    {
+      "id": "613a2db59613500001a6c2a3",
+      "first_name": "Nachiketh",
+      "title": "Head of Proof of Humanity",
+      "org": "Kleros"
+    },
+    {
+      "id": "54ebbfd774686943119f671c",
+      "first_name": "Odete",
+      "title": "Commercial Manager",
+      "org": "Kleros"
+    }
+  ],
+  "bpifrance.fr": [
+    {
+      "id": "6113837a83d5ec0001a7a672",
+      "first_name": "Nicolas",
+      "title": "CEO - Bpifrance",
+      "org": "Bpifrance"
+    },
+    {
+      "id": "6138ac2112c7cb000134a76e",
+      "first_name": "Ahmed",
+      "title": "Directeur Programme Entrepreneuriat Pour Tous",
+      "org": "Bpifrance"
+    },
+    {
+      "id": "54a5e2357468693b8ccfd1b0",
+      "first_name": "Marc",
+      "title": "Directeur Interr\u00e9gional en Charge de L'investissement",
+      "org": "Bpifrance"
+    },
+    {
+      "id": "57de1f11a6da987b3d407339",
+      "first_name": "Jean-Francois",
+      "title": "PO Lead (SAFe)",
+      "org": "Bpifrance"
+    },
+    {
+      "id": "670e37c0833ad40001d2d0bd",
+      "first_name": "Julien",
+      "title": "Directeur Ex\u00e9cutif en Charge de la Communication",
+      "org": "Bpifrance"
+    },
+    {
+      "id": "5b17100ba6da987939efd7c8",
+      "first_name": "Ivan",
+      "title": "Blockchain/Crypto Lead",
+      "org": "Bpifrance"
+    },
+    {
+      "id": "563e853ea6da9865aa0127cf",
+      "first_name": "Isabelle",
+      "title": "Director - Head of International & European Affairs",
+      "org": "Bpifrance"
+    },
+    {
+      "id": "610cbba6ec59420001cea3af",
+      "first_name": "Matthieu",
+      "title": "Directeur Ex\u00e9cutif du Conseil",
+      "org": "Bpifrance"
+    },
+    {
+      "id": "54a48ee07468692abf02b550",
+      "first_name": "Philippe",
+      "title": "Directeur du D\u00e9veloppement Durable et de la RSE",
+      "org": "Bpifrance"
+    },
+    {
+      "id": "57dbd55ca6da986893a27dd7",
+      "first_name": "Pierre",
+      "title": "Deeptech Project Manager",
+      "org": "Bpifrance"
+    }
+  ],
+  "develp.co": null,
+  "changenow.io": [
+    {
+      "id": "5d66e1cff6512582e199282c",
+      "first_name": "Alex",
+      "title": "Head of PR",
+      "org": "ChangeNOW.io"
+    },
+    {
+      "id": "684ffaeffc146f0001dcddb9",
+      "first_name": "Sophia",
+      "title": "Business Development Manager",
+      "org": "ChangeNOW.io"
+    },
+    {
+      "id": "61eff47ed189370001fa4b88",
+      "first_name": "Victoria",
+      "title": "Head of PR Content",
+      "org": "ChangeNOW.io"
+    },
+    {
+      "id": "62c5be721ba02900011e4df0",
+      "first_name": "Tim",
+      "title": "Head of Growth",
+      "org": "ChangeNOW.io"
+    },
+    {
+      "id": "57e1179fa6da987d6495e9b9",
+      "first_name": "Elena",
+      "title": "Senior Business Development Manager",
+      "org": "ChangeNOW.io"
+    },
+    {
+      "id": "604f48528f4f420001e1708c",
+      "first_name": "Yana",
+      "title": "Chief Business Development Officer",
+      "org": "ChangeNOW.io"
+    },
+    {
+      "id": "6558b42ac1d788000124fcec",
+      "first_name": "Pauline",
+      "title": "Chief Strategy Officer",
+      "org": "ChangeNOW.io"
+    },
+    {
+      "id": "649d63f11084bd00011f547b",
+      "first_name": "Rafael",
+      "title": "Growth Manager at ChangeNOW",
+      "org": "ChangeNOW.io"
+    },
+    {
+      "id": "68e64d55ad37e50001551c75",
+      "first_name": "Anastasiia",
+      "title": "Business Development Manager",
+      "org": "ChangeNOW.io"
+    },
+    {
+      "id": "60be8f8641cb4e00012fc4e8",
+      "first_name": "Alexander",
+      "title": "Growth Lead | GTM Strategy",
+      "org": "ChangeNOW.io"
+    }
+  ],
+  "wildcat.finance": null,
+  "poap.xyz": [
+    {
+      "id": "66b0b9ed162a28000168be7b",
+      "first_name": "Isabel",
+      "title": "Co-Founder",
+      "org": "POAP - The Proof of Attendance Protocol"
+    },
+    {
+      "id": "66f2f221b8b30d0001f5e3dc",
+      "first_name": "Justin",
+      "title": "VP of Finance",
+      "org": "POAP - The Proof of Attendance Protocol"
+    },
+    {
+      "id": "54a454e67468692fa20d493f",
+      "first_name": "Sam",
+      "title": "Project Manager",
+      "org": "POAP - The Proof of Attendance Protocol"
+    },
+    {
+      "id": "5e8bf00c611640000107db35",
+      "first_name": "Lis",
+      "title": "Branding Lead",
+      "org": "POAP - The Proof of Attendance Protocol"
+    },
+    {
+      "id": "60b00923c2b8b20001d7580e",
+      "first_name": "Hans",
+      "title": "Head of Design - UX",
+      "org": "POAP - The Proof of Attendance Protocol"
+    },
+    {
+      "id": "57dd2f8ca6da987ae4905109",
+      "first_name": "Franco",
+      "title": "Sr. Project Manager",
+      "org": "POAP - The Proof of Attendance Protocol"
+    },
+    {
+      "id": "5e5ebb3205e2fe000128c681",
+      "first_name": "Erika",
+      "title": "Growth Product Manager",
+      "org": "POAP - The Proof of Attendance Protocol"
+    },
+    {
+      "id": "631c6cecf1544c000149600b",
+      "first_name": "Tory",
+      "title": "Product Design Director",
+      "org": "POAP - The Proof of Attendance Protocol"
+    },
+    {
+      "id": "62e0ac727bc57300014690cb",
+      "first_name": "Christi",
+      "title": "POAP Head of Drop Operations",
+      "org": "POAP - The Proof of Attendance Protocol"
+    },
+    {
+      "id": "676d82ea8362080001e2f96a",
+      "first_name": "Ramon",
+      "title": "Lead Software Engineer",
+      "org": "POAP - The Proof of Attendance Protocol"
+    }
+  ],
+  "zerobase.pro": [
+    {
+      "id": "60a56240a65de3000130350e",
+      "first_name": "Mirror",
+      "title": "Founder & CEO",
+      "org": "ZEROBASE"
+    },
+    {
+      "id": "665fdff4ab666400013d176f",
+      "first_name": "Gink",
+      "title": "Head of Foresight",
+      "org": "ZEROBASE"
+    },
+    {
+      "id": "64d0d2e677d1f00001aca793",
+      "first_name": "Luqman",
+      "title": "Community Lead",
+      "org": "ZEROBASE"
+    },
+    {
+      "id": "63a48f0afa9aef000147eaa1",
+      "first_name": "Fabian",
+      "title": "Community Manager",
+      "org": "ZEROBASE"
+    }
+  ],
+  "safefoundation.org": [
+    {
+      "id": "5b2c9237a6da98c57d32e6a4",
+      "first_name": "Lukas",
+      "title": "Founder & President of the Board",
+      "org": "Safe Foundation"
+    },
+    {
+      "id": "66ff29a13f12c90001d2f29a",
+      "first_name": "Andre",
+      "title": "VP of Growth",
+      "org": "Safe Foundation"
+    },
+    {
+      "id": "6205013187d659000139df68",
+      "first_name": "Jan",
+      "title": "Head of Partnerships & Ecosystem Ventures",
+      "org": "Safe Foundation"
+    },
+    {
+      "id": "672049ab79b29b0001084869",
+      "first_name": "Samuel",
+      "title": "Global Marketing (Content & Social) Communications Lead",
+      "org": "Safe Foundation"
+    }
+  ],
+  "galxe.com": [
+    {
+      "id": "5d67996d80f93e58087a52d6",
+      "first_name": "Andrew",
+      "title": "Head of Ecosystem",
+      "org": "Galxe"
+    },
+    {
+      "id": "5f59004583c45d0001c1f61c",
+      "first_name": "Jairo",
+      "title": "Knowledge & Support Department Lead",
+      "org": "Galxe"
+    },
+    {
+      "id": "66f96d069901a20001b1f082",
+      "first_name": "Kelvin",
+      "title": "Head of Human Resources (Leadership Team)",
+      "org": "Galxe"
+    },
+    {
+      "id": "5ae0a1d7a6da984d81e4a740",
+      "first_name": "Jared",
+      "title": "Head of Knowledge & Support",
+      "org": "Galxe"
+    },
+    {
+      "id": "66964a98dbf4f20001b7f9e8",
+      "first_name": "Daniel",
+      "title": "BD Manager",
+      "org": "Galxe"
+    },
+    {
+      "id": "613079648190e00001c70785",
+      "first_name": "Juee",
+      "title": "GTM Strategy Lead",
+      "org": "Galxe"
+    },
+    {
+      "id": "61fca88b25a16d00012918fb",
+      "first_name": "Zack",
+      "title": "Creative Director",
+      "org": "Galxe"
+    },
+    {
+      "id": "5dd4b26d585d5d0001e0bf48",
+      "first_name": "Lance",
+      "title": "Managing Director, Web3",
+      "org": "Galxe"
+    },
+    {
+      "id": "61286ff797e5e000018a0707",
+      "first_name": "Cindy",
+      "title": "Regional Human Resources Manager",
+      "org": "Galxe"
+    },
+    {
+      "id": "5e7a616844377800014b033d",
+      "first_name": "Dajoeng",
+      "title": "BD Manager",
+      "org": "Galxe"
+    }
+  ],
+  "brevis.network": null,
+  "go.etoro.com": [
+    {
+      "id": "54a430117468692fa2c67c33",
+      "first_name": "Michael",
+      "title": "Group Product Lead",
+      "org": "eToro"
+    },
+    {
+      "id": "564b0aeaa6da984df8047f47",
+      "first_name": "Idan",
+      "title": "Change and Release Manager, Professional Services Engineer",
+      "org": "eToro"
+    },
+    {
+      "id": "609d6637b0e71c0001229041",
+      "first_name": "Guy",
+      "title": "Senior Marketing Director",
+      "org": "eToro"
+    },
+    {
+      "id": "54a4ae4e7468693209d8805a",
+      "first_name": "Eli",
+      "title": "Director of Marketing Strategy & Organic Growth",
+      "org": "eToro"
+    },
+    {
+      "id": "64315fb0b5a087000145a669",
+      "first_name": "David",
+      "title": "R&D Program Manager Team Leader",
+      "org": "eToro"
+    },
+    {
+      "id": "67958a7e956365000142c240",
+      "first_name": "Shalev",
+      "title": "Senior Product Manager",
+      "org": "eToro"
+    },
+    {
+      "id": "54abdf157468692ca106f712",
+      "first_name": "Tal",
+      "title": "Head of Global Talent Acquisition",
+      "org": "eToro"
+    },
+    {
+      "id": "66edaea2ec733a00012e9c77",
+      "first_name": "Avi",
+      "title": "Chief Operating Officer",
+      "org": "eToro"
+    },
+    {
+      "id": "6954aa509ba90600019550f3",
+      "first_name": "Roey",
+      "title": "Strategic Partnerships Team Leader",
+      "org": "eToro"
+    },
+    {
+      "id": "611b451ed2953c000154e102",
+      "first_name": "Omri",
+      "title": "Chief Blockchain Officer",
+      "org": "eToro"
+    }
+  ],
+  "standwithcrypto.org": [
+    {
+      "id": "57d34be8a6da9865c9bbd692",
+      "first_name": "Mason",
+      "title": "Community Director",
+      "org": "Stand With Crypto"
+    },
+    {
+      "id": "632f1f825ce26f0001b52556",
+      "first_name": "Brandon",
+      "title": "Chapter Vice-President",
+      "org": "Stand With Crypto"
+    },
+    {
+      "id": "67af58ff988f54000196978f",
+      "first_name": "Carrie",
+      "title": "President Stand With Crypto California Chapter",
+      "org": "Stand With Crypto"
+    },
+    {
+      "id": "65e879147b7cae00075396ba",
+      "first_name": "Ian",
+      "title": "Chapter President",
+      "org": "Stand With Crypto"
+    },
+    {
+      "id": "611748dacb434a0001b53fa5",
+      "first_name": "Chris",
+      "title": "Illinois Chapter President",
+      "org": "Stand With Crypto"
+    },
+    {
+      "id": "66532a8fad52d000013cd4b7",
+      "first_name": "Claire",
+      "title": "Ohio Chapter President",
+      "org": "Stand With Crypto"
+    },
+    {
+      "id": "5ae29325a6da984cb7cbe0f9",
+      "first_name": "Marcus",
+      "title": "President, Delaware Chapter",
+      "org": "Stand With Crypto"
+    },
+    {
+      "id": "65b998456566d50001c3eda1",
+      "first_name": "Alex",
+      "title": "State Chapter President for Montana",
+      "org": "Stand With Crypto"
+    },
+    {
+      "id": "637b24f721e27b0001b5dfcc",
+      "first_name": "Gilberto",
+      "title": "Maryland Chapter President",
+      "org": "Stand With Crypto"
+    },
+    {
+      "id": "5f5ec9231e37b200017df9ef",
+      "first_name": "Latia",
+      "title": "Vice President Georgia Chapter",
+      "org": "Stand With Crypto"
+    }
+  ],
+  "sigmaprime.io": [
+    {
+      "id": "60767e4b75a59d0001dd7ba4",
+      "first_name": "Mehdi",
+      "title": "Director",
+      "org": "Sigma Prime"
+    },
+    {
+      "id": "5b40497ea6da984b63359072",
+      "first_name": "Adrian",
+      "title": "Director",
+      "org": "Sigma Prime"
+    },
+    {
+      "id": "5ba436cc324d44c65255e173",
+      "first_name": "Sean",
+      "title": "Executive Director",
+      "org": "Sigma Prime"
+    },
+    {
+      "id": "69759075b9f283000163c8ec",
+      "first_name": "Paul",
+      "title": "Co-Founder",
+      "org": "Sigma Prime"
+    },
+    {
+      "id": "624d1fa4bc816800013a6cfa",
+      "first_name": "Kris",
+      "title": "Director General",
+      "org": "Sigma Prime"
+    }
+  ],
+  "cropr.finance": [
+    {
+      "id": "67ee7bf851122c0001a9d233",
+      "first_name": "Celine",
+      "title": "Client Director",
+      "org": "CROPR"
+    },
+    {
+      "id": "67c98aca525cb200018b31ab",
+      "first_name": "Gabriel",
+      "title": "Chief Business Development Officer (CBDO)",
+      "org": "CROPR"
+    },
+    {
+      "id": "67d88ade97cf130001703a65",
+      "first_name": "Shahenda",
+      "title": "Chief Financial Officer",
+      "org": "CROPR"
+    }
+  ],
+  "dual.org": null,
+  "linea.build": [
+    {
+      "id": "63a5dba34888d00001f1c3f7",
+      "first_name": "Ali",
+      "title": "Chief Executive Officer",
+      "org": "Linea | Design&Build"
+    },
+    {
+      "id": "61f7b8e1bd905b0001cbbd27",
+      "first_name": "Amin",
+      "title": "Project Manager",
+      "org": "Linea | Design&Build"
+    },
+    {
+      "id": "68c5ee7948f8df0001638806",
+      "first_name": "Omar",
+      "title": "Project Manager",
+      "org": "Linea | Design&Build"
+    }
+  ],
+  "kryptosphere.org": [
+    {
+      "id": "66f80ecbeee1360001b3411e",
+      "first_name": "Alexandre",
+      "title": "Vice President",
+      "org": "KRYPTOSPHERE\u00ae"
+    },
+    {
+      "id": "642d72b8d0d7b70001f50dcd",
+      "first_name": "Kylian",
+      "title": "Marketing & Communications Manager | Kryptosphere Europe",
+      "org": "KRYPTOSPHERE\u00ae"
+    },
+    {
+      "id": "65f7dc849d800a0007922e1d",
+      "first_name": "Tevfik",
+      "title": "Co-Head of Partnerships Kryptosphere\u00ae France",
+      "org": "KRYPTOSPHERE\u00ae"
+    },
+    {
+      "id": "665b31ae166331000171d0f8",
+      "first_name": "Romain",
+      "title": "Co-fondateur & Vice President",
+      "org": "KRYPTOSPHERE\u00ae"
+    },
+    {
+      "id": "6856da13df344300010f73e9",
+      "first_name": "Paul",
+      "title": "President - Essec",
+      "org": "KRYPTOSPHERE\u00ae"
+    },
+    {
+      "id": "615288034c1912000174f9f5",
+      "first_name": "Said",
+      "title": "President",
+      "org": "KRYPTOSPHERE\u00ae"
+    },
+    {
+      "id": "68c76fee546078000135ebc5",
+      "first_name": "Jean",
+      "title": "Vice President Essec APAC",
+      "org": "KRYPTOSPHERE\u00ae"
+    },
+    {
+      "id": "67005225321e8b00014d903a",
+      "first_name": "Arthur",
+      "title": "Head of Research | Antenne Essec",
+      "org": "KRYPTOSPHERE\u00ae"
+    },
+    {
+      "id": "6720875321ff9b000168d01d",
+      "first_name": "Thomas",
+      "title": "AI Lead Kryptosphere IMT Atlantique",
+      "org": "KRYPTOSPHERE\u00ae"
+    },
+    {
+      "id": "67150fed3bb9eb00016933bc",
+      "first_name": "Mazen",
+      "title": "VP Trading Albert School",
+      "org": "KRYPTOSPHERE\u00ae"
+    }
+  ],
+  "ethstaker.cc": null,
+  "tecommons.org": null,
+  "money2020.com": [
+    {
+      "id": "57db3e6da6da984ba80295f5",
+      "first_name": "Neil",
+      "title": "Head of New Business - Money2020 Asia",
+      "org": "Money20/20"
+    },
+    {
+      "id": "611aa14787831600017d3c09",
+      "first_name": "Kathryn",
+      "title": "VP of Marketing",
+      "org": "Money20/20"
+    },
+    {
+      "id": "6701349b23d9e00001cbc456",
+      "first_name": "Oliver",
+      "title": "Head of Content, Europe",
+      "org": "Money20/20"
+    },
+    {
+      "id": "66867e644a51c20001748f11",
+      "first_name": "Tobi",
+      "title": "Account Manager",
+      "org": "Money20/20"
+    },
+    {
+      "id": "66f59488fa2b63000178d128",
+      "first_name": "Jonathan",
+      "title": "VP Award Operations",
+      "org": "Money20/20"
+    },
+    {
+      "id": "6700d98becad01000140b13e",
+      "first_name": "Beth",
+      "title": "Account Manager",
+      "org": "Money20/20"
+    },
+    {
+      "id": "60b8c0c7884136000151cf0b",
+      "first_name": "Stephen",
+      "title": "VP Global Sales",
+      "org": "Money20/20"
+    },
+    {
+      "id": "626af89792a69d00011ecea1",
+      "first_name": "Ian",
+      "title": "Vice President, Content Asia",
+      "org": "Money20/20"
+    },
+    {
+      "id": "6405f7b3d9bd25000127b10d",
+      "first_name": "Jonathan",
+      "title": "Partnership Lead",
+      "org": "Money20/20"
+    },
+    {
+      "id": "66f2acb4578e7200010e3042",
+      "first_name": "Marian",
+      "title": "Global Director of Awards",
+      "org": "Money20/20"
+    }
+  ],
+  "dlt-talents.com": null,
+  "babylonlabs.io": [
+    {
+      "id": "67449420f2c04b00017e7393",
+      "first_name": "Diogo",
+      "title": "Head of Comms",
+      "org": "Babylon Labs"
+    },
+    {
+      "id": "6041f29ae526d60001c51432",
+      "first_name": "Jenks",
+      "title": "Head of Developer Relations",
+      "org": "Babylon Labs"
+    },
+    {
+      "id": "5f07b0e4dc072c00dc3bc94c",
+      "first_name": "Boris",
+      "title": "Head of Strategic Initiatives",
+      "org": "Babylon Labs"
+    },
+    {
+      "id": "63689dd28507bb00014d5de2",
+      "first_name": "Greg",
+      "title": "CFO",
+      "org": "Babylon Labs"
+    },
+    {
+      "id": "66964e4e914faf0001c20071",
+      "first_name": "Tristan",
+      "title": "Chief Marketing Officer",
+      "org": "Babylon Labs"
+    },
+    {
+      "id": "625879194cd6540001968d39",
+      "first_name": "Jihoon",
+      "title": "APAC Lead",
+      "org": "Babylon Labs"
+    },
+    {
+      "id": "6725cd751123e900012428bc",
+      "first_name": "Filippos",
+      "title": "Lead DevOps Engineer",
+      "org": "Babylon Labs"
+    },
+    {
+      "id": "54a3a6dd7468692abfe19d07",
+      "first_name": "Erik",
+      "title": "Social Media Lead",
+      "org": "Babylon Labs"
+    },
+    {
+      "id": "66de8a7a972bf200017d53f7",
+      "first_name": "Theo",
+      "title": "Senior Manager, Business Development",
+      "org": "Babylon Labs"
+    },
+    {
+      "id": "6705fdb716bfdf00016e1d8e",
+      "first_name": "Aleksa",
+      "title": "Lead Solution Engineer",
+      "org": "Babylon Labs"
+    }
+  ],
+  "bridge.xyz": [
+    {
+      "id": "66edcdab6fb97a0001b0ca0a",
+      "first_name": "Connor",
+      "title": "Head of Partnerships, Cards",
+      "org": "Bridge"
+    },
+    {
+      "id": "66f9eba09901a20001d985fd",
+      "first_name": "Joseph",
+      "title": "Head of Revenue",
+      "org": "Bridge"
+    },
+    {
+      "id": "60c2f9119088cf0001a3658c",
+      "first_name": "Eric",
+      "title": "Chief Legal Officer & Chief Compliance Officer",
+      "org": "Bridge"
+    },
+    {
+      "id": "684c74bed29cb20001504e5a",
+      "first_name": "Zach",
+      "title": "Co-Founder",
+      "org": "Bridge"
+    },
+    {
+      "id": "6095158201054d0001b66431",
+      "first_name": "Allen",
+      "title": "Compliance Operations Lead",
+      "org": "Bridge"
+    },
+    {
+      "id": "611d63f3e8ff7e00014085e7",
+      "first_name": "Tanya",
+      "title": "Chief Compliance Officer",
+      "org": "Bridge"
+    },
+    {
+      "id": "54a4b77b7468692fa2d70d5e",
+      "first_name": "Alexis",
+      "title": "Head of Account Management",
+      "org": "Bridge"
+    },
+    {
+      "id": "57d74d47a6da985b98e4e5d0",
+      "first_name": "Anant",
+      "title": "Solutions and Support Lead",
+      "org": "Bridge"
+    },
+    {
+      "id": "6034dafb75e3440001c873a8",
+      "first_name": "Yoav",
+      "title": "Head of Solutions Engineering",
+      "org": "Bridge"
+    },
+    {
+      "id": "55709d9173696422074b0800",
+      "first_name": "Paris",
+      "title": "President and Chief Trust Officer at Bridge National Trust Bank",
+      "org": "Bridge"
+    }
+  ],
+  "chain.link": null,
+  "maple.finance": [
+    {
+      "id": "66f2ddc2333afb000145bcc9",
+      "first_name": "Sidney",
+      "title": "CEO and Co-Founder",
+      "org": "Maple"
+    },
+    {
+      "id": "610775f61185f60001aae988",
+      "first_name": "Joe",
+      "title": "Co-Founder and Executive Chairman",
+      "org": "Maple"
+    },
+    {
+      "id": "68054ab8b1a2cf000131c462",
+      "first_name": "Ryan",
+      "title": "Chief Operating Officer",
+      "org": "Maple"
+    },
+    {
+      "id": "593b4b86a6da980e5afb7497",
+      "first_name": "Michael",
+      "title": "Offchain Technical Lead",
+      "org": "Maple"
+    },
+    {
+      "id": "6064541c130f330001137d95",
+      "first_name": "Chuck",
+      "title": "Principal Product Manager",
+      "org": "Maple"
+    },
+    {
+      "id": "5ab683fea6da98b696e189bf",
+      "first_name": "Martin",
+      "title": "Head of Growth",
+      "org": "Maple"
+    },
+    {
+      "id": "6907c58c78e0f7000197095e",
+      "first_name": "Sid",
+      "title": "Vice President - Capital Markets",
+      "org": "Maple"
+    },
+    {
+      "id": "6426d9a5b91df700012652ad",
+      "first_name": "Elliot",
+      "title": "Head of Recruitment",
+      "org": "Maple"
+    },
+    {
+      "id": "5570939a7369645045e92800",
+      "first_name": "Nayat",
+      "title": "Head of Product Design",
+      "org": "Maple"
+    },
+    {
+      "id": "66f133984b1818000195c624",
+      "first_name": "Matt",
+      "title": "Chief Technology Officer",
+      "org": "Maple"
+    }
+  ],
+  "drofa-ra.com": [
+    {
+      "id": "683b7e42ab168b0001c3f99b",
+      "first_name": "Zhanna",
+      "title": "Public Relations Manager",
+      "org": "Drofa Comms"
+    },
+    {
+      "id": "5d512705f651251820d2e27e",
+      "first_name": "Dmitry",
+      "title": "Senior Public Relations Manager",
+      "org": "Drofa Comms"
+    },
+    {
+      "id": "60b6400c96d6e800015ebc0a",
+      "first_name": "Alina",
+      "title": "Head of PR",
+      "org": "Drofa Comms"
+    },
+    {
+      "id": "66d6aba310266400010cc173",
+      "first_name": "Maria",
+      "title": "Senior Account Manager",
+      "org": "Drofa Comms"
+    },
+    {
+      "id": "55708f2873696425fa451f00",
+      "first_name": "Graziella",
+      "title": "Senior Public Relations Manager",
+      "org": "Drofa Comms"
+    },
+    {
+      "id": "60b8811f1e51df00018954ad",
+      "first_name": "Olga",
+      "title": "Middle PR Manager",
+      "org": "Drofa Comms"
+    },
+    {
+      "id": "5f68818052c6ad0159838863",
+      "first_name": "Yulia",
+      "title": "Middle PR Manager",
+      "org": "Drofa Comms"
+    },
+    {
+      "id": "673d7b5d44cd00000154c6e2",
+      "first_name": "Svetlana",
+      "title": "Content Manager",
+      "org": "Drofa Comms"
+    },
+    {
+      "id": "66a6f73cded158000148e85f",
+      "first_name": "Maria",
+      "title": "Account Manager at Drofa Comms",
+      "org": "Drofa Comms"
+    },
+    {
+      "id": "66ee4e1f8f909e0001bfedc5",
+      "first_name": "Naala",
+      "title": "Public Relations Account Manager",
+      "org": "Drofa Comms"
+    }
+  ],
+  "wiw3ch.com": [
+    {
+      "id": "5f554d5f30c4ad0001f6de23",
+      "first_name": "Rebekah",
+      "title": "Head of International Growth",
+      "org": "Women in Web3 Switzerland (WiW3CH)"
+    },
+    {
+      "id": "62e7ff49ef1a050001273f48",
+      "first_name": "Monika",
+      "title": "Email Marketing Lead",
+      "org": "Women in Web3 Switzerland (WiW3CH)"
+    }
+  ],
+  "beincrypto.com": [
+    {
+      "id": "698ebae386452d0001c4d5ba",
+      "first_name": "Daniel",
+      "title": "Co-founder",
+      "org": "BeInCrypto"
+    },
+    {
+      "id": "66f1808259ebdc0001043114",
+      "first_name": "Alena",
+      "title": "CEO Founder",
+      "org": "BeInCrypto"
+    },
+    {
+      "id": "66ed309626bb9f0001fa860e",
+      "first_name": "Raquel",
+      "title": "HR Manager - Engagement and Strategy",
+      "org": "BeInCrypto"
+    },
+    {
+      "id": "6089b5670d38390001e69dd6",
+      "first_name": "Jessica",
+      "title": "Chief Global Strategy Officer",
+      "org": "BeInCrypto"
+    },
+    {
+      "id": "627e9a1b9e46d3000126db14",
+      "first_name": "Brian",
+      "title": "Global Head of News at BeInCrypto",
+      "org": "BeInCrypto"
+    },
+    {
+      "id": "5c54e57ef65125723d8234f0",
+      "first_name": "Luis",
+      "title": "Latin America Team Lead",
+      "org": "BeInCrypto"
+    },
+    {
+      "id": "67bc41e44ba69000018ad1d5",
+      "first_name": "Igor",
+      "title": "Product & UX/UI Design Lead",
+      "org": "BeInCrypto"
+    },
+    {
+      "id": "62ffd199cabee20001b6b863",
+      "first_name": "Alevtina",
+      "title": "Chief Strategic Partnerships and Customer Experience Officer, Board Member",
+      "org": "BeInCrypto"
+    },
+    {
+      "id": "66ff8f9d52b0a40001d20d73",
+      "first_name": "Deniz",
+      "title": "Business Development Manager",
+      "org": "BeInCrypto"
+    },
+    {
+      "id": "57dd4808a6da987b350604d1",
+      "first_name": "Alexander",
+      "title": "Business Development Manager",
+      "org": "BeInCrypto"
+    }
+  ],
+  "cointelegraph.com": [
+    {
+      "id": "63cfa0ad849a9e000127e57c",
+      "first_name": "Irene",
+      "title": "Talent Acquisition Manager",
+      "org": "Cointelegraph"
+    },
+    {
+      "id": "6865f7d3a2992f0001d94466",
+      "first_name": "Maria",
+      "title": "Events Lead",
+      "org": "Cointelegraph"
+    },
+    {
+      "id": "669652fdf376bc00012be26a",
+      "first_name": "Matthew",
+      "title": "Business Development Manager",
+      "org": "Cointelegraph"
+    },
+    {
+      "id": "65d497d25449ca000114a4e6",
+      "first_name": "Vlad",
+      "title": "Senior Business Development Manager | Affiliate Marketing Advisor",
+      "org": "Cointelegraph"
+    },
+    {
+      "id": "650bb7fd0c83c20001065452",
+      "first_name": "Nataly",
+      "title": "Business Development Manager",
+      "org": "Cointelegraph"
+    },
+    {
+      "id": "63c4cca226580000014565d4",
+      "first_name": "Leo",
+      "title": "Director, Strategic Partnerships at Cointelegraph Labs",
+      "org": "Cointelegraph"
+    },
+    {
+      "id": "67519e2111f9a40001a06214",
+      "first_name": "Lisa",
+      "title": "PR Lead",
+      "org": "Cointelegraph"
+    },
+    {
+      "id": "6611386c4deb9b0007144133",
+      "first_name": "Mike",
+      "title": "Director of PR & Communications",
+      "org": "Cointelegraph"
+    },
+    {
+      "id": "5e741d57fe753600012b4a85",
+      "first_name": "Khalid",
+      "title": "Arabic Translator Manager",
+      "org": "Cointelegraph"
+    },
+    {
+      "id": "62139573d6b74c0001b4ad78",
+      "first_name": "Polina",
+      "title": "Public Relations Manager",
+      "org": "Cointelegraph"
+    }
+  ],
+  "dlnews.com": [
+    {
+      "id": "62bbf93fc77b720001fd8fb0",
+      "first_name": "Abhinav",
+      "title": "Product Manager",
+      "org": "DL News"
+    },
+    {
+      "id": "665040f0c67c4700014f30aa",
+      "first_name": "Yana",
+      "title": "Chief Marketing Officer",
+      "org": "DL News"
+    },
+    {
+      "id": "66fe2af82815b8000167c027",
+      "first_name": "Bruna",
+      "title": "Product Manager IT",
+      "org": "DL News"
+    },
+    {
+      "id": "648c4c45c51f2d00014f52ef",
+      "first_name": "Sharmaine",
+      "title": "Head of Human Resources",
+      "org": "DL News"
+    }
+  ],
+  "thedefiant.io": [
+    {
+      "id": "625d42bd49a9dc0001ffd7ef",
+      "first_name": "Camila",
+      "title": "Founder",
+      "org": "The Defiant"
+    },
+    {
+      "id": "611b5e6da42a44000194d1f4",
+      "first_name": "Chris",
+      "title": "Chief Product Officer",
+      "org": "The Defiant"
+    },
+    {
+      "id": "5d631461a3ae6181155f9504",
+      "first_name": "Felipe",
+      "title": "Chief Operating Officer",
+      "org": "The Defiant"
+    },
+    {
+      "id": "6668135dc7562a0001b4c8ff",
+      "first_name": "Jack",
+      "title": "Head of Video",
+      "org": "The Defiant"
+    },
+    {
+      "id": "668f6d5a8c34c00001f863a0",
+      "first_name": "Yyc",
+      "title": "Team Manager",
+      "org": "The Defiant"
+    },
+    {
+      "id": "63fe8f9f75357c00016fbd4e",
+      "first_name": "Kennedy",
+      "title": "Social Media Manager",
+      "org": "The Defiant"
+    }
+  ],
+  "ccn.com": null,
+  "theblock.co": [
+    {
+      "id": "66f6a3106b838f0001a921e6",
+      "first_name": "Alexander",
+      "title": "Strategic Account Manager",
+      "org": "The Block"
+    },
+    {
+      "id": "66f46c7d577ba30001ac8cd6",
+      "first_name": "Jeffrey",
+      "title": "Senior Vice President, Revenue",
+      "org": "The Block"
+    },
+    {
+      "id": "5dda591d14263400011d8648",
+      "first_name": "Tim",
+      "title": "Head of Growth",
+      "org": "The Block"
+    },
+    {
+      "id": "5a691f1ca6da98c7e76e0cd7",
+      "first_name": "Matthew",
+      "title": "Chief Product Officer",
+      "org": "The Block"
+    },
+    {
+      "id": "612880e0df72a20001a7bb31",
+      "first_name": "Leanne",
+      "title": "Vice President Human Resources",
+      "org": "The Block"
+    },
+    {
+      "id": "66d7b239dbf87e00011974bc",
+      "first_name": "Frederick",
+      "title": "Associate Director of Revenue",
+      "org": "The Block"
+    },
+    {
+      "id": "5cf3353380f93e2410021812",
+      "first_name": "Edvinas",
+      "title": "Product Manager",
+      "org": "The Block"
+    },
+    {
+      "id": "611466ef20ea0000016acc65",
+      "first_name": "Rose",
+      "title": "General Counsel & Head of People Operations",
+      "org": "The Block"
+    },
+    {
+      "id": "5e88766fb8ce9900014dae75",
+      "first_name": "Simon",
+      "title": "Director, Data",
+      "org": "The Block"
+    },
+    {
+      "id": "60b15c2fcf289d00013e8626",
+      "first_name": "Steven",
+      "title": "Head of Research",
+      "org": "The Block"
+    }
+  ]
+}

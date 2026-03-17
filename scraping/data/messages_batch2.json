@@ -1,0 +1,142 @@
+[
+  {
+    "name": "CHRIS YIN",
+    "channel": "twitter",
+    "outreach_message": "Plume is doing something most RWA protocols avoid — building the compliance layer into the foundation, not bolting it on after. The problem is that when a tokenized asset misfires on shared infrastructure, the question of who owns the error becomes a legal problem before it becomes a technical one. We built Kolme to give teams like yours a dedicated execution environment where the accountability boundary is yours to define, not inherited from a shared chain. Worth 20 minutes at EthCC in Cannes to talk through it?"
+  },
+  {
+    "name": "JUAN DAVID MENDIETA",
+    "channel": "linkedin",
+    "outreach_message": "Keyrock's edge is algorithmic precision at scale — but that precision only holds if the infrastructure underneath can guarantee consistent execution timing and state. When latency or finality assumptions are wrong, the loss is real and immediate, and no algo revision recovers what already cleared. At FP Block, we built Kolme specifically so trading and liquidity teams can run on infrastructure they fully own, with performance isolation that shared environments can't provide. We'd like to find 20 minutes with you at EthCC in Cannes in June to walk through what that looks like in practice."
+  },
+  {
+    "name": "STRAUSSES",
+    "channel": "twitter",
+    "outreach_message": "Immunefi sits at the exact point where a vulnerability either gets contained or becomes a headline — and almost every post-mortem eventually asks whether the infrastructure layer was even in scope. Most security models assume the substrate is trusted; they audit what runs on it, not what it runs on. We built Kolme to give teams a dedicated execution environment where the infrastructure assumptions are theirs to own, not inherited. If that's worth 20 minutes at EthCC in Cannes, we'd like to talk."
+  },
+  {
+    "name": "OPHELIA SNYDER",
+    "channel": "linkedin",
+    "outreach_message": "21Shares operates in a space where a single pricing or settlement error isn't a technical incident — it's a regulatory event with consequences that compound over time. When a regulated ETP is built on shared infrastructure, the error may be yours to own even when the root cause isn't. FP Block built Kolme to give teams in exactly this position a dedicated execution environment with full ownership over the infrastructure layer, so the accountability boundary matches the legal one. We'd value 20 minutes at EthCC in Cannes in June to discuss whether that gap is one you're already solving for."
+  },
+  {
+    "name": "CACTUS RAAZI",
+    "channel": "linkedin",
+    "outreach_message": "B2C2's institutional OTC platform runs on speed and precision, and in that context infrastructure latency or finality inconsistency isn't an operational nuisance — it's direct capital exposure with no mechanism for recovery. The infrastructure underneath a pricing engine needs to be something you control, not something you share with whoever else is on the network. FP Block built Kolme to give liquidity desks and trading platforms a dedicated execution environment with the performance isolation that matters at execution speed. We'd like 20 minutes at EthCC in Cannes in June to show you what that looks like under load."
+  },
+  {
+    "name": "BHAJI ILLUMINATI",
+    "channel": "linkedin",
+    "outreach_message": "Centrifuge is doing the structurally hard work of connecting institutional credit markets to tokenized settlement — and that means errors don't just affect protocol users, they touch the underlying credit relationships and the legal obligations attached to them. The question most RWA protocols defer is who owns the error when the infrastructure below the asset misfires. FP Block built Kolme to give teams like Centrifuge a dedicated execution environment where the infrastructure accountability boundary is clear and controlled, not shared with the rest of the network. We'd welcome 20 minutes at EthCC in Cannes to talk through how that applies to your asset pipeline."
+  },
+  {
+    "name": "SHRAVAN SRINIVASAN",
+    "channel": "twitter",
+    "outreach_message": "Lagrange's coprocessor model depends on the correctness of historical state being queryable and verifiable — but the proof layer sits on top of infrastructure that can fail in ways the math doesn't cover. If the execution environment misorders or drops state before the prover ever sees it, the proof is valid and the output is wrong. We built Kolme so teams can own the substrate beneath the proof layer, not just the prover. Worth 20 minutes at EthCC in Cannes?"
+  },
+  {
+    "name": "FRIEDERIKE ERNST",
+    "channel": "twitter",
+    "outreach_message": "Safe secures an amount of assets where a single infrastructure-layer assumption going wrong isn't a protocol incident — it's a systemic event that's final before anyone can respond. The multisig logic gets the scrutiny; the execution environment it runs on is usually assumed. We built Kolme to give teams building critical custody infrastructure a dedicated execution layer they own, not one they share. Happy to find 20 minutes at EthCC in Cannes if that's worth exploring."
+  },
+  {
+    "name": "LEO FAN",
+    "channel": "linkedin",
+    "outreach_message": "Cysic is solving the hardware bottleneck that makes real-time ZK proof generation practical — but the value of that acceleration depends entirely on the execution environment the proofs surface in being trustworthy. A hardware bug that corrupts proof output doesn't just break one computation; it silently undermines the trust guarantee for every system that accepted those proofs before anyone noticed. FP Block built Kolme so teams deploying ZK infrastructure can own the full stack beneath the proof layer, not just the prover logic. We'd like 20 minutes at EthCC in Cannes in June to talk through what that substrate looks like in production."
+  },
+  {
+    "name": "ALEXANDER",
+    "channel": "twitter",
+    "outreach_message": "Miden's client-side proving model is architecturally elegant — but the privacy and validity guarantees it delivers are only as strong as the execution environment those proofs ultimately settle into. When the VM itself runs on infrastructure the team doesn't control, the failure modes are below the proof layer and outside the formal model. We built Kolme to give teams a dedicated execution substrate they own from the ground up, so the trust boundary matches the proof boundary. Worth 20 minutes at EthCC in Cannes?"
+  },
+  {
+    "name": "RÉMI",
+    "channel": "twitter",
+    "outreach_message": "Lagoon routes institutional capital into tokenized yield positions, which means a contract error or infrastructure failure doesn't produce a reversible transaction — it produces a permanently locked or misdirected position in a regulated asset class. The yield protocol is only as reliable as the environment it runs on, and shared infrastructure means you inherit other teams' risk surface. We built Kolme to give protocols like Lagoon a dedicated execution environment with clean ownership and no inherited exposure. Worth 20 minutes at EthCC in Cannes to walk through it?"
+  },
+  {
+    "name": "FILIP REZABEK",
+    "channel": "linkedin",
+    "outreach_message": "SpaceComputer is building applied ZK infrastructure where cryptographic correctness isn't just a property of the proof — it depends on the entire computation path from input to verification being trustworthy. The formal guarantees break down if the infrastructure layer beneath the prover can be tampered with, missequenced, or degraded without detection. FP Block built Kolme to give ZK infrastructure teams a dedicated, isolated execution environment where the substrate is owned and auditable, not shared. We'd welcome 20 minutes at EthCC in Cannes in June to talk through where that boundary matters most for your systems."
+  },
+  {
+    "name": "AMBROISE HELAINE",
+    "channel": "linkedin",
+    "outreach_message": "Bybit processes billions in daily volume across derivatives and spot markets, and at that scale the infrastructure powering settlement and custody isn't a cost center — it's a risk factor you either control or expose your users to. The 2025 incident made clear that infrastructure you don't fully own is risk you can't fully price or contain. FP Block built Kolme to give exchanges and custodial platforms a dedicated execution environment with full infrastructure ownership, so the failure surface is defined and bounded. We'd like 20 minutes at EthCC in Cannes in June if that's a conversation worth having."
+  },
+  {
+    "name": "MICHAEL WU",
+    "channel": "linkedin",
+    "outreach_message": "Amber Group operates across OTC trading, market making, and structured products for institutional counterparties — a context where an infrastructure-layer failure isn't a support ticket, it's a financial loss that settles immediately and irreversibly. The execution environment underneath a trading or settlement system needs to be something you own and can account for, not a shared resource with undefined failure boundaries. FP Block built Kolme to give institutional trading desks exactly that: a dedicated, high-performance substrate with full ownership over the infrastructure layer. We'd welcome 20 minutes at EthCC in Cannes in June to walk through what that changes operationally."
+  },
+  {
+    "name": "ECE ORSEL",
+    "channel": "twitter",
+    "outreach_message": "Hacken's audits surface what's wrong in the code — but the infrastructure layer the code runs on is almost always out of scope, and that's where assumptions get inherited rather than verified. If the execution environment misorders transactions or drops state, a perfectly audited contract can still behave incorrectly in production. We built Kolme so the teams you audit have a substrate they actually own and can reason about. Worth 20 minutes at EthCC in Cannes?"
+  },
+  {
+    "name": "BEN FISCH",
+    "channel": "twitter",
+    "outreach_message": "Espresso is solving the sequencer centralization problem at the rollup layer — which means you understand better than most that the failure modes people don't anticipate are the ones in the infrastructure beneath the protocol design. A sequencer that's decentralized in theory but running on shared, unowned execution infrastructure still has a single point of failure; it's just harder to see. We built Kolme to give teams building sequencer and confirmation infrastructure a dedicated execution layer with full isolation. Worth 20 minutes at EthCC in Cannes to compare notes?"
+  },
+  {
+    "name": "TOUFIC BATRICE",
+    "channel": "linkedin",
+    "outreach_message": "SpaceComputer's work on private, verifiable computation puts you at the intersection where a failure isn't just a bug — it's a silent breach of the privacy or validity guarantee the entire system is built on. The harder problem isn't usually the cryptography; it's ensuring the environment those proofs are generated and verified in can't be compromised in ways the proof system doesn't model. FP Block built Kolme to give teams deploying sensitive ZK systems a dedicated execution substrate they own end-to-end, not a shared environment with opaque failure modes. We'd like 20 minutes at EthCC in Cannes in June to talk through what that looks like in your architecture."
+  },
+  {
+    "name": "ANDRII BONDAR",
+    "channel": "linkedin",
+    "outreach_message": "zkSync's Elastic Chain architecture distributes execution across a network of ZK-secured rollups — and the stronger that network gets, the more consequential the substrate-layer assumptions become for every chain in it. Proof correctness is verifiable; the infrastructure decisions underneath the prover are usually inherited and rarely audited. FP Block built Kolme to give teams building within or alongside ZK ecosystems a dedicated execution environment where the infrastructure layer is owned, not assumed. We'd welcome 20 minutes at EthCC in Cannes in June to talk through where that matters for zkSync's stack."
+  },
+  {
+    "name": "OISÍN KYNE",
+    "channel": "linkedin",
+    "outreach_message": "Obol's DVT approach eliminates the single node as a point of validator failure — but the distributed key shares still depend on the execution environment they coordinate through being reliable and honest. If the infrastructure layer beneath the validator cluster can be degraded or manipulated, the slashing risk doesn't disappear; it just becomes harder to attribute. FP Block built Kolme to give teams building critical staking infrastructure a dedicated execution substrate they fully own, with the isolation that shared environments can't guarantee. We'd like 20 minutes at EthCC in Cannes in June to talk through where that boundary sits in your architecture."
+  },
+  {
+    "name": "DYMA BUDORIN",
+    "channel": "linkedin",
+    "outreach_message": "Running a security firm at Hacken's scale means you're accountable for the risk posture of dozens of protocols at once — and the business liability from a missed vulnerability that leads to a loss doesn't disappear because the root cause was below the code layer. Most audit scopes stop at the application; the infrastructure the application runs on is typically out of scope and assumed safe. We built Kolme to make that assumption unnecessary — giving protocols a dedicated execution environment where the substrate risk is owned and bounded. If that changes how you think about audit scope or client conversations, we'd like 20 minutes at EthCC in Cannes."
+  },
+  {
+    "name": "TOMER GANOR",
+    "channel": "twitter",
+    "outreach_message": "Certora's formal verification approach can prove a contract behaves correctly given its specification — but the execution environment the contract runs in is a separate trust assumption the formal model takes as given. If the substrate misorders transactions or presents inconsistent state, a formally verified contract can still produce an incorrect outcome. We built Kolme so the protocols you verify have an execution layer they actually own and can include in their trust model. Worth 20 minutes at EthCC in Cannes to think through how that changes the verification scope?"
+  },
+  {
+    "name": "ANDY M. LEE",
+    "channel": "twitter",
+    "outreach_message": "Mamori's real-time guardrails intercept exploits at the transaction layer — but that detection model assumes the infrastructure beneath it is delivering an accurate, unmanipulated view of what's happening on-chain. If the execution environment itself is compromised or degraded, the guardrails see what the substrate shows them, not what's real. We built Kolme so security tools and the protocols they protect can run on infrastructure they own, not infrastructure they inherit. Worth 20 minutes at EthCC in Cannes?"
+  },
+  {
+    "name": "BIANCA BUZEA",
+    "channel": "twitter",
+    "outreach_message": "Chronicle's oracle feeds are only as trustworthy as the full path from source data to on-chain attestation — and if the execution environment those attestations land in isn't owned and controlled by the teams depending on them, the cryptographic proof of correctness doesn't fully close the trust loop. A wrong price that's cryptographically attested is still a wrong price. We built Kolme so protocols depending on verified feeds can own the substrate those feeds settle into, not just trust it. Worth 20 minutes at EthCC in Cannes?"
+  },
+  {
+    "name": "KRZYSZTOF GOGOL",
+    "channel": "linkedin",
+    "outreach_message": "Zircuit's sequencer-level security model is a meaningful architectural advance — quarantining malicious transactions before finalization is exactly the right layer to intervene at. The follow-on question is whether the sequencer and execution environment running that logic is itself something Zircuit fully owns, or whether it inherits infrastructure assumptions it can't audit or control. FP Block built Kolme to give L2 teams a dedicated execution substrate with full ownership over the sequencer layer, not a dependency on shared infrastructure with undefined failure modes. We'd like 20 minutes at EthCC in Cannes in June to compare approaches."
+  },
+  {
+    "name": "DAVID PEARCE",
+    "channel": "twitter",
+    "outreach_message": "ConsenSys's infrastructure — MetaMask, Infura, Linea — sits underneath enough of the ecosystem that decisions made at the substrate level propagate in ways no single team can fully anticipate or roll back. The scale of that reach means the cost of a wrong infrastructure assumption isn't one protocol's problem; it's millions of users' problem simultaneously. We built Kolme around the premise that teams with that kind of downstream responsibility need to own their execution substrate completely. Worth 20 minutes at EthCC in Cannes to think through where that applies?"
+  },
+  {
+    "name": "FISHER YU",
+    "channel": "linkedin",
+    "outreach_message": "Babylon's architecture is compelling precisely because it avoids bridging — BTC stays on Bitcoin mainnet while securing PoS chains, which means the slashing and finality logic has to be airtight at the protocol level with no recovery mechanism if it isn't. The infrastructure the PoS chains run on is the other half of that trust model, and if it's shared or unowned, the non-custodial guarantee has a gap below the cryptography. FP Block built Kolme to give teams building cross-chain staking infrastructure a dedicated execution environment with full ownership over the substrate layer. We'd welcome 20 minutes at EthCC in Cannes in June to walk through how that applies to Babylon's architecture."
+  },
+  {
+    "name": "SUKI YANG",
+    "channel": "twitter",
+    "outreach_message": "Icon Trading runs on execution speed and model precision, and in that context infrastructure that introduces latency, inconsistent ordering, or unpredictable finality isn't a minor degradation — it's direct capital loss that clears before you can act on it. The execution environment underneath a market-making system needs to be something you control, not something you share. We built Kolme to give trading desks a dedicated, isolated substrate with the performance guarantees shared infrastructure can't reliably provide. Worth 20 minutes at EthCC in Cannes?"
+  },
+  {
+    "name": "GIO",
+    "channel": "twitter",
+    "outreach_message": "Parity's clients are building sovereign chains on Substrate, which means a runtime-level decision — a client bug, an upgrade that behaves differently than expected — doesn't just affect one application, it halts an entire network that teams have built their businesses on. Sovereignty at the chain layer is only meaningful if the runtime layer beneath it is equally owned and auditable. We built Kolme from the same instinct — that mission-critical execution requires full infrastructure ownership, not shared dependencies. Worth 20 minutes at EthCC in Cannes to compare notes on where that line sits?"
+  }
+]
