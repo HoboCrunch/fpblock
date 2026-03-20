@@ -199,8 +199,8 @@ export async function fetchEmails(
 
     // JMAP returns requested headers as "header:Name:asText" properties
     const raw: Record<string, unknown> = {};
-    const inReplyTo = (email as Record<string, unknown>)["header:In-Reply-To:asText"];
-    const references = (email as Record<string, unknown>)["header:References:asText"];
+    const inReplyTo = (email as unknown as Record<string, unknown>)["header:In-Reply-To:asText"];
+    const references = (email as unknown as Record<string, unknown>)["header:References:asText"];
     if (inReplyTo) raw["In-Reply-To"] = inReplyTo;
     if (references) raw["References"] = references;
 

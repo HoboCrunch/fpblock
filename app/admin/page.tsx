@@ -130,25 +130,25 @@ export default async function DashboardPage() {
           label="Contacts"
           value={contactCount || 0}
           icon={Users}
-          iconColor="text-[#6e86ff]"
+          accentColor="indigo"
         />
         <StatCard
           label="Companies"
           value={companyCount || 0}
           icon={Building2}
-          iconColor="text-[#6e86ff]"
+          accentColor="indigo"
         />
         <StatCard
           label="Messages"
           value={totalMessages}
           icon={MessageSquare}
-          iconColor="text-[#f58327]"
+          accentColor="orange"
         />
         <StatCard
           label="Replied"
           value={repliedCount}
           icon={CheckCircle}
-          iconColor="text-emerald-500"
+          accentColor="orange"
         />
       </div>
 
