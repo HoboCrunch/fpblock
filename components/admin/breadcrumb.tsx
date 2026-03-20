@@ -32,7 +32,7 @@ export function Breadcrumb({ pathname }: BreadcrumbProps) {
     return { href, label, isLast };
   });
 
-  // Skip rendering if only /admin
+  // If only /admin, show "Dashboard"
   if (crumbs.length <= 1) {
     return (
       <div className="text-sm text-[var(--text-secondary)] font-[family-name:var(--font-heading)] font-semibold">
