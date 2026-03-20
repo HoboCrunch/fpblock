@@ -62,9 +62,10 @@ Redesign the /admin application from a basic dashboard into a full CRM for manag
   4. Events (`Calendar`)
   5. Pipeline (`Kanban`)
   6. Sequences (`GitBranch`)
-  7. Enrichment (`Sparkles`)
-  8. Uploads (`Upload`)
-  9. Settings (`Settings`) — pinned to bottom
+  7. Inbox (`Mail`)
+  8. Enrichment (`Sparkles`)
+  9. Uploads (`Upload`)
+  10. Settings (`Settings`) — pinned to bottom
 - Active item: orange left border (3px) + orange text
 - Inactive: `rgba(255,255,255,0.4)` text, hover → `rgba(255,255,255,0.7)`
 - Events section: collapsible sub-items showing individual events
@@ -312,7 +313,68 @@ Redesign the /admin application from a basic dashboard into a full CRM for manag
 **Upload history (below):**
 - Table from `uploads` table: Date, Filename, Rows Imported, Contacts Created, Companies Created, Status
 
-### 3.9 Settings (`/admin/settings`)
+### 3.9 Inbox (`/admin/inbox`)
+
+**New page.**
+
+**Purpose:** Unified inbound email view for connected accounts (`jb@gofpblock.com` and `wes@gofpblock.com`). Correlates inbound replies to pipeline contacts and auto-updates outreach status. Surfaces notifications to Telegram.
+
+**Architecture:**
+- **Fastmail integration** via JMAP API (`FASTMAIL_API_KEY` in `.env.local`). Next.js API route (`app/api/inbox/route.ts`) fetches emails from both accounts.
+- **Correlation engine:** When an email arrives, match sender address against `contacts.email`. If matched, auto-update the contact's most recent outbound message to `status = 'replied'` and log to `job_log`.
+- **Telegram notifications** via Bot API (`TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `.env.local`). Sends a notification when:
+  - A pipeline contact replies (includes contact name, company, snippet)
+  - An enrichment job completes
+  - A bounce is detected
+- **Polling:** API route fetches new mail on page load + manual refresh button. Future: webhook or cron-based polling.
+
+**Connected Accounts panel (top):**
+- Glass card showing both accounts with status indicator (connected/error)
+- Each account: email address, last sync time, unread count
+- Manual "Sync Now" button per account
+
+**Inbox view:**
+- Two-column layout: email list (left), email detail (right)
+- **Email list:**
+  - Glass card rows: sender name/email, subject, snippet, timestamp
+  - Unread emails have brighter text + orange left border
+  - Correlated emails show a pipeline badge (contact name + ICP score) inline
+  - Uncorrelated emails show a "Link to Contact" button
+  - Filter tabs: All | Correlated | Uncorrelated | account filter (JB / Wes / Both)
+- **Email detail (right panel):**
+  - Full email body rendered in a glass card
+  - If correlated: contact card at top showing name, company, outreach stage, link to contact detail
+  - Thread view: show the outbound message that triggered this reply (matched by `In-Reply-To` / `References` headers or subject line matching)
+  - Action buttons: "Mark as Read", "Link to Contact" (if uncorrelated), "Ignore"
+
+**Auto-correlation logic:**
+1. Match `From` address against `contacts.email` (exact match)
+2. If no match, try domain match against `companies.website` and surface as "possible match" for manual linking
+3. On successful correlation: update `messages.status` to `replied`, set `messages.replied_at` (new column) to email timestamp
+4. Log correlation to `job_log` with `job_type = 'inbox_correlation'`
+
+**Telegram notification format:**
+```
+📬 Reply from {contact_name} ({company_name})
+ICP: {icp_score} | Channel: Email
+Subject: {subject}
+Preview: {first 100 chars}
+→ /admin/contacts/{id}
+```
+
+### 3.10 Telegram Notifications (`lib/telegram.ts`)
+
+**Utility module, not a page.**
+
+- `sendTelegramNotification(message: string)` — sends to configured chat via Bot API
+- Called from:
+  - Inbox correlation (reply detected)
+  - Enrichment completion (`app/api/enrich/route.ts`)
+  - Bounce detection (inbox correlation finds bounce headers)
+- Env vars: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
+- Graceful degradation: if env vars not set, log warning and skip (don't crash)
+
+### 3.11 Settings (`/admin/settings`)
 
 **Tabbed page using existing Tabs component (restyled).**
 
@@ -360,14 +422,23 @@ Redesign the /admin application from a basic dashboard into a full CRM for manag
 - `Header` — add breadcrumb, transparent glass style
 - All table components — glass row hover states
 
-## 5. New Dependencies
+## 5. Environment Variables
+
+Required additions to `.env.local`:
+```
+FASTMAIL_API_KEY=...              (already set)
+TELEGRAM_BOT_TOKEN=...            (user will create bot and add)
+TELEGRAM_CHAT_ID=...              (user will provide after bot setup)
+```
+
+## 6. Dependencies
 
 - `@hello-pangea/dnd` — drag and drop for kanban. If React 19 incompatible at build time, fallback to native HTML drag-and-drop API with custom implementation.
 - `lucide-react` — icon library
 - `papaparse` — CSV parsing for uploads (client-side)
 - `@types/papaparse` — TypeScript types for papaparse
 
-## 6. Schema Changes
+## 7. Schema Changes
 
 New migration `002_sequences_uploads.sql`:
 
@@ -413,6 +484,49 @@ CREATE TABLE uploads (
 
 CREATE INDEX idx_uploads_event ON uploads(event_id);
 
+-- Add replied_at to messages for inbox correlation
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS replied_at TIMESTAMPTZ;
+
+-- Inbox sync tracking
+CREATE TABLE inbox_sync_state (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  account_email TEXT NOT NULL UNIQUE,
+  last_sync_at TIMESTAMPTZ,
+  last_email_id TEXT,
+  unread_count INT DEFAULT 0,
+  status TEXT DEFAULT 'connected' CHECK (status IN ('connected','error','disconnected')),
+  error_message TEXT,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+INSERT INTO inbox_sync_state (account_email) VALUES
+  ('jb@gofpblock.com'),
+  ('wes@gofpblock.com');
+
+-- Cached inbound emails for the inbox view
+CREATE TABLE inbound_emails (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  account_email TEXT NOT NULL,
+  message_id TEXT NOT NULL UNIQUE,
+  from_address TEXT NOT NULL,
+  from_name TEXT,
+  subject TEXT,
+  body_preview TEXT,
+  body_html TEXT,
+  received_at TIMESTAMPTZ NOT NULL,
+  is_read BOOLEAN DEFAULT false,
+  contact_id UUID REFERENCES contacts(id),
+  correlated_message_id UUID REFERENCES messages(id),
+  correlation_type TEXT CHECK (correlation_type IN ('exact_email','domain_match','manual','none')),
+  raw_headers JSONB,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_inbound_emails_account ON inbound_emails(account_email);
+CREATE INDEX idx_inbound_emails_contact ON inbound_emails(contact_id);
+CREATE INDEX idx_inbound_emails_received ON inbound_emails(received_at DESC);
+CREATE INDEX idx_inbound_emails_from ON inbound_emails(from_address);
+
 -- RPC for message status counts (used by dashboard, was missing from schema)
 CREATE OR REPLACE FUNCTION message_status_counts()
 RETURNS TABLE(status TEXT, count BIGINT) AS $$
@@ -420,7 +534,7 @@ RETURNS TABLE(status TEXT, count BIGINT) AS $$
 $$ LANGUAGE sql STABLE;
 ```
 
-## 7. File Structure (new/modified)
+## 8. File Structure (new/modified)
 
 ```
 app/admin/
@@ -440,6 +554,8 @@ app/admin/
   sequences/
     page.tsx                    (NEW — sequence list)
     [id]/page.tsx               (NEW — sequence detail/editor)
+  inbox/
+    page.tsx                    (NEW — unified inbox with correlation)
   enrichment/
     page.tsx                    (NEW — enrichment runner + history)
   uploads/
@@ -453,6 +569,12 @@ app/admin/
 app/api/
   enrich/
     route.ts                    (NEW — Apollo enrichment API route)
+  inbox/
+    route.ts                    (NEW — Fastmail JMAP fetch + correlation)
+    sync/
+      route.ts                  (NEW — manual sync trigger)
+  telegram/
+    route.ts                    (NEW — webhook receiver for future use)
 
 components/admin/
   sidebar.tsx                   (modified — expanded nav, collapse, glass)
@@ -485,7 +607,10 @@ components/ui/
 app/globals.css                 (modified — grid pattern, glass utilities, font imports)
 app/layout.tsx                  (modified — Poppins + Inter via next/font)
 
-lib/types/database.ts           (modified — add Sequence, SequenceEnrollment, Upload types)
+lib/types/database.ts           (modified — add Sequence, SequenceEnrollment, Upload, InboundEmail, InboxSyncState types)
+lib/telegram.ts                 (NEW — Telegram Bot API notification utility)
+lib/fastmail.ts                 (NEW — Fastmail JMAP client wrapper)
+lib/inbox-correlator.ts         (NEW — email-to-contact correlation logic)
 
 supabase/migrations/
   002_sequences_uploads.sql     (NEW)
