@@ -1,0 +1,648 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import {
+  Mail,
+  RefreshCw,
+  CheckCircle,
+  AlertCircle,
+  Link2,
+  Eye,
+  EyeOff,
+  X,
+  Search,
+  Loader2,
+} from "lucide-react";
+import { GlassCard } from "@/components/ui/glass-card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import type { InboxSyncState } from "@/lib/types/database";
+import type { InboundEmailWithRelations } from "./page";
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+
+interface InboxClientProps {
+  initialSyncStates: InboxSyncState[];
+  initialEmails: InboundEmailWithRelations[];
+}
+
+// ---------------------------------------------------------------------------
+// Filters
+// ---------------------------------------------------------------------------
+
+type CorrelationFilter = "all" | "correlated" | "uncorrelated";
+type AccountFilter = "both" | "jb" | "wes";
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export function InboxClient({
+  initialSyncStates,
+  initialEmails,
+}: InboxClientProps) {
+  const [syncStates, setSyncStates] = useState(initialSyncStates);
+  const [emails, setEmails] = useState(initialEmails);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [correlationFilter, setCorrelationFilter] =
+    useState<CorrelationFilter>("all");
+  const [accountFilter, setAccountFilter] = useState<AccountFilter>("both");
+  const [syncing, setSyncing] = useState<Record<string, boolean>>({});
+  const [linkModal, setLinkModal] = useState<string | null>(null);
+  const [contactSearch, setContactSearch] = useState("");
+  const [contactResults, setContactResults] = useState<
+    { id: string; full_name: string; email: string | null }[]
+  >([]);
+  const [linking, setLinking] = useState(false);
+
+  const selectedEmail = emails.find((e) => e.id === selectedId) || null;
+
+  // -------------------------------------------------------------------------
+  // Filtered emails
+  // -------------------------------------------------------------------------
+
+  const filtered = emails.filter((e) => {
+    if (correlationFilter === "correlated" && !e.contact_id) return false;
+    if (correlationFilter === "uncorrelated" && e.contact_id) return false;
+    if (accountFilter === "jb" && !e.account_email.startsWith("jb")) return false;
+    if (accountFilter === "wes" && !e.account_email.startsWith("wes"))
+      return false;
+    return true;
+  });
+
+  // -------------------------------------------------------------------------
+  // Sync handler
+  // -------------------------------------------------------------------------
+
+  const handleSync = useCallback(async (accountEmail: string) => {
+    setSyncing((prev) => ({ ...prev, [accountEmail]: true }));
+    try {
+      const res = await fetch("/api/inbox/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountEmail }),
+      });
+      if (res.ok) {
+        // Refresh page data by re-fetching emails
+        const emailsRes = await fetch("/api/inbox");
+        if (emailsRes.ok) {
+          const data = await emailsRes.json();
+          if (data.emails) {
+            // Re-fetch from server for consistent data — just reload
+            window.location.reload();
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Sync failed:", err);
+    } finally {
+      setSyncing((prev) => ({ ...prev, [accountEmail]: false }));
+    }
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // Mark as read
+  // -------------------------------------------------------------------------
+
+  const handleMarkRead = useCallback(
+    async (emailId: string) => {
+      setEmails((prev) =>
+        prev.map((e) => (e.id === emailId ? { ...e, is_read: true } : e))
+      );
+      // Optimistic — fire and forget
+      fetch("/api/inbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emailId, action: "mark_read" }),
+      }).catch(() => {});
+    },
+    []
+  );
+
+  // -------------------------------------------------------------------------
+  // Link to Contact modal
+  // -------------------------------------------------------------------------
+
+  const searchContacts = useCallback(async (query: string) => {
+    setContactSearch(query);
+    if (query.length < 2) {
+      setContactResults([]);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/inbox?search=${encodeURIComponent(query)}&type=contacts`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setContactResults(data.contacts || []);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleLinkContact = useCallback(
+    async (emailId: string, contactId: string) => {
+      setLinking(true);
+      try {
+        const res = await fetch("/api/inbox", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ emailId, contactId }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setEmails((prev) =>
+            prev.map((e) =>
+              e.id === emailId
+                ? {
+                    ...e,
+                    contact_id: contactId,
+                    correlation_type: "manual" as const,
+                    contact: data.contact
+                      ? {
+                          id: data.contact.id,
+                          full_name: data.contact.full_name,
+                          email: null,
+                        }
+                      : e.contact,
+                  }
+                : e
+            )
+          );
+          setLinkModal(null);
+          setContactSearch("");
+          setContactResults([]);
+        }
+      } catch {
+        // ignore
+      } finally {
+        setLinking(false);
+      }
+    },
+    []
+  );
+
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
+
+  return (
+    <div className="space-y-6">
+      {/* Connected Accounts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {(syncStates.length > 0
+          ? syncStates
+          : [
+              {
+                id: "default-jb",
+                account_email: "jb@gofpblock.com",
+                last_sync_at: null,
+                last_email_id: null,
+                unread_count: 0,
+                status: "disconnected" as const,
+                error_message: null,
+                updated_at: new Date().toISOString(),
+              },
+              {
+                id: "default-wes",
+                account_email: "wes@gofpblock.com",
+                last_sync_at: null,
+                last_email_id: null,
+                unread_count: 0,
+                status: "disconnected" as const,
+                error_message: null,
+                updated_at: new Date().toISOString(),
+              },
+            ]
+        ).map((state) => (
+          <GlassCard key={state.account_email}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Mail className="h-5 w-5 text-white/50" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-white">
+                      {state.account_email}
+                    </span>
+                    <span
+                      className={cn(
+                        "h-2 w-2 rounded-full",
+                        state.status === "connected"
+                          ? "bg-green-500"
+                          : state.status === "error"
+                          ? "bg-red-500"
+                          : "bg-gray-500"
+                      )}
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-white/40 mt-0.5">
+                    {state.last_sync_at && (
+                      <span>
+                        Last sync:{" "}
+                        {new Date(state.last_sync_at).toLocaleString()}
+                      </span>
+                    )}
+                    <span>
+                      {state.unread_count} unread
+                    </span>
+                    {state.error_message && (
+                      <span className="text-red-400 truncate max-w-[200px]">
+                        {state.error_message}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => handleSync(state.account_email)}
+                disabled={syncing[state.account_email]}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg",
+                  "bg-white/5 border border-white/10 text-white/70",
+                  "hover:bg-white/10 hover:text-white transition-all duration-200",
+                  "disabled:opacity-50 disabled:cursor-not-allowed"
+                )}
+              >
+                <RefreshCw
+                  className={cn(
+                    "h-3 w-3",
+                    syncing[state.account_email] && "animate-spin"
+                  )}
+                />
+                Sync Now
+              </button>
+            </div>
+          </GlassCard>
+        ))}
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex gap-1 border-b border-gray-800">
+          {(
+            [
+              ["all", "All"],
+              ["correlated", "Correlated"],
+              ["uncorrelated", "Uncorrelated"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setCorrelationFilter(id)}
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+                correlationFilter === id
+                  ? "border-[#f58327] text-white"
+                  : "border-transparent text-gray-400 hover:text-white"
+              )}
+            >
+              {label}
+              <span className="ml-1 text-xs text-white/40">
+                (
+                {id === "all"
+                  ? emails.length
+                  : id === "correlated"
+                  ? emails.filter((e) => e.contact_id).length
+                  : emails.filter((e) => !e.contact_id).length}
+                )
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-1 border-b border-gray-800 ml-auto">
+          {(
+            [
+              ["both", "Both"],
+              ["jb", "JB"],
+              ["wes", "Wes"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setAccountFilter(id)}
+              className={cn(
+                "px-3 py-2 text-xs font-medium transition-colors border-b-2 -mb-px",
+                accountFilter === id
+                  ? "border-[#6e86ff] text-white"
+                  : "border-transparent text-gray-400 hover:text-white"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Two-column: email list + detail */}
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-4 min-h-[60vh]">
+        {/* Email List */}
+        <div className="space-y-1 overflow-y-auto max-h-[75vh] pr-1">
+          {filtered.length === 0 && (
+            <GlassCard className="text-center py-12">
+              <Mail className="h-8 w-8 text-white/20 mx-auto mb-3" />
+              <p className="text-white/40 text-sm">No emails to show</p>
+              <p className="text-white/25 text-xs mt-1">
+                Try syncing your accounts or adjusting filters
+              </p>
+            </GlassCard>
+          )}
+
+          {filtered.map((email) => (
+            <button
+              key={email.id}
+              onClick={() => {
+                setSelectedId(email.id);
+                if (!email.is_read) handleMarkRead(email.id);
+              }}
+              className={cn(
+                "w-full text-left rounded-xl transition-all duration-200",
+                "bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl",
+                "hover:bg-white/[0.06] hover:border-white/10",
+                "p-3",
+                selectedId === email.id &&
+                  "bg-white/[0.06] border-[#f58327]/30 shadow-[0_0_12px_rgba(245,131,39,0.08)]",
+                !email.is_read && "border-l-2 border-l-[#f58327]"
+              )}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "text-sm truncate",
+                        !email.is_read
+                          ? "font-semibold text-white"
+                          : "font-medium text-white/70"
+                      )}
+                    >
+                      {email.from_name || email.from_address}
+                    </span>
+                    {email.contact_id && email.contact && (
+                      <Badge variant="replied" className="text-[10px] shrink-0">
+                        {email.contact.full_name}
+                        {email.company?.icp_score
+                          ? ` (${email.company.icp_score})`
+                          : ""}
+                      </Badge>
+                    )}
+                  </div>
+                  <p
+                    className={cn(
+                      "text-xs truncate mt-0.5",
+                      !email.is_read ? "text-white/80" : "text-white/50"
+                    )}
+                  >
+                    {email.subject || "(no subject)"}
+                  </p>
+                  <p className="text-xs text-white/30 truncate mt-0.5">
+                    {email.body_preview?.slice(0, 80) || ""}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <span className="text-[10px] text-white/30">
+                    {formatRelativeTime(email.received_at)}
+                  </span>
+                  <div className="text-[10px] text-white/20 mt-0.5">
+                    {email.account_email.startsWith("jb") ? "JB" : "Wes"}
+                  </div>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Email Detail */}
+        <div className="min-h-[400px]">
+          {!selectedEmail ? (
+            <GlassCard className="h-full flex items-center justify-center">
+              <div className="text-center">
+                <Mail className="h-10 w-10 text-white/10 mx-auto mb-3" />
+                <p className="text-white/30 text-sm">
+                  Select an email to view
+                </p>
+              </div>
+            </GlassCard>
+          ) : (
+            <GlassCard className="h-full overflow-y-auto max-h-[75vh]">
+              {/* Correlated contact card */}
+              {selectedEmail.contact_id && selectedEmail.contact && (
+                <div className="mb-4 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-emerald-400" />
+                      <span className="text-sm font-medium text-emerald-300">
+                        {selectedEmail.contact.full_name}
+                      </span>
+                      {selectedEmail.company && (
+                        <span className="text-xs text-white/40">
+                          at {selectedEmail.company.name}
+                        </span>
+                      )}
+                      {selectedEmail.company?.icp_score && (
+                        <Badge variant="approved" className="text-[10px]">
+                          ICP: {selectedEmail.company.icp_score}
+                        </Badge>
+                      )}
+                    </div>
+                    <a
+                      href={`/admin/contacts/${selectedEmail.contact_id}`}
+                      className="text-xs text-[#6e86ff] hover:underline"
+                    >
+                      View Contact
+                    </a>
+                  </div>
+                  {selectedEmail.correlation_type && (
+                    <p className="text-[10px] text-white/30 mt-1">
+                      Matched via {selectedEmail.correlation_type.replace("_", " ")}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Email header */}
+              <div className="mb-4 space-y-1">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-white font-[family-name:var(--font-heading)]">
+                    {selectedEmail.subject || "(no subject)"}
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-white/40">
+                  <span>
+                    From: {selectedEmail.from_name || selectedEmail.from_address}
+                    {selectedEmail.from_name && (
+                      <span className="ml-1 text-white/25">
+                        &lt;{selectedEmail.from_address}&gt;
+                      </span>
+                    )}
+                  </span>
+                  <span>|</span>
+                  <span>To: {selectedEmail.account_email}</span>
+                  <span>|</span>
+                  <span>
+                    {new Date(selectedEmail.received_at).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 mb-4 pb-4 border-b border-white/5">
+                <button
+                  onClick={() => handleMarkRead(selectedEmail.id)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg",
+                    "bg-white/5 border border-white/10 text-white/70",
+                    "hover:bg-white/10 hover:text-white transition-all duration-200"
+                  )}
+                >
+                  {selectedEmail.is_read ? (
+                    <EyeOff className="h-3 w-3" />
+                  ) : (
+                    <Eye className="h-3 w-3" />
+                  )}
+                  {selectedEmail.is_read ? "Mark Unread" : "Mark Read"}
+                </button>
+                {!selectedEmail.contact_id && (
+                  <button
+                    onClick={() => setLinkModal(selectedEmail.id)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg",
+                      "bg-[#6e86ff]/10 border border-[#6e86ff]/20 text-[#6e86ff]",
+                      "hover:bg-[#6e86ff]/20 transition-all duration-200"
+                    )}
+                  >
+                    <Link2 className="h-3 w-3" />
+                    Link to Contact
+                  </button>
+                )}
+                <button
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg",
+                    "bg-white/5 border border-white/10 text-white/40",
+                    "hover:bg-white/10 hover:text-white/60 transition-all duration-200"
+                  )}
+                >
+                  <X className="h-3 w-3" />
+                  Ignore
+                </button>
+              </div>
+
+              {/* Email body */}
+              {selectedEmail.body_html ? (
+                <div
+                  className="prose prose-invert prose-sm max-w-none text-white/70 [&_a]:text-[#6e86ff]"
+                  dangerouslySetInnerHTML={{
+                    __html: selectedEmail.body_html,
+                  }}
+                />
+              ) : (
+                <p className="text-sm text-white/50 whitespace-pre-wrap">
+                  {selectedEmail.body_preview || "(no content)"}
+                </p>
+              )}
+            </GlassCard>
+          )}
+        </div>
+      </div>
+
+      {/* Link to Contact Modal */}
+      {linkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <GlassCard className="w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-white font-[family-name:var(--font-heading)]">
+                Link to Contact
+              </h3>
+              <button
+                onClick={() => {
+                  setLinkModal(null);
+                  setContactSearch("");
+                  setContactResults([]);
+                }}
+                className="text-white/40 hover:text-white transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
+              <input
+                type="text"
+                value={contactSearch}
+                onChange={(e) => searchContacts(e.target.value)}
+                placeholder="Search contacts by name or email..."
+                className={cn(
+                  "w-full pl-9 pr-3 py-2 text-sm rounded-lg",
+                  "bg-white/5 border border-white/10 text-white placeholder:text-white/30",
+                  "focus:outline-none focus:border-[#6e86ff]/40 transition-colors"
+                )}
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-1 max-h-[240px] overflow-y-auto">
+              {contactResults.length === 0 && contactSearch.length >= 2 && (
+                <p className="text-xs text-white/30 text-center py-4">
+                  No contacts found
+                </p>
+              )}
+              {contactResults.map((contact) => (
+                <button
+                  key={contact.id}
+                  disabled={linking}
+                  onClick={() => handleLinkContact(linkModal, contact.id)}
+                  className={cn(
+                    "w-full text-left p-2.5 rounded-lg",
+                    "bg-white/[0.02] border border-white/[0.06]",
+                    "hover:bg-white/[0.06] transition-all duration-200",
+                    "disabled:opacity-50"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm text-white">
+                        {contact.full_name}
+                      </span>
+                      {contact.email && (
+                        <span className="text-xs text-white/30 ml-2">
+                          {contact.email}
+                        </span>
+                      )}
+                    </div>
+                    {linking && (
+                      <Loader2 className="h-3 w-3 text-white/40 animate-spin" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </GlassCard>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60_000);
+
+  if (diffMins < 1) return "now";
+  if (diffMins < 60) return `${diffMins}m`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d`;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
