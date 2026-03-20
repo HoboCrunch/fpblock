@@ -7,7 +7,8 @@ Redesign the /admin application from a basic dashboard into a full CRM for manag
 ## 1. Design System
 
 ### Colors
-- **Background:** `#0f0f13` with subtle grid pattern (48px grid, `rgba(255,255,255,0.03)`)
+- **Background:** `#0f0f13` — override Tailwind's gray-950 via CSS custom property `--bg-app`
+- **Grid pattern:** 48px grid, stroke `rgba(255,255,255,0.03)`
 - **Surface (glass):** `rgba(255,255,255,0.03)` background, `backdrop-blur-xl`, `border: 1px solid rgba(255,255,255,0.06)`
 - **Surface hover:** `rgba(255,255,255,0.06)` with subtle border glow at accent color, low opacity
 - **Primary accent:** `#f58327` (orange) — active nav, primary buttons, progress indicators
@@ -15,17 +16,20 @@ Redesign the /admin application from a basic dashboard into a full CRM for manag
 - **Status colors (unchanged):**
   - Draft: `yellow-500`
   - Scheduled: `blue-500`
+  - Sending: `orange-400`
   - Sent: `green-500`
+  - Delivered: `green-400`
+  - Opened: `teal-400`
   - Replied: `emerald-500`
-  - Bounced/Failed: `red-500`
-  - Approved: `purple-500`
-  - Processing: `orange-500`
+  - Bounced: `red-500`
+  - Failed: `red-600`
 - **Text:** White for headings, `rgba(255,255,255,0.7)` for body, `rgba(255,255,255,0.4)` for secondary
 
 ### Typography
-- **Headings:** Poppins, semibold
-- **Body:** Inter, regular
+- **Headings:** Poppins via `next/font/google`, semibold
+- **Body:** Inter via `next/font/google`, regular
 - **Mono:** Geist Mono (keep existing)
+- Loaded in root `layout.tsx` using Next.js `next/font` — set as CSS variables `--font-heading` and `--font-body`
 
 ### Borders & Radius
 - Cards: `rounded-xl`
@@ -36,21 +40,31 @@ Redesign the /admin application from a basic dashboard into a full CRM for manag
 - All interactive elements: `transition-all duration-200`
 - Hover border glow: box-shadow with accent color at 0.1 opacity
 
+### Loading, Error, and Empty States
+- **Loading:** Glass card skeleton with pulsing `animate-pulse` bars matching the layout of the expected content
+- **Error:** Glass card with red-tinted border, error message, and retry button
+- **Empty:** Glass card with centered icon, descriptive text, and CTA button (e.g., "No contacts yet — Upload a CSV")
+
+### Responsive Behavior
+- **Desktop (≥1024px):** Full sidebar + main content
+- **Tablet (768–1023px):** Collapsed sidebar (icon-only) + main content
+- **Mobile (<768px):** Hidden sidebar with hamburger toggle, kanban columns scroll horizontally with snap
+
 ## 2. Layout Shell
 
 ### Sidebar (`w-60`, fixed left)
 - Glass panel background
 - Top: FP Block logo/wordmark
-- Nav items with Lucide-style SVG icons:
-  1. Dashboard (LayoutDashboard)
-  2. Contacts (Users)
-  3. Companies (Building2)
-  4. Events (Calendar)
-  5. Pipeline (Kanban)
-  6. Sequences (GitBranch)
-  7. Enrichment (Sparkles)
-  8. Uploads (Upload)
-  9. Settings (Settings) — pinned to bottom
+- Nav items with Lucide React icons:
+  1. Dashboard (`LayoutDashboard`)
+  2. Contacts (`Users`)
+  3. Companies (`Building2`)
+  4. Events (`Calendar`)
+  5. Pipeline (`Kanban`)
+  6. Sequences (`GitBranch`)
+  7. Enrichment (`Sparkles`)
+  8. Uploads (`Upload`)
+  9. Settings (`Settings`) — pinned to bottom
 - Active item: orange left border (3px) + orange text
 - Inactive: `rgba(255,255,255,0.4)` text, hover → `rgba(255,255,255,0.7)`
 - Events section: collapsible sub-items showing individual events
@@ -73,14 +87,15 @@ Redesign the /admin application from a basic dashboard into a full CRM for manag
 **Layout:** 2-column grid on desktop, single column on mobile.
 
 **Top row — Stat cards (4 across):**
-- Contacts, Companies, Drafts, Sent
+- Contacts, Companies, Messages (total), Replied
 - Each card: glass surface, large number (Poppins, `text-3xl`), label below, accent-colored icon top-right
 - Placeholder area for future sparkline/trend
 
 **Middle — Pipeline funnel:**
-- Horizontal stacked bar showing contact distribution across stages
-- Each segment colored by status, labeled with count
+- Horizontal stacked bar showing contact distribution across ALL stages: Not Contacted, Draft, Scheduled, Sent, Delivered, Opened, Replied, Bounced, Failed
+- Each segment colored by its status color, labeled with count
 - Glass card container
+- Clickable segments → filter Pipeline page to that stage
 
 **Bottom left — Recent Activity:**
 - Feed of `job_log` entries
@@ -91,7 +106,7 @@ Redesign the /admin application from a basic dashboard into a full CRM for manag
 - Glass card with 3 action buttons:
   - Upload CSV → `/admin/uploads`
   - Run Enrichment → `/admin/enrichment`
-  - Review Drafts → `/admin/queue` (renamed to pipeline drafts tab)
+  - Review Drafts → `/admin/pipeline?stage=draft`
 
 ### 3.2 Contacts (`/admin/contacts`)
 
@@ -101,15 +116,24 @@ Redesign the /admin application from a basic dashboard into a full CRM for manag
 - Search input (glass styled, placeholder "Search contacts...")
 - Filter dropdowns: ICP score range, Has Email (y/n), Outreach Status, Event, Company
 
+**Computed columns:**
+- **ICP Score:** Derived from the contact's primary company's `icp_score` via the `contact_company` join (same as existing `contact-table.tsx` behavior). No new column on `contacts` table.
+- **Outreach Status:** The most advanced `messages.status` for that contact, ordered: failed < bounced < draft < scheduled < sending < sent < delivered < opened < replied. Computed via a subquery: `SELECT status FROM messages WHERE contact_id = ? ORDER BY CASE status ... END DESC LIMIT 1`. If no messages exist, status is "Not Contacted".
+- **Last Touched:** `MAX(messages.updated_at)` for the contact. If no messages, falls back to `contact.created_at`.
+
 **Table:**
 | Name | Company | Title | ICP | Channels | Outreach Status | Last Touched |
 |------|---------|-------|-----|----------|----------------|--------------|
-| Link | Text | Text | Badge | Icon dots (email/linkedin/twitter/telegram) | Status badge | Date |
+| Link | Text | Text | Badge (company ICP) | Icon dots for populated channels | Status badge | Date |
 
+- **Channels column:** Shows small icons for each channel the contact has data for (email icon if `email` is populated, LinkedIn icon if `linkedin` is populated, etc.)
 - Row click → `/admin/contacts/[id]` (existing page, restyled)
 - Checkbox column for multi-select
-- **Bulk actions toolbar** (appears on selection): Enrich Selected, Generate Messages, Add to Sequence
-- Pagination at bottom
+- **Bulk actions toolbar** (appears on selection):
+  - **Enrich Selected:** Navigates to `/admin/enrichment?contacts=id1,id2,...` with those contacts pre-selected
+  - **Generate Messages:** Opens modal — select Event, Channel, Prompt Template → creates draft messages via server action
+  - **Add to Sequence:** Opens modal — select Sequence → creates enrollments via server action
+- Pagination at bottom (25 per page)
 
 **Contact detail page (`/admin/contacts/[id]`):**
 - Restyle existing page with glass cards
@@ -126,10 +150,10 @@ Redesign the /admin application from a basic dashboard into a full CRM for manag
 **Table:**
 | Name | Category | ICP Score | Contacts | Signals | Last Signal |
 |------|----------|-----------|----------|---------|-------------|
-| Link | Text | Badge | Count | Count | Date |
+| Link | Text | Badge | Count (from contact_company) | Count (from company_signals) | Date (MAX company_signals.date) |
 
 - Row click → `/admin/companies/[id]` (existing page, restyled)
-- Pagination
+- Pagination (25 per page)
 
 **Company detail page (`/admin/companies/[id]`):**
 - Restyle existing page with glass cards
@@ -155,12 +179,29 @@ Redesign the /admin application from a basic dashboard into a full CRM for manag
 
 **Filter bar:**
 - Event selector, Channel filter, ICP range, Date range
+- URL query params for filters (e.g., `?stage=draft` from Dashboard Quick Action)
+
+**Data model:** The pipeline operates on **contacts**, not messages. Each contact appears once, in the column matching their most advanced outreach status (same logic as Contacts page "Outreach Status" column).
+
+**Kanban columns and their status mappings:**
+| Column | Maps to |
+|--------|---------|
+| Not Contacted | Contact has zero messages |
+| Draft | Most advanced status is `draft` |
+| Scheduled | Most advanced status is `scheduled` |
+| Sent | Most advanced status is `sending`, `sent`, or `delivered` |
+| Opened | Most advanced status is `opened` |
+| Replied | Most advanced status is `replied` |
+| Bounced/Failed | Most advanced status is `bounced` or `failed` |
 
 **Kanban view:**
-- Columns: Not Contacted, Drafted, Scheduled, Sent, Replied, Bounced
 - Each column: glass background, column header with count badge
-- Cards: Contact name, company name, channel icon, ICP badge (small)
-- Cards are draggable between columns (client-side drag, triggers Supabase status update on drop)
+- Cards: Contact name, company name, channel icon, ICP badge (small, showing company ICP)
+- Cards are draggable between columns — **drag behavior:**
+  - Moving a card RIGHT (to a more advanced stage): Updates the most recent message's `status` to the target column's primary status
+  - Moving a card LEFT (to an earlier stage): Creates a new message with `status = draft` and `iteration + 1` (resets them in the sequence)
+  - Moving FROM "Not Contacted": Creates a new `draft` message (modal appears to select channel + event)
+  - Moving TO "Not Contacted": Not allowed (cannot un-contact someone)
 - Column scroll if overflow
 
 **Table view:**
@@ -181,53 +222,74 @@ Redesign the /admin application from a basic dashboard into a full CRM for manag
 - Sequence name + metadata at top
 - Visual step timeline:
   - Vertical list of steps, each as a glass card
-  - Step card: Day number, action type (initial/follow-up/break-up), message template preview
+  - Step card: Day number, action type, subject line (if email), message template preview
   - Add Step button at bottom
 - Right sidebar: enrolled contacts list with current step indicator
 
-**Data model note:** Sequences map to the existing `messages` table via `sequence_number` and `iteration` fields. A "sequence" is conceptually a named group of message templates with timing rules. This may require a new `sequences` table:
-
-```sql
-CREATE TABLE sequences (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  channel TEXT NOT NULL,
-  event_id UUID REFERENCES events(id),
-  steps JSONB NOT NULL DEFAULT '[]',
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE TABLE sequence_enrollments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  sequence_id UUID REFERENCES sequences(id),
-  contact_id UUID REFERENCES contacts(id),
-  current_step INT DEFAULT 0,
-  status TEXT DEFAULT 'active',
-  enrolled_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(sequence_id, contact_id)
-);
+**Sequence step JSONB schema:**
+```json
+{
+  "steps": [
+    {
+      "step_number": 1,
+      "delay_days": 0,
+      "action_type": "initial",
+      "subject_template": "Hey {first_name}",
+      "body_template": "Hi {first_name}, ...",
+      "prompt_template_id": null
+    },
+    {
+      "step_number": 2,
+      "delay_days": 3,
+      "action_type": "follow_up",
+      "subject_template": "Re: {previous_subject}",
+      "body_template": "Just following up...",
+      "prompt_template_id": null
+    },
+    {
+      "step_number": 3,
+      "delay_days": 7,
+      "action_type": "break_up",
+      "subject_template": null,
+      "body_template": "Last note from me...",
+      "prompt_template_id": null
+    }
+  ]
+}
 ```
+
+- `delay_days`: Days after enrollment (step 1) or after previous step (steps 2+) to send
+- `action_type`: One of `initial`, `follow_up`, `break_up`
+- `subject_template`: For email channel only; null for LinkedIn/Twitter DMs
+- `body_template`: Message body with `{first_name}`, `{company_name}`, `{usp}` placeholders
+- `prompt_template_id`: Optional — if set, uses the linked prompt template to AI-generate the message instead of using `body_template`
+
+**Sequence progression:** Not automated in this phase. Users manually advance contacts through steps from the sequence detail page (click "Send Next Step" per contact). Future: Supabase Edge Function cron to auto-progress based on `delay_days`.
 
 ### 3.7 Enrichment (`/admin/enrichment`)
 
 **New page.**
 
+**Architecture:** Enrichment runs via a **Next.js API route** (`app/api/enrich/route.ts`) that calls the Apollo API directly (porting the logic from `scripts/apollo_enrich.py`). The API route accepts a list of contact IDs and fields to enrich, processes them sequentially, updates the contacts table, and logs results to `job_log`.
+
 **Top section — Run Enrichment:**
 - Glass card with:
   - Source selector: Apollo (default, only option for now)
-  - Target selector: "All unenriched contacts" / "Selected contacts" / "Contacts from event X"
+  - Target selector: "All unenriched contacts" / "Selected contacts" (from URL params) / "Contacts from event X"
   - Fields to enrich: checkboxes (Email, LinkedIn, Twitter, Phone)
-  - Run button (orange primary)
+  - Run button (orange primary) → calls `POST /api/enrich` → shows progress bar
+  - Progress: polls `job_log` entry for status updates
 
 **Bottom section — Job History:**
 - Table of past enrichment runs from `job_log` where `job_type = 'enrichment'`
 - Columns: Date, Source, Contacts Processed, Emails Found, LinkedIn Found, Status
-- Row expand → detailed results
+- Row expand → detailed results from `job_log.metadata`
 
 ### 3.8 Uploads (`/admin/uploads`)
 
 **New page.**
+
+**Architecture:** CSV parsing happens client-side via `papaparse`. Import processing happens via a **Next.js server action** (`app/admin/uploads/actions.ts`) that receives the mapped rows and creates contacts/companies in Supabase.
 
 **Upload zone:**
 - Large drag-and-drop area (glass card, dashed border)
@@ -238,17 +300,17 @@ CREATE TABLE sequence_enrollments (
 - Left column: detected CSV headers
 - Right column: dropdown to map to contact/company fields
 - Auto-match obvious columns (name → full_name, email → email, etc.)
-- Preview: first 10 rows with mapped data
+- Preview: first 10 rows with mapped data in a glass table
 
 **Import config:**
 - Event selector: which event to link imported contacts to
 - Import as: Contacts / Companies / Both
-- Duplicate handling: Skip / Update / Create new
+- Duplicate handling: Skip / Update / Create new (matched on email for contacts, name for companies)
 
-**Import button → processes rows, shows progress**
+**Import button → calls server action → shows progress → redirects to contacts list on completion**
 
 **Upload history (below):**
-- Table of past imports: Date, Filename, Rows Imported, Contacts Created, Companies Created
+- Table from `uploads` table: Date, Filename, Rows Imported, Contacts Created, Companies Created, Status
 
 ### 3.9 Settings (`/admin/settings`)
 
@@ -267,7 +329,9 @@ CREATE TABLE sequence_enrollments (
 - Add/Edit: name, trigger_table, trigger_event, conditions (JSON editor), action, action_params
 
 **Event Config tab:**
-- Per-event settings: sender, CTA URL/text, prompt template, notify emails
+- Editable table with one row per event
+- Columns: Event Name (read-only), Sender (dropdown), CTA URL (input), CTA Text (input), Prompt Template (dropdown), Notify Emails (input)
+- Inline editing with save button per row
 
 ## 4. New Shared Components
 
@@ -298,15 +362,17 @@ CREATE TABLE sequence_enrollments (
 
 ## 5. New Dependencies
 
-- `@hello-pangea/dnd` — drag and drop for kanban (React 19 compatible fork of react-beautiful-dnd)
-- `lucide-react` — icon library (consistent with modern Next.js apps)
+- `@hello-pangea/dnd` — drag and drop for kanban. If React 19 incompatible at build time, fallback to native HTML drag-and-drop API with custom implementation.
+- `lucide-react` — icon library
 - `papaparse` — CSV parsing for uploads (client-side)
+- `@types/papaparse` — TypeScript types for papaparse
 
 ## 6. Schema Changes
 
-New tables needed for Sequences feature:
+New migration `002_sequences_uploads.sql`:
 
 ```sql
+-- Sequences
 CREATE TABLE sequences (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -329,11 +395,9 @@ CREATE TABLE sequence_enrollments (
 
 CREATE INDEX idx_sequence_enrollments_sequence ON sequence_enrollments(sequence_id);
 CREATE INDEX idx_sequence_enrollments_contact ON sequence_enrollments(contact_id);
-```
+CREATE INDEX idx_sequences_event ON sequences(event_id);
 
-New `uploads` table for tracking imports:
-
-```sql
+-- Uploads
 CREATE TABLE uploads (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   filename TEXT NOT NULL,
@@ -341,11 +405,19 @@ CREATE TABLE uploads (
   contacts_created INT DEFAULT 0,
   companies_created INT DEFAULT 0,
   event_id UUID REFERENCES events(id),
-  status TEXT DEFAULT 'processing',
+  status TEXT DEFAULT 'processing' CHECK (status IN ('processing','completed','failed')),
   errors JSONB,
   uploaded_by UUID,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE INDEX idx_uploads_event ON uploads(event_id);
+
+-- RPC for message status counts (used by dashboard, was missing from schema)
+CREATE OR REPLACE FUNCTION message_status_counts()
+RETURNS TABLE(status TEXT, count BIGINT) AS $$
+  SELECT status, COUNT(*) FROM messages GROUP BY status;
+$$ LANGUAGE sql STABLE;
 ```
 
 ## 7. File Structure (new/modified)
@@ -372,10 +444,15 @@ app/admin/
     page.tsx                    (NEW — enrichment runner + history)
   uploads/
     page.tsx                    (NEW — CSV upload + mapper)
+    actions.ts                  (NEW — server action for import processing)
   settings/
     page.tsx                    (NEW — tabbed settings)
   queue/
     page.tsx                    (REMOVE — replaced by pipeline)
+
+app/api/
+  enrich/
+    route.ts                    (NEW — Apollo enrichment API route)
 
 components/admin/
   sidebar.tsx                   (modified — expanded nav, collapse, glass)
@@ -406,6 +483,9 @@ components/ui/
   stat-card.tsx                 (NEW)
 
 app/globals.css                 (modified — grid pattern, glass utilities, font imports)
+app/layout.tsx                  (modified — Poppins + Inter via next/font)
+
+lib/types/database.ts           (modified — add Sequence, SequenceEnrollment, Upload types)
 
 supabase/migrations/
   002_sequences_uploads.sql     (NEW)
