@@ -32,7 +32,16 @@ BRAVE_SEARCH_API_KEY=...
 PERPLEXITY_API_KEY=...
 SENDGRID_API_KEY=...
 HEYREACH_API_KEY=...
+
+# Fastmail (for inbox sync)
+FASTMAIL_API_KEY=...
+
+# Telegram Bot (for reply/bounce notifications)
+TELEGRAM_BOT_TOKEN=...     # From @BotFather
+TELEGRAM_CHAT_ID=...       # Chat/group ID for notifications
 ```
+
+**Note:** Telegram vars are optional. If not set, notifications are silently skipped.
 
 ### 3. Start dev server
 
@@ -51,6 +60,7 @@ npm run build
 Should compile successfully with these routes:
 - `○ /jb`, `○ /wes` — static
 - `ƒ /admin/*` — dynamic (server-rendered)
+- `ƒ /api/enrich`, `/api/inbox/*` — API routes
 
 ---
 
@@ -60,11 +70,12 @@ Should compile successfully with these routes:
 
 Run these SQL files **in order** in the Supabase SQL Editor (Dashboard > SQL Editor):
 
-1. `supabase/migrations/001_schema.sql` — tables + indexes
-2. `supabase/migrations/002_rls.sql` — RLS policies
-3. `supabase/migrations/003_triggers.sql` — updated_at + automation triggers
-4. `supabase/migrations/004_cron.sql` — pg_cron jobs (send + sync)
-5. `supabase/migrations/005_rpc.sql` — message_status_counts() function
+1. `supabase/migrations/001_schema.sql` — core tables + indexes
+2. `supabase/migrations/002_sequences_uploads_inbox.sql` — sequences, uploads, inbox tables, replied_at, message_status_counts RPC
+3. `supabase/migrations/002_rls.sql` — RLS policies
+4. `supabase/migrations/003_triggers.sql` — updated_at + automation triggers
+5. `supabase/migrations/004_cron.sql` — pg_cron jobs (send + sync)
+6. `supabase/migrations/005_rpc.sql` — message_status_counts() function (also in 002, safe to run twice)
 
 Or via CLI:
 ```bash
@@ -162,13 +173,15 @@ These use `current_setting('app.settings.supabase_url')` and `current_setting('a
 
 ## Deployment Checklist
 
-- [ ] Apply migrations 001-005 to Supabase
+- [ ] Apply migrations 001, 002_sequences_uploads_inbox, 002_rls, 003, 004, 005 to Supabase
 - [ ] Run seed.sql
 - [ ] Create auth user
 - [ ] Set edge function secrets
 - [ ] Deploy all 6 edge functions
 - [ ] Set app.settings.supabase_url and app.settings.secret_key in DB config
 - [ ] Run `npx tsx scripts/migrate-csv.ts`
-- [ ] Verify: login, dashboard, event view, contact detail, company detail, queue
+- [ ] Set FASTMAIL_API_KEY in .env.local
+- [ ] Create Telegram bot and set TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID in .env.local
+- [ ] Verify: login, dashboard, contacts, companies, events, pipeline, sequences, inbox, enrichment, uploads, settings
 - [ ] Verify: `/jb` and `/wes` landing pages render
 - [ ] Deploy Next.js app (Vercel or similar)

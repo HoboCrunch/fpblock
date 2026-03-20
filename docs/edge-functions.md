@@ -1,6 +1,6 @@
-# Edge Functions
+# Edge Functions & API Routes
 
-Six Supabase Edge Functions (Deno runtime). All live in `supabase/functions/`.
+Six Supabase Edge Functions (Deno runtime) in `supabase/functions/`, plus Next.js API routes in `app/api/` for enrichment and inbox sync.
 
 ## Shared
 
@@ -172,6 +172,61 @@ All functions handle OPTIONS preflight and return JSON responses.
 
 ---
 
+## Next.js API Routes
+
+These live in `app/api/` and run in the Next.js server (not Deno). They use server-side Supabase client and have access to `.env.local` variables.
+
+### POST /api/enrich
+
+**Path:** `app/api/enrich/route.ts`
+
+Triggers Apollo enrichment for selected contacts. Creates a `job_log` entry with `job_type = 'enrichment'` and status `processing`. Returns the job ID for polling.
+
+**Input:**
+```json
+{
+  "contactIds": ["uuid1", "uuid2"],
+  "fields": ["email", "linkedin", "twitter", "phone"]
+}
+```
+
+**Note:** Currently creates the job log entry only. Full Apollo API integration to be ported from `scripts/apollo_enrich.py`.
+
+### GET /api/inbox
+
+**Path:** `app/api/inbox/route.ts`
+
+Fetches emails from both Fastmail accounts via JMAP, runs auto-correlation against pipeline contacts, stores in `inbound_emails` table, and sends Telegram notifications for matches.
+
+Returns the fetched and correlated emails.
+
+### POST /api/inbox
+
+Manual "Link to Contact" action for uncorrelated emails.
+
+**Input:**
+```json
+{
+  "emailId": "uuid",
+  "contactId": "uuid"
+}
+```
+
+### POST /api/inbox/sync
+
+**Path:** `app/api/inbox/sync/route.ts`
+
+Triggers sync for a specific Fastmail account. Updates `inbox_sync_state` with timestamps and counts.
+
+**Input:**
+```json
+{
+  "accountEmail": "jb@gofpblock.com"
+}
+```
+
+---
+
 ## Environment Variables
 
 All edge functions need these Supabase-provided vars (auto-available):
@@ -188,3 +243,11 @@ Additional secrets (set via `npx supabase secrets set`):
 | `GEMINI_API_KEY` | enrich-company, generate-messages |
 | `SENDGRID_API_KEY` | send-message, sync-status |
 | `HEYREACH_API_KEY` | send-message |
+
+**Next.js API route env vars** (in `.env.local`, not Supabase secrets):
+
+| Variable | Used By |
+|----------|---------|
+| `FASTMAIL_API_KEY` | /api/inbox (JMAP auth) |
+| `TELEGRAM_BOT_TOKEN` | lib/telegram.ts (Bot API) |
+| `TELEGRAM_CHAT_ID` | lib/telegram.ts (notification target) |
