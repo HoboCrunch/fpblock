@@ -76,6 +76,7 @@ export interface Message {
   scheduled_at: string | null;
   created_at: string;
   sent_at: string | null;
+  replied_at: string | null;
 }
 
 export interface CompanySignal {
@@ -168,5 +169,75 @@ export interface JobLog {
   status: string;
   error: string | null;
   metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface Sequence {
+  id: string;
+  name: string;
+  channel: string;
+  event_id: string | null;
+  steps: SequenceStep[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SequenceStep {
+  step_number: number;
+  delay_days: number;
+  action_type: "initial" | "follow_up" | "break_up";
+  subject_template: string | null;
+  body_template: string;
+  prompt_template_id: string | null;
+}
+
+export interface SequenceEnrollment {
+  id: string;
+  sequence_id: string;
+  contact_id: string;
+  current_step: number;
+  status: "active" | "paused" | "completed" | "bounced";
+  enrolled_at: string;
+}
+
+export interface Upload {
+  id: string;
+  filename: string;
+  row_count: number | null;
+  contacts_created: number;
+  companies_created: number;
+  event_id: string | null;
+  status: "processing" | "completed" | "failed";
+  errors: Record<string, unknown> | null;
+  uploaded_by: string | null;
+  created_at: string;
+}
+
+export interface InboxSyncState {
+  id: string;
+  account_email: string;
+  last_sync_at: string | null;
+  last_email_id: string | null;
+  unread_count: number;
+  status: "connected" | "error" | "disconnected";
+  error_message: string | null;
+  updated_at: string;
+}
+
+export interface InboundEmail {
+  id: string;
+  account_email: string;
+  message_id: string;
+  from_address: string;
+  from_name: string | null;
+  subject: string | null;
+  body_preview: string | null;
+  body_html: string | null;
+  received_at: string;
+  is_read: boolean;
+  contact_id: string | null;
+  correlated_message_id: string | null;
+  correlation_type: "exact_email" | "domain_match" | "manual" | "none" | null;
+  raw_headers: Record<string, unknown> | null;
   created_at: string;
 }

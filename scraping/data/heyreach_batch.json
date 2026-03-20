@@ -1,0 +1,629 @@
+[
+  {
+    "name": "AMI NAGATA",
+    "score": "97",
+    "linkedin": "https://www.linkedin.com/in/aminagata1/",
+    "email": "ami.nagata@zodia.io",
+    "company": "ZODIA CUSTODY",
+    "updated_message": "Hey Ami, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Zodia, congrats on the support of AUDM!\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Ami",
+      "lastName": "Nagata",
+      "profileUrl": "https://www.linkedin.com/in/aminagata1/",
+      "email": "ami.nagata@zodia.io",
+      "company": "ZODIA CUSTODY",
+      "position": "Director"
+    }
+  },
+  {
+    "name": "SYLVAIN PRIGENT",
+    "score": "97",
+    "linkedin": "https://www.linkedin.com/in/sylvain-prigent-96978682/",
+    "email": "sylvain.prigent@sgforge.com",
+    "company": "SG FORGE",
+    "updated_message": "Hey Sylvain, excited to hear your talk at EthCC this year.\n\nI've been keeping up with SG Forge, love seeing the CoinVertible integration with Deutsche Borse!\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Sylvain",
+      "lastName": "Prigent",
+      "profileUrl": "https://www.linkedin.com/in/sylvain-prigent-96978682/",
+      "email": "sylvain.prigent@sgforge.com",
+      "company": "SG FORGE",
+      "position": "Founder"
+    }
+  },
+  {
+    "name": "RYAN SAUGE",
+    "score": "96",
+    "linkedin": "https://www.linkedin.com/in/ryan-sge/",
+    "email": "ryan.sauge@taurusgroup.ch",
+    "company": "TAURUS",
+    "updated_message": "Hey Ryan, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Taurus, the Scorechain partnership looks great.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Ryan",
+      "lastName": "Sauge",
+      "profileUrl": "https://www.linkedin.com/in/ryan-sge/",
+      "email": "ryan.sauge@taurusgroup.ch",
+      "company": "TAURUS",
+      "position": "Engineer"
+    }
+  },
+  {
+    "name": "JAKE RO",
+    "score": "95",
+    "linkedin": "https://www.linkedin.com/in/itisjake",
+    "email": "",
+    "company": "BITGO",
+    "updated_message": "Hey Jake, excited to hear your talk at EthCC this year.\n\nI've been keeping up with BitGo, congrats on the IPO!\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Jake",
+      "lastName": "Ro",
+      "profileUrl": "https://www.linkedin.com/in/itisjake",
+      "company": "BITGO"
+    }
+  },
+  {
+    "name": "SEBASTIAN WIDMANN",
+    "score": "95",
+    "linkedin": "https://www.linkedin.com/in/sebastianwidmann/",
+    "email": "",
+    "company": "KOMAINU",
+    "updated_message": "Hey Sebastian, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Komainu, the Blockstream partnership is a great move.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Sebastian",
+      "lastName": "Widmann",
+      "profileUrl": "https://www.linkedin.com/in/sebastianwidmann/",
+      "company": "KOMAINU",
+      "position": "Other"
+    }
+  },
+  {
+    "name": "PATRICK HANSEN",
+    "score": "95",
+    "linkedin": "https://www.linkedin.com/in/patrickghansen/",
+    "email": "patrick.hansen@circle.com",
+    "company": "CIRCLE",
+    "updated_message": "Hey Patrick, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Circle, those Q4 earnings were impressive.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Patrick",
+      "lastName": "Hansen",
+      "profileUrl": "https://www.linkedin.com/in/patrickghansen/",
+      "email": "patrick.hansen@circle.com",
+      "company": "CIRCLE",
+      "position": "Director"
+    }
+  },
+  {
+    "name": "JEAN-MARC STENGER",
+    "score": "95",
+    "linkedin": "https://www.linkedin.com/company/sgforge/",
+    "email": "jean-marc.stenger@sgforge.com",
+    "company": "SOCIETE GENERALE-FORGE",
+    "updated_message": "Hey Jean-Marc, excited to hear your talk at EthCC this year.\n\nI've been keeping up with SG Forge, the EUR CoinVertible launch on XRPL is really cool.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Jean-Marc",
+      "lastName": "Stenger",
+      "profileUrl": "https://www.linkedin.com/company/sgforge/",
+      "email": "jean-marc.stenger@sgforge.com",
+      "company": "SOCIETE GENERALE-FORGE",
+      "position": "CEO"
+    }
+  },
+  {
+    "name": "STERLING BARNETT",
+    "score": "95",
+    "linkedin": "https://www.linkedin.com/in/sterlingbarnett/",
+    "email": "sterling.barnett@circle.com",
+    "company": "CIRCLE",
+    "updated_message": "Hey Sterling, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Circle, those Q4 earnings were impressive.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Sterling",
+      "lastName": "Barnett",
+      "profileUrl": "https://www.linkedin.com/in/sterlingbarnett/",
+      "email": "sterling.barnett@circle.com",
+      "company": "CIRCLE",
+      "position": "Other"
+    }
+  },
+  {
+    "name": "JULIAN GRIGO",
+    "score": "95",
+    "linkedin": "https://www.linkedin.com/in/juliangrigo/",
+    "email": "julian@safe.global",
+    "company": "SAFE",
+    "updated_message": "Hey Julian, excited to hear your talk at EthCC this year.\n\nBig fan of what Safe is building, the smart account platform has been really impactful.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Julian",
+      "lastName": "Grigo",
+      "profileUrl": "https://www.linkedin.com/in/juliangrigo/",
+      "email": "julian@safe.global",
+      "company": "SAFE",
+      "position": "Head of Department"
+    }
+  },
+  {
+    "name": "ANYA",
+    "score": "95",
+    "linkedin": "https://www.linkedin.com/in/anya-nova/",
+    "email": "anya@gk8.io",
+    "company": "GK8 BY GALAXY",
+    "updated_message": "Hey Anya, excited to hear your talk at EthCC this year.\n\nI've been keeping up with GK8, congrats on the Best Self-Custody Solution award!\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Anya",
+      "lastName": "",
+      "profileUrl": "https://www.linkedin.com/in/anya-nova/",
+      "email": "anya@gk8.io",
+      "company": "GK8 BY GALAXY",
+      "position": "Other"
+    }
+  },
+  {
+    "name": "CHUNDA MCCAIN",
+    "score": "95",
+    "linkedin": "https://www.linkedin.com/in/chundamccain/",
+    "email": "",
+    "company": "PAXOS LABS",
+    "updated_message": "Hey Chunda, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Paxos, the USAD launch on Aleo is really interesting.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Chunda",
+      "lastName": "Mccain",
+      "profileUrl": "https://www.linkedin.com/in/chundamccain/",
+      "company": "PAXOS LABS",
+      "position": "Founder"
+    }
+  },
+  {
+    "name": "KIRK BAIRD",
+    "score": "94",
+    "linkedin": "https://www.linkedin.com/in/kirk-baird-1b734510a/",
+    "email": "kirk@sigmaprime.io",
+    "company": "SIGMA PRIME",
+    "updated_message": "Hey Kirk, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Sigma Prime, the Lunar Strategy partnership is a cool move.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Kirk",
+      "lastName": "Baird",
+      "profileUrl": "https://www.linkedin.com/in/kirk-baird-1b734510a/",
+      "email": "kirk@sigmaprime.io",
+      "company": "SIGMA PRIME",
+      "position": "Engineer"
+    }
+  },
+  {
+    "name": "ANDREW O'NEILL",
+    "score": "92",
+    "linkedin": "https://www.linkedin.com/in/andrew-o-neill-cfa-954326a1",
+    "email": "andrew.oneill@spglobal.com",
+    "company": "S&P GLOBAL RATINGS",
+    "updated_message": "Hey Andrew, excited to hear your talk at EthCC this year.\n\nI've been keeping up with S&P Global Ratings, the Ledn ratings were a big deal.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Andrew",
+      "lastName": "O'Neill",
+      "profileUrl": "https://www.linkedin.com/in/andrew-o-neill-cfa-954326a1",
+      "email": "andrew.oneill@spglobal.com",
+      "company": "S&P GLOBAL RATINGS",
+      "position": "Director"
+    }
+  },
+  {
+    "name": "CHRISTINE MOY",
+    "score": "92",
+    "linkedin": "https://www.linkedin.com/in/christine-moy/",
+    "email": "cmoy@apollo.com",
+    "company": "APOLLO",
+    "updated_message": "Hey Christine, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Apollo, the Morpho governance move is really interesting.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Christine",
+      "lastName": "Moy",
+      "profileUrl": "https://www.linkedin.com/in/christine-moy/",
+      "email": "cmoy@apollo.com",
+      "company": "APOLLO",
+      "position": "Other"
+    }
+  },
+  {
+    "name": "WOLFGANG VITALE",
+    "score": "90",
+    "linkedin": "https://www.linkedin.com/in/wavitale/",
+    "email": "wolfgang.vitale@bitcoinsuisse.com",
+    "company": "BITCOIN SUISSE AG",
+    "updated_message": "Hey Wolfgang, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Bitcoin Suisse, the Crypto Outlook 2026 report was a solid read.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Wolfgang",
+      "lastName": "Vitale",
+      "profileUrl": "https://www.linkedin.com/in/wavitale/",
+      "email": "wolfgang.vitale@bitcoinsuisse.com",
+      "company": "BITCOIN SUISSE AG",
+      "position": "Other"
+    }
+  },
+  {
+    "name": "JOS\u00c9 LUU",
+    "score": "90",
+    "linkedin": "https://www.linkedin.com/in/jose-luu",
+    "email": "jose.luu@natixis.com",
+    "company": "BPCE",
+    "updated_message": "Hey Jose, excited to hear your talk at EthCC this year.\n\nI've been keeping up with BPCE, rolling out crypto trading to millions of customers is massive.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Jos\u00e9",
+      "lastName": "Luu",
+      "profileUrl": "https://www.linkedin.com/in/jose-luu",
+      "email": "jose.luu@natixis.com",
+      "company": "BPCE",
+      "position": "Other"
+    }
+  },
+  {
+    "name": "PAMINA GEORGIEV",
+    "score": "90",
+    "linkedin": "http://www.linkedin.com/in/pamina-georgiev-90b773124",
+    "email": "pamina@certora.com",
+    "company": "CERTORA",
+    "updated_message": "Hey Pamina, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Certora, congrats on the Ethereum Foundation grant!\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Pamina",
+      "lastName": "Georgiev",
+      "profileUrl": "http://www.linkedin.com/in/pamina-georgiev-90b773124",
+      "email": "pamina@certora.com",
+      "company": "CERTORA",
+      "position": "Other"
+    }
+  },
+  {
+    "name": "NICOLAS ASSOUAD",
+    "score": "90",
+    "linkedin": "https://www.linkedin.com/in/nicolas-assouad/",
+    "email": "",
+    "company": "SPIKO",
+    "updated_message": "Hey Nicolas, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Spiko, deploying tokenized T-Bills on Arbitrum is really cool.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Nicolas",
+      "lastName": "Assouad",
+      "profileUrl": "https://www.linkedin.com/in/nicolas-assouad/",
+      "company": "SPIKO",
+      "position": "Engineer"
+    }
+  },
+  {
+    "name": "ROMAIN MENETRIER",
+    "score": "90",
+    "linkedin": "https://www.linkedin.com/in/rmenetrier/",
+    "email": "",
+    "company": "DOWGO",
+    "updated_message": "Hey Romain, excited to hear your talk at EthCC this year.\n\nBig fan of what Dowgo is building, really solid work in asset tokenization.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Romain",
+      "lastName": "Menetrier",
+      "profileUrl": "https://www.linkedin.com/in/rmenetrier/",
+      "company": "DOWGO",
+      "position": "Other"
+    }
+  },
+  {
+    "name": "CHRIS YIN",
+    "score": "88",
+    "linkedin": "http://www.linkedin.com/in/chrisyin",
+    "email": "chris@plumenetwork.xyz",
+    "company": "PLUME NETWORK",
+    "updated_message": "Hey Chris, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Plume, the token momentum lately has been wild.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Chris",
+      "lastName": "Yin",
+      "profileUrl": "http://www.linkedin.com/in/chrisyin",
+      "email": "chris@plumenetwork.xyz",
+      "company": "PLUME NETWORK",
+      "position": "CEO"
+    }
+  },
+  {
+    "name": "JUAN DAVID MENDIETA",
+    "score": "88",
+    "linkedin": "https://www.linkedin.com/in/davidmendieta/",
+    "email": "",
+    "company": "KEYROCK",
+    "updated_message": "Hey Juan, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Keyrock, the US expansion is a great move.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Juan",
+      "lastName": "David Mendieta",
+      "profileUrl": "https://www.linkedin.com/in/davidmendieta/",
+      "company": "KEYROCK",
+      "position": "Founder"
+    }
+  },
+  {
+    "name": "OPHELIA SNYDER",
+    "score": "88",
+    "linkedin": "https://www.linkedin.com/in/opheliasnyder/",
+    "email": "",
+    "company": "21SHARES",
+    "updated_message": "Hey Ophelia, excited to hear your talk at EthCC this year.\n\nI've been keeping up with 21Shares, the State of Crypto report was a great read.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Ophelia",
+      "lastName": "Snyder",
+      "profileUrl": "https://www.linkedin.com/in/opheliasnyder/",
+      "company": "21SHARES",
+      "position": "President"
+    }
+  },
+  {
+    "name": "CHARLES D'HAUSSY",
+    "score": "88",
+    "linkedin": "http://www.linkedin.com/in/charlesdhaussy",
+    "email": "charles@dydx.foundation",
+    "company": "DYDX",
+    "updated_message": "Hey Charles, excited to hear your talk at EthCC this year.\n\nI've been keeping up with dYdX, the token buyback program was an interesting move.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Charles",
+      "lastName": "D'Haussy",
+      "profileUrl": "http://www.linkedin.com/in/charlesdhaussy",
+      "email": "charles@dydx.foundation",
+      "company": "DYDX",
+      "position": "Other"
+    }
+  },
+  {
+    "name": "SHRAVAN SRINIVASAN",
+    "score": "88",
+    "linkedin": "http://www.linkedin.com/in/sshravan",
+    "email": "shravan@lagrange.dev",
+    "company": "LAGRANGE LABS",
+    "updated_message": "Hey Shravan, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Lagrange, the DeepProve launch looks really impressive.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Shravan",
+      "lastName": "Srinivasan",
+      "profileUrl": "http://www.linkedin.com/in/sshravan",
+      "email": "shravan@lagrange.dev",
+      "company": "LAGRANGE LABS",
+      "position": "Research"
+    }
+  },
+  {
+    "name": "LEO FAN",
+    "score": "88",
+    "linkedin": "https://www.linkedin.com/in/xiong-leo-fan-76292249/",
+    "email": "leo@cysic.xyz",
+    "company": "CYSIC",
+    "updated_message": "Hey Leo, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Cysic, congrats on the AI marketplace launch and upcoming mainnet!\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Leo",
+      "lastName": "Fan",
+      "profileUrl": "https://www.linkedin.com/in/xiong-leo-fan-76292249/",
+      "email": "leo@cysic.xyz",
+      "company": "CYSIC",
+      "position": "Other"
+    }
+  },
+  {
+    "name": "BHAJI ILLUMINATI",
+    "score": "88",
+    "linkedin": "https://www.linkedin.com/in/bhajiilluminati",
+    "email": "bhaji@centrifuge.io",
+    "company": "CENTRIFUGE",
+    "updated_message": "Hey Bhaji, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Centrifuge, the $100M tokenized credit strategy with Resolv is huge.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Bhaji",
+      "lastName": "Illuminati",
+      "profileUrl": "https://www.linkedin.com/in/bhajiilluminati",
+      "email": "bhaji@centrifuge.io",
+      "company": "CENTRIFUGE",
+      "position": "CEO"
+    }
+  },
+  {
+    "name": "CACTUS RAAZI",
+    "score": "88",
+    "linkedin": "https://www.linkedin.com/in/cactusraazi/",
+    "email": "cactus.raazi@b2c2.com",
+    "company": "PENNY BY B2C2",
+    "updated_message": "Hey Cactus, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Penny, instant zero-fee stablecoin swaps is a great concept.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Cactus",
+      "lastName": "Raazi",
+      "profileUrl": "https://www.linkedin.com/in/cactusraazi/",
+      "email": "cactus.raazi@b2c2.com",
+      "company": "PENNY BY B2C2",
+      "position": "CEO"
+    }
+  },
+  {
+    "name": "AMBROISE HELAINE",
+    "score": "85",
+    "linkedin": "https://www.linkedin.com/in/ambroisecrypto/",
+    "email": "ambroise.helaine@bybit.com",
+    "company": "BYBIT",
+    "updated_message": "Hey Ambroise, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Bybit, the rebrand into a full financial platform is a big move.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Ambroise",
+      "lastName": "Helaine",
+      "profileUrl": "https://www.linkedin.com/in/ambroisecrypto/",
+      "email": "ambroise.helaine@bybit.com",
+      "company": "BYBIT",
+      "position": "Other"
+    }
+  },
+  {
+    "name": "FILIP REZABEK",
+    "score": "85",
+    "linkedin": "https://www.linkedin.com/in/rezabfil/",
+    "email": "",
+    "company": "SPACECOMPUTER",
+    "updated_message": "Hey Filip, excited to hear your talk at EthCC this year.\n\nI've been keeping up with SpaceComputer, congrats on the $10M seed round!\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Filip",
+      "lastName": "Rezabek",
+      "profileUrl": "https://www.linkedin.com/in/rezabfil/",
+      "company": "SPACECOMPUTER"
+    }
+  },
+  {
+    "name": "MICHAEL WU",
+    "score": "85",
+    "linkedin": "https://www.linkedin.com/in/michael-w-8583a820/",
+    "email": "",
+    "company": "AMBER GROUP",
+    "updated_message": "Hey Michael, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Amber Group, the $25.5M raise is a strong signal.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Michael",
+      "lastName": "Wu",
+      "profileUrl": "https://www.linkedin.com/in/michael-w-8583a820/",
+      "company": "AMBER GROUP"
+    }
+  },
+  {
+    "name": "JAN GORZNY",
+    "score": "85",
+    "linkedin": "http://www.linkedin.com/in/jangorzny",
+    "email": "jan@zircuit.com",
+    "company": "ZIRCUIT",
+    "updated_message": "Hey Jan, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Zircuit, the institutional yield platform launch looks really promising.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Jan",
+      "lastName": "Gorzny",
+      "profileUrl": "http://www.linkedin.com/in/jangorzny",
+      "email": "jan@zircuit.com",
+      "company": "ZIRCUIT",
+      "position": "Founder"
+    }
+  },
+  {
+    "name": "BEN FISCH",
+    "score": "85",
+    "linkedin": "http://www.linkedin.com/in/ben-fisch-2b20055b",
+    "email": "benjamin.fisch@yale.edu",
+    "company": "ESPRESSO SYSTEMS",
+    "updated_message": "Hey Ben, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Espresso, congrats on the permissionless PoS transition!\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Ben",
+      "lastName": "Fisch",
+      "profileUrl": "http://www.linkedin.com/in/ben-fisch-2b20055b",
+      "email": "benjamin.fisch@yale.edu",
+      "company": "ESPRESSO SYSTEMS",
+      "position": "CEO"
+    }
+  },
+  {
+    "name": "OIS\u00cdN KYNE",
+    "score": "85",
+    "linkedin": "https://www.linkedin.com/in/oisin-kyne/",
+    "email": "oisin@obol.tech",
+    "company": "OBOL",
+    "updated_message": "Hey Oisin, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Obol, the Pluto Multi-Client DV launch sounds exciting.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Ois\u00edn",
+      "lastName": "Kyne",
+      "profileUrl": "https://www.linkedin.com/in/oisin-kyne/",
+      "email": "oisin@obol.tech",
+      "company": "OBOL",
+      "position": "CTO"
+    }
+  },
+  {
+    "name": "TOUFIC BATRICE",
+    "score": "85",
+    "linkedin": "https://www.linkedin.com/in/toufic-batrice",
+    "email": "",
+    "company": "SPACECOMPUTER",
+    "updated_message": "Hey Toufic, excited to hear your talk at EthCC this year.\n\nI've been keeping up with SpaceComputer, congrats on the $10M seed round!\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Toufic",
+      "lastName": "Batrice",
+      "profileUrl": "https://www.linkedin.com/in/toufic-batrice",
+      "company": "SPACECOMPUTER",
+      "position": "Other"
+    }
+  },
+  {
+    "name": "ANDRII BONDAR",
+    "score": "85",
+    "linkedin": "https://www.linkedin.com/in/andriibondards/",
+    "email": "ab@matterlabs.dev",
+    "company": "MATTER LABS (ZKSYNC)",
+    "updated_message": "Hey Andrii, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Matter Labs, congrats on the $200M Series C!\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Andrii",
+      "lastName": "Bondar",
+      "profileUrl": "https://www.linkedin.com/in/andriibondards/",
+      "email": "ab@matterlabs.dev",
+      "company": "MATTER LABS (ZKSYNC)",
+      "position": "Founder"
+    }
+  },
+  {
+    "name": "KRZYSZTOF GOGOL",
+    "score": "85",
+    "linkedin": "https://www.linkedin.com/in/krzysztofgogol/",
+    "email": "kg@defiam.xyz",
+    "company": "ZIRCUIT L2",
+    "updated_message": "Hey Krzysztof, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Zircuit, the institutional yield platform launch looks really promising.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Krzysztof",
+      "lastName": "Gogol",
+      "profileUrl": "https://www.linkedin.com/in/krzysztofgogol/",
+      "email": "kg@defiam.xyz",
+      "company": "ZIRCUIT L2",
+      "position": "Founder"
+    }
+  },
+  {
+    "name": "BIANCA BUZEA",
+    "score": "85",
+    "linkedin": "http://www.linkedin.com/in/bianca-andreea-buzea",
+    "email": "bianca@chroniclelabs.org",
+    "company": "CHRONICLE",
+    "updated_message": "Hey Bianca, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Chronicle, the Centrifuge oracle partnership is a great fit.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Bianca",
+      "lastName": "Buzea",
+      "profileUrl": "http://www.linkedin.com/in/bianca-andreea-buzea",
+      "email": "bianca@chroniclelabs.org",
+      "company": "CHRONICLE",
+      "position": "Engineer"
+    }
+  },
+  {
+    "name": "DYMA BUDORIN",
+    "score": "85",
+    "linkedin": "https://www.linkedin.com/in/dyma-budorin-acca-ccssa-56a98035/",
+    "email": "d.budorin@hacken.io",
+    "company": "HACKEN",
+    "updated_message": "Hey Dyma, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Hacken, that security report on $3.95B in losses was eye-opening.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Dyma",
+      "lastName": "Budorin",
+      "profileUrl": "https://www.linkedin.com/in/dyma-budorin-acca-ccssa-56a98035/",
+      "email": "d.budorin@hacken.io",
+      "company": "HACKEN",
+      "position": "CEO"
+    }
+  },
+  {
+    "name": "DAVID PEARCE",
+    "score": "83",
+    "linkedin": "http://www.linkedin.com/in/david-pearce-8592647",
+    "email": "david.pearce@consensys.net",
+    "company": "CONSENSYS",
+    "updated_message": "Hey David, excited to hear your talk at EthCC this year.\n\nI've been keeping up with ConsenSys, big moves with the IPO plans.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "David",
+      "lastName": "Pearce",
+      "profileUrl": "http://www.linkedin.com/in/david-pearce-8592647",
+      "email": "david.pearce@consensys.net",
+      "company": "CONSENSYS",
+      "position": "Research"
+    }
+  },
+  {
+    "name": "FISHER YU",
+    "score": "83",
+    "linkedin": "https://www.linkedin.com/in/mingchaoyu/?originalSubdomain=au",
+    "email": "fisher.yu@babylonlabs.io",
+    "company": "BABYLON",
+    "updated_message": "Hey Fisher, excited to hear your talk at EthCC this year.\n\nI've been keeping up with Babylon, the Aave V4 integration for native BTC collateral is huge.\n\nLet's grab coffee and connect while we're both there? If you're up for it, feel free to schedule here - https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1\n\nCheers,\nJB",
+    "payload": {
+      "firstName": "Fisher",
+      "lastName": "Yu",
+      "profileUrl": "https://www.linkedin.com/in/mingchaoyu/?originalSubdomain=au",
+      "email": "fisher.yu@babylonlabs.io",
+      "company": "BABYLON",
+      "position": "CTO"
+    }
+  }
+]

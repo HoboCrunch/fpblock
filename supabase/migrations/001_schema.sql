@@ -4,7 +4,7 @@
 -- ============================================================
 -- EXTENSIONS
 -- ============================================================
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA extensions;
 
 -- ============================================================
 -- TABLES
@@ -12,7 +12,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Contacts ---------------------------------------------------
 CREATE TABLE contacts (
-  id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   first_name  text,
   last_name   text,
   full_name   text NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE contacts (
 
 -- Companies --------------------------------------------------
 CREATE TABLE companies (
-  id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name        text NOT NULL,
   website     text,
   linkedin_url text,
@@ -50,7 +50,7 @@ CREATE TABLE companies (
 
 -- Events -----------------------------------------------------
 CREATE TABLE events (
-  id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name        text NOT NULL,
   location    text,
   date_start  date,
@@ -62,7 +62,7 @@ CREATE TABLE events (
 
 -- Sender Profiles --------------------------------------------
 CREATE TABLE sender_profiles (
-  id                   uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name                 text NOT NULL,
   email                text,
   heyreach_account_id  text,
@@ -73,7 +73,7 @@ CREATE TABLE sender_profiles (
 
 -- Prompt Templates -------------------------------------------
 CREATE TABLE prompt_templates (
-  id                    uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name                  text NOT NULL,
   channel               text,
   system_prompt         text NOT NULL,
@@ -84,7 +84,7 @@ CREATE TABLE prompt_templates (
 
 -- Event Config -----------------------------------------------
 CREATE TABLE event_config (
-  id                  uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   event_id            uuid NOT NULL REFERENCES events (id),
   sender_id           uuid REFERENCES sender_profiles (id),
   cta_url             text,
@@ -97,7 +97,7 @@ CREATE TABLE event_config (
 
 -- Messages ---------------------------------------------------
 CREATE TABLE messages (
-  id               uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   contact_id       uuid NOT NULL REFERENCES contacts (id) ON DELETE CASCADE,
   company_id       uuid REFERENCES companies (id) ON DELETE SET NULL,
   event_id         uuid REFERENCES events (id) ON DELETE SET NULL,
@@ -116,7 +116,7 @@ CREATE TABLE messages (
 
 -- Company Signals --------------------------------------------
 CREATE TABLE company_signals (
-  id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id  uuid NOT NULL REFERENCES companies (id) ON DELETE CASCADE,
   signal_type text NOT NULL,
   description text NOT NULL,
@@ -127,7 +127,7 @@ CREATE TABLE company_signals (
 
 -- Contact ↔ Company (junction) --------------------------------
 CREATE TABLE contact_company (
-  id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   contact_id      uuid NOT NULL REFERENCES contacts (id) ON DELETE CASCADE,
   company_id      uuid NOT NULL REFERENCES companies (id) ON DELETE CASCADE,
   role            text,
@@ -140,7 +140,7 @@ CREATE TABLE contact_company (
 
 -- Contact ↔ Event (junction) ----------------------------------
 CREATE TABLE contact_event (
-  id                  uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   contact_id          uuid NOT NULL REFERENCES contacts (id) ON DELETE CASCADE,
   event_id            uuid NOT NULL REFERENCES events (id) ON DELETE CASCADE,
   participation_type  text,
@@ -151,7 +151,7 @@ CREATE TABLE contact_event (
 
 -- Company ↔ Event (junction) ----------------------------------
 CREATE TABLE company_event (
-  id                 uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id         uuid NOT NULL REFERENCES companies (id) ON DELETE CASCADE,
   event_id           uuid NOT NULL REFERENCES events (id) ON DELETE CASCADE,
   relationship_type  text,
@@ -162,7 +162,7 @@ CREATE TABLE company_event (
 
 -- Automation Rules -------------------------------------------
 CREATE TABLE automation_rules (
-  id             uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name           text NOT NULL,
   trigger_table  text NOT NULL,
   trigger_event  text NOT NULL,
@@ -175,7 +175,7 @@ CREATE TABLE automation_rules (
 
 -- Job Log ----------------------------------------------------
 CREATE TABLE job_log (
-  id            uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   job_type      text NOT NULL,
   target_table  text,
   target_id     uuid,

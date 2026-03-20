@@ -1,0 +1,226 @@
+Record Type,Category/Tier,Name/Company,Title,Organization
+Speaker,Government/Regulator,Paul Atkins,Chairman,U.S. Securities and Exchange Commission
+Speaker,Government/Regulator,Hester M. Peirce,Commissioner,U.S. Securities and Exchange Commission
+Speaker,Government/Regulator,Michael Selig,Chairman,Commodity Futures Trading Commission
+Speaker,Government/Regulator,Jonathan Brightbill,General Counsel,U.S. Department of Energy
+Speaker,Government/Regulator,Lori Chavez-DeRemer,Secretary,Department of Labor
+Speaker,Government/Regulator,Jonathan V. Gould,Comptroller of the Currency,OCC
+Speaker,Government/Regulator,Bill Guidera,Deputy Assistant Secretary,ITA
+Speaker,Government/Regulator,Travis Hill,Chairman,Federal Deposit Insurance Corporation (FDIC)
+Speaker,Government/Regulator,Patrick Witt,Executive Director,President's Council of Advisors for Digital Assets
+Speaker,Government/Regulator,Tyler Williams,Counselor,US Department of Treasury
+Speaker,Government/Regulator,Prof. Pierre Yared,Acting Chair,Council of Economic Advisers
+Speaker,U.S. Senator,Sen. Angela Alsobrooks,U.S. Senator (D-MD),U.S. Senate
+Speaker,U.S. Senator,Sen. Katie Britt,U.S. Senator (R-AL),U.S. Senate
+Speaker,U.S. Senator,Sen. Ted Budd,U.S. Senator (R-NC),U.S. Senate
+Speaker,U.S. Senator,Sen. Kirsten Gillibrand,U.S. Senator (D-NY),U.S. Senate
+Speaker,U.S. Senator,Sen. Steve Daines,U.S. Senator (R-MT),U.S. Senate
+Speaker,U.S. Senator,Sen. Bill Hagerty,U.S. Senator (R-TN),U.S. Senate
+Speaker,U.S. Senator,Sen. Jon Husted,U.S. Senator (R-OH),U.S. Senate
+Speaker,U.S. Senator,Sen. Cynthia Lummis,U.S. Senator (R-WY),U.S. Senate
+Speaker,U.S. Senator,Sen. Bernie Moreno,U.S. Senator (R-OH),U.S. Senate
+Speaker,U.S. Senator,Sen. Tim Scott,"Chairman, Senate Banking Committee (R-SC)",U.S. Senate
+Speaker,U.S. Senator,Sen. Darius Brown,State Senator (D-DE),Delaware State Senate
+Speaker,U.S. Senator,Sen. Ron L. Watson,State Senator (D-MD),Maryland State Senate
+Speaker,U.S. Representative,Rep. Tom Emmer,Majority Whip (R-MN),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Nick Begich,U.S. Representative (R-AK),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Nikki Budzinski,U.S. Representative (D-IL),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Janelle Bynum,U.S. Representative (D-OR),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Buddy Carter,U.S. Representative (R-GA),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Don Davis,U.S. Representative (D-NC),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Monica De La Cruz,U.S. Representative (R-TX),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Warren Davidson,U.S. Representative (R-OH),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Byron Donalds,U.S. Representative (R-FL),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Troy Downing,U.S. Representative (R-MT),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Vince Fong,U.S. Representative (R-CA),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Mike Flood,U.S. Representative (R-NE),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Harriet Hageman,U.S. Representative (R-WY),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Pat Harrigan,U.S. Representative (R-NC),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Steven Horsford,U.S. Representative (D-NV),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Dusty Johnson,U.S. Representative (R-SD),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Young Kim,U.S. Representative (R-CA),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Sam Liccardo,U.S. Representative (D-CA),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Ryan Mackenzie,U.S. Representative (R-PA),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Max Miller,U.S. Representative (R-OH),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Kristen McDonald Rivet,U.S. Representative (D-MI),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Barry Moore,U.S. Representative (R-AL),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Bryan Steil,U.S. Representative (R-WI),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Haley Stevens,U.S. Representative (D-MI),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Shri Thanedar,U.S. Representative (D-MI),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. William Timmons,U.S. Representative (R-SC),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. GT Thompson,U.S. Representative (R-PA),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Suhas Subramanyam,U.S. Representative (D-VA),U.S. House of Representatives
+Speaker,U.S. Representative,Rep. Keith Ammon,State Representative (R-NH),New Hampshire House of Representatives
+Speaker,Governor/Official,Gov. Wes Moore,Governor (D-MD),State of Maryland
+Speaker,Governor/Official,E. David Burt,Premier,Bermuda
+Speaker,Governor/Official,Lord Kulveer Ranger of Northwood,Member,UK House of Lords
+Speaker,Industry Leader,CZ (Changpeng Zhao),Founder,Binance
+Speaker,Industry Leader,Richard Teng,Co-CEO,Binance
+Speaker,Industry Leader,Justin Sun,Founder,TRON
+Speaker,Industry Leader,Fred Thiel,Chairman and CEO,MARA
+Speaker,Industry Leader,Jihan Wu,CEO,Bitdeer
+Speaker,Industry Leader,Chris Pavlovski,Founder and CEO,Rumble Inc.
+Speaker,Industry Leader,Stani Kulechov,Founder,Aave Labs
+Speaker,Industry Leader,Matthew Roszak,Chairman and Co-founder,Bloq
+Speaker,Industry Leader,Alex Tapscott,Founding Partner and CEO,CMCC Global Capital Markets
+Speaker,Industry Leader,Avery Ching,Co-Founder and CEO,Aptos Labs
+Speaker,Industry Leader,Alex Gluckowski,Co-Founder and CEO,Matter Labs / ZKsync
+Speaker,Industry Leader,Raghu Yarlagadda,CEO and Co-Founder,FalconX
+Speaker,Industry Leader,Yoshi Yokokawa,Co-Founder and CEO,Alpaca
+Speaker,Industry Leader,Daniel Vogel,Co-Founder and CEO,Bitso
+Speaker,Industry Leader,Ben Weiss,Co-founder and CEO,Coinflip
+Speaker,Industry Leader,Trevor Bacon,Founder and CEO,Parcl
+Speaker,Industry Leader,Ethan Chan,CEO and Co-Founder,Allium
+Speaker,Industry Leader,Jeremy Levine,Founder and CEO,Underdog
+Speaker,Industry Leader,Eugene A. Ludwig,Founder and CEO,Cari Network
+Speaker,Industry Leader,Paul Neuner,Founder and CEO,Telcoin
+Speaker,Industry Leader,Nikhil Raghuveera,Co-Founder and CEO,Predicate
+Speaker,Industry Leader,Timm Reinsdorf,Co-Founder and CEO,Particula
+Speaker,Industry Leader,Miller Whitehouse-Levine,Founder and CEO,Solana Policy Institute
+Speaker,Industry Leader,Alexandre Dreyfus,CEO and Founder,Chiliz
+Speaker,Industry Leader,Jolie Kahn,CEO,AVAX One
+Speaker,Industry Leader,Alex Konanykhin,Founder and CEO,Unicoin
+Speaker,Industry Leader,Alan Konevsky,CEO,tZERO
+Speaker,Industry Leader,Ben Jorgensen,CEO,Constellation Network
+Speaker,Industry Leader,Glen Sussman,CEO,Tassat
+Speaker,Industry Leader,Matt Prusak,President,American Bitcoin
+Speaker,Industry Leader,Jonathan Steinberg,Founder and CEO,WisdomTree Investments
+Speaker,Industry Leader,Marcin Kazmierczak,CEO and Co-founder,RedStone
+Speaker,Industry Leader,Joseph Ziolkowski,Founder and CEO,Relm Insurance
+Speaker,Industry Leader,Paul Unterberg,Chief Product Officer,Uphold
+Speaker,Industry Leader,Andrew McCormick,Head of eToro US,eToro
+Speaker,Industry Leader,Tom Zschach,Chief Innovation Officer,SWIFT
+Speaker,Industry Leader,Rob Krugman,Chief Digital Officer,Broadridge Financial Solutions
+Speaker,Industry Leader,Amy Oldenburg,Head of Digital Asset Strategy,Morgan Stanley
+Speaker,Industry Leader,Teddy Fusaro,President,Bitwise Management
+Speaker,Industry Leader,Sebastian Bea,CIO,ReserveOne
+Speaker,Industry Leader,Perianne Boring,Founder and Chair,The Digital Chamber
+Speaker,Industry Leader,Cody Carbone,CEO,The Digital Chamber
+Speaker,Industry Leader,Raja Chakravorti,Chief Business Officer,Stellar Development Foundation
+Speaker,Industry Leader,Scarlett Sieber,Chief Strategy and Growth Officer,Money20/20
+Speaker,Industry Leader,Virginia Alvarez,Head of Content Americas,Money20/20
+Speaker,Industry Leader,Nilmini Rubin,CPO,Hedera
+Speaker,Industry Leader,Rachel Anderika,Head of Global Operations / Bank COO,Anchorage
+Speaker,Industry Leader,Wasim Ahmad,Co-Founder,Vault12
+Speaker,Industry Leader,Hinza Asif,President,Asia Web3 Alliance Japan
+Speaker,Industry Leader,Anthony Apollo,Executive Director,Wyoming Stable Token Commission
+Speaker,Industry Leader,Chen Arad,Co-Founder & CXO,Solidus Labs
+Speaker,Industry Leader,Frank Chaparro,Head of Content & Special Projects,GSR
+Speaker,Industry Leader,James Cheng,CFO,Canaan
+Speaker,Industry Leader,Jayson Browder,"SVP, Government Affairs",MARA
+Speaker,Industry Leader,Sahana Dharmapuri,Vice President,Our Secure Future
+Speaker,Industry Leader,Youssef El Maddarsi,Co-founder and Chief Business Officer,Naoris
+Speaker,Industry Leader,David Holtzman,Chief Strategy Officer,Naoris
+Speaker,Industry Leader,Jason Jiang,CBO,CertiK
+Speaker,Industry Leader,Larry Pang,Head of BD,IoTeX
+Speaker,Industry Leader,Jeff Rundlet,"VP, Institutional Solutions",Cryptio
+Speaker,Industry Leader,Silvina Moschini,Co-Founder and Chief Strategy Officer,Unicoin
+Speaker,Industry Leader,Jack McDonald,SVP - Stablecoins,Ripple
+Speaker,Industry Leader,Jelena McWilliams,President of Corporate and External Affairs,Plaid
+Speaker,Industry Leader,Dr. Darko Hajdukovic,Head of Digital Markets Infrastructure,London Stock Exchange Group / DMI Private Funds
+Speaker,Industry Leader,Anthony Vassallo,"SVP, Crypto",Silicon Valley Bank
+Speaker,Industry Leader,Ari Redbord,Global Head of Policy,TRM Labs
+Speaker,Industry Leader,Norman Reed,Senior Advisor,Binance.US
+Speaker,Industry Leader,Brandi Reynolds,Chief Compliance Officer,World Liberty Financial
+Speaker,Industry Leader,Zach Witkoff,Co-Founder,World Liberty Financial
+Speaker,Industry Leader,Josh Peschko,Global Head of Compliance and Regulatory Strategy,Talos
+Speaker,Industry Leader,Joaquin Gubb,VP of Capital Markets Legal,Crypto.com
+Speaker,Industry Leader,Dean Sovolos,Chief Legal Officer,B2C2
+Speaker,Industry Leader,Hunter Sims,Associate Director of Alternative Finance,Cambridge Centre
+Speaker,Industry Leader,Jamison Sites,Principal,KPMG LLP
+Speaker,Industry Leader,Eric Vincent,"President, General Counsel and Partner",50T Funds
+Speaker,Industry Leader,Sarah Ward,Chief Legal and Administrative Officer,Chainalysis
+Speaker,Industry Leader,Sarah Wheeler,Director,Marfire
+Speaker,Industry Leader,Zach Whiting,"Manager, Public Policy",Riot Platforms
+Speaker,Industry Leader,Mari Tomunen,General Counsel,DoubleZero
+Speaker,Industry Leader,Amanda Tuminelli,Executive Director & Chief Legal Officer,DeFi Education Fund
+Speaker,Industry Leader,Ian Taylor,Board Advisor / COO,CRYPTO UK / HT DIGITAL
+Speaker,Industry Leader,Lisa Cameron,Founder,UK-US Crypto Alliance
+Speaker,Legal/Policy,Jake Chervinsky,CEO,Hyperliquid Policy Center
+Speaker,Legal/Policy,Connor Brown,Managing Director,Bitcoin Policy Institute
+Speaker,Legal/Policy,Kevin Batteh,Partner,Delta Strategy Group
+Speaker,Legal/Policy,Elizabeth Boison,Partner,Chapman and Cutler
+Speaker,Legal/Policy,Greg Collett,General Counsel,Osprey Funds
+Speaker,Legal/Policy,Aaron Dimitri,General Counsel - Digital Assets,Flow Traders
+Speaker,Legal/Policy,Samson A. Enzer,Partner and Co-Chair,CahillNXT
+Speaker,Legal/Policy,Stephen Gardner,CLO and CCO,zerohash
+Speaker,Legal/Policy,Gerald Gallagher,General Counsel,Sei Labs
+Speaker,Legal/Policy,Chris Giancarlo,Former Chairman,Commodity Futures Trading Commission
+Speaker,Legal/Policy,Teresa Goody Guillén,Partner,Baker Hostetler LLP
+Speaker,Legal/Policy,William Mack,"Co-Chair, Financial Regulatory Group",Greenberg Traurig LLP
+Speaker,Legal/Policy,Rob Massey,Partner / Global Tax Leader - Blockchain,Deloitte Tax LLP
+Speaker,Legal/Policy,Ian McGinley,Partner,Sidley Austin
+Speaker,Legal/Policy,Chris Montagano,Chief Legal Officer,Orca
+Speaker,Legal/Policy,Lee Schneider,General Counsel,Ava Labs
+Speaker,Legal/Policy,Ben Sherwin,General Counsel,Chainlink
+Speaker,Legal/Policy,Sarah Shtylman,Partner,Perkins Coie
+Speaker,Legal/Policy,Daniel Stabile,"Partner & Co-Chair, Digital Assets",Winston & Strawn LLP
+Speaker,Legal/Policy,Sarah Aberg,CLO,Helium
+Speaker,Legal/Policy,Caroline Pham,CLO and CAO,Moonpay
+Speaker,Policy/Advocacy,Taylor Barr,Director of Government Affairs,The Digital Chamber
+Speaker,Policy/Advocacy,Jean-Philippe Beaudet,"Policy Associate, National Security",The Digital Chamber
+Speaker,Policy/Advocacy,Anastasia Dellaccio,Executive Director of State and Regional Affairs,The Digital Chamber
+Speaker,Policy/Advocacy,Zunera Mazhar,VP of Policy and Government Affairs,The Digital Chamber
+Speaker,Policy/Advocacy,Jonathan Schmalfeld,Policy Director,The Digital Chamber
+Speaker,Policy/Advocacy,Jonathan Rufrano,Policy Director,The Digital Chamber
+Speaker,Policy/Advocacy,Sonya Murphy,Senior Policy Associate,Digital Power Network
+Speaker,Policy/Advocacy,Mina Nguyen,Senior Advisor,FalconX
+Speaker,Policy/Advocacy,Adrian Wall,Senior Director of U.S. Policy,TRON DAO
+Speaker,Policy/Advocacy,Elizabeth Duchek,Associate Director of Gov. Relations,Bitdeer
+Speaker,Policy/Advocacy,Ali Tager,VP of Communications,National Cryptocurrency Association
+Speaker,Policy/Advocacy,Mike Senich,Senior Advisor,Bitcoin Voter Project
+Speaker,Policy/Advocacy,Dr. Chris Powell,Chief Scientist and Fellow,SAIC
+Speaker,Media,Sander Lutz,White House Correspondent,Decrypt
+Speaker,Media,Eleanor Mueller,White House Economic Policy Reporter,Semafor
+Speaker,Media,Eleanor Terrett,Co-Founder and Host,Crypto In America Podcast
+Speaker,Media,Sarah Wynn,Reporter,The Block
+Sponsor,Presented By,Chiliz,,Chiliz
+Sponsor,Platinum,Unicoin,,Unicoin
+Sponsor,Diamond,TRON,,TRON
+Sponsor,Gold,Binance,,Binance
+Sponsor,Gold,Binance.US,,Binance.US
+Sponsor,Gold,CleanSpark,,CleanSpark
+Sponsor,Gold,Riot Platforms,,Riot Platforms
+Sponsor,Silver,Bitdeer,,Bitdeer
+Sponsor,Silver,Bitwise,,Bitwise
+Sponsor,Silver,Cahill / CahillNXT,,Cahill / CahillNXT
+Sponsor,Silver,CertiK,,CertiK
+Sponsor,Silver,Cryptio,,Cryptio
+Sponsor,Silver,KPMG,,KPMG
+Sponsor,Silver,National Cryptocurrency Association,,National Cryptocurrency Association
+Sponsor,Silver,Naoris Protocol,,Naoris Protocol
+Sponsor,Silver,Perkins Coie,,Perkins Coie
+Sponsor,Bronze,AVAX One,,AVAX One
+Sponsor,Bronze,Chapman and Cutler,,Chapman and Cutler
+Sponsor,Bronze,Clifford Chance,,Clifford Chance
+Sponsor,Bronze,Dinari,,Dinari
+Sponsor,Bronze,Greenberg Traurig,,Greenberg Traurig
+Sponsor,Bronze,Our Secure Future,,Our Secure Future
+Sponsor,Bronze,Relm Insurance,,Relm Insurance
+Sponsor,Bronze,SAIC,,SAIC
+Sponsor,Bronze,Stronghold,,Stronghold
+Sponsor,Bronze,Telcoin,,Telcoin
+Sponsor,Bronze,TRM Labs,,TRM Labs
+Sponsor,Bronze,tZERO,,tZERO
+Sponsor,Bronze,Vault12,,Vault12
+Sponsor,Bronze,Winston & Strawn LLP,,Winston & Strawn LLP
+Sponsor,Copper,Broadridge Financial Solutions,,Broadridge Financial Solutions
+Sponsor,Copper,CryptoUK,,CryptoUK
+Sponsor,Copper,Debevoise & Plimpton,,Debevoise & Plimpton
+Sponsor,Copper,Digital Power Network,,Digital Power Network
+Sponsor,Copper,iTrustCapital,,iTrustCapital
+Sponsor,Copper,OKX,,OKX
+Sponsor,Copper,The Digital Chamber State Network,,The Digital Chamber State Network
+Sponsor,Copper,Treasury Council,,Treasury Council
+Sponsor,Community Partner,American Legislative Exchange Council (ALEC),,American Legislative Exchange Council (ALEC)
+Sponsor,Community Partner,Blockchain Foundation,,Blockchain Foundation
+Sponsor,Community Partner,DC DAO,,DC DAO
+Sponsor,Community Partner,DC Startup & Tech Week,,DC Startup & Tech Week
+Sponsor,Community Partner,Detroit Blockchain Center,,Detroit Blockchain Center
+Sponsor,Community Partner,Future Caucus,,Future Caucus
+Sponsor,Community Partner,Maryland Blockchain Association,,Maryland Blockchain Association
+Sponsor,Community Partner,PA Blockchain Coalition,,PA Blockchain Coalition
+Sponsor,Community Partner,Virginia Blockchain Council,,Virginia Blockchain Council
+Sponsor,Community Partner,Web3 Foundation,,Web3 Foundation
+Sponsor,Community Partner,Wisconsin Blockchain Business Council,,Wisconsin Blockchain Business Council
+Sponsor,Community Partner,Women in Crypto,,Women in Crypto
