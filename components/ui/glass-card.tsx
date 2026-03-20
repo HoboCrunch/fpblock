@@ -8,6 +8,7 @@ interface GlassCardProps {
   glowColor?: "orange" | "indigo";
   padding?: boolean;
   as?: "div" | "section" | "article";
+  onClick?: () => void;
 }
 
 export function GlassCard({
@@ -18,9 +19,11 @@ export function GlassCard({
   glowColor = "orange",
   padding = true,
   as: Component = "div",
+  onClick,
 }: GlassCardProps) {
   return (
     <Component
+      onClick={onClick}
       className={cn(
         "glass rounded-xl transition-all duration-200",
         padding && "p-5",

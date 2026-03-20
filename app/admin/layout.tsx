@@ -24,11 +24,11 @@ export default async function AdminLayout({
     .order("date_start", { ascending: true });
 
   return (
-    <div className="flex min-h-screen bg-gray-950 text-white">
+    <div className="flex min-h-screen bg-[var(--bg-app)] text-white">
       <Sidebar events={events || []} />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         <Header userEmail={user.email || ""} />
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-6 bg-grid overflow-y-auto">{children}</main>
       </div>
     </div>
   );
