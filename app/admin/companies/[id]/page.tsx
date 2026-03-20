@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { GlassCard } from "@/components/ui/glass-card";
 import { SignalsTimeline } from "@/components/admin/signals-timeline";
 import { ContactTable } from "@/components/admin/contact-table";
 import { MessageTable } from "@/components/admin/message-table";
@@ -43,8 +44,10 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">{company.name}</h1>
-        <p className="text-gray-400 text-sm mt-1">{company.category || "—"}</p>
+        <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)]">
+          {company.name}
+        </h1>
+        <p className="text-[var(--text-muted)] text-sm mt-1">{company.category || "\u2014"}</p>
         {company.icp_score != null && (
           <Badge variant={company.icp_score >= 90 ? "replied" : "scheduled"} className="mt-2">
             ICP {company.icp_score}
@@ -53,29 +56,59 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {/* Company info */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3">
-        {company.description && <div><div className="text-xs text-gray-500">Description</div><p className="text-sm text-gray-300 mt-0.5">{company.description}</p></div>}
-        {company.context && <div><div className="text-xs text-gray-500">Context</div><p className="text-sm text-gray-300 mt-0.5">{company.context}</p></div>}
-        {company.usp && <div><div className="text-xs text-gray-500">Our Angle (USP)</div><p className="text-sm text-gray-300 mt-0.5">{company.usp}</p></div>}
-        {company.icp_reason && <div><div className="text-xs text-gray-500">ICP Reason</div><p className="text-sm text-gray-300 mt-0.5">{company.icp_reason}</p></div>}
-      </div>
+      <GlassCard className="space-y-3">
+        {company.description && (
+          <div>
+            <div className="text-xs text-[var(--text-muted)]">Description</div>
+            <p className="text-sm text-[var(--text-secondary)] mt-0.5">{company.description}</p>
+          </div>
+        )}
+        {company.context && (
+          <div>
+            <div className="text-xs text-[var(--text-muted)]">Context</div>
+            <p className="text-sm text-[var(--text-secondary)] mt-0.5">{company.context}</p>
+          </div>
+        )}
+        {company.usp && (
+          <div>
+            <div className="text-xs text-[var(--text-muted)]">Our Angle (USP)</div>
+            <p className="text-sm text-[var(--text-secondary)] mt-0.5">{company.usp}</p>
+          </div>
+        )}
+        {company.icp_reason && (
+          <div>
+            <div className="text-xs text-[var(--text-muted)]">ICP Reason</div>
+            <p className="text-sm text-[var(--text-secondary)] mt-0.5">{company.icp_reason}</p>
+          </div>
+        )}
+      </GlassCard>
 
       {/* Signals */}
       <div>
-        <h2 className="text-lg font-medium mb-2">Signals</h2>
+        <h2 className="text-lg font-medium font-[family-name:var(--font-heading)] mb-2">
+          Signals
+        </h2>
         <SignalsTimeline signals={signals || []} />
       </div>
 
       {/* Contacts */}
       <div>
-        <h2 className="text-lg font-medium mb-2">Contacts ({contacts.length})</h2>
-        <ContactTable contacts={contacts} />
+        <h2 className="text-lg font-medium font-[family-name:var(--font-heading)] mb-2">
+          Contacts ({contacts.length})
+        </h2>
+        <GlassCard padding={false}>
+          <ContactTable contacts={contacts} />
+        </GlassCard>
       </div>
 
       {/* Messages */}
       <div>
-        <h2 className="text-lg font-medium mb-2">Messages</h2>
-        <MessageTable messages={(messages || []).map((m: any) => ({ ...m, company: { id: company.id, name: company.name } }))} />
+        <h2 className="text-lg font-medium font-[family-name:var(--font-heading)] mb-2">
+          Messages
+        </h2>
+        <GlassCard padding={false}>
+          <MessageTable messages={(messages || []).map((m: any) => ({ ...m, company: { id: company.id, name: company.name } }))} />
+        </GlassCard>
       </div>
     </div>
   );

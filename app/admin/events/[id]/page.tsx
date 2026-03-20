@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { GlassCard } from "@/components/ui/glass-card";
 import { Tabs } from "@/components/ui/tabs";
 import { ContactTable } from "@/components/admin/contact-table";
 import { CompanyTable } from "@/components/admin/company-table";
@@ -55,36 +56,53 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">{event.name}</h1>
-        <p className="text-gray-400 text-sm mt-1">
-          {event.location} · {event.date_start} — {event.date_end}
+        <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)]">
+          {event.name}
+        </h1>
+        <p className="text-[var(--text-muted)] text-sm mt-1">
+          {event.location} {event.date_start && `\u00B7 ${event.date_start}`}
+          {event.date_end && ` \u2014 ${event.date_end}`}
         </p>
         {eventConfig && (
-          <p className="text-gray-500 text-xs mt-2">
-            Sender: {eventConfig.sender?.name || "—"} · CTA: {eventConfig.cta_url || "—"}
+          <p className="text-[var(--text-muted)] text-xs mt-2">
+            Sender: {eventConfig.sender?.name || "\u2014"} \u00B7 CTA: {eventConfig.cta_url || "\u2014"}
           </p>
         )}
       </div>
 
-      <Tabs
-        tabs={[
-          {
-            id: "contacts",
-            label: `Contacts (${contacts.length})`,
-            content: <ContactTable contacts={contacts} />,
-          },
-          {
-            id: "companies",
-            label: `Companies (${companies.length})`,
-            content: <CompanyTable companies={companies} />,
-          },
-          {
-            id: "messages",
-            label: `Messages (${(messages || []).length})`,
-            content: <MessageTable messages={messages || []} />,
-          },
-        ]}
-      />
+      <GlassCard padding={false} className="p-2">
+        <Tabs
+          tabs={[
+            {
+              id: "contacts",
+              label: `Contacts (${contacts.length})`,
+              content: (
+                <div className="p-3">
+                  <ContactTable contacts={contacts} />
+                </div>
+              ),
+            },
+            {
+              id: "companies",
+              label: `Companies (${companies.length})`,
+              content: (
+                <div className="p-3">
+                  <CompanyTable companies={companies} />
+                </div>
+              ),
+            },
+            {
+              id: "messages",
+              label: `Messages (${(messages || []).length})`,
+              content: (
+                <div className="p-3">
+                  <MessageTable messages={messages || []} />
+                </div>
+              ),
+            },
+          ]}
+        />
+      </GlassCard>
     </div>
   );
 }

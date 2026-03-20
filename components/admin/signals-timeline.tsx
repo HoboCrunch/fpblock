@@ -3,18 +3,21 @@ import { Badge } from "@/components/ui/badge";
 
 export function SignalsTimeline({ signals }: { signals: CompanySignal[] }) {
   if (signals.length === 0) {
-    return <p className="text-gray-500 text-sm">No signals yet.</p>;
+    return <p className="text-[var(--text-muted)] text-sm">No signals yet.</p>;
   }
 
   return (
     <div className="space-y-3">
       {signals.map((signal) => (
-        <div key={signal.id} className="flex items-start gap-3 bg-gray-900 border border-gray-800 rounded p-3">
+        <div
+          key={signal.id}
+          className="flex items-start gap-3 glass rounded-xl p-3 hover:bg-white/[0.03] transition-all duration-200"
+        >
           <Badge>{signal.signal_type}</Badge>
           <div className="flex-1">
-            <p className="text-sm text-gray-300">{signal.description}</p>
+            <p className="text-sm text-[var(--text-secondary)]">{signal.description}</p>
             {signal.date && (
-              <p className="text-xs text-gray-500 mt-1">{signal.date}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">{signal.date}</p>
             )}
           </div>
         </div>
