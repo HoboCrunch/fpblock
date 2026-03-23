@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { SequenceStep, InteractionType } from "@/lib/types/database";
 
+export const maxDuration = 60;
+
 interface EnrollmentRow {
   id: string;
   sequence_id: string;
