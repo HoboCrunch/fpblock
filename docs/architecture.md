@@ -28,7 +28,7 @@ Browser (Admin CRM)
     │
     v
 Supabase
-    ├── Postgres (17 tables with RLS)
+    ├── Postgres (18 tables with RLS)
     ├── Auth (email/password, guards /admin/*)
     ├── Edge Functions (6 Deno functions)
     ├── pg_cron (hourly send + status sync, 15-min inbox sync)
@@ -37,7 +37,7 @@ Supabase
 External Services
     ├── Fastmail JMAP (inbound email sync)
     ├── Telegram Bot (reply/bounce notifications)
-    ├── Apollo (person enrichment + org firmographics)
+    ├── Apollo (person enrichment + org firmographics + people search at orgs)
     ├── Perplexity Sonar (org deep research)
     ├── Gemini 2.0 Flash (org synthesis + ICP scoring, message generation)
     ├── SendGrid (email sending + status)
@@ -55,12 +55,14 @@ The CRM is built around five core entities:
 | **Events** | `events` | Conferences and gatherings |
 | **Initiatives** | `initiatives` | Campaign tracking units (e.g., "EthCC 2026 Outreach") |
 | **Interactions** | `interactions` | Unified timeline of all touchpoints (cold_email, cold_linkedin, reply, meeting, note, etc.) |
+| **Company Context** | `company_context` | Singleton — ICP criteria, positioning, language rules for enrichment |
 
 **Key relationships:**
 - `person_organizations` — many-to-many with role/title
 - `event_participations` — many-to-many between persons/organizations and events, with roles (speaker, sponsor, attendee, organizer, panelist, etc.)
 - `interactions` — ties a person + initiative + channel into a single interaction record; replaces the old messages table
 - `persons_with_icp` — Postgres view that computes ICP score and enrichment status
+- `company_context` — singleton row storing ICP criteria, positioning, and language rules used by Gemini scoring
 
 **Correlation engine:**
 - `find_person_correlations` RPC — uses `pg_trgm` fuzzy matching to detect duplicate persons by name, email, LinkedIn, and Twitter similarity
@@ -106,13 +108,15 @@ Cannes/
 │   │   │   ├── page.tsx          # Inbox server wrapper
 │   │   │   └── inbox-client.tsx  # Inbox client (email list + detail)
 │   │   ├── enrichment/
-│   │   │   └── page.tsx          # Enrichment runner + job history
+│   │   │   ├── page.tsx          # Enrichment runner (person + org + people finder) + job history
+│   │   │   ├── [jobId]/page.tsx  # Job detail (stats, expandable results, people finder)
+│   │   │   └── [jobId]/job-results-client.tsx  # Interactive results viewer
 │   │   ├── uploads/
 │   │   │   ├── page.tsx          # CSV upload + column mapper
 │   │   │   └── actions.ts        # Server action for import processing
 │   │   └── settings/
-│   │       ├── page.tsx          # Settings (4 tabs: senders, prompts, rules, events)
-│   │       └── actions.ts        # Server actions for settings CRUD
+│   │       ├── page.tsx          # Settings (5 tabs: company profile, senders, prompts, rules, events)
+│   │       └── actions.ts        # Server actions for settings CRUD + company context
 │   └── api/
 │       ├── enrich/
 │       │   ├── route.ts              # Apollo enrichment API route (targets persons)
@@ -164,10 +168,11 @@ Cannes/
 │   │   ├── database.ts           # TypeScript types for all tables
 │   │   └── pipeline.ts           # Pipeline-specific types
 │   ├── enrichment/
-│   │   ├── apollo.ts             # Apollo org API — firmographics (industry, employees, revenue, funding, tech stack, HQ)
-│   │   ├── perplexity.ts         # Perplexity Sonar — deep research (description, products, strengths, weaknesses, news, target market)
-│   │   ├── gemini.ts             # Gemini 2.0 Flash — synthesis + ICP scoring (applies FP Block ICP criteria, score 0-100)
-│   │   └── pipeline.ts           # Orchestrator — runApolloEnrichment(), runPerplexityEnrichment(), runGeminiSynthesis(), runFullEnrichment(), runBatchEnrichment() with progress callback
+│   │   ├── apollo.ts             # Apollo org API — firmographics, with domain→name fallback
+│   │   ├── apollo-people.ts      # Apollo People Search — find contacts at orgs (search + enrich)
+│   │   ├── perplexity.ts         # Perplexity Sonar — deep research + website discovery
+│   │   ├── gemini.ts             # Gemini 2.0 Flash — synthesis + ICP scoring (reads from company_context DB)
+│   │   └── pipeline.ts           # Orchestrator — 5 stages (Apollo, Perplexity, Gemini, People Finder, Signals), smart ordering, batch + progress
 │   ├── fastmail.ts               # Fastmail JMAP client (session + email fetch, uses 'headers' array property syntax)
 │   ├── inbox-correlator.ts       # Email-to-person correlation engine
 │   ├── telegram.ts               # Telegram Bot API notifications
@@ -178,7 +183,8 @@ Cannes/
 │   │   ├── 001_schema.sql        # Core tables (persons, organizations, events, etc.)
 │   │   ├── 007_sequences_uploads_inbox.sql  # Sequences, uploads, inbox tables
 │   │   ├── 008_sequence_status.sql          # Sequence status tracking
-│   │   └── 009_rls_new_tables.sql           # RLS policies for new tables
+│   │   ├── 009_rls_new_tables.sql           # RLS policies for new tables
+│   │   ├── 019_company_context.sql         # Company context singleton (ICP, positioning, language rules)
 │   ├── functions/                # Deno edge functions
 │   └── seed.sql                  # Seed data
 ├── scripts/
@@ -214,12 +220,14 @@ Cannes/
    → /admin/enrichment → POST /api/enrich
    → fills email, LinkedIn, phone, seniority on persons table
          │
-4. Enrich organizations (Apollo + Perplexity + Gemini pipeline)
+4. Enrich organizations (5-stage pipeline)
    → POST /api/enrich/organizations
+   → Smart ordering: parallel path if org has website, discovery path if not
+   → Perplexity Sonar discovers website/domain + deep research
    → Apollo firmographics (industry, employees, revenue, funding, tech stack, HQ)
-   → Perplexity Sonar deep research (description, products, strengths, weaknesses, news, target market)
-   → Apollo + Perplexity run in parallel, then Gemini 2.0 Flash synthesizes + ICP scores (0-100)
-   → Updates org record + inserts organization_signals
+   → Gemini 2.0 Flash synthesizes + ICP scores (reads criteria from company_context table)
+   → People Finder: Apollo People Search finds contacts → dedup → insert/merge persons
+   → Updates org record + inserts signals + creates person records with source tracking
          │
 5. Create initiatives and outreach sequences
    → /admin/initiatives (campaign grouping)
@@ -266,10 +274,11 @@ Cannes/
 - **Next.js API routes for enrichment/inbox**: Apollo enrichment and Fastmail sync run via API routes (not edge functions) for easier debugging and access to Node.js APIs.
 - **Edge Functions for external APIs**: Generation, sending, and company enrichment go through Supabase Edge Functions, keeping API keys server-side.
 - **Fastmail JMAP for inbox**: Direct JMAP protocol integration for email sync from jb@gofpblock.com and wes@gofpblock.com. Uses `headers` array property syntax (not `header:Name:asText`). Service role client bypasses RLS in sync route. Correlation matches against `persons` table. Organization data joined via `person_organization` -> `organizations`.
-- **Organization enrichment pipeline**: Three-stage pipeline in `lib/enrichment/` — Apollo (firmographics) + Perplexity Sonar (deep research) run in parallel, then Gemini 2.0 Flash synthesizes into structured fields + ICP score. Each stage is independently runnable. ICP scoring applies FP Block criteria from `scraping/context/fpblock-icp.md`. Pipeline supports batch processing with progress callbacks.
+- **Organization enrichment pipeline**: Five-stage pipeline in `lib/enrichment/` — smart ordering based on data availability. If org has a website: Apollo + Perplexity run in parallel (fast). If no website: Perplexity runs first to discover domain, then Apollo uses discovered domain. Gemini synthesizes into structured fields + ICP score using criteria from `company_context` table (editable in Settings). People Finder searches Apollo for contacts at each org, deduplicates against existing persons, and creates `person_organization` links with source tracking. Apollo modules retry with name-based fallback when domain lookups fail.
 - **Telegram for notifications**: Lightweight push notifications for reply detection and enrichment completion.
 - **Interaction versioning**: Interactions use `sequence_number` + `iteration` to track position in a sequence and regeneration count. Old iterations are marked `superseded`.
 - **Pipeline operates on persons**: Kanban/table views show one card per person at their most advanced outreach stage, not one card per interaction.
 - **Correlation engine**: Uses `pg_trgm` extension for fuzzy matching across name, email, LinkedIn, and Twitter fields. The `find_person_correlations` RPC surfaces potential duplicates; `merge_persons` RPC handles the merge, reassigning all related records to the surviving person.
+- **Company context**: ICP criteria, positioning, and language rules stored in `company_context` singleton table, editable via Settings > Company Profile. Gemini reads these at enrichment time, falling back to hardcoded defaults if the DB row is missing.
 - **Event participation model**: Events link to persons and organizations via `event_participations` with explicit roles (speaker, sponsor, attendee, organizer, panelist), replacing simple foreign keys.
 - **Initiative-based tracking**: Initiatives group interactions into campaigns, enabling per-campaign analytics and sequence management.

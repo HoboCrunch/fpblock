@@ -196,34 +196,55 @@ Triggers Apollo enrichment for selected persons. Creates a `job_log` entry with 
 
 **Path:** `app/api/enrich/organizations/route.ts`
 
-Organization enrichment pipeline orchestrator. Runs a three-stage enrichment: Apollo (firmographics) + Perplexity Sonar (deep research) in parallel, then Gemini 2.0 Flash synthesis + ICP scoring.
+Organization enrichment pipeline orchestrator. Runs a five-stage enrichment with smart ordering based on data availability.
 
 **Input:**
 ```json
 {
-  "orgIds": ["uuid1", "uuid2"],       // specific orgs (optional)
-  "eventId": "uuid",                   // enrich orgs from this event (optional)
-  "initiativeId": "uuid",              // enrich orgs from this initiative (optional)
-  "icpBelow": 50,                      // enrich orgs with ICP below threshold (optional)
-  "stages": ["apollo", "perplexity", "gemini"]  // run specific stages (optional, default: all)
+  "organizationIds": ["uuid1", "uuid2"],
+  "eventId": "uuid",
+  "initiativeId": "uuid",
+  "icpBelow": 50,
+  "stages": ["apollo", "perplexity", "gemini", "people_finder", "full"],
+  "peopleFinderConfig": {
+    "perCompany": 5,
+    "seniorities": ["owner", "founder", "c_suite", "vp", "director"],
+    "departments": []
+  }
 }
 ```
 
 **Pipeline stages:**
-1. `runApolloEnrichment(orgId)` — Apollo org API for firmographics (industry, employees, revenue, funding, tech stack, HQ)
-2. `runPerplexityEnrichment(orgId)` — Perplexity Sonar for deep research (description, products, strengths, weaknesses, recent news, target market)
-3. `runGeminiSynthesis(orgId)` — Gemini 2.0 Flash combines Apollo + Perplexity data, applies FP Block ICP criteria from `scraping/context/fpblock-icp.md`, outputs structured fields with ICP score 0-100
+1. `runPerplexityEnrichment(orgId)` — Perplexity Sonar for deep research + website/domain discovery
+2. `runApolloEnrichment(orgId)` — Apollo org API for firmographics (industry, employees, revenue, funding, tech stack, HQ). Retries with name-based lookup if domain fails.
+3. `runGeminiSynthesis(orgId)` — Gemini 2.0 Flash combines Apollo + Perplexity data, reads ICP criteria from `company_context` table, outputs structured fields with ICP score 0-100
+4. `runPeopleFinderEnrichment(orgId, config)` — Apollo People Search finds contacts at org, deduplicates against existing persons, creates/merges person records with source tracking
+5. Signal extraction — inserts typed signals into `organization_signals`
 
-**Full pipeline:** `runFullEnrichment(orgId)` runs stages 1+2 in parallel, then stage 3.
-**Batch mode:** `runBatchEnrichment(orgIds, progressCallback)` processes multiple orgs with progress reporting.
+**Smart ordering:**
+- **Parallel path** (org has website): Apollo + Perplexity run simultaneously, then Gemini, then People Finder
+- **Discovery path** (no website): Perplexity runs first to discover domain, then Apollo with discovered domain, then Gemini, then People Finder
 
-**Output:** Updates `organizations` record (icp_score, icp_reason, context, description, etc.) + inserts rows into `organization_signals` table.
+**People Finder** (`peopleFinderConfig`):
+- `perCompany` (1-25): max contacts per org
+- `seniorities`: filter by seniority level (owner, founder, c_suite, partner, vp, director, manager, senior, entry)
+- `departments`: client-side filter (engineering, sales, marketing, etc.)
+- Two-step: search via `/api/v1/mixed_people/api_search`, then enrich each via `/v1/people/match` for contact details
+- Deduplication: exact match on apollo_id → email → linkedin_url, then fuzzy correlations via `find_person_correlations` RPC
+- New persons: `source = 'org_enrichment'`, `person_organization.is_primary = true`
+- Existing persons: COALESCE (only fill null fields)
+
+**Full pipeline:** `runFullEnrichment(orgId, peopleFinderConfig)` runs all stages with smart ordering.
+**Batch mode:** `runBatchEnrichment(orgIds, options)` processes multiple orgs with progress reporting.
+
+**Response includes:** `orgs_processed`, `orgs_enriched`, `orgs_failed`, `signals_created`, `people_found`, `people_created`, `people_merged`, per-org results with people finder stats.
 
 **Modules:** All pipeline logic lives in `lib/enrichment/`:
-- `lib/enrichment/apollo.ts` — Apollo org API client
-- `lib/enrichment/perplexity.ts` — Perplexity Sonar client
-- `lib/enrichment/gemini.ts` — Gemini synthesis + ICP scoring
-- `lib/enrichment/pipeline.ts` — Orchestrator with individual + batch runners
+- `lib/enrichment/apollo.ts` — Apollo org API client (domain→name fallback)
+- `lib/enrichment/apollo-people.ts` — Apollo People Search + People Match (search→enrich two-step)
+- `lib/enrichment/perplexity.ts` — Perplexity Sonar client + website discovery
+- `lib/enrichment/gemini.ts` — Gemini synthesis + ICP scoring (reads from `company_context` DB)
+- `lib/enrichment/pipeline.ts` — Orchestrator with smart ordering, 5 stages, batch + progress
 
 ---
 

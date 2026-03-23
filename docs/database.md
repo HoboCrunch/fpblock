@@ -22,6 +22,8 @@ Supabase Postgres. Project: `<your-project-ref>`.
 | `015_crm_enrollment_constraint_and_correlation_fix.sql` | Unique constraint on initiatives.name, final correlation function fix |
 | `016_inbox_sync_cron.sql` | pg_cron job: auto-syncs Fastmail inbox every 15 min per account (JB at :00/:15/:30/:45, Wes offset by 1 min) via pg_net HTTP POST to `/api/inbox/sync` |
 | `017_fix_persons_with_icp_view.sql` | Fixes `persons_with_icp` view with `DISTINCT ON (p.id)` to prevent duplicate rows when a person has multiple organization affiliations |
+| `018_people_finder.sql` | (Reserved — no schema changes needed for people finder) |
+| `019_company_context.sql` | Company context singleton table (ICP criteria, positioning, language rules), RLS, seed data |
 
 ## Extensions
 
@@ -392,6 +394,25 @@ Structured intelligence about organizations from enrichment. Renamed from `compa
 | date | date | When the signal occurred |
 | source | text | e.g. "enrichment", "company_news_cache" |
 
+### Company Context
+
+#### company_context
+Singleton table storing company profile data used in enrichment and generation flows. Editable via Settings > Company Profile.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | Auto-generated |
+| company_name | text NOT NULL | Default 'FP Block'. Used in Gemini prompts |
+| about | text | Company description |
+| icp_criteria | text | Full ICP framework, used verbatim by Gemini for scoring |
+| positioning | text | Market positioning statement |
+| language_rules | text | Words/phrases to lead with or avoid |
+| outreach_strategy | text | High-level outreach strategy notes |
+| updated_at | timestamptz NOT NULL | Auto-updated by trigger |
+
+**RLS:** Authenticated full access
+**Trigger:** `updated_at` auto-update
+
 ### Automation
 
 #### automation_rules
@@ -470,6 +491,7 @@ Same pattern for organizations. Reassigns person_organization, event_participati
 - `person_organization`
 - `initiatives`
 - `interactions`
+- `company_context`
 
 ## RLS
 
@@ -479,6 +501,7 @@ Authenticated full access (`auth.uid() IS NOT NULL`) on all tables:
 - sender_profiles, prompt_templates, event_config, sequences, sequence_enrollments
 - uploads, inbox_sync_state, inbound_emails, organization_signals
 - automation_rules, job_log
+- company_context
 
 ## Indexes Summary
 

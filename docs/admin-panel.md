@@ -83,7 +83,8 @@ Full profile in glass cards:
 Searchable, filterable list of all organizations:
 
 - **Filters** — ICP range, Category, Has Signals
-- **Table columns:** Name (link to detail), Category, ICP Score (badge), Person Count, Signal Count, Events (with sponsor tier badges), Last Interaction
+- **Table columns:** ICP Score (badge), Name (link to detail), Category, People count (+N enriched indicator), Signal Count, Last Signal date, Events (with sponsor tier badges)
+- Sortable by all columns
 - **Pagination** — 25 per page
 
 ### Organization Detail
@@ -91,12 +92,14 @@ Searchable, filterable list of all organizations:
 **URL:** `/admin/organizations/{id}`
 
 Full profile with:
-- **Header** — name, category, ICP score badge, logo, website
+- **Header** — name, category, ICP score badge (color-coded by tier: green 90+, yellow 75+, orange 50+), people count with enriched indicator, signals count
 - **Context** — description, strategic context, USP angle, ICP reason
-- **People Roster** — persons affiliated via person_organization with role, role_type, current/historical status
+- **Links** — website, LinkedIn
+- **Firmographics** — industry, employees, revenue, funding (with stage), headquarters, founded year, tech stack tags (from Apollo enrichment data)
 - **Signals Timeline** — organization_signals in reverse chronological order
-- **Events** — event participations with role (sponsor, partner, exhibitor) and sponsor tier
-- **Interactions Timeline** — aggregated interaction timeline across all persons in the org (see Interactions Timeline section below)
+- **Events** — event participations with role and sponsor tier
+- **People Roster** — persons affiliated via person_organization with role, email, LinkedIn, phone, source badge ("Enriched" for org_enrichment source), current/former status
+- **Interactions Timeline** — aggregated interaction timeline across all persons in the org
 
 ## Events
 
@@ -247,35 +250,46 @@ Tabbed interface with two tabs: Person Enrichment and Organization Enrichment.
 - **Pre-selection:** Bulk "Enrich Selected" action from Persons page passes person IDs via URL params
 
 ### Organization Enrichment Tab
-Three-stage pipeline with individual or combined execution:
+Five-stage pipeline with individual or combined execution:
 
 **Stage Selector** — Toggle buttons with descriptions:
+- **Full Pipeline** — runs all stages with smart ordering
 - **Apollo** (Firmographics) — industry, employee count, revenue, funding, tech stack, HQ
-- **Perplexity** (Deep Research) — description, products, strengths, weaknesses, recent news, target market
-- **Gemini** (Synthesis + ICP Score) — combines Apollo + Perplexity, applies FP Block ICP criteria, outputs score 0-100
-- **Full Pipeline** — runs all three (Apollo + Perplexity in parallel, then Gemini)
+- **Perplexity** (Deep Research) — description, products, strengths, weaknesses, recent news, target market, website discovery
+- **Gemini** (Synthesis + ICP Score) — combines Apollo + Perplexity, reads ICP criteria from company_context DB, outputs score 0-100
+- **People Finder** (Find Contacts at Org) — searches Apollo for people, enriches for contact details, deduplicates against existing persons
 
-Selecting Full Pipeline deselects individual stages and vice versa.
+People Finder can be combined with Full Pipeline or individual stages (additive toggle).
 
-**Target Selector:**
-- All unenriched (no ICP score) — default
-- ICP below threshold — with configurable number input
-- From event — event dropdown
-- From initiative — initiative dropdown
-- Selected organizations — from URL params (`?organizations=id1,id2`)
-- **Select from list** — searchable checkbox panel with up to 2000 records, select all/deselect all on filtered results
+**People Finder Settings** (shown when People Finder is selected):
+- Contacts per company (1-25, default 5)
+- Seniority level toggles (Owner, Founder, C-Suite, Partner, VP, Director, Manager, Senior, Entry)
+- Department toggles (Executive, Engineering, Sales, Marketing, Finance, Operations, Product, Legal, HR) — empty = all
 
-**Preview list:** Shows matching organizations before running (name, ICP score, category, website, true total count)
+**Smart Pipeline Ordering:**
+- If org has a website: Apollo + Perplexity run in parallel (fast path)
+- If org has no website: Perplexity runs first to discover domain, then Apollo uses discovered domain
 
-**Real-time progress:** During enrichment, polls job_log every 2s showing progress bar + per-org live status list with fade-in animation
+**Target Selector:** Same as before (unenriched, ICP below threshold, from event, from initiative, selected, select from list)
+
+**Preview list:** Shows matching organizations before running
+
+**Real-time progress:** Polls job_log every 2s showing progress bar + per-org live status with pipeline stage labels:
+- "Researching" (Perplexity)
+- "Firmographics" (Apollo)
+- "ICP Scoring" (Gemini)
+- "Finding People" (People Finder)
+- "Complete"
+
+**Results include:** Orgs processed/enriched, signals created, people found/created/merged
 
 ### Job History (shared)
-Table of all enrichment jobs (person + organization). Each row is a clickable link to the job detail page:
-- **Type** column with color-coded badges (orange = Person, indigo = Organization)
-- **Processed** column shows person or org count depending on type
-- **Results** column: emails/LinkedIn for person jobs, enriched/signals for org jobs
-- **Status** badge (completed/failed/processing)
-- Hover arrow indicator on each row
+Compact card list of enrichment batch jobs (person + organization). Each row shows:
+- **Type badge** (orange = Person, indigo = Organization)
+- **Inline stats:** org count, enriched, signals, people found (org) or persons, emails, linkedin (person)
+- **Timestamp** (date + time)
+- **Status badge** (completed/failed/processing)
+- Click to navigate to job detail page
 
 ### Job Detail Page
 
@@ -285,13 +299,16 @@ Dedicated results dashboard for a completed enrichment job.
 
 **Header:** Back link, job title with date, status badge, duration.
 
-**Summary Stats:** 4 stat cards — org jobs show Orgs Processed / Enriched / Signals Created / Avg ICP Score; person jobs show Persons Processed / Emails / LinkedIn / Twitter Found.
+**Summary Stats:**
+- Org jobs: Orgs Processed / Enriched / Signals Created / Avg ICP Score
+- Org jobs with People Finder: + People Found / New Persons Created / Merged with Existing
+- Person jobs: Persons Processed / Emails / LinkedIn / Twitter Found
 
 **Organization Results:** Collapsible cards with search and sort (by name, ICP, status):
-- **Collapsed:** Org name (linked), ICP score badge (color-coded), category, signals count, stage, status
-- **Expanded:** Two-column layout — left: description, context, USP, ICP reason (quote-styled); right: large ICP score with colored glow, firmographics (industry, employees, revenue, funding, HQ with icons), category. Below: strengths (green-tinted) / weaknesses (red-tinted) side by side, signals timeline with colored type badges.
+- **Collapsed:** Org name (linked), ICP score badge (color-coded), category, signals count, people found count, stage, status
+- **Expanded:** Two-column layout — left: description, context, USP, ICP reason; right: ICP score display, firmographics, category, People Finder stats (found/new/merged). Below: strengths/weaknesses, signals timeline.
 
-**Person Results:** Flat list with name (linked), field-found indicators (checkmark/X for each field), status badge.
+**Person Results:** Flat list with name (linked), field-found indicators, status badge.
 
 ## Uploads
 
@@ -311,7 +328,18 @@ Table of past imports: Date, Filename, Rows, Persons Created, Organizations Crea
 
 **URL:** `/admin/settings`
 
-Four tabs:
+Five tabs:
+
+### Company Profile
+Editable company context used by the enrichment pipeline and message generation:
+- **Company Name** — used in Gemini prompts
+- **About / Company Description** — brief description, used as context in ICP scoring
+- **Positioning Statement** — market positioning, embedded in Gemini prompts
+- **ICP Criteria** — full ICP framework, used verbatim by Gemini to score organizations (0-100)
+- **Language Rules** — words/phrases to lead with or avoid in enrichment and outreach
+- **Outreach Strategy** — high-level strategy notes for message generation
+
+Changes take effect on the next enrichment run. Stored in `company_context` singleton table.
 
 ### Sender Profiles
 CRUD for sender accounts: name, email, heyreach_account_id, signature, tone_notes.
