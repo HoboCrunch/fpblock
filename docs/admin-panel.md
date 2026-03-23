@@ -12,19 +12,21 @@ Email/password sign-in. Redirects to `/admin` on success. All `/admin/*` routes 
 
 ## Navigation
 
-The sidebar contains 10 sections with Lucide icons:
+The sidebar contains 11 sections with Lucide icons:
 
 | Section | URL | Icon |
 |---------|-----|------|
 | Dashboard | `/admin` | LayoutDashboard |
-| Contacts | `/admin/contacts` | Users |
-| Companies | `/admin/companies` | Building2 |
+| Persons | `/admin/persons` | Users |
+| Organizations | `/admin/organizations` | Building2 |
 | Events | `/admin/events` | Calendar |
 | Pipeline | `/admin/pipeline` | Kanban |
+| Initiatives | `/admin/initiatives` | Target |
 | Sequences | `/admin/sequences` | GitBranch |
 | Inbox | `/admin/inbox` | Mail |
 | Enrichment | `/admin/enrichment` | Sparkles |
 | Uploads | `/admin/uploads` | Upload |
+| Correlations | `/admin/correlations` | GitMerge |
 | Settings | `/admin/settings` | Settings |
 
 Events sub-items expand inline under the Events nav item. The sidebar collapses to icon-only mode via a toggle at the bottom, and auto-collapses on tablet viewports.
@@ -35,102 +37,171 @@ The header shows a breadcrumb trail (auto-generated from the URL path) on the le
 
 **URL:** `/admin`
 
-Overview of the outreach pipeline:
+Overview of the CRM:
 
-- **Stat Cards** (4 across) — Contacts, Companies, Messages (total), Replied. Glass cards with large numbers and accent-colored Lucide icons.
-- **Pipeline Funnel** — horizontal stacked bar showing contact distribution across all outreach stages (Not Contacted → Draft → Scheduled → Sent → Opened → Replied → Bounced/Failed). Segments are clickable and link to the Pipeline page filtered to that stage.
+- **Stat Cards** (4 across) — Persons, Organizations, Interactions (total), Replied. Glass cards with large numbers and accent-colored Lucide icons.
+- **Pipeline Funnel** — horizontal stacked bar showing person distribution across interaction stages (Not Contacted → Draft → Scheduled → Sent → Opened → Replied → Bounced/Failed). Segments are clickable and link to the Pipeline page filtered to that stage.
 - **Recent Activity** — last 20 entries from the job_log table with status indicators
 - **Quick Actions** — Upload CSV, Run Enrichment, Review Drafts
 
-## Contacts
+## Persons
 
-**URL:** `/admin/contacts`
+**URL:** `/admin/persons`
 
-Searchable, filterable list of all contacts with computed fields:
+Searchable, filterable list of all persons with computed fields:
 
-- **Search** — by name
-- **Filters** — ICP score range, Has Email, Outreach Status, Event, Company
+- **Search** — by name (trigram fuzzy search via pg_trgm)
+- **Filters** — ICP score range, Has Email, Last Interaction Status, Event, Organization
 - **Table columns:**
   - Name (link to detail)
-  - Company (primary company from contact_company join)
+  - Organization (primary org from person_organization where is_primary = true)
   - Title
-  - ICP (primary company's icp_score, color-coded badge)
+  - ICP (primary organization's icp_score via `persons_with_icp` Postgres view, color-coded badge)
   - Channels (small icons for each populated channel: email, LinkedIn, Twitter, Telegram)
-  - Outreach Status (most advanced message status for this contact; "Not Contacted" if no messages)
-  - Last Touched (most recent message activity date)
+  - Last Interaction (most recent interaction date)
+  - Interaction Count
 - **Pagination** — 25 per page
-- **Bulk actions** (on multi-select): Enrich Selected, Generate Messages, Add to Sequence
+- **Bulk actions** (on multi-select): Enrich Selected, Generate Messages, Enroll in Initiative
 
-### Contact Detail
+### Person Detail
 
-**URL:** `/admin/contacts/{id}`
+**URL:** `/admin/persons/{id}`
 
 Full profile in glass cards:
-- Header — name, title, primary company, ICP score badge
-- Contact Info — email, LinkedIn, Twitter, Telegram, phone, source
-- Context — freeform notes
-- Companies — all affiliations with roles, founder status, primary indicator
-- Events — linked events with participation type and track
-- Messages — all messages to this contact
+- **Header** — name, title, primary organization, ICP score badge, photo
+- **Contact Info** — email, LinkedIn, Twitter, Telegram, phone, source
+- **Notes** — freeform notes, bio
+- **Affiliations** — all organization memberships (current and historical) with role, role_type, is_current indicator, primary flag
+- **Events** — event participations across all events with role (speaker, attendee, etc.), talk_title, track, time_slot
+- **Interactions Timeline** — unified chronological feed of all interactions (see Interactions Timeline section below)
+- **Initiative Enrollments** — initiatives this person is enrolled in with status, priority, and scoped interaction progress
 
-## Companies
+## Organizations
 
-**URL:** `/admin/companies`
+**URL:** `/admin/organizations`
 
-Searchable, filterable list of all companies:
+Searchable, filterable list of all organizations:
 
 - **Filters** — ICP range, Category, Has Signals
-- **Table columns:** Name (link), Category, ICP Score (badge), Contact Count, Signal Count, Last Signal Date
+- **Table columns:** Name (link to detail), Category, ICP Score (badge), Person Count, Signal Count, Events (with sponsor tier badges), Last Interaction
 - **Pagination** — 25 per page
 
-### Company Detail
+### Organization Detail
 
-**URL:** `/admin/companies/{id}`
+**URL:** `/admin/organizations/{id}`
 
-Full profile with: description, context, USP angle, ICP reason, signals timeline, contacts table, messages table.
+Full profile with:
+- **Header** — name, category, ICP score badge, logo, website
+- **Context** — description, strategic context, USP angle, ICP reason
+- **People Roster** — persons affiliated via person_organization with role, role_type, current/historical status
+- **Signals Timeline** — organization_signals in reverse chronological order
+- **Events** — event participations with role (sponsor, partner, exhibitor) and sponsor tier
+- **Interactions Timeline** — aggregated interaction timeline across all persons in the org (see Interactions Timeline section below)
 
 ## Events
 
 **URL:** `/admin/events`
 
-Card grid layout. Each event as a glass card showing name, dates, location, and footer stats (contact/company/message counts). Click to open detail.
+Card grid layout. Each event as a glass card showing name, dates, location, event_type, and footer stats (counts per role type: speakers, sponsors, related contacts). Click to open detail.
 
 ### Event Detail
 
 **URL:** `/admin/events/{id}`
 
-Three tabs: Contacts (linked via contact_event), Companies (linked via company_event), Messages (for this event).
+Five tabs:
+
+#### Speakers
+Confirmed speakers from event_participations (role = "speaker"). Table columns: Name, Organization, Talk Title, Track, Time Slot, Room. Links to person detail.
+
+#### Sponsors
+Sponsoring organizations from event_participations (role = "sponsor"). Table columns: Organization Name, Sponsor Tier (badge), Person Count (from affiliated persons). Links to organization detail.
+
+#### Related Contacts
+People from sponsoring/partner organizations joined via person_organization, who are not themselves confirmed event participants. Labeled "not confirmed" with an option to mark as confirmed (creates an event_participation with confirmed = true). Table columns: Name, Organization, Role, Title, ICP.
+
+#### Schedule
+Lightweight day/track/slot grid view assembled from event_participation metadata (time_slot, track, room, talk_title). Grouped by day, sorted by time within track.
+
+#### Initiatives
+Campaigns and workstreams tied to this event via initiatives.event_id. Table columns: Name, Type, Status, Owner, Enrollment Count, Interaction Stats. Links to initiative detail.
+
+## Initiatives
+
+**URL:** `/admin/initiatives`
+
+List of campaigns and workstreams:
+
+- **Filters** — Status (active/paused/completed), Type, Event, Owner
+- **Table columns:** Name (link to detail), Type, Event, Status, Owner, Enrollment Count, Interaction Stats (sent/replied/meeting counts)
+- **Actions** — Create New Initiative
+
+### Initiative Detail
+
+**URL:** `/admin/initiatives/{id}`
+
+- **Header** — name, type, status, owner, linked event
+- **Enrolled Persons/Organizations** — table with priority, enrollment status, last interaction, interaction count. Bulk enroll/remove actions.
+- **Interactions Timeline** — scoped to this initiative (interactions where initiative_id matches), showing all touchpoints chronologically
+- **Sequence Progress** — sequences linked to this initiative with enrollment counts and step completion rates
+
+## Interactions Timeline
+
+Reusable component embedded on Person, Organization, Event, and Initiative detail views.
+
+- **Chronological feed** — reverse chronological by occurred_at
+- **Entry display** — type icon (email, handshake, phone, etc.), channel badge, direction arrow (inbound/outbound/internal), status pill (draft/sent/replied/etc.), handled_by tag
+- **Filterable** — by interaction_type, channel, direction
+- **Expandable** — click to reveal full body, subject, and type-specific detail from the JSONB `detail` field
+- **Interaction types:** cold_email, cold_linkedin, cold_twitter, warm_intro, meeting, call, event_encounter, note, research
+
+## Correlations
+
+**URL:** `/admin/correlations`
+
+Fuzzy match review queue for deduplication:
+
+- **Queue** — pending correlation_candidates sorted by confidence (highest first)
+- **Side-by-side comparison** — source record vs. target record with all fields displayed for comparison
+- **Match reasons** — displayed as badges (e.g., "exact_email", "similar_name:0.92", "same_linkedin")
+- **Confidence score** — prominently displayed with color coding (green > 0.9, yellow 0.7-0.9, orange 0.6-0.7)
+- **Actions:**
+  - **Merge** — combines records, reassigns all relationships (event_participations, interactions, initiative_enrollments, person_organization) to the winning record, deletes the losing record
+  - **Dismiss** — marks candidate as dismissed, keeps both records separate
+- **Filters** — entity_type (person/organization), confidence range, status (pending/merged/dismissed)
+- **Stats** — counts of pending, merged, and dismissed candidates
 
 ## Pipeline
 
 **URL:** `/admin/pipeline`
 
+Scoped to a selected initiative (dropdown at top). Derives stages from interaction status.
+
 Two views (toggle top-right):
 
 ### Kanban View (default)
 - **Columns:** Not Contacted, Draft, Scheduled, Sent, Opened, Replied, Bounced/Failed
-- **Cards:** Contact name, company, channel icon, ICP badge
-- **Drag and drop:** Move contacts between stages. Moving right updates the most recent message status. Moving left creates a new draft. Moving from "Not Contacted" creates a new message (modal for channel + event selection).
-- **Filters:** Event, Channel, ICP range
+- **Cards:** Person name, organization, channel icon, ICP badge
+- **Drag and drop:** Move persons between stages. Moving right updates the most recent interaction status. Moving left creates a new draft. Moving from "Not Contacted" creates a new interaction (modal for channel + type selection).
+- **Filters:** Channel, ICP range
 
 ### Table View
-Same data as a sortable, filterable table: Contact, Company, Channel, Stage, ICP, Scheduled Date, Last Updated.
+Same data as a sortable, filterable table: Person, Organization, Channel, Stage, ICP, Scheduled Date, Last Updated.
 
-**Deep linking:** `?stage=draft` pre-filters to a specific stage (used by Dashboard "Review Drafts" quick action).
+**Deep linking:** `?stage=draft` pre-filters to a specific stage (used by Dashboard "Review Drafts" quick action). `?initiative={id}` pre-selects an initiative.
 
 ## Sequences
 
 **URL:** `/admin/sequences`
 
-Manage outreach sequence templates.
+Manage outreach sequence templates. Sequences can be linked to an initiative via initiative_id.
 
 ### List View
-Table: Name, Channel, Steps count, Contacts Enrolled, Completion Rate.
+Table: Name, Channel, Steps count, Persons Enrolled, Completion Rate, Initiative.
 
 ### Detail View (`/admin/sequences/{id}`)
 - **Step timeline** — vertical list of glass cards, each showing: step number, delay (days), action type (initial/follow_up/break_up), subject template (email only), body template preview
 - **Step editor** — add/remove/edit steps, save via server action
-- **Enrolled contacts** — right sidebar showing contacts with their current step and status
+- **Enrolled persons** — right sidebar showing persons with their current step and status
 
 ## Inbox
 
@@ -142,15 +213,15 @@ Unified inbound email view for `jb@gofpblock.com` and `wes@gofpblock.com` via Fa
 Glass cards for each account: email, last sync time, unread count, status indicator (green/red), "Sync Now" button.
 
 ### Email View (two-column)
-- **Left (email list):** Sender, subject, snippet, timestamp. Unread emails have orange left border. Correlated emails show a pipeline badge (contact name + ICP). Uncorrelated emails show "Link to Contact".
-- **Right (email detail):** Full email body. If correlated: contact card with name, company, stage, link to contact detail. Action buttons: Mark as Read, Link to Contact, Ignore.
+- **Left (email list):** Sender, subject, snippet, timestamp. Unread emails have orange left border. Correlated emails show a pipeline badge (person name + ICP). Uncorrelated emails show "Link to Person".
+- **Right (email detail):** Full email body. If correlated: person card with name, organization, stage, link to person detail. Action buttons: Mark as Read, Link to Person, Ignore.
 - **Filter tabs:** All | Correlated | Uncorrelated | Account filter (JB / Wes / Both)
 
 ### Auto-Correlation
 When emails are synced:
-1. Exact match on sender email → contacts.email
-2. Domain match on sender → companies.website
-3. On match: updates outbound message to "replied", sends Telegram notification
+1. Exact match on sender email → persons.email
+2. Domain match on sender → organizations.website
+3. On match: creates inbound interaction record, sends Telegram notification
 
 ## Enrichment
 
@@ -158,14 +229,14 @@ When emails are synced:
 
 ### Run Enrichment
 - Source: Apollo (only option currently)
-- Target: All unenriched contacts / Selected contacts / Contacts from event
+- Target: All unenriched persons / Selected persons / Persons from event
 - Fields: Email, LinkedIn, Twitter, Phone (checkboxes)
 - Run button → creates job_log entry, kicks off enrichment
 
 ### Job History
-Table of past enrichment runs from job_log: Date, Source, Contacts Processed, Emails Found, LinkedIn Found, Status.
+Table of past enrichment runs from job_log: Date, Source, Persons Processed, Emails Found, LinkedIn Found, Status.
 
-**Pre-selection:** Bulk "Enrich Selected" action from Contacts page passes contact IDs via URL params.
+**Pre-selection:** Bulk "Enrich Selected" action from Persons page passes person IDs via URL params.
 
 ## Uploads
 
@@ -173,13 +244,13 @@ Table of past enrichment runs from job_log: Date, Source, Contacts Processed, Em
 
 ### CSV Upload
 1. **Drop zone** — drag and drop or click to browse for .csv files
-2. **Column mapper** — maps CSV headers to contact/company fields with auto-matching
+2. **Column mapper** — maps CSV headers to person/organization fields with auto-matching
 3. **Preview** — first 10 rows with mapped data
-4. **Import config:** event selector, import as (Contacts/Companies/Both), duplicate handling (Skip/Update/Create new)
-5. **Import** — server action creates records, links to event, handles dedup
+4. **Import config:** event selector, import as (Persons/Organizations/Both), duplicate handling (Skip/Update/Create new)
+5. **Import** — server action creates records, links to event, handles dedup. After import, runs correlation pass to flag potential duplicates.
 
 ### Upload History
-Table of past imports: Date, Filename, Rows, Contacts Created, Companies Created, Status.
+Table of past imports: Date, Filename, Rows, Persons Created, Organizations Created, Status.
 
 ## Settings
 

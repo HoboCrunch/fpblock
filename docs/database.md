@@ -6,112 +6,251 @@ Supabase Postgres. Project: `<your-project-ref>`.
 
 | File | Purpose |
 |------|---------|
-| `001_schema.sql` | Core 13 tables, foreign keys, indexes |
-| `002_sequences_uploads_inbox.sql` | Sequences, uploads, inbox sync, inbound emails, replied_at, message_status_counts RPC |
-| `002_rls.sql` | Row Level Security policies |
-| `003_triggers.sql` | `updated_at` auto-update, `pg_notify` for automations |
+| `001_schema.sql` | Original schema (superseded by CRM redesign) |
+| `002_rls.sql` | Original RLS policies |
+| `003_triggers.sql` | Original `updated_at` trigger, `pg_notify` |
 | `004_cron.sql` | Hourly send-message + sync-status via pg_cron |
-| `005_rpc.sql` | `message_status_counts()` function for dashboard |
+| `005_rpc.sql` | Original `message_status_counts()` (replaced by `interaction_status_counts()`) |
+| `007_sequences_uploads_inbox.sql` | Sequences, uploads, inbox sync, inbound emails |
+| `008_sequence_status.sql` | Sequence status additions |
+| `009_rls_new_tables.sql` | RLS for sequences/uploads/inbox tables |
+| `010_crm_redesign_schema.sql` | New core tables, event redesign, initiatives, interactions, correlation, supporting table migrations |
+| `011_crm_redesign_rls.sql` | RLS on all new tables |
+| `012_crm_redesign_functions.sql` | Triggers, views, correlation functions, merge functions |
+| `013_crm_drop_old_tables.sql` | Drop old tables (contacts, companies, etc.) |
+| `014_crm_upsert_constraints.sql` | Unique constraint on organizations.name, fix correlation functions |
+| `015_crm_enrollment_constraint_and_correlation_fix.sql` | Unique constraint on initiatives.name, final correlation function fix |
 
-## Tables (17 total)
+## Extensions
+
+- `pg_trgm` — trigram fuzzy matching for person/org name similarity
+
+## Tables
 
 ### Core Entities
 
-#### contacts
-Primary entity. Represents a person to outreach to.
+#### persons
+The permanent identity record. One row per real human, survives across events, initiatives, and time.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | uuid PK | Auto-generated |
+| full_name | text NOT NULL | Display name |
 | first_name | text | |
 | last_name | text | |
-| full_name | text NOT NULL | Display name |
-| title | text | Job title |
-| seniority | text | From Apollo |
-| department | text | From Apollo |
 | email | text | |
-| linkedin | text | Profile URL |
-| twitter | text | Handle or URL |
-| telegram | text | |
+| linkedin_url | text | Profile URL |
+| twitter_handle | text | Handle or URL |
+| telegram_handle | text | |
 | phone | text | |
-| context | text | Freeform context notes |
+| title | text | Current role/title |
+| seniority | text | |
+| department | text | |
+| bio | text | |
+| photo_url | text | |
+| source | text | How they first entered the system |
 | apollo_id | text | Apollo CRM ID |
-| source | text | e.g. "speakers", "apollo" |
 | notes | text | |
-| created_at | timestamptz | |
-| updated_at | timestamptz | Auto-updated by trigger |
+| created_at | timestamptz NOT NULL | Default now() |
+| updated_at | timestamptz NOT NULL | Auto-updated by trigger |
 
-#### companies
-Organizations that contacts belong to.
+**Indexes:** email, apollo_id, full_name (trigram via `gin_trgm_ops`), linkedin_url, twitter_handle
+
+#### organizations
+Companies, DAOs, foundations, government agencies.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| id | uuid PK | |
-| name | text NOT NULL | |
+| id | uuid PK | Auto-generated |
+| name | text NOT NULL UNIQUE | |
 | website | text | |
 | linkedin_url | text | |
-| category | text | e.g. "DeFi", "Infrastructure" |
+| category | text | e.g. "L1/L2", "Exchange", "VC", "Government" |
 | description | text | |
-| context | text | AI-generated summary from enrichment |
-| usp | text | Our angle for outreach |
-| icp_score | integer | 0-100, >= 75 qualifying, >= 90 Tier 1 |
+| logo_url | text | |
+| icp_score | int | 0-100, >= 75 qualifying, >= 90 Tier 1 |
 | icp_reason | text | Why this score |
-| created_at / updated_at | timestamptz | |
+| context | text | Strategic context / why this org matters |
+| usp | text | Our angle for outreach |
+| notes | text | |
+| created_at | timestamptz NOT NULL | Default now() |
+| updated_at | timestamptz NOT NULL | Auto-updated by trigger |
+
+**Indexes:** name (trigram via `gin_trgm_ops`), icp_score, website
+**Constraints:** UNIQUE on name (for PostgREST upsert)
+
+#### person_organization
+Affiliations. A person can belong to multiple orgs over time.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| person_id | uuid FK persons | CASCADE delete |
+| organization_id | uuid FK organizations | CASCADE delete |
+| role | text | "CEO", "Head of BD", etc. |
+| role_type | text | "founder", "executive", "employee", "advisor" |
+| is_current | boolean | Default true |
+| is_primary | boolean | Default false |
+| source | text | |
+| created_at | timestamptz NOT NULL | Default now() |
+| updated_at | timestamptz NOT NULL | Auto-updated by trigger |
+
+**Constraints:** UNIQUE on (person_id, organization_id)
+**Indexes:** person_id, organization_id
 
 #### events
-Conferences/events we're targeting.
+Conferences, side events, meetups.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | Auto-generated |
+| name | text NOT NULL | e.g. "EthCC 9" |
+| slug | text UNIQUE | e.g. "ethcc-9" |
+| location | text | |
+| date_start | date | |
+| date_end | date | |
+| website | text | |
+| event_type | text | "conference", "side_event", "meetup" |
+| notes | text | |
+| created_at | timestamptz NOT NULL | Default now() |
+
+**Indexes:** slug, date_start
+
+### Event Relationships
+
+#### event_participations
+How persons and organizations relate to events. Uses exclusive-or constraint: exactly one of person_id or organization_id must be set per row.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | uuid PK | |
-| name | text NOT NULL | e.g. "EthCC 2026" |
-| location | text | |
-| date_start / date_end | date | |
-| website | text | |
+| event_id | uuid FK events | CASCADE delete, NOT NULL |
+| person_id | uuid FK persons | CASCADE delete, nullable |
+| organization_id | uuid FK organizations | CASCADE delete, nullable |
+| role | text NOT NULL | Person: "speaker", "attendee", "organizer", "panelist", "mc". Org: "sponsor", "partner", "exhibitor", "media" |
+| sponsor_tier | text | For org sponsors: "presented_by", "platinum", "diamond", etc. |
+| confirmed | boolean | Default true. False = inferred |
+| talk_title | text | Session metadata |
+| time_slot | text | e.g. "Day 2, 14:00" |
+| track | text | e.g. "defi", "security" |
+| room | text | |
 | notes | text | |
 
-### Messaging
+**Constraints:**
+- `CHECK ((person_id IS NULL) != (organization_id IS NULL))` — exactly one must be set
+- Partial unique index on `(event_id, person_id, role) WHERE person_id IS NOT NULL`
+- Partial unique index on `(event_id, organization_id, role) WHERE organization_id IS NOT NULL`
 
-#### messages
-Generated outreach messages with full lifecycle tracking.
+**Indexes:** event_id, person_id, organization_id
+
+### Initiatives
+
+#### initiatives
+Campaigns, workstreams, outreach efforts.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | uuid PK | |
-| contact_id | uuid FK contacts | CASCADE delete |
-| company_id | uuid FK companies | SET NULL |
-| event_id | uuid FK events | SET NULL |
-| channel | text NOT NULL | "email", "linkedin", "twitter", "telegram" |
-| sequence_number | int NOT NULL | Position in sequence (1 = intro, 2 = follow-up) |
-| iteration | int NOT NULL | Regeneration count at this position |
-| subject | text | Email subject line |
-| body | text NOT NULL | Message body |
-| status | text NOT NULL | See status lifecycle below |
-| sender_id | uuid FK sender_profiles | |
-| cta | text | Call-to-action URL |
+| name | text NOT NULL UNIQUE | |
+| initiative_type | text | "cold_outreach", "partnership", "event_prep", "research" |
+| event_id | uuid FK events | Optional event association |
+| status | text | Default "active". "active", "paused", "completed" |
+| owner | text | Genzio team member |
+| notes | text | |
+| created_at | timestamptz | Default now() |
+| updated_at | timestamptz | Auto-updated by trigger |
+
+**Indexes:** event_id, status
+**Constraints:** UNIQUE on name (for PostgREST upsert)
+
+#### initiative_enrollments
+Which persons or organizations are enrolled in an initiative. Uses same exclusive-or pattern as event_participations.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| initiative_id | uuid FK initiatives | CASCADE delete, NOT NULL |
+| person_id | uuid FK persons | CASCADE delete, nullable |
+| organization_id | uuid FK organizations | CASCADE delete, nullable |
+| status | text | Default "active". "active", "paused", "completed", "removed" |
+| priority | text | "high", "medium", "low" |
+| enrolled_at | timestamptz | Default now() |
+
+**Constraints:**
+- `CHECK ((person_id IS NULL) != (organization_id IS NULL))` — exactly one must be set
+- Partial unique index on `(initiative_id, person_id) WHERE person_id IS NOT NULL`
+- Partial unique index on `(initiative_id, organization_id) WHERE organization_id IS NOT NULL`
+
+**Indexes:** initiative_id, person_id, organization_id
+
+### Interactions
+
+#### interactions
+Unified timeline. Every touchpoint — outbound messages, inbound replies, meetings, notes, research — lives here. Replaces the old `messages` table.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| person_id | uuid FK persons | SET NULL on delete, nullable |
+| organization_id | uuid FK organizations | SET NULL on delete, nullable |
+| event_id | uuid FK events | SET NULL on delete, nullable |
+| initiative_id | uuid FK initiatives | SET NULL on delete, nullable |
+| interaction_type | text NOT NULL | "cold_email", "cold_linkedin", "cold_twitter", "warm_intro", "meeting", "call", "event_encounter", "note", "research" |
+| channel | text | "email", "linkedin", "twitter", "telegram", "in_person", "phone" |
+| direction | text | "outbound", "inbound", "internal" |
+| subject | text | |
+| body | text | |
+| status | text | Default "draft". See status lifecycle below |
+| handled_by | text | Genzio team member |
+| sender_profile_id | uuid FK sender_profiles | SET NULL on delete |
+| sequence_id | uuid FK sequences | SET NULL on delete |
+| sequence_step | int | Step number within sequence |
 | scheduled_at | timestamptz | When to send |
-| sent_at | timestamptz | When actually sent |
-| replied_at | timestamptz | When a reply was detected (from inbox correlation) |
+| occurred_at | timestamptz | When it actually happened |
+| detail | jsonb | Type-specific fields (see below) |
+| created_at | timestamptz | Default now() |
+| updated_at | timestamptz | Auto-updated by trigger |
 
 **Status Lifecycle:**
 ```
-draft → approved → scheduled → processing → sent → opened → replied
-                                          ↘ bounced
-                                          ↘ failed
-(any) → superseded (when regenerated)
+draft -> scheduled -> sending -> sent -> delivered -> opened -> replied
+                                      \-> bounced
+                                      \-> failed
 ```
 
-**Pipeline Stage Mapping (for Kanban view):**
+**Detail JSONB by interaction_type:**
+- `warm_intro`: `{ introducer, relationship_strength, target_outcome, intro_status, follow_up_date }`
+- `meeting`: `{ location, attendees[], outcome, follow_up_date }`
+- `cold_email`: `{ iteration, cta, message_id_header }`
+- `research`: `{ findings, sources[] }`
 
-| Pipeline Stage | Message Statuses |
-|---------------|-----------------|
-| Not Contacted | Contact has zero messages |
-| Draft | Most advanced status is `draft` |
-| Scheduled | Most advanced status is `scheduled` |
-| Sent | Most advanced is `sending`, `sent`, or `delivered` |
-| Opened | Most advanced is `opened` |
-| Replied | Most advanced is `replied` |
-| Bounced/Failed | Most advanced is `bounced` or `failed` |
+**Indexes:** person_id, organization_id, event_id, initiative_id, status, occurred_at DESC, interaction_type
+
+### Correlation & Deduplication
+
+#### correlation_candidates
+Staging table for fuzzy match review.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| entity_type | text NOT NULL | "person" or "organization" |
+| source_id | uuid NOT NULL | The new/incoming record |
+| target_id | uuid NOT NULL | The existing record it might match |
+| confidence | float NOT NULL | 0.0 to 1.0 |
+| match_reasons | jsonb | e.g. `["exact_email", "similar_name:0.92"]` |
+| status | text | Default "pending". "pending", "merged", "dismissed" |
+| resolved_by | text | |
+| created_at | timestamptz | Default now() |
+
+**Indexes:** status, entity_type, source_id, target_id
+
+**Confidence thresholds:**
+- **>= 0.95 (auto-merge):** Exact email (0.98), exact LinkedIn (0.97), exact Twitter/website (0.96-0.98)
+- **0.6-0.95 (flag for review):** Fuzzy name match via pg_trgm similarity
+- **< 0.6:** No match, create new record
+
+### Supporting Tables
 
 #### sender_profiles
 Who sends the messages.
@@ -134,8 +273,6 @@ Templates for AI message generation.
 | system_prompt | text NOT NULL | AI system instructions |
 | user_prompt_template | text NOT NULL | Per-message prompt with template variables |
 
-Template variables: `{{contact.full_name}}`, `{{contact.title}}`, `{{contact.context}}`, `{{company.name}}`, `{{company.context}}`, `{{company.description}}`, `{{company.usp}}`, `{{company.icp_reason}}`, `{{sender.name}}`, `{{sender.tone_notes}}`, `{{cta}}`, `{{previous_message}}`
-
 #### event_config
 Per-event defaults for message generation.
 
@@ -148,8 +285,6 @@ Per-event defaults for message generation.
 | prompt_template_id | uuid FK prompt_templates | Default template |
 | notify_emails | text[] | Alert recipients |
 
-### Sequences (new in 002)
-
 #### sequences
 Named outreach sequence templates with multi-step timing.
 
@@ -159,6 +294,7 @@ Named outreach sequence templates with multi-step timing.
 | name | text NOT NULL | e.g. "EthCC LinkedIn 3-touch" |
 | channel | text NOT NULL | "email", "linkedin", etc. |
 | event_id | uuid FK events | Optional event association |
+| initiative_id | uuid FK initiatives | Links sequence to parent initiative |
 | steps | jsonb NOT NULL | Array of step objects (see below) |
 | created_at / updated_at | timestamptz | |
 
@@ -179,20 +315,18 @@ Named outreach sequence templates with multi-step timing.
 Fields: `step_number`, `delay_days` (days after previous step), `action_type` (initial/follow_up/break_up), `subject_template` (email only), `body_template`, `prompt_template_id` (optional, for AI generation).
 
 #### sequence_enrollments
-Tracks which contacts are enrolled in which sequences.
+Tracks which persons are enrolled in which sequences.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | uuid PK | |
 | sequence_id | uuid FK sequences | CASCADE delete |
-| contact_id | uuid FK contacts | CASCADE delete |
+| person_id | uuid FK persons | CASCADE delete |
 | current_step | int | 0-indexed current step |
 | status | text | active, paused, completed, bounced |
 | enrolled_at | timestamptz | |
 
-UNIQUE on (sequence_id, contact_id).
-
-### Uploads (new in 002)
+UNIQUE on (sequence_id, person_id).
 
 #### uploads
 Tracks CSV import operations.
@@ -202,15 +336,13 @@ Tracks CSV import operations.
 | id | uuid PK | |
 | filename | text NOT NULL | Original CSV filename |
 | row_count | int | Total rows in file |
-| contacts_created | int | Contacts created by this import |
-| companies_created | int | Companies created by this import |
-| event_id | uuid FK events | Event contacts were linked to |
+| persons_created | int | Persons created by this import |
+| organizations_created | int | Organizations created by this import |
+| event_id | uuid FK events | Event records were linked to |
 | status | text | processing, completed, failed |
 | errors | jsonb | Import error details |
 | uploaded_by | uuid | Auth user ID |
 | created_at | timestamptz | |
-
-### Inbox (new in 002)
 
 #### inbox_sync_state
 Tracks Fastmail sync state per connected email account.
@@ -225,8 +357,6 @@ Tracks Fastmail sync state per connected email account.
 | status | text | connected, error, disconnected |
 | error_message | text | Error details if status = error |
 | updated_at | timestamptz | |
-
-Pre-seeded with both accounts.
 
 #### inbound_emails
 Cached inbound emails from Fastmail for the inbox view.
@@ -243,47 +373,22 @@ Cached inbound emails from Fastmail for the inbox view.
 | body_html | text | Full HTML body |
 | received_at | timestamptz NOT NULL | |
 | is_read | boolean | |
-| contact_id | uuid FK contacts | Correlated contact (if matched) |
-| correlated_message_id | uuid FK messages | Matched outbound message |
+| person_id | uuid FK persons | Correlated person (if matched) |
+| correlated_interaction_id | uuid | Matched outbound interaction |
 | correlation_type | text | exact_email, domain_match, manual, none |
 | raw_headers | jsonb | In-Reply-To, References headers |
 | created_at | timestamptz | |
 
-### Enrichment
-
-#### company_signals
-Structured intelligence about companies from enrichment.
+#### organization_signals
+Structured intelligence about organizations from enrichment. Renamed from `company_signals`.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| company_id | uuid FK companies | CASCADE delete |
+| organization_id | uuid FK organizations | CASCADE delete |
 | signal_type | text NOT NULL | news, funding, partnership, product_launch, regulatory, hiring, award |
 | description | text NOT NULL | One-sentence summary |
 | date | date | When the signal occurred |
 | source | text | e.g. "enrichment", "company_news_cache" |
-
-### Join Tables
-
-#### contact_company
-Many-to-many: contacts ↔ companies.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| contact_id | uuid FK | |
-| company_id | uuid FK | |
-| role | text | Job title at this company |
-| role_type | text | |
-| founder_status | text | |
-| is_primary | boolean | Primary company affiliation |
-| source | text | |
-
-UNIQUE on (contact_id, company_id).
-
-#### contact_event / company_event
-Link contacts and companies to events.
-
-- `contact_event`: participation_type ("speaker", "sponsor_rep"), track, notes
-- `company_event`: relationship_type ("sponsor"), sponsor_tier, notes
 
 ### Automation
 
@@ -311,26 +416,78 @@ Audit trail for all background operations.
 | error | text | Error message if failed |
 | metadata | jsonb | Job-specific data |
 
-## Indexes
+## Views
 
-- `contacts`: email, apollo_id, full_name
-- `companies`: name, icp_score
-- `messages`: status, scheduled_at, contact_id, event_id
-- `company_signals`: company_id
-- `contact_company`: contact_id, company_id
-- `contact_event`: event_id
-- `company_event`: event_id
-- `job_log`: created_at DESC
-- `sequences`: event_id
-- `sequence_enrollments`: sequence_id, contact_id
+#### persons_with_icp
+Joins persons with their primary organization's ICP data for sortable list views.
+
+```sql
+SELECT
+  p.*,
+  o.name AS primary_org_name,
+  o.icp_score,
+  o.icp_reason,
+  o.category AS org_category,
+  po.role AS org_role
+FROM persons p
+LEFT JOIN person_organization po ON po.person_id = p.id AND po.is_primary = true
+LEFT JOIN organizations o ON o.id = po.organization_id;
+```
+
+## Functions
+
+#### interaction_status_counts()
+RPC that returns interaction status distribution for dashboard widgets.
+
+```sql
+SELECT status, count(*)::bigint FROM interactions WHERE status IS NOT NULL GROUP BY status;
+```
+
+#### find_person_correlations(p_person_id uuid)
+Finds potential duplicate persons by comparing email, LinkedIn, Twitter (exact match), and full_name (pg_trgm similarity >= 0.6). Returns `(target_id, confidence, match_reasons)`.
+
+Confidence scores: exact email = 0.98, exact LinkedIn = 0.97, exact Twitter = 0.96, name similarity = trigram score.
+
+#### find_org_correlations(p_org_id uuid)
+Same pattern for organizations. Compares website (0.98), LinkedIn (0.97), and name similarity (>= 0.6).
+
+#### merge_persons(winner_id uuid, loser_id uuid)
+Merges two person records. Reassigns all relationships (person_organization, event_participations, initiative_enrollments, interactions, sequence_enrollments, inbound_emails) from loser to winner. Fills null fields on winner from loser. Cleans up correlation_candidates. Deletes loser record.
+
+#### merge_organizations(winner_id uuid, loser_id uuid)
+Same pattern for organizations. Reassigns person_organization, event_participations, initiative_enrollments, interactions, organization_signals. Fills null fields. Cleans up correlation_candidates. Deletes loser.
+
+## Triggers
+
+`updated_at` auto-update trigger on:
+- `persons`
+- `organizations`
+- `person_organization`
+- `initiatives`
+- `interactions`
+
+## RLS
+
+Authenticated full access (`auth.uid() IS NOT NULL`) on all tables:
+- persons, organizations, person_organization, events, event_participations
+- initiatives, initiative_enrollments, interactions, correlation_candidates
+- sender_profiles, prompt_templates, event_config, sequences, sequence_enrollments
+- uploads, inbox_sync_state, inbound_emails, organization_signals
+- automation_rules, job_log
+
+## Indexes Summary
+
+- `persons`: email, apollo_id, full_name (trigram GIN), linkedin_url, twitter_handle
+- `organizations`: name (trigram GIN), icp_score, website
+- `person_organization`: person_id, organization_id
+- `events`: slug, date_start
+- `event_participations`: event_id, person_id, organization_id + partial unique indexes on (event_id, person_id, role) and (event_id, organization_id, role)
+- `initiatives`: event_id, status
+- `initiative_enrollments`: initiative_id, person_id, organization_id + partial unique indexes
+- `interactions`: person_id, organization_id, event_id, initiative_id, status, occurred_at DESC, interaction_type
+- `correlation_candidates`: status, entity_type, source_id, target_id
+- `sequences`: event_id, initiative_id
+- `sequence_enrollments`: sequence_id, person_id
 - `uploads`: event_id
-- `inbound_emails`: account_email, contact_id, received_at DESC, from_address
-
-## Seed Data
-
-The `supabase/seed.sql` file creates:
-- 2 sender profiles (JB, Wes) with fixed UUIDs `a0000000-...-000000000001/2`
-- 2 events (EthCC 2026, TOKEN2049 Dubai) with fixed UUIDs `b0000000-...-000000000001/2`
-- 2 prompt templates (LinkedIn Intro, Email Intro) with fixed UUIDs `c0000000-...-000000000001/2`
-- 1 event_config linking EthCC to JB sender + LinkedIn template
-- 2 inbox_sync_state records for jb@gofpblock.com and wes@gofpblock.com
+- `inbound_emails`: account_email, person_id, received_at DESC, from_address
+- `job_log`: created_at DESC
