@@ -12,6 +12,7 @@ import {
   ArrowUpDown,
   Building2,
   Users,
+  UserPlus,
   DollarSign,
   TrendingUp,
   Briefcase,
@@ -148,6 +149,12 @@ function OrgExpandedCard({
   const meta = (entry.metadata ?? {}) as Record<string, unknown>;
   const icpScore = org?.icp_score ?? (meta.icp_score as number | null) ?? null;
 
+  const peopleFinder = meta.people_finder as Record<string, number> | undefined;
+  const pfFound = peopleFinder?.found ?? (meta.found as number) ?? (meta.people_found as number) ?? null;
+  const pfCreated = peopleFinder?.created ?? (meta.people_created as number) ?? null;
+  const pfMerged = peopleFinder?.merged ?? (meta.people_merged as number) ?? null;
+  const hasPeopleFinder = pfFound != null && pfFound > 0;
+
   const description = org?.description ?? (meta.description as string) ?? null;
   const context = org?.context ?? (meta.context as string) ?? null;
   const usp = org?.usp ?? (meta.usp as string) ?? null;
@@ -177,7 +184,7 @@ function OrgExpandedCard({
   const weaknesses = (meta.weaknesses as string[]) ?? null;
 
   const hasContent =
-    description || context || usp || icpReason || hasFirmographics || strengths || weaknesses || signals.length > 0;
+    description || context || usp || icpReason || hasFirmographics || strengths || weaknesses || signals.length > 0 || hasPeopleFinder;
 
   if (!hasContent && !entry.error) {
     return (
@@ -297,6 +304,29 @@ function OrgExpandedCard({
               <span className="text-xs text-[var(--text-secondary)]">{org.category}</span>
             </div>
           )}
+
+          {/* People Finder */}
+          {hasPeopleFinder && (
+            <div className="rounded-lg bg-[var(--accent-orange)]/[0.03] border border-[var(--accent-orange)]/10 p-3 space-y-2">
+              <div className="text-[10px] uppercase tracking-wider text-[var(--accent-orange)]/70 mb-1 font-medium flex items-center gap-1.5">
+                <UserPlus className="h-3 w-3" /> People Found
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="text-lg font-bold text-white tabular-nums">{pfFound}</div>
+                  <div className="text-[9px] text-[var(--text-muted)]">Found</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-green-400 tabular-nums">{pfCreated ?? 0}</div>
+                  <div className="text-[9px] text-[var(--text-muted)]">New</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-[var(--accent-indigo)] tabular-nums">{pfMerged ?? 0}</div>
+                  <div className="text-[9px] text-[var(--text-muted)]">Merged</div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -405,6 +435,8 @@ function OrgResultRow({
   const stageCompleted = entry.job_type.replace("enrichment_", "");
   const signalsCount =
     (meta.signals_created as number) ?? (meta.signal_count as number) ?? signals.length;
+  const pfData = meta.people_finder as Record<string, number> | undefined;
+  const peopleFound = pfData?.found ?? (meta.found as number) ?? (meta.people_found as number) ?? 0;
 
   return (
     <div className="border-b border-white/[0.04] last:border-0">
@@ -462,6 +494,14 @@ function OrgResultRow({
         <span className="text-[10px] text-[var(--text-muted)] shrink-0 hidden sm:inline tabular-nums">
           {signalsCount} signal{signalsCount !== 1 ? "s" : ""}
         </span>
+
+        {/* People found */}
+        {peopleFound > 0 && (
+          <span className="text-[10px] text-[var(--accent-orange)] shrink-0 hidden sm:inline tabular-nums flex items-center gap-1">
+            <UserPlus className="h-3 w-3" />
+            {peopleFound} people
+          </span>
+        )}
 
         {/* Stage */}
         <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] border border-[var(--accent-indigo)]/20 shrink-0 capitalize hidden md:inline">

@@ -49,6 +49,8 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
     role: pl.role,
     role_type: pl.role_type,
     is_current: pl.is_current,
+    is_primary: pl.is_primary,
+    link_source: pl.source,
   }));
 
   return (
@@ -172,7 +174,10 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
                     <th className="px-5 py-3 font-medium">Title</th>
                     <th className="px-5 py-3 font-medium">Role</th>
                     <th className="px-5 py-3 font-medium">Email</th>
+                    <th className="px-5 py-3 font-medium">LinkedIn</th>
+                    <th className="px-5 py-3 font-medium">Phone</th>
                     <th className="px-5 py-3 font-medium">Status</th>
+                    <th className="px-5 py-3 font-medium">Source</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.04]">
@@ -189,11 +194,28 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
                         {!person.role && <span className="text-[var(--text-muted)]">&mdash;</span>}
                       </td>
                       <td className="px-5 py-3 text-[var(--text-muted)]">{person.email || "\u2014"}</td>
+                      <td className="px-5 py-3 text-[var(--text-muted)]">
+                        {person.linkedin_url ? (
+                          <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-indigo)] hover:underline text-xs truncate max-w-[120px] inline-block">
+                            LinkedIn
+                          </a>
+                        ) : "\u2014"}
+                      </td>
+                      <td className="px-5 py-3 text-[var(--text-muted)]">{person.phone || "\u2014"}</td>
                       <td className="px-5 py-3">
                         {person.is_current ? (
                           <Badge variant="sent">Current</Badge>
                         ) : (
                           <Badge variant="default">Former</Badge>
+                        )}
+                      </td>
+                      <td className="px-5 py-3">
+                        {person.link_source === "org_enrichment" ? (
+                          <Badge variant="glass-orange" className="text-[10px]">Enriched</Badge>
+                        ) : person.link_source ? (
+                          <span className="text-xs text-[var(--text-muted)]">{person.link_source}</span>
+                        ) : (
+                          <span className="text-[var(--text-muted)]">&mdash;</span>
                         )}
                       </td>
                     </tr>

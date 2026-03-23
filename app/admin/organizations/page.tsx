@@ -74,7 +74,7 @@ export default async function OrganizationsListPage({
     let batchQuery = supabase
       .from("organizations")
       .select(
-        "*, person_organization(id), organization_signals(id, date), event_participations(event_id, role, sponsor_tier, event:events(id, name))",
+        "*, person_organization(id, source), organization_signals(id, date), event_participations(event_id, role, sponsor_tier, event:events(id, name))",
       );
 
     if (params.search) {
@@ -118,6 +118,9 @@ export default async function OrganizationsListPage({
   const rows = (allOrgs || [])
     .map((org: any) => {
       const personCount = org.person_organization?.length || 0;
+      const enrichedPersonCount = (org.person_organization || []).filter(
+        (po: any) => po.source === "org_enrichment"
+      ).length;
       const signals = org.organization_signals || [];
       const signalCount = signals.length;
       const lastSignal =
@@ -133,6 +136,7 @@ export default async function OrganizationsListPage({
         category: org.category,
         icp_score: org.icp_score,
         person_count: personCount,
+        enriched_person_count: enrichedPersonCount,
         signal_count: signalCount,
         last_signal: lastSignal,
         events: (org.event_participations || [])
@@ -296,6 +300,11 @@ export default async function OrganizationsListPage({
                   </td>
                   <td className="px-5 py-3 text-[var(--text-secondary)]">
                     {row.person_count}
+                    {row.enriched_person_count > 0 && (
+                      <span className="text-[10px] text-[var(--accent-orange)] ml-1" title="Found via People Finder">
+                        (+{row.enriched_person_count})
+                      </span>
+                    )}
                   </td>
                   <td className="px-5 py-3 text-[var(--text-secondary)]">
                     {row.signal_count}

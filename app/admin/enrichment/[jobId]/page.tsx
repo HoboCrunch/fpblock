@@ -9,6 +9,7 @@ import {
   Sparkles,
   Zap,
   Users,
+  UserPlus,
   Mail,
   Linkedin,
   Twitter,
@@ -191,6 +192,7 @@ export default async function EnrichmentJobPage({
           "enrichment_apollo",
           "enrichment_perplexity",
           "enrichment_gemini",
+          "enrichment_people_finder",
         ]
       : ["enrichment", "enrichment_apollo"];
     const orgIds =
@@ -322,6 +324,28 @@ export default async function EnrichmentJobPage({
       )
     : null;
 
+  // People finder stats (org enrichment only)
+  const peopleFinderStats = isOrgJob
+    ? {
+        found: (meta.people_found as number) ?? childEntries.reduce((sum, e) => {
+          const m = (e.metadata ?? {}) as Record<string, unknown>;
+          const pf = m.people_finder as Record<string, number> | undefined;
+          return sum + (pf?.found ?? (m.found as number) ?? 0);
+        }, 0),
+        created: (meta.people_created as number) ?? childEntries.reduce((sum, e) => {
+          const m = (e.metadata ?? {}) as Record<string, unknown>;
+          const pf = m.people_finder as Record<string, number> | undefined;
+          return sum + (pf?.created ?? (m.created as number) ?? 0);
+        }, 0),
+        merged: (meta.people_merged as number) ?? childEntries.reduce((sum, e) => {
+          const m = (e.metadata ?? {}) as Record<string, unknown>;
+          const pf = m.people_finder as Record<string, number> | undefined;
+          return sum + (pf?.merged ?? (m.merged as number) ?? 0);
+        }, 0),
+      }
+    : null;
+  const hasPeopleFinderStats = peopleFinderStats && (peopleFinderStats.found > 0 || peopleFinderStats.created > 0);
+
   // Duration
   const duration = (() => {
     if (meta.duration_ms) {
@@ -418,27 +442,51 @@ export default async function EnrichmentJobPage({
 
       {/* Summary Stats */}
       {isOrgJob ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            label="Orgs Processed"
-            value={orgsProcessedFromMeta}
-            icon={Building2}
-            accent="indigo"
-          />
-          <StatCard
-            label="Orgs Enriched"
-            value={orgsEnrichedFromMeta}
-            icon={Sparkles}
-            accent="orange"
-          />
-          <StatCard
-            label="Signals Created"
-            value={signalsCreatedFromMeta}
-            icon={Zap}
-            accent="blue"
-          />
-          <IcpAverageCard avg={avgIcp} />
-        </div>
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              label="Orgs Processed"
+              value={orgsProcessedFromMeta}
+              icon={Building2}
+              accent="indigo"
+            />
+            <StatCard
+              label="Orgs Enriched"
+              value={orgsEnrichedFromMeta}
+              icon={Sparkles}
+              accent="orange"
+            />
+            <StatCard
+              label="Signals Created"
+              value={signalsCreatedFromMeta}
+              icon={Zap}
+              accent="blue"
+            />
+            <IcpAverageCard avg={avgIcp} />
+          </div>
+          {hasPeopleFinderStats && (
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              <StatCard
+                label="People Found"
+                value={peopleFinderStats!.found}
+                icon={UserPlus}
+                accent="orange"
+              />
+              <StatCard
+                label="New Persons Created"
+                value={peopleFinderStats!.created}
+                icon={Users}
+                accent="green"
+              />
+              <StatCard
+                label="Merged with Existing"
+                value={peopleFinderStats!.merged}
+                icon={Users}
+                accent="indigo"
+              />
+            </div>
+          )}
+        </>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
