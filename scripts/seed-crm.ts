@@ -140,6 +140,26 @@ async function batchUpsert<T extends Record<string, unknown>>(
   return all;
 }
 
+/** Insert rows in batches (no upsert, just insert). Returns inserted rows. */
+async function batchInsert<T extends Record<string, unknown>>(
+  table: string,
+  rows: T[]
+): Promise<T[]> {
+  const all: T[] = [];
+  for (const chunk of batch(rows, BATCH_SIZE)) {
+    const { data, error } = await supabase
+      .from(table)
+      .insert(chunk)
+      .select();
+    if (error) {
+      console.error(`  Error inserting into ${table}:`, error.message);
+    } else if (data) {
+      all.push(...(data as T[]));
+    }
+  }
+  return all;
+}
+
 /** Normalize a name to look up orgs/persons (lowercase, trimmed) */
 function norm(s: string | undefined | null): string {
   return (s ?? "").trim().toLowerCase();
@@ -225,6 +245,32 @@ const personCache = new Map<string, string>(); // norm(name) → person id
 // Main import functions
 // ---------------------------------------------------------------------------
 
+async function clearExistingData() {
+  console.log("\n=== Clearing existing data ===");
+  // Truncate in dependency order (children first)
+  const tables = [
+    "correlation_candidates",
+    "interactions",
+    "initiative_enrollments",
+    "event_participations",
+    "person_organization",
+    "organization_signals",
+    "initiatives",
+    "persons",
+    "organizations",
+    "events",
+  ];
+  for (const table of tables) {
+    // Use id > '' as a universal "delete all" filter (works for uuid columns)
+    const { error } = await supabase.from(table).delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (error) {
+      console.error(`  Warning: could not clear ${table}: ${error.message}`);
+    } else {
+      console.log(`  Cleared ${table}`);
+    }
+  }
+}
+
 async function createEvents() {
   console.log("\n=== Creating Events ===");
 
@@ -250,7 +296,7 @@ async function createEvents() {
   ];
 
   const { data, error } = await supabase
-    .from("events_new")
+    .from("events")
     .upsert(events, { onConflict: "slug" })
     .select();
 
@@ -385,7 +431,7 @@ async function importEthCCSpeakers(eventId: string) {
     }
   }
   if (epRows.length > 0) {
-    const inserted = await batchUpsert("event_participations", epRows, "event_id,person_id,role", { ignoreDuplicates: true });
+    const inserted = await batchInsert("event_participations", epRows);
     stats.event_participations += inserted.length;
     console.log(`  Created ${inserted.length} event participations`);
   }
@@ -455,7 +501,7 @@ async function importEthCCSponsors(eventId: string) {
     }
   }
   if (participations.length > 0) {
-    const inserted = await batchUpsert("event_participations", participations, "event_id,organization_id,role", { ignoreDuplicates: true });
+    const inserted = await batchInsert("event_participations", participations);
     stats.event_participations += inserted.length;
     console.log(`  Created ${inserted.length} sponsor participations`);
   }
@@ -575,7 +621,7 @@ async function importDCSpeakers(eventId: string) {
     }
   }
   if (epRows.length > 0) {
-    const inserted = await batchUpsert("event_participations", epRows, "event_id,person_id,role", { ignoreDuplicates: true });
+    const inserted = await batchInsert("event_participations", epRows);
     stats.event_participations += inserted.length;
     console.log(`  Created ${inserted.length} event participations`);
   }
@@ -638,7 +684,7 @@ async function importDCSponsors(eventId: string) {
     }
   }
   if (participations.length > 0) {
-    const inserted = await batchUpsert("event_participations", participations, "event_id,organization_id,role", { ignoreDuplicates: true });
+    const inserted = await batchInsert("event_participations", participations);
     stats.event_participations += inserted.length;
     console.log(`  Created ${inserted.length} sponsor participations`);
   }
@@ -792,7 +838,7 @@ async function importGenzioSheet3(initiativeId: string): Promise<Set<string>> {
   });
 
   if (dedupedEnrollRows.length > 0) {
-    const inserted = await batchUpsert("initiative_enrollments", dedupedEnrollRows, "initiative_id,organization_id", { ignoreDuplicates: true });
+    const inserted = await batchInsert("initiative_enrollments", dedupedEnrollRows);
     stats.initiative_enrollments += inserted.length;
     console.log(`  Created ${inserted.length} initiative enrollments`);
   }
@@ -949,7 +995,7 @@ async function importGenzioExplorationLeads(
     }
   }
   if (enrollRows.length > 0) {
-    const inserted = await batchUpsert("initiative_enrollments", enrollRows, "initiative_id,organization_id", { ignoreDuplicates: true });
+    const inserted = await batchInsert("initiative_enrollments", enrollRows);
     stats.initiative_enrollments += inserted.length;
     console.log(`  Created ${inserted.length} initiative enrollments`);
   }
@@ -1153,6 +1199,9 @@ async function main() {
   console.log("=== CRM Data Seeding Script ===");
   console.log(`Supabase URL: ${SUPABASE_URL}`);
   console.log(`Base path: ${BASE}`);
+
+  // 0. Clear any existing data (idempotent re-runs)
+  await clearExistingData();
 
   // 1. Create events
   const eventMap = await createEvents();
