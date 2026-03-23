@@ -51,15 +51,22 @@ export default async function InboxPage() {
     organization: email.person_id ? orgMap[email.person_id] || null : null,
   }));
 
+  // Build a set of known person emails for pipeline detection
+  // (emails from people in our system, even if not yet correlated to this specific inbound)
+  const { data: personEmails } = await supabase
+    .from("persons")
+    .select("email")
+    .not("email", "is", null);
+  const knownEmails = new Set(
+    (personEmails || []).map((p: { email: string | null }) => p.email?.toLowerCase()).filter(Boolean)
+  );
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)]">
-        Inbox
-      </h1>
-
       <InboxClient
         initialSyncStates={(syncStates as InboxSyncState[]) || []}
         initialEmails={emailsWithOrgs as InboundEmailWithRelations[]}
+        knownPersonEmails={[...knownEmails] as string[]}
       />
     </div>
   );

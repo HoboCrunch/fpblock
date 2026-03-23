@@ -27,6 +27,7 @@ import type { InboundEmailWithRelations } from "./page";
 interface InboxClientProps {
   initialSyncStates: InboxSyncState[];
   initialEmails: InboundEmailWithRelations[];
+  knownPersonEmails: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -43,7 +44,9 @@ type AccountFilter = "both" | "jb" | "wes";
 export function InboxClient({
   initialSyncStates,
   initialEmails,
+  knownPersonEmails,
 }: InboxClientProps) {
+  const knownEmailSet = new Set(knownPersonEmails.map((e) => e.toLowerCase()));
   const router = useRouter();
   const [syncStates, setSyncStates] = useState(initialSyncStates);
   const [emails, setEmails] = useState(initialEmails);
@@ -199,31 +202,11 @@ export function InboxClient({
 
   return (
     <div className="space-y-6">
-      {/* Sync Bar */}
+      {/* Header row */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {syncStates.map((state) => (
-            <div key={state.account_email} className="flex items-center gap-2 text-xs text-white/40">
-              <span
-                className={cn(
-                  "h-2 w-2 rounded-full",
-                  state.status === "connected"
-                    ? "bg-green-500"
-                    : state.status === "error"
-                    ? "bg-red-500"
-                    : "bg-gray-500"
-                )}
-              />
-              <span className="text-white/60">{state.account_email.split("@")[0].toUpperCase()}</span>
-              {state.last_sync_at && (
-                <span>{formatRelativeTime(state.last_sync_at)} ago</span>
-              )}
-              {state.error_message && (
-                <span className="text-red-400 truncate max-w-[150px]">{state.error_message}</span>
-              )}
-            </div>
-          ))}
-        </div>
+        <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)]">
+          Inbox
+        </h1>
         <button
           onClick={handleSyncAll}
           disabled={syncing}
@@ -235,7 +218,7 @@ export function InboxClient({
           )}
         >
           <RefreshCw className={cn("h-3 w-3", syncing && "animate-spin")} />
-          Sync All
+          Sync
         </button>
       </div>
 
@@ -311,68 +294,80 @@ export function InboxClient({
             </GlassCard>
           )}
 
-          {filtered.map((email) => (
-            <button
-              key={email.id}
-              onClick={() => {
-                setSelectedId(email.id);
-                if (!email.is_read) handleMarkRead(email.id);
-              }}
-              className={cn(
-                "w-full text-left rounded-xl transition-all duration-200",
-                "bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl",
-                "hover:bg-white/[0.06] hover:border-white/10",
-                "p-3",
-                selectedId === email.id &&
-                  "bg-white/[0.06] border-[#f58327]/30 shadow-[0_0_12px_rgba(245,131,39,0.08)]",
-                !email.is_read && "border-l-2 border-l-[#f58327]"
-              )}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span
+          {filtered.map((email) => {
+            const isKnown = knownEmailSet.has(email.from_address.toLowerCase());
+            const isUnread = !email.is_read;
+
+            return (
+              <button
+                key={email.id}
+                onClick={() => {
+                  setSelectedId(email.id);
+                  if (isUnread) handleMarkRead(email.id);
+                }}
+                className={cn(
+                  "w-full text-left rounded-xl transition-all duration-200",
+                  "border backdrop-blur-xl p-3",
+                  // Background: orange tint for known persons, default glass otherwise
+                  isKnown
+                    ? "bg-[#f58327]/[0.04] border-[#f58327]/10"
+                    : "bg-white/[0.02] border-white/[0.06]",
+                  // Hover
+                  "hover:bg-white/[0.06] hover:border-white/10",
+                  // Selected
+                  selectedId === email.id &&
+                    "bg-white/[0.06] border-[#f58327]/30 shadow-[0_0_12px_rgba(245,131,39,0.08)]",
+                  // Left accent for unread: orange if known, gray if not
+                  isUnread && isKnown && "border-l-2 border-l-[#f58327]",
+                  isUnread && !isKnown && "border-l-2 border-l-white/20"
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          "text-sm truncate",
+                          isUnread
+                            ? "font-semibold text-white"
+                            : "font-medium text-white/70"
+                        )}
+                      >
+                        {email.from_name || email.from_address}
+                      </span>
+                      {email.person_id && email.person && (
+                        <Badge variant="replied" className="text-[10px] shrink-0">
+                          {email.person.full_name}
+                          {email.organization?.icp_score
+                            ? ` (${email.organization.icp_score})`
+                            : ""}
+                        </Badge>
+                      )}
+                    </div>
+                    <p
                       className={cn(
-                        "text-sm truncate",
-                        !email.is_read
-                          ? "font-semibold text-white"
-                          : "font-medium text-white/70"
+                        "text-xs truncate mt-0.5",
+                        isUnread ? "text-white/80" : "text-white/50"
                       )}
                     >
-                      {email.from_name || email.from_address}
-                    </span>
-                    {email.person_id && email.person && (
-                      <Badge variant="replied" className="text-[10px] shrink-0">
-                        {email.person.full_name}
-                        {email.organization?.icp_score
-                          ? ` (${email.organization.icp_score})`
-                          : ""}
-                      </Badge>
-                    )}
+                      {email.subject || "(no subject)"}
+                    </p>
+                    <p className="text-xs text-white/30 truncate mt-0.5">
+                      {email.body_preview?.slice(0, 80) || ""}
+                    </p>
                   </div>
-                  <p
-                    className={cn(
-                      "text-xs truncate mt-0.5",
-                      !email.is_read ? "text-white/80" : "text-white/50"
-                    )}
-                  >
-                    {email.subject || "(no subject)"}
-                  </p>
-                  <p className="text-xs text-white/30 truncate mt-0.5">
-                    {email.body_preview?.slice(0, 80) || ""}
-                  </p>
+                  <div className="shrink-0 flex flex-col items-end justify-between self-stretch">
+                    <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#f58327]/15 text-[#f58327]">
+                      {email.account_email.startsWith("jb") ? "JB" : "Wes"}
+                    </span>
+                    <span className="text-[10px] text-white/30 mt-auto">
+                      {formatRelativeTime(email.received_at)}
+                    </span>
+                  </div>
                 </div>
-                <div className="shrink-0 text-right">
-                  <span className="text-[10px] text-white/30">
-                    {formatRelativeTime(email.received_at)}
-                  </span>
-                  <span className="inline-block mt-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#f58327]/15 text-[#f58327]">
-                    {email.account_email.startsWith("jb") ? "JB" : "Wes"}
-                  </span>
-                </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
 
         {/* Email Detail */}
