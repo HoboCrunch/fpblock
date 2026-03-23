@@ -1,7 +1,7 @@
-import type { CompanySignal } from "@/lib/types/database";
+import type { OrganizationSignal } from "@/lib/types/database";
 import { Badge } from "@/components/ui/badge";
 
-export function SignalsTimeline({ signals }: { signals: CompanySignal[] }) {
+export function SignalsTimeline({ signals }: { signals: OrganizationSignal[] }) {
   if (signals.length === 0) {
     return <p className="text-[var(--text-muted)] text-sm">No signals yet.</p>;
   }

@@ -1,4 +1,4 @@
-// lib/inbox-correlator.ts — Match inbound emails to pipeline contacts
+// lib/inbox-correlator.ts — Match inbound emails to pipeline persons
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { InboundEmail } from "@/lib/types/database";
@@ -8,11 +8,11 @@ import {
 } from "@/lib/telegram";
 
 export interface CorrelationResult {
-  contact_id: string | null;
+  person_id: string | null;
   correlation_type: "exact_email" | "domain_match" | "none";
-  matched_message_id: string | null;
-  contact?: { id: string; full_name: string };
-  company?: { id: string; name: string; icp_score: number | null } | null;
+  correlated_interaction_id: string | null;
+  person?: { id: string; full_name: string };
+  organization?: { id: string; name: string; icp_score: number | null } | null;
 }
 
 /**
@@ -39,12 +39,12 @@ function normalizeDomain(url: string): string {
 }
 
 /**
- * Correlate an inbound email to a pipeline contact.
+ * Correlate an inbound email to a pipeline person.
  *
  * Logic:
- * 1. Exact match: from_address against contacts.email
- * 2. Domain match: extract domain, match against companies.website
- * 3. If matched: update most recent outbound message status to 'replied'
+ * 1. Exact match: from_address against persons.email
+ * 2. Domain match: extract domain, match against organizations.website
+ * 3. If matched: update most recent outbound interaction status to 'replied'
  * 4. Log correlation to job_log
  */
 export async function correlateEmail(
@@ -58,7 +58,7 @@ export async function correlateEmail(
 
   // 1. Exact email match
   const { data: exactMatch } = await supabase
-    .from("contacts")
+    .from("persons")
     .select("id, full_name")
     .ilike("email", fromAddress)
     .limit(1)
@@ -74,59 +74,59 @@ export async function correlateEmail(
     return result;
   }
 
-  // 2. Domain match — extract domain from sender, match against companies
+  // 2. Domain match — extract domain from sender, match against organizations
   const senderDomain = extractDomain(fromAddress);
   if (senderDomain) {
-    const { data: companies } = await supabase
-      .from("companies")
+    const { data: organizations } = await supabase
+      .from("organizations")
       .select("id, name, website, icp_score")
       .not("website", "is", null);
 
-    if (companies?.length) {
-      const matchedCompany = companies.find((c) => {
-        if (!c.website) return false;
-        return normalizeDomain(c.website) === senderDomain;
+    if (organizations?.length) {
+      const matchedOrg = organizations.find((o) => {
+        if (!o.website) return false;
+        return normalizeDomain(o.website) === senderDomain;
       });
 
-      if (matchedCompany) {
-        // Find a contact at this company
-        const { data: contactCompany } = await supabase
-          .from("contact_companies")
-          .select("contact_id")
-          .eq("company_id", matchedCompany.id)
+      if (matchedOrg) {
+        // Find a person at this organization
+        const { data: personOrg } = await supabase
+          .from("person_organizations")
+          .select("person_id")
+          .eq("organization_id", matchedOrg.id)
           .limit(1)
           .single();
 
-        if (contactCompany) {
-          const { data: contact } = await supabase
-            .from("contacts")
+        if (personOrg) {
+          const { data: person } = await supabase
+            .from("persons")
             .select("id, full_name")
-            .eq("id", contactCompany.contact_id)
+            .eq("id", personOrg.person_id)
             .single();
 
-          if (contact) {
+          if (person) {
             const result = await processCorrelation(
               supabase,
               inboundEmail,
-              contact,
+              person,
               "domain_match",
-              matchedCompany
+              matchedOrg
             );
             return result;
           }
         }
 
-        // Company matched but no contact linked — return domain match with no contact
+        // Organization matched but no person linked — return domain match with no person
         await logCorrelation(supabase, inboundEmail.id, null, "domain_match", null, {
-          company_id: matchedCompany.id,
-          company_name: matchedCompany.name,
+          organization_id: matchedOrg.id,
+          organization_name: matchedOrg.name,
         });
 
         return {
-          contact_id: null,
+          person_id: null,
           correlation_type: "domain_match",
-          matched_message_id: null,
-          company: matchedCompany,
+          correlated_interaction_id: null,
+          organization: matchedOrg,
         };
       }
     }
@@ -136,9 +136,9 @@ export async function correlateEmail(
   await logCorrelation(supabase, inboundEmail.id, null, "none", null);
 
   return {
-    contact_id: null,
+    person_id: null,
     correlation_type: "none",
-    matched_message_id: null,
+    correlated_interaction_id: null,
   };
 }
 
@@ -148,67 +148,67 @@ async function processCorrelation(
     InboundEmail,
     "id" | "from_address" | "from_name" | "subject" | "body_preview" | "received_at"
   >,
-  contact: { id: string; full_name: string },
+  person: { id: string; full_name: string },
   correlationType: "exact_email" | "domain_match",
-  company?: { id: string; name: string; icp_score: number | null } | null
+  organization?: { id: string; name: string; icp_score: number | null } | null
 ): Promise<CorrelationResult> {
-  // Find the most recent outbound message to this contact
-  const { data: recentMessage } = await supabase
-    .from("messages")
-    .select("id, company_id")
-    .eq("contact_id", contact.id)
+  // Find the most recent outbound interaction to this person
+  const { data: recentInteraction } = await supabase
+    .from("interactions")
+    .select("id, organization_id")
+    .eq("person_id", person.id)
     .eq("channel", "email")
+    .eq("direction", "outbound")
     .in("status", ["sent", "delivered", "opened"])
-    .order("sent_at", { ascending: false })
+    .order("occurred_at", { ascending: false })
     .limit(1)
     .single();
 
-  let matchedMessageId: string | null = null;
+  let correlatedInteractionId: string | null = null;
 
-  if (recentMessage) {
-    // Update message status to 'replied'
+  if (recentInteraction) {
+    // Update interaction status to 'replied'
     await supabase
-      .from("messages")
+      .from("interactions")
       .update({
         status: "replied",
-        replied_at: inboundEmail.received_at,
       })
-      .eq("id", recentMessage.id);
+      .eq("id", recentInteraction.id);
 
-    matchedMessageId = recentMessage.id;
+    correlatedInteractionId = recentInteraction.id;
   }
 
   // Update the inbound email record with correlation
   await supabase
     .from("inbound_emails")
     .update({
-      contact_id: contact.id,
-      correlated_message_id: matchedMessageId,
+      person_id: person.id,
+      correlated_interaction_id: correlatedInteractionId,
       correlation_type: correlationType,
     })
     .eq("id", inboundEmail.id);
 
-  // If we don't have company info yet, try to fetch it from the matched message
-  if (!company && recentMessage?.company_id) {
-    const { data: companyData } = await supabase
-      .from("companies")
+  // If we don't have organization info yet, try to fetch it from the matched interaction
+  if (!organization && recentInteraction?.organization_id) {
+    const { data: orgData } = await supabase
+      .from("organizations")
       .select("id, name, icp_score")
-      .eq("id", recentMessage.company_id)
+      .eq("id", recentInteraction.organization_id)
       .single();
-    company = companyData;
+    organization = orgData;
   }
 
-  // Also try fetching from contact_companies if still no company
-  if (!company) {
-    const { data: cc } = await supabase
-      .from("contact_companies")
-      .select("company:companies(id, name, icp_score)")
-      .eq("contact_id", contact.id)
+  // Also try fetching from person_organizations if still no organization
+  if (!organization) {
+    const { data: po } = await supabase
+      .from("person_organizations")
+      .select("org:organizations(id, name, icp_score)")
+      .eq("person_id", person.id)
       .eq("is_primary", true)
       .limit(1)
       .single();
-    if (cc?.company) {
-      company = cc.company as unknown as {
+    if (po?.org) {
+      organization = po.org as unknown as {
         id: string;
         name: string;
         icp_score: number | null;
@@ -219,26 +219,26 @@ async function processCorrelation(
   await logCorrelation(
     supabase,
     inboundEmail.id,
-    contact.id,
+    person.id,
     correlationType,
-    matchedMessageId
+    correlatedInteractionId
   );
 
   return {
-    contact_id: contact.id,
+    person_id: person.id,
     correlation_type: correlationType,
-    matched_message_id: matchedMessageId,
-    contact,
-    company: company || null,
+    correlated_interaction_id: correlatedInteractionId,
+    person,
+    organization: organization || null,
   };
 }
 
 async function logCorrelation(
   supabase: SupabaseClient,
   emailId: string,
-  contactId: string | null,
+  personId: string | null,
   correlationType: string,
-  messageId: string | null,
+  interactionId: string | null,
   extra?: Record<string, unknown>
 ) {
   await supabase.from("job_log").insert({
@@ -247,9 +247,9 @@ async function logCorrelation(
     target_id: emailId,
     status: correlationType === "none" ? "no_match" : "matched",
     metadata: {
-      contact_id: contactId,
+      person_id: personId,
       correlation_type: correlationType,
-      matched_message_id: messageId,
+      correlated_interaction_id: interactionId,
       ...extra,
     },
   });
@@ -267,10 +267,10 @@ export async function correlateAndNotify(
 ): Promise<CorrelationResult> {
   const result = await correlateEmail(supabase, inboundEmail);
 
-  if (result.contact_id && result.contact) {
+  if (result.person_id && result.person) {
     const message = formatReplyNotification(
-      result.contact,
-      result.company || null,
+      result.person,
+      result.organization || null,
       {
         subject: inboundEmail.subject || null,
         body_preview: inboundEmail.body_preview || null,

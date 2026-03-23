@@ -28,7 +28,7 @@ type Props = {
 
 export function DragCard({ contact, isDragging }: Props) {
   return (
-    <Link href={`/admin/contacts/${contact.id}`}>
+    <Link href={`/admin/persons/${contact.id}`}>
       <div
         className={cn(
           "rounded-lg p-3 bg-white/[0.04] border border-white/[0.08] transition-all duration-200 cursor-grab active:cursor-grabbing",

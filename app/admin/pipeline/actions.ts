@@ -3,11 +3,11 @@
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Move a contact between pipeline stages.
+ * Move a person between pipeline stages.
  *
- * Moving RIGHT (more advanced stage): update the most recent message's status.
- * Moving LEFT (earlier stage): create a new draft message with iteration+1.
- * Moving FROM "not_contacted": create a new draft message.
+ * Moving RIGHT (more advanced stage): update the most recent interaction's status.
+ * Moving LEFT (earlier stage): create a new draft interaction.
+ * Moving FROM "not_contacted": create a new draft interaction.
  */
 
 const STAGE_TO_STATUS: Record<string, string> = {
@@ -20,7 +20,7 @@ const STAGE_TO_STATUS: Record<string, string> = {
 };
 
 export async function moveContact(
-  contactId: string,
+  personId: string,
   fromStage: string,
   toStage: string
 ) {
@@ -32,12 +32,12 @@ export async function moveContact(
   }
 
   if (fromStage === "not_contacted") {
-    // Create a new draft message
-    const { error } = await supabase.from("messages").insert({
-      contact_id: contactId,
+    // Create a new draft interaction
+    const { error } = await supabase.from("interactions").insert({
+      person_id: personId,
+      interaction_type: "cold_email",
       channel: "email",
-      sequence_number: 1,
-      iteration: 1,
+      direction: "outbound",
       body: "",
       status: "draft",
     });
@@ -45,36 +45,36 @@ export async function moveContact(
     return;
   }
 
-  // Get most recent message for this contact
-  const { data: latestMessage, error: fetchError } = await supabase
-    .from("messages")
-    .select("id, iteration")
-    .eq("contact_id", contactId)
+  // Get most recent interaction for this person
+  const { data: latestInteraction, error: fetchError } = await supabase
+    .from("interactions")
+    .select("id")
+    .eq("person_id", personId)
     .order("created_at", { ascending: false })
     .limit(1)
     .single();
 
-  if (fetchError || !latestMessage) {
-    throw new Error("No message found for contact");
+  if (fetchError || !latestInteraction) {
+    throw new Error("No interaction found for person");
   }
 
   const fromIdx = Object.keys(STAGE_TO_STATUS).indexOf(fromStage);
   const toIdx = Object.keys(STAGE_TO_STATUS).indexOf(toStage);
 
   if (toIdx >= fromIdx) {
-    // Moving right — update existing message status
+    // Moving right -- update existing interaction status
     const { error } = await supabase
-      .from("messages")
+      .from("interactions")
       .update({ status: targetStatus })
-      .eq("id", latestMessage.id);
+      .eq("id", latestInteraction.id);
     if (error) throw error;
   } else {
-    // Moving left — create new draft with incremented iteration
-    const { error } = await supabase.from("messages").insert({
-      contact_id: contactId,
+    // Moving left -- create new draft interaction
+    const { error } = await supabase.from("interactions").insert({
+      person_id: personId,
+      interaction_type: "cold_email",
       channel: "email",
-      sequence_number: 1,
-      iteration: (latestMessage.iteration || 1) + 1,
+      direction: "outbound",
       body: "",
       status: "draft",
     });

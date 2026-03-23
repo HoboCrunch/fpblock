@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 export type FieldMapping = Record<string, string>;
 
-const CONTACT_FIELDS = [
+const PERSON_FIELDS = [
   { value: "", label: "-- Skip --" },
   { value: "full_name", label: "Full Name" },
   { value: "first_name", label: "First Name" },
@@ -21,10 +21,10 @@ const CONTACT_FIELDS = [
   { value: "department", label: "Department" },
   { value: "telegram", label: "Telegram" },
   { value: "context", label: "Context / Notes" },
-  { value: "company_name", label: "Company Name" },
-  { value: "company_website", label: "Company Website" },
-  { value: "company_category", label: "Company Category" },
-  { value: "company_linkedin", label: "Company LinkedIn" },
+  { value: "company_name", label: "Organization Name" },
+  { value: "company_website", label: "Organization Website" },
+  { value: "company_category", label: "Organization Category" },
+  { value: "company_linkedin", label: "Organization LinkedIn" },
   { value: "icp_score", label: "ICP Score" },
   { value: "icp_reason", label: "ICP Reason" },
 ];
@@ -105,7 +105,7 @@ export function ColumnMapper({
               <div className="text-[var(--text-muted)]">&rarr;</div>
               <div className="flex-1">
                 <GlassSelect
-                  options={CONTACT_FIELDS}
+                  options={PERSON_FIELDS}
                   value={effectiveMapping[header] ?? ""}
                   onChange={(e) => updateField(header, e.target.value)}
                 />

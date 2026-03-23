@@ -2,13 +2,15 @@ import { createClient } from "@/lib/supabase/server";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Badge } from "@/components/ui/badge";
 import { StepEditor } from "@/components/admin/step-editor";
-import { GitBranch, ArrowLeft } from "lucide-react";
+import { EnrollmentPanel } from "./enrollment-panel";
+import { SequenceControls } from "./sequence-controls";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Sequence, SequenceEnrollment, Contact } from "@/lib/types/database";
+import type { Sequence, SequenceEnrollment, Person } from "@/lib/types/database";
 
-interface EnrollmentWithContact extends SequenceEnrollment {
-  contacts: Pick<Contact, "id" | "full_name" | "email"> | null;
+interface EnrollmentWithPerson extends SequenceEnrollment {
+  persons: Pick<Person, "id" | "full_name" | "email"> | null;
 }
 
 export default async function SequenceDetailPage({
@@ -33,11 +35,11 @@ export default async function SequenceDetailPage({
 
   const { data: enrollments } = await supabase
     .from("sequence_enrollments")
-    .select("*, contacts(id, full_name, email)")
+    .select("*, persons(id, full_name, email)")
     .eq("sequence_id", id)
     .order("enrolled_at", { ascending: false });
 
-  const enrollmentList = (enrollments ?? []) as EnrollmentWithContact[];
+  const enrollmentList = (enrollments ?? []) as EnrollmentWithPerson[];
 
   // Get event name if linked
   let eventName: string | null = null;
@@ -50,6 +52,17 @@ export default async function SequenceDetailPage({
     eventName = event?.name ?? null;
   }
 
+  // Get initiative name if linked
+  let initiativeName: string | null = null;
+  if (seq.initiative_id) {
+    const { data: initiative } = await supabase
+      .from("initiatives")
+      .select("name")
+      .eq("id", seq.initiative_id)
+      .single();
+    initiativeName = initiative?.name ?? null;
+  }
+
   const steps = Array.isArray(seq.steps) ? seq.steps : [];
 
   const channelVariant: Record<string, string> = {
@@ -60,10 +73,10 @@ export default async function SequenceDetailPage({
   };
 
   const statusVariant: Record<string, string> = {
+    draft: "draft",
     active: "sent",
-    paused: "draft",
+    paused: "scheduled",
     completed: "replied",
-    bounced: "bounced",
   };
 
   return (
@@ -77,9 +90,14 @@ export default async function SequenceDetailPage({
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)] text-white">
-            {seq.name}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)] text-white">
+              {seq.name}
+            </h1>
+            <Badge variant={statusVariant[seq.status] ?? "default"}>
+              {seq.status}
+            </Badge>
+          </div>
           <div className="flex items-center gap-3 mt-1">
             <Badge variant={channelVariant[seq.channel] ?? "default"}>
               {seq.channel}
@@ -89,11 +107,17 @@ export default async function SequenceDetailPage({
                 {eventName}
               </span>
             )}
+            {initiativeName && (
+              <span className="text-sm text-[var(--text-muted)]">
+                {initiativeName}
+              </span>
+            )}
             <span className="text-sm text-[var(--text-muted)]">
               {steps.length} step{steps.length !== 1 ? "s" : ""}
             </span>
           </div>
         </div>
+        <SequenceControls sequenceId={seq.id} status={seq.status} />
       </div>
 
       {/* Main content: steps + sidebar */}
@@ -107,60 +131,13 @@ export default async function SequenceDetailPage({
           />
         </div>
 
-        {/* Enrolled Contacts Sidebar - 1/3 width */}
+        {/* Enrolled Persons Sidebar - 1/3 width */}
         <div>
-          <GlassCard>
-            <h2 className="text-lg font-semibold font-[family-name:var(--font-heading)] text-white mb-4">
-              Enrolled Contacts
-              <span className="text-sm font-normal text-[var(--text-muted)] ml-2">
-                ({enrollmentList.length})
-              </span>
-            </h2>
-
-            {enrollmentList.length === 0 ? (
-              <div className="text-center py-8">
-                <GitBranch className="h-8 w-8 text-[var(--text-muted)] mx-auto mb-2" />
-                <p className="text-sm text-[var(--text-muted)]">
-                  No contacts enrolled yet
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {enrollmentList.map((enrollment) => (
-                  <div
-                    key={enrollment.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-bg-hover)] transition-all duration-200"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <Link
-                        href={`/admin/contacts/${enrollment.contact_id}`}
-                        className="text-sm text-white hover:text-[var(--accent-indigo)] transition-colors truncate block"
-                      >
-                        {enrollment.contacts?.full_name ?? "Unknown"}
-                      </Link>
-                      {enrollment.contacts?.email && (
-                        <p className="text-xs text-[var(--text-muted)] truncate">
-                          {enrollment.contacts.email}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 ml-3 shrink-0">
-                      <span className="text-xs text-[var(--text-muted)]">
-                        Step {enrollment.current_step}/{steps.length}
-                      </span>
-                      <Badge
-                        variant={
-                          statusVariant[enrollment.status] ?? "default"
-                        }
-                      >
-                        {enrollment.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </GlassCard>
+          <EnrollmentPanel
+            sequenceId={seq.id}
+            enrollments={enrollmentList}
+            totalSteps={steps.length}
+          />
         </div>
       </div>
     </div>

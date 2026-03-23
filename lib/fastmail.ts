@@ -214,8 +214,8 @@ export async function fetchEmails(
       body_html: htmlBody,
       received_at: email.receivedAt,
       is_read: !email.keywords?.["$seen"] ? false : true,
-      contact_id: null,
-      correlated_message_id: null,
+      person_id: null,
+      correlated_interaction_id: null,
       correlation_type: null,
       raw_headers: Object.keys(raw).length > 0 ? raw : null,
     };

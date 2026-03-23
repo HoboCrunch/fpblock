@@ -18,17 +18,21 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Rocket,
+  GitMerge,
 } from "lucide-react";
 
 const mainNavItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Contacts", href: "/admin/contacts", icon: Users },
-  { label: "Companies", href: "/admin/companies", icon: Building2 },
+  { label: "Persons", href: "/admin/persons", icon: Users },
+  { label: "Organizations", href: "/admin/organizations", icon: Building2 },
   { label: "Events", href: "/admin/events", icon: Calendar, hasSubItems: true },
   { label: "Pipeline", href: "/admin/pipeline", icon: Kanban },
+  { label: "Initiatives", href: "/admin/initiatives", icon: Rocket },
   { label: "Sequences", href: "/admin/sequences", icon: GitBranch },
   { label: "Inbox", href: "/admin/inbox", icon: Mail },
   { label: "Enrichment", href: "/admin/enrichment", icon: Sparkles },
+  { label: "Correlations", href: "/admin/correlations", icon: GitMerge },
   { label: "Uploads", href: "/admin/uploads", icon: Upload },
 ];
 

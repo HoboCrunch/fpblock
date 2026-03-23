@@ -13,7 +13,7 @@ export default async function InboxPage() {
     supabase
       .from("inbound_emails")
       .select(
-        "*, contact:contacts(id, full_name, email), company:companies(id, name, icp_score)"
+        "*, person:persons(id, full_name, email)"
       )
       .order("received_at", { ascending: false })
       .limit(200),
@@ -34,6 +34,6 @@ export default async function InboxPage() {
 }
 
 export type InboundEmailWithRelations = InboundEmail & {
-  contact: { id: string; full_name: string; email: string | null } | null;
-  company: { id: string; name: string; icp_score: number | null } | null;
+  person: { id: string; full_name: string; email: string | null } | null;
+  organization?: { id: string; name: string; icp_score: number | null } | null;
 };

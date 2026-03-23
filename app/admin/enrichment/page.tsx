@@ -14,11 +14,11 @@ type EnrichField = "email" | "linkedin" | "twitter" | "phone";
 
 export default function EnrichmentPage() {
   const searchParams = useSearchParams();
-  const preSelectedContacts = searchParams.get("contacts")?.split(",") ?? [];
+  const preSelectedPersons = searchParams.get("persons")?.split(",") ?? [];
 
   const [source] = useState("apollo");
   const [target, setTarget] = useState<string>(
-    preSelectedContacts.length > 0 ? "selected" : "unenriched"
+    preSelectedPersons.length > 0 ? "selected" : "unenriched"
   );
   const [eventId, setEventId] = useState("");
   const [fields, setFields] = useState<EnrichField[]>(["email", "linkedin"]);
@@ -26,6 +26,7 @@ export default function EnrichmentPage() {
   const [jobs, setJobs] = useState<JobLog[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [lastResult, setLastResult] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     const supabase = createBrowserClient(
@@ -68,11 +69,12 @@ export default function EnrichmentPage() {
     if (fields.length === 0) return;
     setIsRunning(true);
 
+    setLastResult(null);
     try {
       const body: Record<string, unknown> = { fields, source };
 
-      if (target === "selected" && preSelectedContacts.length > 0) {
-        body.contactIds = preSelectedContacts;
+      if (target === "selected" && preSelectedPersons.length > 0) {
+        body.personIds = preSelectedPersons;
       } else if (target === "event" && eventId) {
         body.eventId = eventId;
       }
@@ -88,14 +90,16 @@ export default function EnrichmentPage() {
       if (data.jobId) {
         setActiveJobId(data.jobId);
       }
+      if (data.persons_processed != null || data.error) {
+        setLastResult(data);
+      }
 
       // Refresh jobs
       await loadJobs();
     } catch {
-      // Error handling — job list will reflect any failures
+      setLastResult({ error: "Network error" });
     } finally {
       setIsRunning(false);
-      setActiveJobId(null);
     }
   }
 
@@ -138,12 +142,12 @@ export default function EnrichmentPage() {
             </label>
             <GlassSelect
               options={[
-                { value: "unenriched", label: "All unenriched contacts" },
+                { value: "unenriched", label: "All unenriched persons" },
                 {
                   value: "selected",
-                  label: `Selected contacts (${preSelectedContacts.length})`,
+                  label: `Selected persons (${preSelectedPersons.length})`,
                 },
-                { value: "event", label: "Contacts from event" },
+                { value: "event", label: "Persons from event" },
               ]}
               value={target}
               onChange={(e) => setTarget(e.target.value)}
@@ -210,10 +214,37 @@ export default function EnrichmentPage() {
           {isRunning ? "Running..." : "Run Enrichment"}
         </button>
 
-        {activeJobId && (
+        {activeJobId && !lastResult && (
           <p className="mt-3 text-sm text-[var(--text-muted)]">
             Job started: {activeJobId}
           </p>
+        )}
+
+        {lastResult && (
+          <div className="mt-4 p-4 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+            {lastResult.error ? (
+              <p className="text-sm text-red-400">{lastResult.error as string}</p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <div className="text-xs text-[var(--text-muted)]">Persons Processed</div>
+                  <div className="text-lg font-semibold text-white">{lastResult.persons_processed as number}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-[var(--text-muted)]">Emails Found</div>
+                  <div className="text-lg font-semibold text-[var(--accent-orange)]">{lastResult.emails_found as number}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-[var(--text-muted)]">LinkedIn Found</div>
+                  <div className="text-lg font-semibold text-[var(--accent-indigo)]">{lastResult.linkedin_found as number}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-[var(--text-muted)]">Twitter Found</div>
+                  <div className="text-lg font-semibold text-[var(--text-secondary)]">{lastResult.twitter_found as number}</div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </GlassCard>
 
@@ -240,7 +271,7 @@ export default function EnrichmentPage() {
                       Source
                     </th>
                     <th className="px-5 py-3 text-[var(--text-muted)] font-medium">
-                      Contacts
+                      Persons
                     </th>
                     <th className="px-5 py-3 text-[var(--text-muted)] font-medium">
                       Emails Found
@@ -268,7 +299,7 @@ export default function EnrichmentPage() {
                           {(meta.source as string) ?? "apollo"}
                         </td>
                         <td className="px-5 py-4 text-[var(--text-secondary)]">
-                          {(meta.contacts_processed as number) ?? "-"}
+                          {(meta.persons_processed as number) ?? "-"}
                         </td>
                         <td className="px-5 py-4 text-[var(--text-secondary)]">
                           {(meta.emails_found as number) ?? "-"}

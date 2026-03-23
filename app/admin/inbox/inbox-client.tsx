@@ -51,8 +51,8 @@ export function InboxClient({
   const [accountFilter, setAccountFilter] = useState<AccountFilter>("both");
   const [syncing, setSyncing] = useState<Record<string, boolean>>({});
   const [linkModal, setLinkModal] = useState<string | null>(null);
-  const [contactSearch, setContactSearch] = useState("");
-  const [contactResults, setContactResults] = useState<
+  const [personSearch, setPersonSearch] = useState("");
+  const [personResults, setPersonResults] = useState<
     { id: string; full_name: string; email: string | null }[]
   >([]);
   const [linking, setLinking] = useState(false);
@@ -64,8 +64,8 @@ export function InboxClient({
   // -------------------------------------------------------------------------
 
   const filtered = emails.filter((e) => {
-    if (correlationFilter === "correlated" && !e.contact_id) return false;
-    if (correlationFilter === "uncorrelated" && e.contact_id) return false;
+    if (correlationFilter === "correlated" && !e.person_id) return false;
+    if (correlationFilter === "uncorrelated" && e.person_id) return false;
     if (accountFilter === "jb" && !e.account_email.startsWith("jb")) return false;
     if (accountFilter === "wes" && !e.account_email.startsWith("wes"))
       return false;
@@ -122,36 +122,36 @@ export function InboxClient({
   );
 
   // -------------------------------------------------------------------------
-  // Link to Contact modal
+  // Link to Person modal
   // -------------------------------------------------------------------------
 
-  const searchContacts = useCallback(async (query: string) => {
-    setContactSearch(query);
+  const searchPersons = useCallback(async (query: string) => {
+    setPersonSearch(query);
     if (query.length < 2) {
-      setContactResults([]);
+      setPersonResults([]);
       return;
     }
     try {
       const res = await fetch(
-        `/api/inbox?search=${encodeURIComponent(query)}&type=contacts`
+        `/api/inbox?search=${encodeURIComponent(query)}&type=persons`
       );
       if (res.ok) {
         const data = await res.json();
-        setContactResults(data.contacts || []);
+        setPersonResults(data.persons || []);
       }
     } catch {
       // ignore
     }
   }, []);
 
-  const handleLinkContact = useCallback(
-    async (emailId: string, contactId: string) => {
+  const handleLinkPerson = useCallback(
+    async (emailId: string, personId: string) => {
       setLinking(true);
       try {
         const res = await fetch("/api/inbox", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ emailId, contactId }),
+          body: JSON.stringify({ emailId, personId }),
         });
         if (res.ok) {
           const data = await res.json();
@@ -160,22 +160,22 @@ export function InboxClient({
               e.id === emailId
                 ? {
                     ...e,
-                    contact_id: contactId,
+                    person_id: personId,
                     correlation_type: "manual" as const,
-                    contact: data.contact
+                    person: data.person
                       ? {
-                          id: data.contact.id,
-                          full_name: data.contact.full_name,
+                          id: data.person.id,
+                          full_name: data.person.full_name,
                           email: null,
                         }
-                      : e.contact,
+                      : e.person,
                   }
                 : e
             )
           );
           setLinkModal(null);
-          setContactSearch("");
-          setContactResults([]);
+          setPersonSearch("");
+          setPersonResults([]);
         }
       } catch {
         // ignore
@@ -306,8 +306,8 @@ export function InboxClient({
                 {id === "all"
                   ? emails.length
                   : id === "correlated"
-                  ? emails.filter((e) => e.contact_id).length
-                  : emails.filter((e) => !e.contact_id).length}
+                  ? emails.filter((e) => e.person_id).length
+                  : emails.filter((e) => !e.person_id).length}
                 )
               </span>
             </button>
@@ -382,11 +382,11 @@ export function InboxClient({
                     >
                       {email.from_name || email.from_address}
                     </span>
-                    {email.contact_id && email.contact && (
+                    {email.person_id && email.person && (
                       <Badge variant="replied" className="text-[10px] shrink-0">
-                        {email.contact.full_name}
-                        {email.company?.icp_score
-                          ? ` (${email.company.icp_score})`
+                        {email.person.full_name}
+                        {email.organization?.icp_score
+                          ? ` (${email.organization.icp_score})`
                           : ""}
                       </Badge>
                     )}
@@ -430,30 +430,30 @@ export function InboxClient({
           ) : (
             <GlassCard className="h-full overflow-y-auto max-h-[75vh]">
               {/* Correlated contact card */}
-              {selectedEmail.contact_id && selectedEmail.contact && (
+              {selectedEmail.person_id && selectedEmail.person && (
                 <div className="mb-4 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-emerald-400" />
                       <span className="text-sm font-medium text-emerald-300">
-                        {selectedEmail.contact.full_name}
+                        {selectedEmail.person.full_name}
                       </span>
-                      {selectedEmail.company && (
+                      {selectedEmail.organization && (
                         <span className="text-xs text-white/40">
-                          at {selectedEmail.company.name}
+                          at {selectedEmail.organization.name}
                         </span>
                       )}
-                      {selectedEmail.company?.icp_score && (
+                      {selectedEmail.organization?.icp_score && (
                         <Badge variant="approved" className="text-[10px]">
-                          ICP: {selectedEmail.company.icp_score}
+                          ICP: {selectedEmail.organization.icp_score}
                         </Badge>
                       )}
                     </div>
                     <a
-                      href={`/admin/contacts/${selectedEmail.contact_id}`}
+                      href={`/admin/persons/${selectedEmail.person_id}`}
                       className="text-xs text-[#6e86ff] hover:underline"
                     >
-                      View Contact
+                      View Person
                     </a>
                   </div>
                   {selectedEmail.correlation_type && (
@@ -506,7 +506,7 @@ export function InboxClient({
                   )}
                   {selectedEmail.is_read ? "Mark Unread" : "Mark Read"}
                 </button>
-                {!selectedEmail.contact_id && (
+                {!selectedEmail.person_id && (
                   <button
                     onClick={() => setLinkModal(selectedEmail.id)}
                     className={cn(
@@ -516,7 +516,7 @@ export function InboxClient({
                     )}
                   >
                     <Link2 className="h-3 w-3" />
-                    Link to Contact
+                    Link to Person
                   </button>
                 )}
                 <button
@@ -549,19 +549,19 @@ export function InboxClient({
         </div>
       </div>
 
-      {/* Link to Contact Modal */}
+      {/* Link to Person Modal */}
       {linkModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <GlassCard className="w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-white font-[family-name:var(--font-heading)]">
-                Link to Contact
+                Link to Person
               </h3>
               <button
                 onClick={() => {
                   setLinkModal(null);
-                  setContactSearch("");
-                  setContactResults([]);
+                  setPersonSearch("");
+                  setPersonResults([]);
                 }}
                 className="text-white/40 hover:text-white transition-colors"
               >
@@ -573,9 +573,9 @@ export function InboxClient({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
               <input
                 type="text"
-                value={contactSearch}
-                onChange={(e) => searchContacts(e.target.value)}
-                placeholder="Search contacts by name or email..."
+                value={personSearch}
+                onChange={(e) => searchPersons(e.target.value)}
+                placeholder="Search persons by name or email..."
                 className={cn(
                   "w-full pl-9 pr-3 py-2 text-sm rounded-lg",
                   "bg-white/5 border border-white/10 text-white placeholder:text-white/30",
@@ -586,16 +586,16 @@ export function InboxClient({
             </div>
 
             <div className="space-y-1 max-h-[240px] overflow-y-auto">
-              {contactResults.length === 0 && contactSearch.length >= 2 && (
+              {personResults.length === 0 && personSearch.length >= 2 && (
                 <p className="text-xs text-white/30 text-center py-4">
-                  No contacts found
+                  No persons found
                 </p>
               )}
-              {contactResults.map((contact) => (
+              {personResults.map((person) => (
                 <button
-                  key={contact.id}
+                  key={person.id}
                   disabled={linking}
-                  onClick={() => handleLinkContact(linkModal, contact.id)}
+                  onClick={() => handleLinkPerson(linkModal, person.id)}
                   className={cn(
                     "w-full text-left p-2.5 rounded-lg",
                     "bg-white/[0.02] border border-white/[0.06]",
@@ -606,11 +606,11 @@ export function InboxClient({
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-sm text-white">
-                        {contact.full_name}
+                        {person.full_name}
                       </span>
-                      {contact.email && (
+                      {person.email && (
                         <span className="text-xs text-white/30 ml-2">
-                          {contact.email}
+                          {person.email}
                         </span>
                       )}
                     </div>

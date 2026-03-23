@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 interface ImportConfig {
   eventId: string | null;
-  importAs: "contacts" | "companies" | "both";
+  importAs: "persons" | "organizations" | "both";
   duplicateHandling: "skip" | "update" | "create_new";
 }
 
@@ -15,8 +15,8 @@ interface MappedRow {
 interface ImportResult {
   success: boolean;
   uploadId?: string;
-  contactsCreated: number;
-  companiesCreated: number;
+  personsCreated: number;
+  organizationsCreated: number;
   skipped: number;
   errors: string[];
 }
@@ -27,8 +27,8 @@ export async function importCsvData(
   filename: string
 ): Promise<ImportResult> {
   const supabase = await createClient();
-  let contactsCreated = 0;
-  let companiesCreated = 0;
+  let personsCreated = 0;
+  let organizationsCreated = 0;
   let skipped = 0;
   const errors: string[] = [];
 
@@ -47,8 +47,8 @@ export async function importCsvData(
   if (uploadError || !upload) {
     return {
       success: false,
-      contactsCreated: 0,
-      companiesCreated: 0,
+      personsCreated: 0,
+      organizationsCreated: 0,
       skipped: 0,
       errors: [uploadError?.message ?? "Failed to create upload record"],
     };
@@ -57,48 +57,48 @@ export async function importCsvData(
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     try {
-      let companyId: string | null = null;
+      let organizationId: string | null = null;
 
-      // Handle company creation
-      const companyName = row.company_name?.trim();
+      // Handle organization creation
+      const orgName = row.company_name?.trim();
       if (
-        companyName &&
-        (config.importAs === "companies" || config.importAs === "both")
+        orgName &&
+        (config.importAs === "organizations" || config.importAs === "both")
       ) {
-        // Check for existing company
-        const { data: existingCompany } = await supabase
-          .from("companies")
+        // Check for existing organization
+        const { data: existingOrg } = await supabase
+          .from("organizations")
           .select("id")
-          .eq("name", companyName)
+          .eq("name", orgName)
           .single();
 
-        if (existingCompany) {
+        if (existingOrg) {
           if (config.duplicateHandling === "skip") {
-            companyId = existingCompany.id;
+            organizationId = existingOrg.id;
           } else if (config.duplicateHandling === "update") {
-            const companyUpdate: Record<string, string> = {};
-            if (row.company_website) companyUpdate.website = row.company_website;
+            const orgUpdate: Record<string, string> = {};
+            if (row.company_website) orgUpdate.website = row.company_website;
             if (row.company_category)
-              companyUpdate.category = row.company_category;
+              orgUpdate.category = row.company_category;
             if (row.company_linkedin)
-              companyUpdate.linkedin_url = row.company_linkedin;
+              orgUpdate.linkedin_url = row.company_linkedin;
             if (row.icp_score)
-              (companyUpdate as Record<string, unknown>).icp_score = parseInt(row.icp_score) || null;
-            if (row.icp_reason) companyUpdate.icp_reason = row.icp_reason;
+              (orgUpdate as Record<string, unknown>).icp_score = parseInt(row.icp_score) || null;
+            if (row.icp_reason) orgUpdate.icp_reason = row.icp_reason;
 
-            if (Object.keys(companyUpdate).length > 0) {
+            if (Object.keys(orgUpdate).length > 0) {
               await supabase
-                .from("companies")
-                .update(companyUpdate)
-                .eq("id", existingCompany.id);
+                .from("organizations")
+                .update(orgUpdate)
+                .eq("id", existingOrg.id);
             }
-            companyId = existingCompany.id;
+            organizationId = existingOrg.id;
           } else {
             // create_new
-            const { data: newCompany } = await supabase
-              .from("companies")
+            const { data: newOrg } = await supabase
+              .from("organizations")
               .insert({
-                name: companyName,
+                name: orgName,
                 website: row.company_website || null,
                 category: row.company_category || null,
                 linkedin_url: row.company_linkedin || null,
@@ -107,16 +107,16 @@ export async function importCsvData(
               })
               .select("id")
               .single();
-            if (newCompany) {
-              companyId = newCompany.id;
-              companiesCreated++;
+            if (newOrg) {
+              organizationId = newOrg.id;
+              organizationsCreated++;
             }
           }
         } else {
-          const { data: newCompany } = await supabase
-            .from("companies")
+          const { data: newOrg } = await supabase
+            .from("organizations")
             .insert({
-              name: companyName,
+              name: orgName,
               website: row.company_website || null,
               category: row.company_category || null,
               linkedin_url: row.company_linkedin || null,
@@ -125,15 +125,15 @@ export async function importCsvData(
             })
             .select("id")
             .single();
-          if (newCompany) {
-            companyId = newCompany.id;
-            companiesCreated++;
+          if (newOrg) {
+            organizationId = newOrg.id;
+            organizationsCreated++;
           }
         }
       }
 
-      // Handle contact creation
-      if (config.importAs === "contacts" || config.importAs === "both") {
+      // Handle person creation
+      if (config.importAs === "persons" || config.importAs === "both") {
         const email = row.email?.trim();
         const fullName =
           row.full_name?.trim() ||
@@ -145,127 +145,132 @@ export async function importCsvData(
           continue;
         }
 
-        // Check for existing contact (by email)
-        let existingContact = null;
+        // Check for existing person (by email)
+        let existingPerson = null;
         if (email) {
           const { data } = await supabase
-            .from("contacts")
+            .from("persons")
             .select("id")
             .eq("email", email)
             .single();
-          existingContact = data;
+          existingPerson = data;
         }
 
-        if (existingContact) {
+        if (existingPerson) {
           if (config.duplicateHandling === "skip") {
             skipped++;
           } else if (config.duplicateHandling === "update") {
-            const contactUpdate: Record<string, string | null> = {};
-            if (row.full_name) contactUpdate.full_name = row.full_name;
-            if (row.first_name) contactUpdate.first_name = row.first_name;
-            if (row.last_name) contactUpdate.last_name = row.last_name;
-            if (row.linkedin) contactUpdate.linkedin = row.linkedin;
-            if (row.twitter) contactUpdate.twitter = row.twitter;
-            if (row.phone) contactUpdate.phone = row.phone;
-            if (row.title) contactUpdate.title = row.title;
-            if (row.seniority) contactUpdate.seniority = row.seniority;
-            if (row.department) contactUpdate.department = row.department;
-            if (row.context) contactUpdate.context = row.context;
-            if (row.telegram) contactUpdate.telegram = row.telegram;
+            const personUpdate: Record<string, string | null> = {};
+            if (row.full_name) personUpdate.full_name = row.full_name;
+            if (row.first_name) personUpdate.first_name = row.first_name;
+            if (row.last_name) personUpdate.last_name = row.last_name;
+            if (row.linkedin) personUpdate.linkedin_url = row.linkedin;
+            if (row.twitter) personUpdate.twitter_handle = row.twitter;
+            if (row.phone) personUpdate.phone = row.phone;
+            if (row.title) personUpdate.title = row.title;
+            if (row.seniority) personUpdate.seniority = row.seniority;
+            if (row.department) personUpdate.department = row.department;
+            if (row.context) personUpdate.notes = row.context;
+            if (row.telegram) personUpdate.telegram_handle = row.telegram;
 
-            if (Object.keys(contactUpdate).length > 0) {
+            if (Object.keys(personUpdate).length > 0) {
               await supabase
-                .from("contacts")
-                .update(contactUpdate)
-                .eq("id", existingContact.id);
+                .from("persons")
+                .update(personUpdate)
+                .eq("id", existingPerson.id);
             }
 
-            // Link to company if exists
-            if (companyId) {
-              await supabase.from("contact_company").upsert(
+            // Link to organization if exists
+            if (organizationId) {
+              await supabase.from("person_organization").upsert(
                 {
-                  contact_id: existingContact.id,
-                  company_id: companyId,
+                  person_id: existingPerson.id,
+                  organization_id: organizationId,
                   is_primary: true,
+                  is_current: true,
                 },
-                { onConflict: "contact_id,company_id" }
+                { onConflict: "person_id,organization_id" }
               );
             }
             skipped++;
           } else {
             // create_new — fall through to create
-            const { data: newContact } = await supabase
-              .from("contacts")
+            const { data: newPerson } = await supabase
+              .from("persons")
               .insert({
                 full_name: fullName || "Unknown",
                 first_name: row.first_name || null,
                 last_name: row.last_name || null,
                 email: email || null,
-                linkedin: row.linkedin || null,
-                twitter: row.twitter || null,
+                linkedin_url: row.linkedin || null,
+                twitter_handle: row.twitter || null,
                 phone: row.phone || null,
                 title: row.title || null,
                 seniority: row.seniority || null,
                 department: row.department || null,
-                context: row.context || null,
-                telegram: row.telegram || null,
+                notes: row.context || null,
+                telegram_handle: row.telegram || null,
                 source: "csv_import",
               })
               .select("id")
               .single();
 
-            if (newContact) {
-              contactsCreated++;
-              if (companyId) {
-                await supabase.from("contact_company").insert({
-                  contact_id: newContact.id,
-                  company_id: companyId,
+            if (newPerson) {
+              personsCreated++;
+              if (organizationId) {
+                await supabase.from("person_organization").insert({
+                  person_id: newPerson.id,
+                  organization_id: organizationId,
                   is_primary: true,
+                  is_current: true,
                 });
               }
               if (config.eventId) {
-                await supabase.from("contact_events").insert({
-                  contact_id: newContact.id,
+                await supabase.from("event_participations").insert({
+                  person_id: newPerson.id,
                   event_id: config.eventId,
+                  role: "attendee",
                 });
               }
             }
           }
         } else {
-          // New contact
-          const { data: newContact } = await supabase
-            .from("contacts")
+          // New person
+          const { data: newPerson } = await supabase
+            .from("persons")
             .insert({
               full_name: fullName || "Unknown",
               first_name: row.first_name || null,
               last_name: row.last_name || null,
               email: email || null,
-              linkedin: row.linkedin || null,
-              twitter: row.twitter || null,
+              linkedin_url: row.linkedin || null,
+              twitter_handle: row.twitter || null,
               phone: row.phone || null,
               title: row.title || null,
               seniority: row.seniority || null,
               department: row.department || null,
-              context: row.context || null,
-              telegram: row.telegram || null,
+              notes: row.context || null,
+              telegram_handle: row.telegram || null,
               source: "csv_import",
             })
             .select("id")
             .single();
 
-          if (newContact) {
-            contactsCreated++;
-            if (companyId) {
-              await supabase.from("contact_company").insert({
-                contact_id: newContact.id,
-                company_id: companyId,
+          if (newPerson) {
+            personsCreated++;
+            if (organizationId) {
+              await supabase.from("person_organization").insert({
+                person_id: newPerson.id,
+                organization_id: organizationId,
                 is_primary: true,
+                is_current: true,
               });
             }
             if (config.eventId) {
-              await supabase.from("contact_events").insert({
-                contact_id: newContact.id,
+              await supabase.from("event_participations").insert({
+                person_id: newPerson.id,
                 event_id: config.eventId,
+                role: "attendee",
               });
             }
           }
@@ -280,9 +285,9 @@ export async function importCsvData(
   await supabase
     .from("uploads")
     .update({
-      contacts_created: contactsCreated,
-      companies_created: companiesCreated,
-      status: errors.length > 0 && contactsCreated === 0 ? "failed" : "completed",
+      persons_created: personsCreated,
+      organizations_created: organizationsCreated,
+      status: errors.length > 0 && personsCreated === 0 ? "failed" : "completed",
       errors: errors.length > 0 ? { messages: errors } : null,
     })
     .eq("id", upload.id);
@@ -290,8 +295,8 @@ export async function importCsvData(
   return {
     success: true,
     uploadId: upload.id,
-    contactsCreated,
-    companiesCreated,
+    personsCreated,
+    organizationsCreated,
     skipped,
     errors,
   };

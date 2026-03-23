@@ -454,7 +454,7 @@ function AutomationRulesTab() {
             </div>
             <div>
               <label className="text-xs text-[var(--text-muted)] mb-1 block">Trigger Table</label>
-              <GlassInput value={editing.trigger_table ?? ""} onChange={(e) => setEditing({ ...editing, trigger_table: e.target.value })} placeholder="contacts" />
+              <GlassInput value={editing.trigger_table ?? ""} onChange={(e) => setEditing({ ...editing, trigger_table: e.target.value })} placeholder="persons" />
             </div>
             <div>
               <label className="text-xs text-[var(--text-muted)] mb-1 block">Trigger Event</label>

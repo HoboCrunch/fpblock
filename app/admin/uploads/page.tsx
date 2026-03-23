@@ -23,8 +23,8 @@ export default function UploadsPage() {
 
   // Import config
   const [eventId, setEventId] = useState("");
-  const [importAs, setImportAs] = useState<"contacts" | "companies" | "both">(
-    "contacts"
+  const [importAs, setImportAs] = useState<"persons" | "organizations" | "both">(
+    "persons"
   );
   const [duplicateHandling, setDuplicateHandling] = useState<
     "skip" | "update" | "create_new"
@@ -33,8 +33,8 @@ export default function UploadsPage() {
   // Import state
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<{
-    contactsCreated: number;
-    companiesCreated: number;
+    personsCreated: number;
+    organizationsCreated: number;
     skipped: number;
     errors: string[];
   } | null>(null);
@@ -106,8 +106,8 @@ export default function UploadsPage() {
         file?.name ?? "upload.csv"
       );
       setResult({
-        contactsCreated: res.contactsCreated,
-        companiesCreated: res.companiesCreated,
+        personsCreated: res.personsCreated,
+        organizationsCreated: res.organizationsCreated,
         skipped: res.skipped,
         errors: res.errors,
       });
@@ -193,14 +193,14 @@ export default function UploadsPage() {
                 </label>
                 <GlassSelect
                   options={[
-                    { value: "contacts", label: "Contacts" },
-                    { value: "companies", label: "Companies" },
+                    { value: "persons", label: "Persons" },
+                    { value: "organizations", label: "Organizations" },
                     { value: "both", label: "Both" },
                   ]}
                   value={importAs}
                   onChange={(e) =>
                     setImportAs(
-                      e.target.value as "contacts" | "companies" | "both"
+                      e.target.value as "persons" | "organizations" | "both"
                     )
                   }
                 />
@@ -247,8 +247,8 @@ export default function UploadsPage() {
                     <>
                       <CheckCircle className="h-4 w-4 text-emerald-400" />
                       <span className="text-emerald-400">
-                        {result.contactsCreated} contacts,{" "}
-                        {result.companiesCreated} companies created.{" "}
+                        {result.personsCreated} persons,{" "}
+                        {result.organizationsCreated} organizations created.{" "}
                         {result.skipped} skipped.
                       </span>
                     </>
@@ -256,7 +256,7 @@ export default function UploadsPage() {
                     <>
                       <AlertCircle className="h-4 w-4 text-yellow-400" />
                       <span className="text-yellow-400">
-                        {result.contactsCreated} created, {result.errors.length}{" "}
+                        {result.personsCreated} created, {result.errors.length}{" "}
                         errors
                       </span>
                     </>
@@ -293,10 +293,10 @@ export default function UploadsPage() {
                       Rows
                     </th>
                     <th className="px-5 py-3 text-[var(--text-muted)] font-medium">
-                      Contacts
+                      Persons
                     </th>
                     <th className="px-5 py-3 text-[var(--text-muted)] font-medium">
-                      Companies
+                      Organizations
                     </th>
                     <th className="px-5 py-3 text-[var(--text-muted)] font-medium">
                       Status
@@ -317,10 +317,10 @@ export default function UploadsPage() {
                         {u.row_count ?? "-"}
                       </td>
                       <td className="px-5 py-4 text-[var(--text-secondary)]">
-                        {u.contacts_created}
+                        {u.persons_created}
                       </td>
                       <td className="px-5 py-4 text-[var(--text-secondary)]">
-                        {u.companies_created}
+                        {u.organizations_created}
                       </td>
                       <td className="px-5 py-4">
                         <Badge variant={u.status === "completed" ? "sent" : u.status === "failed" ? "failed" : "processing"}>

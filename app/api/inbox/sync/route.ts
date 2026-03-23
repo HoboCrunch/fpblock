@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       if (inserted) {
         newCount++;
         const result = await correlateAndNotify(supabase, inserted);
-        if (result.contact_id) correlatedCount++;
+        if (result.person_id) correlatedCount++;
       }
     }
 

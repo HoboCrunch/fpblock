@@ -6,7 +6,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { Users, Building2, MessageSquare, CheckCircle, Upload, Sparkles, FileText } from "lucide-react";
 import Link from "next/link";
 
-/** Status ordering for computing most advanced status per contact. */
+/** Status ordering for computing most advanced status per person. */
 const STATUS_RANK: Record<string, number> = {
   failed: 0,
   bounced: 1,
@@ -39,43 +39,44 @@ export default async function DashboardPage() {
   const supabase = await createClient();
 
   const [
-    { count: contactCount },
-    { count: companyCount },
-    { data: messageCounts },
+    { count: personCount },
+    { count: orgCount },
+    { data: interactionCounts },
     { data: recentLogs },
-    { data: allContacts },
-    { data: allMessages },
+    { data: allPersons },
+    { data: allInteractions },
   ] = await Promise.all([
-    supabase.from("contacts").select("*", { count: "exact", head: true }),
-    supabase.from("companies").select("*", { count: "exact", head: true }),
-    supabase.rpc("message_status_counts"),
+    supabase.from("persons").select("*", { count: "exact", head: true }),
+    supabase.from("organizations").select("*", { count: "exact", head: true }),
+    supabase.rpc("interaction_status_counts"),
     supabase
       .from("job_log")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(20),
-    supabase.from("contacts").select("id"),
-    supabase.from("messages").select("id, contact_id, status"),
+    supabase.from("persons").select("id"),
+    supabase.from("interactions").select("id, person_id, status"),
   ]);
 
-  // Total messages and replied count
+  // Total interactions and replied count
   const statusCounts: Record<string, number> = {};
-  if (messageCounts) {
-    for (const row of messageCounts as { status: string; count: number }[]) {
+  if (interactionCounts) {
+    for (const row of interactionCounts as { status: string; count: number }[]) {
       statusCounts[row.status] = Number(row.count);
     }
   }
-  const totalMessages = Object.values(statusCounts).reduce((s, v) => s + v, 0);
+  const totalInteractions = Object.values(statusCounts).reduce((s, v) => s + v, 0);
   const repliedCount = statusCounts["replied"] || 0;
 
-  // Compute pipeline stages: for each contact find most advanced message status
-  const contactIds = new Set((allContacts || []).map((c) => c.id));
-  const messagesByContact = new Map<string, string[]>();
-  if (allMessages) {
-    for (const msg of allMessages) {
-      const existing = messagesByContact.get(msg.contact_id) || [];
-      existing.push(msg.status);
-      messagesByContact.set(msg.contact_id, existing);
+  // Compute pipeline stages: for each person find most advanced interaction status
+  const personIds = new Set((allPersons || []).map((p: { id: string }) => p.id));
+  const interactionsByPerson = new Map<string, string[]>();
+  if (allInteractions) {
+    for (const interaction of allInteractions as { id: string; person_id: string; status: string }[]) {
+      if (!interaction.person_id) continue;
+      const existing = interactionsByPerson.get(interaction.person_id) || [];
+      existing.push(interaction.status);
+      interactionsByPerson.set(interaction.person_id, existing);
     }
   }
 
@@ -89,8 +90,8 @@ export default async function DashboardPage() {
     bounced_failed: 0,
   };
 
-  for (const contactId of contactIds) {
-    const statuses = messagesByContact.get(contactId);
+  for (const personId of personIds) {
+    const statuses = interactionsByPerson.get(personId);
     if (!statuses || statuses.length === 0) {
       stageCounts.not_contacted++;
       continue;
@@ -127,20 +128,20 @@ export default async function DashboardPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Contacts"
-          value={contactCount || 0}
+          label="Persons"
+          value={personCount || 0}
           icon={Users}
           accentColor="indigo"
         />
         <StatCard
-          label="Companies"
-          value={companyCount || 0}
+          label="Organizations"
+          value={orgCount || 0}
           icon={Building2}
           accentColor="indigo"
         />
         <StatCard
-          label="Messages"
-          value={totalMessages}
+          label="Interactions"
+          value={totalInteractions}
           icon={MessageSquare}
           accentColor="orange"
         />

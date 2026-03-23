@@ -9,7 +9,23 @@ const ACCOUNTS = ["jb@gofpblock.com", "wes@gofpblock.com"];
  * GET /api/inbox
  * Fetch emails from both Fastmail accounts, correlate, store, and return.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url);
+  const searchType = url.searchParams.get("type");
+  const search = url.searchParams.get("search");
+
+  // Person search for link-to-person modal
+  if (searchType === "contacts" && search) {
+    const supabase = await createClient();
+    const { data: persons } = await supabase
+      .from("persons")
+      .select("id, full_name, email")
+      .or(`full_name.ilike.%${search}%,email.ilike.%${search}%`)
+      .limit(20);
+    return NextResponse.json({ contacts: persons || [] });
+  }
+
+  // Original email sync logic continues below...
   const apiKey = process.env.FASTMAIL_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -120,42 +136,42 @@ export async function GET() {
 
 /**
  * POST /api/inbox
- * Manual "Link to Contact" action: associate an inbound email with a contact.
+ * Manual "Link to Person" action: associate an inbound email with a person.
  */
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
 
-  let body: { emailId: string; contactId: string };
+  let body: { emailId: string; personId: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { emailId, contactId } = body;
-  if (!emailId || !contactId) {
+  const { emailId, personId } = body;
+  if (!emailId || !personId) {
     return NextResponse.json(
-      { error: "emailId and contactId are required" },
+      { error: "emailId and personId are required" },
       { status: 400 }
     );
   }
 
-  // Verify contact exists
-  const { data: contact, error: contactError } = await supabase
-    .from("contacts")
+  // Verify person exists
+  const { data: person, error: personError } = await supabase
+    .from("persons")
     .select("id, full_name")
-    .eq("id", contactId)
+    .eq("id", personId)
     .single();
 
-  if (contactError || !contact) {
-    return NextResponse.json({ error: "Contact not found" }, { status: 404 });
+  if (personError || !person) {
+    return NextResponse.json({ error: "Person not found" }, { status: 404 });
   }
 
   // Update the inbound email
   const { error: updateError } = await supabase
     .from("inbound_emails")
     .update({
-      contact_id: contactId,
+      person_id: personId,
       correlation_type: "manual",
     })
     .eq("id", emailId);
@@ -174,10 +190,10 @@ export async function POST(request: NextRequest) {
     target_id: emailId,
     status: "matched",
     metadata: {
-      contact_id: contactId,
+      person_id: personId,
       correlation_type: "manual",
     },
   });
 
-  return NextResponse.json({ success: true, contact });
+  return NextResponse.json({ success: true, person });
 }
