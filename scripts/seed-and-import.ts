@@ -22,14 +22,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 async function authenticate() {
   const { data, error } = await supabase.auth.signInWithPassword({
     email: "admin@gofpblock.com",
-    password: "changeme",
+    password: process.env.ADMIN_PASSWORD || "changeme",
   });
   if (error) {
     console.error("Auth failed:", error.message);
     console.log("Trying to create user...");
     const { error: signUpErr } = await supabase.auth.signUp({
       email: "admin@gofpblock.com",
-      password: "changeme",
+      password: process.env.ADMIN_PASSWORD || "changeme",
     });
     if (signUpErr) {
       console.error("Signup also failed:", signUpErr.message);
@@ -38,7 +38,7 @@ async function authenticate() {
     // Try login again
     const { error: retryErr } = await supabase.auth.signInWithPassword({
       email: "admin@gofpblock.com",
-      password: "changeme",
+      password: process.env.ADMIN_PASSWORD || "changeme",
     });
     if (retryErr) {
       console.error("Auth retry failed:", retryErr.message);

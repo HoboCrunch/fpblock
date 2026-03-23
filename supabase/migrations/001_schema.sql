@@ -1,5 +1,5 @@
 -- 001_schema.sql  –  Core tables for FP Block outreach platform
--- Applied to: <your-project-ref>.supabase.co
+-- Core schema for FP Block outreach platform
 
 -- ============================================================
 -- EXTENSIONS

@@ -236,7 +236,7 @@ export const config = {
 Add to `.env.local` (keep existing keys, add public-prefixed aliases for client-side access):
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
 ```
 
@@ -3446,7 +3446,7 @@ npx supabase secrets set \
   BRAVE_SEARCH_API_KEY=<your-brave-key> \
   PERPLEXITY_API_KEY=<your-perplexity-key> \
   SENDGRID_API_KEY=<your-sendgrid-key> \
-  HEYREACH_API_KEY="<your-heyreach-key>"
+  HEYREACH_API_KEY=<your-heyreach-key>
 ```
 
 - [ ] **Step 2: Verify secrets are set**

@@ -43,7 +43,7 @@ const contactEmailCache = new Map<string, string>(); // email → id
 async function authenticate() {
   const { error } = await supabase.auth.signInWithPassword({
     email: "admin@gofpblock.com",
-    password: "changeme",
+    password: process.env.ADMIN_PASSWORD || "changeme",
   });
   if (error) {
     console.error("Auth failed:", error.message);

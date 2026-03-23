@@ -5,7 +5,7 @@
 - Node.js 18+
 - npm
 - Supabase CLI (`npm install -D supabase`)
-- A Supabase project (current: `<your-project-ref>`)
+- A Supabase project
 
 ## Local Development
 
@@ -95,7 +95,7 @@ This creates sender profiles (JB, Wes), events (EthCC, TOKEN2049), prompt templa
 
 Go to **Supabase Dashboard > Authentication > Users > Add User**. Create an account with email/password for admin access.
 
-A default user has been created: `admin@gofpblock.com` / `changeme`
+Create an admin user with your own email/password credentials.
 
 ### Important: Supabase API Keys
 
@@ -139,7 +139,7 @@ npx supabase secrets set \
   BRAVE_SEARCH_API_KEY=<your-brave-key> \
   PERPLEXITY_API_KEY=<your-perplexity-key> \
   SENDGRID_API_KEY=<your-sendgrid-key> \
-  HEYREACH_API_KEY="<your-heyreach-key>"
+  HEYREACH_API_KEY=<your-heyreach-key>
 ```
 
 ### Deploy Functions

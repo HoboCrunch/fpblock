@@ -1,6 +1,6 @@
 # Database Schema
 
-Supabase Postgres. Project: `<your-project-ref>`.
+Supabase Postgres.
 
 ## Migrations
 
