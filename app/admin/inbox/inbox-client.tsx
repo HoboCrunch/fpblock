@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Mail,
   RefreshCw,
@@ -43,8 +44,18 @@ export function InboxClient({
   initialSyncStates,
   initialEmails,
 }: InboxClientProps) {
+  const router = useRouter();
   const [syncStates, setSyncStates] = useState(initialSyncStates);
   const [emails, setEmails] = useState(initialEmails);
+
+  // Sync local state when server component re-renders (e.g. after router.refresh())
+  useEffect(() => {
+    setSyncStates(initialSyncStates);
+  }, [initialSyncStates]);
+  useEffect(() => {
+    setEmails(initialEmails);
+  }, [initialEmails]);
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [correlationFilter, setCorrelationFilter] =
     useState<CorrelationFilter>("all");
@@ -85,22 +96,15 @@ export function InboxClient({
         body: JSON.stringify({ accountEmail }),
       });
       if (res.ok) {
-        // Refresh page data by re-fetching emails
-        const emailsRes = await fetch("/api/inbox");
-        if (emailsRes.ok) {
-          const data = await emailsRes.json();
-          if (data.emails) {
-            // Re-fetch from server for consistent data — just reload
-            window.location.reload();
-          }
-        }
+        // Revalidate server component data (preserves filter state)
+        router.refresh();
       }
     } catch (err) {
       console.error("Sync failed:", err);
     } finally {
       setSyncing((prev) => ({ ...prev, [accountEmail]: false }));
     }
-  }, []);
+  }, [router]);
 
   // -------------------------------------------------------------------------
   // Mark as read

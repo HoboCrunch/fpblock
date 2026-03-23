@@ -15,14 +15,14 @@ export async function GET(request: NextRequest) {
   const search = url.searchParams.get("search");
 
   // Person search for link-to-person modal
-  if (searchType === "contacts" && search) {
+  if (searchType === "persons" && search) {
     const supabase = await createClient();
     const { data: persons } = await supabase
       .from("persons")
       .select("id, full_name, email")
       .or(`full_name.ilike.%${search}%,email.ilike.%${search}%`)
       .limit(20);
-    return NextResponse.json({ contacts: persons || [] });
+    return NextResponse.json({ persons: persons || [] });
   }
 
   // Original email sync logic continues below...
@@ -141,14 +141,32 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
 
-  let body: { emailId: string; personId: string };
+  let body: { emailId?: string; personId?: string; action?: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { emailId, personId } = body;
+  const { emailId, personId, action } = body;
+
+  // Handle mark_read action
+  if (action === "mark_read" && emailId) {
+    const { error: readError } = await supabase
+      .from("inbound_emails")
+      .update({ is_read: true })
+      .eq("id", emailId);
+
+    if (readError) {
+      return NextResponse.json(
+        { error: "Failed to mark email as read", details: readError.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  }
+
   if (!emailId || !personId) {
     return NextResponse.json(
       { error: "emailId and personId are required" },
