@@ -5,10 +5,10 @@
   --foreground: #ededed;
   --accent-orange: #f58327;
   --accent-indigo: #6e86ff;
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-bg-hover: rgba(255, 255, 255, 0.06);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --glass-border-hover: rgba(255, 255, 255, 0.1);
+  --glass-bg: #161618;
+  --glass-bg-hover: #1c1c1f;
+  --glass-border: #2a2a2e;
+  --glass-border-hover: #36363c;
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.7);
   --text-muted: rgba(255, 255, 255, 0.4);
@@ -41,8 +41,6 @@ body {
 /* Glass utilities */
 .glass {
   background: var(--glass-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--glass-border);
 }
 

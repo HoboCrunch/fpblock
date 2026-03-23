@@ -330,3 +330,18 @@ export interface CompanyContext {
   outreach_strategy: string | null;
   updated_at: string;
 }
+
+export interface PersonList {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PersonListItem {
+  id: string;
+  list_id: string;
+  person_id: string;
+  added_at: string;
+}

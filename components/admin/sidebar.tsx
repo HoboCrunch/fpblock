@@ -20,11 +20,13 @@ import {
   ChevronRight,
   Rocket,
   GitMerge,
+  List as ListIcon,
 } from "lucide-react";
 
 const mainNavItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Persons", href: "/admin/persons", icon: Users },
+  { label: "Lists", href: "/admin/lists", icon: ListIcon },
   { label: "Organizations", href: "/admin/organizations", icon: Building2 },
   { label: "Events", href: "/admin/events", icon: Calendar, hasSubItems: true },
   { label: "Pipeline", href: "/admin/pipeline", icon: Kanban },
@@ -65,22 +67,20 @@ export function Sidebar({
     >
       {/* Logo */}
       <div className="h-14 flex items-center px-4 border-b border-[var(--glass-border)]">
-        <span
-          className={cn(
-            "font-[family-name:var(--font-heading)] font-semibold text-lg text-white transition-all duration-200",
-            collapsed && "lg:hidden"
-          )}
-        >
-          FP Block
-        </span>
-        <span
-          className={cn(
-            "font-[family-name:var(--font-heading)] font-semibold text-lg text-[var(--accent-orange)]",
-            !collapsed && "lg:hidden"
-          )}
-        >
-          FP
-        </span>
+        <Link href="/admin" className={cn(
+          "font-[family-name:var(--font-heading)] font-bold text-lg transition-all duration-200",
+          collapsed && "lg:hidden"
+        )} style={{ letterSpacing: "-0.3px" }}>
+          <span className="text-white">FP </span>
+          <span className="text-[var(--accent-orange)]">Block</span>
+        </Link>
+        <Link href="/admin" className={cn(
+          "font-[family-name:var(--font-heading)] font-bold text-lg",
+          !collapsed && "lg:hidden"
+        )} style={{ letterSpacing: "-0.3px" }}>
+          <span className="text-white">F</span>
+          <span className="text-[var(--accent-orange)]">B</span>
+        </Link>
       </div>
 
       {/* Main nav */}

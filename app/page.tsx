@@ -14,55 +14,74 @@ export default function Home() {
 
       <div className="relative z-10 flex flex-col items-center gap-8 px-6">
         {/* Logo */}
-        <img
-          src="https://framerusercontent.com/images/6lHOTAZziUqbnDrqcc8hCM8ps8.png"
-          alt="FP Block"
-          className="h-12 w-auto"
-        />
+        <h1 className="text-3xl font-bold font-[family-name:var(--font-heading)] tracking-tight" style={{ letterSpacing: "-0.3px" }}>
+          <span className="text-white">FP </span>
+          <span className="text-[#f58327]">Block</span>
+        </h1>
+        <p className="text-[#a1a1aa] text-sm -mt-4 font-[family-name:var(--font-body)]">
+          Mission-critical systems. Built right.
+        </p>
 
-        {/* Heading */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-white font-[family-name:var(--font-heading)] tracking-tight">
-            FP Block
-          </h1>
-          <p className="text-[#a1a1aa] text-sm mt-2 font-[family-name:var(--font-body)]">
-            Mission-critical systems. Built right.
-          </p>
-        </div>
-
-        {/* Navigation cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-lg mt-4">
-          <Link
-            href="/jb"
-            className="group flex flex-col items-center gap-2 rounded-xl p-6 text-center transition-all duration-300 border border-white/[0.06] bg-white/[0.03] backdrop-blur-xl hover:bg-white/[0.06] hover:border-[#f58327]/20 hover:shadow-[0_0_30px_rgba(245,131,39,0.08)]"
-          >
-            <span className="text-2xl">🎤</span>
-            <span className="text-white font-semibold font-[family-name:var(--font-heading)] text-sm">JB</span>
-            <span className="text-[#a1a1aa] text-xs">EthCC Cannes</span>
-          </Link>
-
+        {/* Profile cards */}
+        <div className="flex flex-col gap-4 w-full max-w-md mt-4">
           <Link
             href="/wes"
-            className="group flex flex-col items-center gap-2 rounded-xl p-6 text-center transition-all duration-300 border border-white/[0.06] bg-white/[0.03] backdrop-blur-xl hover:bg-white/[0.06] hover:border-[#6e86ff]/20 hover:shadow-[0_0_30px_rgba(110,134,255,0.08)]"
+            className="group rounded-xl p-5 transition-all duration-300 border border-[#f58327]/15 bg-white/[0.03] backdrop-blur-xl hover:bg-white/[0.06] hover:border-[#f58327]/30 hover:shadow-[0_0_40px_rgba(245,131,39,0.1)]"
           >
-            <span className="text-2xl">🤝</span>
-            <span className="text-white font-semibold font-[family-name:var(--font-heading)] text-sm">Wes</span>
-            <span className="text-[#a1a1aa] text-xs">EthCC Cannes</span>
+            <div className="flex items-center gap-4">
+              <img
+                src="https://nbpyunavtweourytwcrq.supabase.co/storage/v1/object/public/misc/wes.jpg"
+                alt="Wesley Crook"
+                className="h-14 w-14 rounded-full object-cover ring-2 ring-[#f58327]/20 group-hover:ring-[#f58327]/40 transition-all"
+              />
+              <div className="flex-1 min-w-0">
+                <span className="text-white font-semibold font-[family-name:var(--font-heading)] text-base block">Wesley Crook</span>
+                <span className="text-[#a1a1aa] text-xs font-[family-name:var(--font-body)]">CEO, FP Block</span>
+              </div>
+              <span className="text-[#52525b] group-hover:text-[#f58327] transition-colors">&rarr;</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-white/[0.06]">
+              <p className="text-[#a1a1aa] text-xs font-[family-name:var(--font-body)] leading-relaxed">
+                Up next &mdash; <span className="text-[#f58327]">EthCC Cannes 2026</span>. Building systems where failure is not an option.
+              </p>
+            </div>
           </Link>
 
           <Link
-            href="/login"
-            className="group flex flex-col items-center gap-2 rounded-xl p-6 text-center transition-all duration-300 border border-white/[0.06] bg-white/[0.03] backdrop-blur-xl hover:bg-white/[0.06] hover:border-[#f58327]/20 hover:shadow-[0_0_30px_rgba(245,131,39,0.08)]"
+            href="/jb"
+            className="group rounded-xl p-5 transition-all duration-300 border border-[#f58327]/15 bg-white/[0.03] backdrop-blur-xl hover:bg-white/[0.06] hover:border-[#f58327]/30 hover:shadow-[0_0_40px_rgba(245,131,39,0.1)]"
           >
-            <span className="text-2xl">⚡</span>
-            <span className="text-white font-semibold font-[family-name:var(--font-heading)] text-sm">Admin</span>
-            <span className="text-[#a1a1aa] text-xs">CRM Dashboard</span>
+            <div className="flex items-center gap-4">
+              <img
+                src="/landing/jb.png"
+                alt="JB"
+                className="h-14 w-14 rounded-full object-cover ring-2 ring-[#f58327]/20 group-hover:ring-[#f58327]/40 transition-all"
+              />
+              <div className="flex-1 min-w-0">
+                <span className="text-white font-semibold font-[family-name:var(--font-heading)] text-base block">JB</span>
+                <span className="text-[#a1a1aa] text-xs font-[family-name:var(--font-body)]">Head of BD, FP Block</span>
+              </div>
+              <span className="text-[#52525b] group-hover:text-[#f58327] transition-colors">&rarr;</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-white/[0.06]">
+              <p className="text-[#a1a1aa] text-xs font-[family-name:var(--font-body)] leading-relaxed">
+                Up next &mdash; <span className="text-[#f58327]">EthCC Cannes 2026</span>. Let&apos;s talk infrastructure, ownership, and what comes next.
+              </p>
+            </div>
           </Link>
         </div>
 
+        {/* Admin link */}
+        <Link
+          href="/login"
+          className="text-xs text-[#f58327] hover:text-[#f58327]/80 transition-colors font-[family-name:var(--font-body)] mt-4"
+        >
+          Login as admin &rarr;
+        </Link>
+
         {/* Footer */}
-        <p className="text-[#52525b] text-xs mt-8 font-[family-name:var(--font-body)]">
-          © 2026 FP Block. All rights reserved.
+        <p className="text-[#52525b] text-xs mt-6 font-[family-name:var(--font-body)]">
+          &copy; 2026 FP Block. All rights reserved.
         </p>
       </div>
     </div>

@@ -740,11 +740,33 @@ function PersonEnrichmentTab({
   const [previewLoading, setPreviewLoading] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Saved lists state
+  const [savedLists, setSavedLists] = useState<{ id: string; name: string; count: number }[]>([]);
+  const [selectedListId, setSelectedListId] = useState("");
+
   // Real-time progress state
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [progressEntries, setProgressEntries] = useState<ProgressEntry[]>([]);
   const [jobStartTime, setJobStartTime] = useState<string | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load saved lists on mount
+  useEffect(() => {
+    (async () => {
+      const supabase = useSupabase();
+      const { data } = await supabase
+        .from("person_lists")
+        .select("id, name, person_list_items(count)")
+        .order("name");
+      if (data) {
+        setSavedLists(data.map((l: any) => ({
+          id: l.id,
+          name: l.name,
+          count: l.person_list_items?.[0]?.count ?? 0,
+        })));
+      }
+    })();
+  }, []);
 
   // Fetch preview whenever target/eventId changes
   useEffect(() => {
@@ -781,6 +803,20 @@ function PersonEnrichmentTab({
             .map((p: { person_id: string | null }) => p.person_id)
             .filter((id): id is string => id !== null);
 
+          if (personIds.length === 0) {
+            setPreviewPersons([]);
+            setPreviewPersonCount(0);
+            setPreviewLoading(false);
+            return;
+          }
+          query = query.in("id", personIds);
+        } else if (target === "saved_list" && selectedListId) {
+          const { data: listItems } = await supabase
+            .from("person_list_items")
+            .select("person_id")
+            .eq("list_id", selectedListId);
+
+          const personIds = (listItems ?? []).map((i: any) => i.person_id).filter(Boolean);
           if (personIds.length === 0) {
             setPreviewPersons([]);
             setPreviewPersonCount(0);
@@ -836,7 +872,7 @@ function PersonEnrichmentTab({
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [target, eventId, preSelectedPersons]);
+  }, [target, eventId, preSelectedPersons, selectedListId]);
 
   // Poll for progress while running
   useEffect(() => {
@@ -907,6 +943,14 @@ function PersonEnrichmentTab({
         body.personIds = Array.from(pickedPersonIds);
       } else if (target === "event" && eventId) {
         body.eventId = eventId;
+      } else if (target === "saved_list" && selectedListId) {
+        const supabase = useSupabase();
+        const { data: listItems } = await supabase
+          .from("person_list_items")
+          .select("person_id")
+          .eq("list_id", selectedListId);
+        const ids = (listItems ?? []).map((i: any) => i.person_id).filter(Boolean);
+        if (ids.length > 0) body.personIds = ids;
       }
 
       const res = await fetch("/api/enrich", {
@@ -966,6 +1010,7 @@ function PersonEnrichmentTab({
                 label: `Selected persons (${preSelectedPersons.length})`,
               },
               { value: "event", label: "Persons from event" },
+              { value: "saved_list", label: "From saved list" },
               { value: "pick", label: "Select from list" },
             ]}
             value={target}
@@ -985,6 +1030,20 @@ function PersonEnrichmentTab({
               placeholder="Select event"
               value={eventId}
               onChange={(e) => setEventId(e.target.value)}
+            />
+          </div>
+        )}
+        {target === "saved_list" && (
+          <div>
+            <label className="text-xs text-[var(--text-muted)] mb-1 block">List</label>
+            <GlassSelect
+              options={savedLists.map((l) => ({
+                value: l.id,
+                label: `${l.name} (${l.count})`,
+              }))}
+              placeholder="Select list"
+              value={selectedListId}
+              onChange={(e) => setSelectedListId(e.target.value)}
             />
           </div>
         )}
