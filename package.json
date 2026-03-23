@@ -21,7 +21,8 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "tailwind-merge": "^3.5.0",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "unipile-node-sdk": "^1.9.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

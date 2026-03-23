@@ -189,12 +189,15 @@ export default async function OrganizationsListPage({
         enriched_person_count: personCounts.enriched,
         signal_count: signalData.count,
         last_signal: signalData.lastDate,
-        events: events.map((ep: any) => ({
-          id: ep.event?.id,
-          name: ep.event?.name,
-          role: ep.role,
-          tier: ep.sponsor_tier,
-        })),
+        events: events.map((ep: any) => {
+          const evt = Array.isArray(ep.event) ? ep.event[0] : ep.event;
+          return {
+            id: evt?.id,
+            name: evt?.name,
+            role: ep.role,
+            tier: ep.sponsor_tier,
+          };
+        }),
       };
     })
     .filter((row: any) => {
