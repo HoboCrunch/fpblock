@@ -73,6 +73,30 @@ function buildHqLocation(org: Record<string, unknown>): string | null {
 }
 
 /**
+ * Map a raw Apollo organization object to ApolloOrgResult.
+ */
+function mapOrg(org: Record<string, unknown>, data: Record<string, unknown>): ApolloOrgResult {
+  return {
+    description: (org.short_description as string) || (org.description as string) || null,
+    industry: (org.industry as string) || null,
+    employee_count:
+      typeof org.estimated_num_employees === "number" ? org.estimated_num_employees : null,
+    annual_revenue: formatRevenue(org.annual_revenue ?? org.estimated_annual_revenue ?? null),
+    founded_year: typeof org.founded_year === "number" ? org.founded_year : null,
+    technologies: Array.isArray(org.current_technologies)
+      ? (org.current_technologies as string[])
+      : [],
+    funding_total: formatFunding(org.total_funding ?? null),
+    latest_funding_stage:
+      (org.latest_funding_stage as string) || (org.latest_funding_round_type as string) || null,
+    linkedin_url: (org.linkedin_url as string) || null,
+    website: (org.website_url as string) || (org.primary_domain as string) || null,
+    hq_location: buildHqLocation(org),
+    raw: data as Record<string, unknown>,
+  };
+}
+
+/**
  * Sleep for the given number of milliseconds.
  */
 function sleep(ms: number): Promise<void> {
@@ -82,8 +106,10 @@ function sleep(ms: number): Promise<void> {
 /**
  * Enrich an organization via the Apollo Organization Enrich API.
  *
- * Prefers domain-based lookup (more precise) when a website is provided,
- * falls back to name-based lookup otherwise.
+ * Tries domain-based lookup first (more precise) when a website is provided.
+ * If the domain lookup fails (non-200 response) or returns no org match, falls
+ * back to name-based lookup. If no domain is available, goes straight to
+ * name-based lookup.
  *
  * Never throws -- returns null-filled results on error.
  */
@@ -112,71 +138,58 @@ export async function enrichFromApollo(
     return emptyResult;
   }
 
-  // Build query params -- prefer domain when available
-  const params = new URLSearchParams();
+  // Build strategies — prefer domain when available
+  const strategies: URLSearchParams[] = [];
   const domain = website ? extractDomain(website) : null;
+
   if (domain) {
-    params.set("domain", domain);
-  } else {
-    params.set("name", orgName);
+    const domainParams = new URLSearchParams();
+    domainParams.set("domain", domain);
+    strategies.push(domainParams);
   }
 
+  // Always add name-based as fallback (or primary if no domain)
+  const nameParams = new URLSearchParams();
+  nameParams.set("name", orgName);
+  strategies.push(nameParams);
+
   try {
-    const res = await fetch(`${APOLLO_ORG_ENRICH_URL}?${params.toString()}`, {
-      method: "GET",
-      headers: {
-        "X-Api-Key": apiKey,
-        "Content-Type": "application/json",
-      },
-    });
+    for (const params of strategies) {
+      const res = await fetch(`${APOLLO_ORG_ENRICH_URL}?${params.toString()}`, {
+        method: "GET",
+        headers: {
+          "X-Api-Key": apiKey,
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (!res.ok) {
-      console.error(
-        `[apollo] Organization enrich failed for "${orgName}": ${res.status} ${res.statusText}`,
-      );
-      return emptyResult;
+      if (!res.ok) {
+        console.error(
+          `[apollo] Organization enrich failed for "${orgName}" (${params.toString()}): ${res.status} ${res.statusText}`,
+        );
+        await sleep(500);
+        continue; // Try next strategy
+      }
+
+      const data = await res.json();
+      const org = data.organization as Record<string, unknown> | undefined;
+
+      if (!org) {
+        console.warn(`[apollo] No organization match for "${orgName}" (${params.toString()})`);
+        await sleep(500);
+        continue; // Try next strategy
+      }
+
+      // Found a match — map and return
+      await sleep(500);
+      return mapOrg(org, data as Record<string, unknown>);
     }
 
-    const data = await res.json();
-    const org = data.organization as Record<string, unknown> | undefined;
-
-    if (!org) {
-      console.warn(`[apollo] No organization match for "${orgName}"`);
-      return emptyResult;
-    }
-
-    const result: ApolloOrgResult = {
-      description: (org.short_description as string) || (org.description as string) || null,
-      industry: (org.industry as string) || null,
-      employee_count:
-        typeof org.estimated_num_employees === "number"
-          ? org.estimated_num_employees
-          : null,
-      annual_revenue: formatRevenue(
-        org.annual_revenue ?? org.estimated_annual_revenue ?? null,
-      ),
-      founded_year:
-        typeof org.founded_year === "number" ? org.founded_year : null,
-      technologies: Array.isArray(org.current_technologies)
-        ? (org.current_technologies as string[])
-        : [],
-      funding_total: formatFunding(org.total_funding ?? null),
-      latest_funding_stage:
-        (org.latest_funding_stage as string) ||
-        (org.latest_funding_round_type as string) ||
-        null,
-      linkedin_url: (org.linkedin_url as string) || null,
-      website: (org.website_url as string) || (org.primary_domain as string) || null,
-      hq_location: buildHqLocation(org),
-      raw: data as Record<string, unknown>,
-    };
-
-    return result;
+    // All strategies exhausted
+    console.warn(`[apollo] No match found for "${orgName}" after all strategies`);
+    return emptyResult;
   } catch (err) {
     console.error(`[apollo] Network error enriching "${orgName}":`, err);
     return emptyResult;
-  } finally {
-    // Rate limit: 500ms pause after every call (success or failure)
-    await sleep(500);
   }
 }

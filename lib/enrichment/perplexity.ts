@@ -6,6 +6,7 @@ export interface PerplexityOrgResult {
   recent_news: { headline: string; date: string | null; source: string | null }[];
   target_market: string | null;
   raw_response: string;
+  discovered_website: string | null;
 }
 
 const PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions";
@@ -23,6 +24,7 @@ function buildPrompt(
   return `Research the company "${orgName}"${websiteLine}.
 
 Provide a structured analysis:
+0. Company website URL (the official domain, e.g. https://example.com)
 1. What does this company do? (2-3 sentences)
 2. Key products or services
 3. Competitive strengths (bullet points)
@@ -33,12 +35,31 @@ Provide a structured analysis:
 If existing context is provided, build on it rather than repeating it.${contextLine}
 
 IMPORTANT: Format your response with these exact section headers on their own lines:
+## Website
 ## Description
 ## Products
 ## Strengths
 ## Weaknesses
 ## Recent News
 ## Target Market`;
+}
+
+function extractWebsiteFromText(text: string): string | null {
+  if (!text) return null;
+  // Try to find a URL pattern
+  const urlMatch = text.match(/https?:\/\/[^\s,)}\]"']+/i);
+  if (urlMatch) {
+    try {
+      const url = new URL(urlMatch[0]);
+      return url.origin;
+    } catch { /* fall through */ }
+  }
+  // Try to find a domain pattern like "example.com"
+  const domainMatch = text.match(/\b([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}\b/i);
+  if (domainMatch) {
+    return `https://${domainMatch[0]}`;
+  }
+  return null;
 }
 
 function parseSection(text: string, header: string, nextHeader?: string): string {
@@ -95,6 +116,7 @@ function parseNewsItems(
 
 function parseResponse(raw: string): Omit<PerplexityOrgResult, "raw_response"> {
   const sections = [
+    "Website",
     "Description",
     "Products",
     "Strengths",
@@ -103,15 +125,20 @@ function parseResponse(raw: string): Omit<PerplexityOrgResult, "raw_response"> {
     "Target Market",
   ];
 
-  const description = parseSection(raw, sections[0], sections[1]) || null;
-  const products = parseSection(raw, sections[1], sections[2]) || null;
-  const strengths = parseBullets(parseSection(raw, sections[2], sections[3]));
-  const weaknesses = parseBullets(parseSection(raw, sections[3], sections[4]));
-  const recentNewsRaw = parseSection(raw, sections[4], sections[5]);
+  const websiteSection = parseSection(raw, sections[0], sections[1]);
+  const description = parseSection(raw, sections[1], sections[2]) || null;
+  const products = parseSection(raw, sections[2], sections[3]) || null;
+  const strengths = parseBullets(parseSection(raw, sections[3], sections[4]));
+  const weaknesses = parseBullets(parseSection(raw, sections[4], sections[5]));
+  const recentNewsRaw = parseSection(raw, sections[5], sections[6]);
   const recent_news = parseNewsItems(recentNewsRaw);
-  const target_market = parseSection(raw, sections[5]) || null;
+  const target_market = parseSection(raw, sections[6]) || null;
 
-  return { description, products, strengths, weaknesses, recent_news, target_market };
+  const discovered_website = extractWebsiteFromText(websiteSection)
+    ?? extractWebsiteFromText(description ?? "")
+    ?? null;
+
+  return { description, products, strengths, weaknesses, recent_news, target_market, discovered_website };
 }
 
 export async function enrichFromPerplexity(
@@ -127,6 +154,7 @@ export async function enrichFromPerplexity(
     recent_news: [],
     target_market: null,
     raw_response: "",
+    discovered_website: null,
   };
 
   const apiKey = process.env.PERPLEXITY_API_KEY;

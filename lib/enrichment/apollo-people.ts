@@ -130,51 +130,30 @@ function mapPerson(p: Record<string, unknown>): ApolloPersonResult {
 }
 
 // ---------------------------------------------------------------------------
-// Main export
+// Private API helper
 // ---------------------------------------------------------------------------
 
 /**
- * Search for people at a given organization using Apollo's People Search API.
- *
- * Prefers domain-based lookup (via `website`) when available; falls back to
- * `organization_names` when no parseable domain is found.
- *
+ * Execute a single people search request with the given org filter.
+ * Handles rate limiting (500ms sleep) after every call.
  * Never throws — returns an empty result with a populated `error` field on failure.
  */
-export async function searchPeopleAtOrg(
+async function doSearch(
+  apiKey: string,
   orgName: string,
-  website: string | null | undefined,
-  config: PeopleFinderConfig = DEFAULT_PEOPLE_FINDER_CONFIG,
+  config: PeopleFinderConfig,
+  orgFilter: Record<string, unknown>,
 ): Promise<PeopleFinderResult> {
-  const emptyResult: PeopleFinderResult = {
-    people: [],
-    total_available: 0,
-    error: null,
-  };
-
-  const apiKey = process.env.APOLLO_API_KEY;
-  if (!apiKey) {
-    console.error("[apollo-people] APOLLO_API_KEY not configured");
-    return { ...emptyResult, error: "APOLLO_API_KEY not configured" };
-  }
-
-  // Build request body
-  const domain = website ? extractDomain(website) : null;
+  const emptyResult: PeopleFinderResult = { people: [], total_available: 0, error: null };
 
   const body: Record<string, unknown> = {
     per_page: Math.min(Math.max(1, config.perCompany), 25),
+    ...orgFilter,
   };
-
-  if (domain) {
-    body.organization_domains = [domain];
-  } else {
-    body.organization_names = [orgName];
-  }
 
   if (config.seniorities.length > 0) {
     body.person_seniorities = config.seniorities;
   }
-
   if (config.departments.length > 0) {
     body.person_departments = config.departments;
   }
@@ -182,10 +161,7 @@ export async function searchPeopleAtOrg(
   try {
     const res = await fetch(APOLLO_PEOPLE_SEARCH_URL, {
       method: "POST",
-      headers: {
-        "X-Api-Key": apiKey,
-        "Content-Type": "application/json",
-      },
+      headers: { "X-Api-Key": apiKey, "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
@@ -196,7 +172,6 @@ export async function searchPeopleAtOrg(
     }
 
     const data = await res.json();
-
     const rawPeople = Array.isArray(data.people) ? data.people : [];
     const totalAvailable =
       typeof data.pagination?.total_entries === "number"
@@ -204,14 +179,56 @@ export async function searchPeopleAtOrg(
         : rawPeople.length;
 
     const people = (rawPeople as Record<string, unknown>[]).map(mapPerson);
-
     return { people, total_available: totalAvailable, error: null };
   } catch (err) {
     const msg = `Network error searching people at "${orgName}": ${String(err)}`;
     console.error(`[apollo-people] ${msg}`);
     return { ...emptyResult, error: msg };
   } finally {
-    // Rate limit: 500ms pause after every call (success or failure)
     await sleep(500);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Main export
+// ---------------------------------------------------------------------------
+
+/**
+ * Search for people at a given organization using Apollo's People Search API.
+ *
+ * Tries domain-based search first when a parseable domain is available. If that
+ * returns 0 results, falls back to name-based search. If no domain is available,
+ * goes straight to name-based search.
+ *
+ * Never throws — returns an empty result with a populated `error` field on failure.
+ */
+export async function searchPeopleAtOrg(
+  orgName: string,
+  website: string | null | undefined,
+  config: PeopleFinderConfig = DEFAULT_PEOPLE_FINDER_CONFIG,
+): Promise<PeopleFinderResult> {
+  const emptyResult: PeopleFinderResult = { people: [], total_available: 0, error: null };
+
+  const apiKey = process.env.APOLLO_API_KEY;
+  if (!apiKey) {
+    console.error("[apollo-people] APOLLO_API_KEY not configured");
+    return { ...emptyResult, error: "APOLLO_API_KEY not configured" };
+  }
+
+  const domain = website ? extractDomain(website) : null;
+
+  // Try domain-based search first if available
+  if (domain) {
+    const result = await doSearch(apiKey, orgName, config, { organization_domains: [domain] });
+    if (result.people.length > 0) return result;
+
+    // Domain search returned 0 results — fall back to name-based
+    console.log(
+      `[apollo-people] Domain search for "${orgName}" (${domain}) returned 0 results, trying name-based`,
+    );
+  }
+
+  // Name-based search (primary if no domain, fallback if domain returned nothing)
+  const result = await doSearch(apiKey, orgName, config, { organization_names: [orgName] });
+  return result;
 }

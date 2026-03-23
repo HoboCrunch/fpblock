@@ -640,11 +640,36 @@ export async function runFullEnrichment(
   });
 
   try {
-    // Step 1: Run Apollo + Perplexity in parallel
-    const [apolloResult, perplexityResult] = await Promise.all([
-      enrichFromApollo(org.name, org.website),
-      enrichFromPerplexity(org.name, org.website, org.context),
-    ]);
+    // Step 1: Run Apollo + Perplexity — parallel if org has a website, sequential (discovery) if not
+    console.log(`[pipeline] ${org.name}: using ${org.website ? 'parallel' : 'discovery'} path`);
+
+    let apolloResult: ApolloOrgResult;
+    let perplexityResult: PerplexityOrgResult;
+
+    if (org.website) {
+      // Fast path: org has a website, run Apollo + Perplexity in parallel
+      [apolloResult, perplexityResult] = await Promise.all([
+        enrichFromApollo(org.name, org.website),
+        enrichFromPerplexity(org.name, org.website, org.context),
+      ]);
+    } else {
+      // Discovery path: no website — run Perplexity first to discover domain
+      perplexityResult = await enrichFromPerplexity(org.name, null, org.context);
+
+      // Try to extract website from Perplexity research
+      const discoveredWebsite = perplexityResult.discovered_website;
+      if (discoveredWebsite) {
+        // Persist discovered website to the org immediately
+        await supabase
+          .from("organizations")
+          .update({ website: discoveredWebsite })
+          .eq("id", orgId);
+        console.log(`[pipeline] Discovered website for ${org.name}: ${discoveredWebsite}`);
+      }
+
+      // Now run Apollo with the discovered website (or name-only fallback)
+      apolloResult = await enrichFromApollo(org.name, discoveredWebsite ?? org.website);
+    }
 
     // Log individual stage results
     await Promise.all([
@@ -668,6 +693,8 @@ export async function runFullEnrichment(
     const apolloUpdates: Record<string, unknown> = {};
     if (apolloResult.website && !org.website)
       apolloUpdates.website = apolloResult.website;
+    else if (!org.website && perplexityResult.discovered_website && !apolloResult.website)
+      apolloUpdates.website = perplexityResult.discovered_website;
     if (apolloResult.linkedin_url && !org.linkedin_url)
       apolloUpdates.linkedin_url = apolloResult.linkedin_url;
     if (apolloResult.description && !org.description)
