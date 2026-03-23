@@ -209,19 +209,28 @@ Table: Name, Channel, Steps count, Persons Enrolled, Completion Rate, Initiative
 
 Unified inbound email view for `jb@gofpblock.com` and `wes@gofpblock.com` via Fastmail JMAP.
 
-### Connected Accounts (top)
-Glass cards for each account: email, last sync time, unread count, status indicator (green/red), "Sync Now" button.
+### Header
+"Inbox" heading with a right-aligned "Sync" button that syncs both accounts in parallel. No per-account status cards.
 
 ### Email View (two-column)
-- **Left (email list):** Sender, subject, snippet, timestamp. Unread emails have orange left border. Correlated emails show a pipeline badge (person name + ICP). Uncorrelated emails show "Link to Person".
-- **Right (email detail):** Full email body. If correlated: person card with name, organization, stage, link to person detail. Action buttons: Mark as Read, Link to Person, Ignore.
+- **Left (email list):** Each email card shows sender name, subject, snippet. Top-right: orange pill with account tag (JB / Wes). Bottom-right: relative timestamp. Pipeline-aware styling:
+  - **Unread, from known person:** orange left accent + subtle orange background fill
+  - **Unread, unknown sender:** white left accent, default background
+  - **Read, from known person:** subtle orange background fill, no accent
+  - **Read, unknown sender:** default background, no accent
+  - "Known person" = sender email exists in the persons table (pipeline detection)
+  - Correlated emails additionally show a badge with person name + ICP score
+- **Right (email detail):** Full email body (HTML rendered). If correlated: person card with name, organization, ICP score, link to person detail. Action buttons: Mark as Read, Link to Person, Ignore.
 - **Filter tabs:** All | Correlated | Uncorrelated | Account filter (JB / Wes / Both)
+
+### Auto-Sync
+A pg_cron job (`016_inbox_sync_cron.sql`) polls every 15 minutes per account (JB at :00/:15/:30/:45, Wes offset by 1 minute) via pg_net HTTP POST to `/api/inbox/sync`.
 
 ### Auto-Correlation
 When emails are synced:
 1. Exact match on sender email → persons.email
 2. Domain match on sender → organizations.website
-3. On match: creates inbound interaction record, sends Telegram notification
+3. On match: updates interaction status to "replied", sends Telegram notification
 
 ## Enrichment
 
