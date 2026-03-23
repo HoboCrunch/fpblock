@@ -60,7 +60,7 @@ export function InboxClient({
   const [correlationFilter, setCorrelationFilter] =
     useState<CorrelationFilter>("all");
   const [accountFilter, setAccountFilter] = useState<AccountFilter>("both");
-  const [syncing, setSyncing] = useState<Record<string, boolean>>({});
+  const [syncing, setSyncing] = useState(false);
   const [linkModal, setLinkModal] = useState<string | null>(null);
   const [personSearch, setPersonSearch] = useState("");
   const [personResults, setPersonResults] = useState<
@@ -87,22 +87,25 @@ export function InboxClient({
   // Sync handler
   // -------------------------------------------------------------------------
 
-  const handleSync = useCallback(async (accountEmail: string) => {
-    setSyncing((prev) => ({ ...prev, [accountEmail]: true }));
+  const accounts = ["jb@gofpblock.com", "wes@gofpblock.com"];
+
+  const handleSyncAll = useCallback(async () => {
+    setSyncing(true);
     try {
-      const res = await fetch("/api/inbox/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accountEmail }),
-      });
-      if (res.ok) {
-        // Revalidate server component data (preserves filter state)
-        router.refresh();
-      }
+      await Promise.all(
+        accounts.map((acct) =>
+          fetch("/api/inbox/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ accountEmail: acct }),
+          })
+        )
+      );
+      router.refresh();
     } catch (err) {
       console.error("Sync failed:", err);
     } finally {
-      setSyncing((prev) => ({ ...prev, [accountEmail]: false }));
+      setSyncing(false);
     }
   }, [router]);
 
@@ -196,92 +199,44 @@ export function InboxClient({
 
   return (
     <div className="space-y-6">
-      {/* Connected Accounts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {(syncStates.length > 0
-          ? syncStates
-          : [
-              {
-                id: "default-jb",
-                account_email: "jb@gofpblock.com",
-                last_sync_at: null,
-                last_email_id: null,
-                unread_count: 0,
-                status: "disconnected" as const,
-                error_message: null,
-                updated_at: new Date().toISOString(),
-              },
-              {
-                id: "default-wes",
-                account_email: "wes@gofpblock.com",
-                last_sync_at: null,
-                last_email_id: null,
-                unread_count: 0,
-                status: "disconnected" as const,
-                error_message: null,
-                updated_at: new Date().toISOString(),
-              },
-            ]
-        ).map((state) => (
-          <GlassCard key={state.account_email}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-white/50" />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-white">
-                      {state.account_email}
-                    </span>
-                    <span
-                      className={cn(
-                        "h-2 w-2 rounded-full",
-                        state.status === "connected"
-                          ? "bg-green-500"
-                          : state.status === "error"
-                          ? "bg-red-500"
-                          : "bg-gray-500"
-                      )}
-                    />
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-white/40 mt-0.5">
-                    {state.last_sync_at && (
-                      <span>
-                        Last sync:{" "}
-                        {new Date(state.last_sync_at).toLocaleString()}
-                      </span>
-                    )}
-                    <span>
-                      {state.unread_count} unread
-                    </span>
-                    {state.error_message && (
-                      <span className="text-red-400 truncate max-w-[200px]">
-                        {state.error_message}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => handleSync(state.account_email)}
-                disabled={syncing[state.account_email]}
+      {/* Sync Bar */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          {syncStates.map((state) => (
+            <div key={state.account_email} className="flex items-center gap-2 text-xs text-white/40">
+              <span
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg",
-                  "bg-white/5 border border-white/10 text-white/70",
-                  "hover:bg-white/10 hover:text-white transition-all duration-200",
-                  "disabled:opacity-50 disabled:cursor-not-allowed"
+                  "h-2 w-2 rounded-full",
+                  state.status === "connected"
+                    ? "bg-green-500"
+                    : state.status === "error"
+                    ? "bg-red-500"
+                    : "bg-gray-500"
                 )}
-              >
-                <RefreshCw
-                  className={cn(
-                    "h-3 w-3",
-                    syncing[state.account_email] && "animate-spin"
-                  )}
-                />
-                Sync Now
-              </button>
+              />
+              <span className="text-white/60">{state.account_email.split("@")[0].toUpperCase()}</span>
+              {state.last_sync_at && (
+                <span>{formatRelativeTime(state.last_sync_at)} ago</span>
+              )}
+              {state.error_message && (
+                <span className="text-red-400 truncate max-w-[150px]">{state.error_message}</span>
+              )}
             </div>
-          </GlassCard>
-        ))}
+          ))}
+        </div>
+        <button
+          onClick={handleSyncAll}
+          disabled={syncing}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg",
+            "bg-white/5 border border-white/10 text-white/70",
+            "hover:bg-white/10 hover:text-white transition-all duration-200",
+            "disabled:opacity-50 disabled:cursor-not-allowed"
+          )}
+        >
+          <RefreshCw className={cn("h-3 w-3", syncing && "animate-spin")} />
+          Sync All
+        </button>
       </div>
 
       {/* Filter Tabs */}
@@ -411,9 +366,9 @@ export function InboxClient({
                   <span className="text-[10px] text-white/30">
                     {formatRelativeTime(email.received_at)}
                   </span>
-                  <div className="text-[10px] text-white/20 mt-0.5">
+                  <span className="inline-block mt-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#f58327]/15 text-[#f58327]">
                     {email.account_email.startsWith("jb") ? "JB" : "Wes"}
-                  </div>
+                  </span>
                 </div>
               </div>
             </button>
