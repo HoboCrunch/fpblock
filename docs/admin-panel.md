@@ -240,10 +240,10 @@ Tabbed interface with two tabs: Person Enrichment and Organization Enrichment.
 
 ### Person Enrichment Tab
 - Source: Apollo (fixed)
-- Target: All unenriched persons / Selected persons / Persons from event
+- Target: All unenriched persons / Selected persons / Persons from event / **Select from list** (searchable checkbox panel)
 - Fields: Email, LinkedIn, Twitter, Phone (toggle buttons)
-- Run button → creates job_log entry, kicks off enrichment
-- Results: persons processed, emails/LinkedIn/Twitter found
+- **Preview list:** Shows matching persons before running (name, org, field availability icons, true total count)
+- **Real-time progress:** During enrichment, polls job_log every 2s showing progress bar + per-person status
 - **Pre-selection:** Bulk "Enrich Selected" action from Persons page passes person IDs via URL params
 
 ### Organization Enrichment Tab
@@ -263,17 +263,35 @@ Selecting Full Pipeline deselects individual stages and vice versa.
 - From event — event dropdown
 - From initiative — initiative dropdown
 - Selected organizations — from URL params (`?organizations=id1,id2`)
+- **Select from list** — searchable checkbox panel with up to 2000 records, select all/deselect all on filtered results
 
-**Results Display:**
-- Summary stats: Orgs Processed, Orgs Enriched, Signals Created, Average ICP Score
-- Mini table of enriched orgs with name, new ICP score (color-coded), signals created, success/failure badge
+**Preview list:** Shows matching organizations before running (name, ICP score, category, website, true total count)
+
+**Real-time progress:** During enrichment, polls job_log every 2s showing progress bar + per-org live status list with fade-in animation
 
 ### Job History (shared)
-Table of all enrichment jobs (person + organization):
+Table of all enrichment jobs (person + organization). Each row is a clickable link to the job detail page:
 - **Type** column with color-coded badges (orange = Person, indigo = Organization)
 - **Processed** column shows person or org count depending on type
 - **Results** column: emails/LinkedIn for person jobs, enriched/signals for org jobs
 - **Status** badge (completed/failed/processing)
+- Hover arrow indicator on each row
+
+### Job Detail Page
+
+**URL:** `/admin/enrichment/{jobId}`
+
+Dedicated results dashboard for a completed enrichment job.
+
+**Header:** Back link, job title with date, status badge, duration.
+
+**Summary Stats:** 4 stat cards — org jobs show Orgs Processed / Enriched / Signals Created / Avg ICP Score; person jobs show Persons Processed / Emails / LinkedIn / Twitter Found.
+
+**Organization Results:** Collapsible cards with search and sort (by name, ICP, status):
+- **Collapsed:** Org name (linked), ICP score badge (color-coded), category, signals count, stage, status
+- **Expanded:** Two-column layout — left: description, context, USP, ICP reason (quote-styled); right: large ICP score with colored glow, firmographics (industry, employees, revenue, funding, HQ with icons), category. Below: strengths (green-tinted) / weaknesses (red-tinted) side by side, signals timeline with colored type badges.
+
+**Person Results:** Flat list with name (linked), field-found indicators (checkmark/X for each field), status badge.
 
 ## Uploads
 
