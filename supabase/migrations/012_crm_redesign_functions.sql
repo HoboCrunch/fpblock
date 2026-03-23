@@ -142,9 +142,10 @@ $$ LANGUAGE plpgsql STABLE;
 CREATE OR REPLACE FUNCTION merge_persons(winner_id uuid, loser_id uuid)
 RETURNS void AS $$
 BEGIN
-  -- Reassign relationships
-  UPDATE person_organization SET person_id = winner_id WHERE person_id = loser_id
-    ON CONFLICT (person_id, organization_id) DO NOTHING;
+  -- Reassign relationships (delete duplicates first to avoid unique constraint violations)
+  DELETE FROM person_organization WHERE person_id = loser_id
+    AND organization_id IN (SELECT organization_id FROM person_organization WHERE person_id = winner_id);
+  UPDATE person_organization SET person_id = winner_id WHERE person_id = loser_id;
   UPDATE event_participations SET person_id = winner_id WHERE person_id = loser_id;
   UPDATE initiative_enrollments SET person_id = winner_id WHERE person_id = loser_id;
   UPDATE interactions SET person_id = winner_id WHERE person_id = loser_id;
@@ -179,9 +180,10 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION merge_organizations(winner_id uuid, loser_id uuid)
 RETURNS void AS $$
 BEGIN
-  -- Reassign relationships
-  UPDATE person_organization SET organization_id = winner_id WHERE organization_id = loser_id
-    ON CONFLICT (person_id, organization_id) DO NOTHING;
+  -- Reassign relationships (delete duplicates first to avoid unique constraint violations)
+  DELETE FROM person_organization WHERE organization_id = loser_id
+    AND person_id IN (SELECT person_id FROM person_organization WHERE organization_id = winner_id);
+  UPDATE person_organization SET organization_id = winner_id WHERE organization_id = loser_id;
   UPDATE event_participations SET organization_id = winner_id WHERE organization_id = loser_id;
   UPDATE initiative_enrollments SET organization_id = winner_id WHERE organization_id = loser_id;
   UPDATE interactions SET organization_id = winner_id WHERE organization_id = loser_id;

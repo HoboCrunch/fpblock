@@ -248,6 +248,14 @@ ALTER TABLE event_config DROP CONSTRAINT IF EXISTS event_config_event_id_fkey;
 ALTER TABLE sequences DROP CONSTRAINT IF EXISTS sequences_event_id_fkey;
 ALTER TABLE uploads DROP CONSTRAINT IF EXISTS uploads_event_id_fkey;
 
+-- Clear old data from tables referencing events (starting fresh — seed script will repopulate)
+TRUNCATE event_config CASCADE;
+TRUNCATE sequence_enrollments CASCADE;
+TRUNCATE sequences CASCADE;
+TRUNCATE uploads CASCADE;
+TRUNCATE inbound_emails CASCADE;
+TRUNCATE inbox_sync_state CASCADE;
+
 ALTER TABLE events RENAME TO events_old;
 ALTER TABLE events_new RENAME TO events;
 
