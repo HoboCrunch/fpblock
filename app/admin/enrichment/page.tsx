@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { Badge } from "@/components/ui/badge";
@@ -16,10 +16,16 @@ import {
   Zap,
   Brain,
   FlaskConical,
+  CheckCircle2,
+  Mail,
+  Linkedin,
+  Twitter,
+  Phone,
+  Globe,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
-import type { Event, Initiative, JobLog } from "@/lib/types/database";
+import type { Event, Initiative, JobLog, Organization, Person } from "@/lib/types/database";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -55,6 +61,35 @@ interface OrgEnrichResponse {
   message?: string;
 }
 
+interface PreviewPerson {
+  id: string;
+  full_name: string;
+  email: string | null;
+  linkedin_url: string | null;
+  twitter_handle: string | null;
+  phone: string | null;
+  primary_org?: string | null;
+}
+
+interface PreviewOrg {
+  id: string;
+  name: string;
+  icp_score: number | null;
+  category: string | null;
+  website: string | null;
+}
+
+interface ProgressEntry {
+  id: string;
+  target_id: string | null;
+  org_name: string | null;
+  status: string;
+  icp_score: number | null;
+  job_type: string;
+  created_at: string;
+  error: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -63,6 +98,283 @@ function useSupabase() {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Preview List Component (shared)
+// ---------------------------------------------------------------------------
+
+function PreviewPersonList({ persons, isLoading }: { persons: PreviewPerson[]; isLoading: boolean }) {
+  if (isLoading) {
+    return (
+      <div className="mt-4 p-4 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+        <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading preview...
+        </div>
+      </div>
+    );
+  }
+
+  if (persons.length === 0) return null;
+
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs text-[var(--text-muted)]">Preview</span>
+        <span className="text-xs font-medium text-[var(--accent-orange)]">
+          {persons.length} person{persons.length !== 1 ? "s" : ""} will be enriched
+        </span>
+      </div>
+      <div className="rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
+        <div className="max-h-[300px] overflow-y-auto">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 bg-[var(--glass-bg)] z-10">
+              <tr className="border-b border-[var(--glass-border)] text-left">
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Name</th>
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Organization</th>
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center">
+                  <Mail className="h-3 w-3 inline" />
+                </th>
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center">
+                  <Linkedin className="h-3 w-3 inline" />
+                </th>
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center">
+                  <Twitter className="h-3 w-3 inline" />
+                </th>
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center">
+                  <Phone className="h-3 w-3 inline" />
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {persons.map((p) => (
+                <tr key={p.id} className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02]">
+                  <td className="px-3 py-1.5 text-white truncate max-w-[180px]">{p.full_name}</td>
+                  <td className="px-3 py-1.5 text-[var(--text-muted)] truncate max-w-[140px]">
+                    {p.primary_org ?? "\u2014"}
+                  </td>
+                  <td className="px-3 py-1.5 text-center">
+                    {p.email ? (
+                      <CheckCircle2 className="h-3 w-3 text-green-400 inline" />
+                    ) : (
+                      <span className="text-[var(--text-muted)]">\u2014</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-1.5 text-center">
+                    {p.linkedin_url ? (
+                      <CheckCircle2 className="h-3 w-3 text-green-400 inline" />
+                    ) : (
+                      <span className="text-[var(--text-muted)]">\u2014</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-1.5 text-center">
+                    {p.twitter_handle ? (
+                      <CheckCircle2 className="h-3 w-3 text-green-400 inline" />
+                    ) : (
+                      <span className="text-[var(--text-muted)]">\u2014</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-1.5 text-center">
+                    {p.phone ? (
+                      <CheckCircle2 className="h-3 w-3 text-green-400 inline" />
+                    ) : (
+                      <span className="text-[var(--text-muted)]">\u2014</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewOrgList({ orgs, isLoading }: { orgs: PreviewOrg[]; isLoading: boolean }) {
+  if (isLoading) {
+    return (
+      <div className="mt-4 p-4 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+        <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading preview...
+        </div>
+      </div>
+    );
+  }
+
+  if (orgs.length === 0) return null;
+
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs text-[var(--text-muted)]">Preview</span>
+        <span className="text-xs font-medium text-[var(--accent-orange)]">
+          {orgs.length} organization{orgs.length !== 1 ? "s" : ""} will be enriched
+        </span>
+      </div>
+      <div className="rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
+        <div className="max-h-[300px] overflow-y-auto">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 bg-[var(--glass-bg)] z-10">
+              <tr className="border-b border-[var(--glass-border)] text-left">
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Name</th>
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">ICP Score</th>
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Category</th>
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Website</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orgs.map((o) => (
+                <tr key={o.id} className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02]">
+                  <td className="px-3 py-1.5 text-white truncate max-w-[200px]">{o.name}</td>
+                  <td className="px-3 py-1.5">
+                    {o.icp_score != null ? (
+                      <span
+                        className={cn(
+                          "font-semibold",
+                          o.icp_score >= 75
+                            ? "text-[var(--accent-orange)]"
+                            : o.icp_score >= 50
+                              ? "text-yellow-400"
+                              : "text-[var(--text-muted)]"
+                        )}
+                      >
+                        {o.icp_score}
+                      </span>
+                    ) : (
+                      <span className="text-[var(--text-muted)]">\u2014</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-1.5 text-[var(--text-muted)] truncate max-w-[120px]">
+                    {o.category ?? "\u2014"}
+                  </td>
+                  <td className="px-3 py-1.5 text-[var(--text-muted)] truncate max-w-[160px]">
+                    {o.website ? (
+                      <span className="flex items-center gap-1">
+                        <Globe className="h-3 w-3 shrink-0" />
+                        {o.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+                      </span>
+                    ) : (
+                      "\u2014"
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Progress Bar + Live Status Component
+// ---------------------------------------------------------------------------
+
+function ProgressBar({ completed, total }: { completed: number; total: number }) {
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  return (
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs text-[var(--text-muted)]">
+          {completed} / {total} processed
+        </span>
+        <span className="text-xs font-medium text-[var(--accent-orange)]">{pct}%</span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-white/[0.06] overflow-hidden">
+        <div
+          className="h-full rounded-full bg-[var(--accent-orange)] transition-all duration-500 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function LiveStatusList({
+  entries,
+  entityType,
+}: {
+  entries: ProgressEntry[];
+  entityType: "organization" | "person";
+}) {
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="mt-3 rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
+      <div className="max-h-[240px] overflow-y-auto">
+        <table className="w-full text-xs">
+          <thead className="sticky top-0 bg-[var(--glass-bg)] z-10">
+            <tr className="border-b border-[var(--glass-border)] text-left">
+              <th className="px-3 py-2 text-[var(--text-muted)] font-medium">
+                {entityType === "organization" ? "Organization" : "Person"}
+              </th>
+              <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Stage</th>
+              {entityType === "organization" && (
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">ICP</th>
+              )}
+              <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry, idx) => (
+              <tr
+                key={entry.id}
+                className={cn(
+                  "border-b border-white/[0.03] last:border-0",
+                  idx === 0 && "animate-[fadeIn_0.3s_ease-in-out]"
+                )}
+              >
+                <td className="px-3 py-1.5 text-white truncate max-w-[200px]">
+                  {entry.org_name ?? entry.target_id?.slice(0, 8) ?? "\u2014"}
+                </td>
+                <td className="px-3 py-1.5 text-[var(--text-muted)]">
+                  {entry.job_type.replace("enrichment_", "")}
+                </td>
+                {entityType === "organization" && (
+                  <td className="px-3 py-1.5">
+                    {entry.icp_score != null ? (
+                      <span
+                        className={cn(
+                          "font-semibold",
+                          entry.icp_score >= 75
+                            ? "text-[var(--accent-orange)]"
+                            : entry.icp_score >= 50
+                              ? "text-yellow-400"
+                              : "text-[var(--text-muted)]"
+                        )}
+                      >
+                        {entry.icp_score}
+                      </span>
+                    ) : (
+                      <span className="text-[var(--text-muted)]">\u2014</span>
+                    )}
+                  </td>
+                )}
+                <td className="px-3 py-1.5">
+                  <Badge
+                    variant={
+                      entry.status === "completed"
+                        ? "sent"
+                        : entry.status === "failed"
+                          ? "failed"
+                          : "processing"
+                    }
+                    className="text-[10px]"
+                  >
+                    {entry.status}
+                  </Badge>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
@@ -90,6 +402,145 @@ function PersonEnrichmentTab({
     null
   );
 
+  // Preview state
+  const [previewPersons, setPreviewPersons] = useState<PreviewPerson[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Real-time progress state
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [progressEntries, setProgressEntries] = useState<ProgressEntry[]>([]);
+  const [jobStartTime, setJobStartTime] = useState<string | null>(null);
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch preview whenever target/eventId changes
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      setPreviewLoading(true);
+      const supabase = useSupabase();
+
+      try {
+        let query = supabase
+          .from("persons")
+          .select("id, full_name, email, linkedin_url, twitter_handle, phone");
+
+        if (target === "selected" && preSelectedPersons.length > 0) {
+          query = query.in("id", preSelectedPersons);
+        } else if (target === "event" && eventId) {
+          // Get person IDs from event participations
+          const { data: participations } = await supabase
+            .from("event_participations")
+            .select("person_id")
+            .eq("event_id", eventId)
+            .not("person_id", "is", null);
+
+          const personIds = (participations ?? [])
+            .map((p: { person_id: string | null }) => p.person_id)
+            .filter((id): id is string => id !== null);
+
+          if (personIds.length === 0) {
+            setPreviewPersons([]);
+            setPreviewLoading(false);
+            return;
+          }
+          query = query.in("id", personIds);
+        } else {
+          // unenriched: persons without apollo_id
+          query = query.is("apollo_id", null);
+        }
+
+        const { data } = await query.limit(200);
+
+        if (data) {
+          // Fetch primary org names for the preview
+          const personIds = data.map((p: Pick<Person, "id">) => p.id);
+          const { data: orgLinks } = personIds.length > 0
+            ? await supabase
+                .from("person_organizations")
+                .select("person_id, organization:organizations(name)")
+                .in("person_id", personIds)
+                .eq("is_primary", true)
+            : { data: [] };
+
+          const orgMap = new Map<string, string>();
+          for (const link of orgLinks ?? []) {
+            const l = link as unknown as { person_id: string; organization: { name: string } | null };
+            const orgName = l.organization?.name;
+            if (orgName) orgMap.set(l.person_id, orgName);
+          }
+
+          setPreviewPersons(
+            (data as Pick<Person, "id" | "full_name" | "email" | "linkedin_url" | "twitter_handle" | "phone">[]).map((p) => ({
+              id: p.id,
+              full_name: p.full_name,
+              email: p.email,
+              linkedin_url: p.linkedin_url,
+              twitter_handle: p.twitter_handle,
+              phone: p.phone,
+              primary_org: orgMap.get(p.id) ?? null,
+            }))
+          );
+        }
+      } catch {
+        setPreviewPersons([]);
+      } finally {
+        setPreviewLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [target, eventId, preSelectedPersons]);
+
+  // Poll for progress while running
+  useEffect(() => {
+    if (!isRunning || !activeJobId) {
+      if (pollRef.current) clearInterval(pollRef.current);
+      return;
+    }
+
+    const supabase = useSupabase();
+
+    const poll = async () => {
+      const { data } = await supabase
+        .from("job_log")
+        .select("id, target_id, status, job_type, metadata, created_at, error")
+        .eq("target_table", "contacts")
+        .gte("created_at", jobStartTime!)
+        .neq("id", activeJobId)
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (data) {
+        setProgressEntries(
+          (data as unknown as JobLog[]).map((j) => {
+            const meta = (j.metadata ?? {}) as Record<string, unknown>;
+            return {
+              id: j.id,
+              target_id: j.target_id,
+              org_name: (meta.full_name as string) ?? (meta.contact_name as string) ?? null,
+              status: j.status,
+              icp_score: null,
+              job_type: j.job_type,
+              created_at: j.created_at,
+              error: j.error,
+            };
+          })
+        );
+      }
+    };
+
+    pollRef.current = setInterval(poll, 2000);
+    poll(); // immediate first poll
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [isRunning, activeJobId, jobStartTime]);
+
   function toggleField(field: EnrichField) {
     setFields((prev) =>
       prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
@@ -100,6 +551,8 @@ function PersonEnrichmentTab({
     if (fields.length === 0) return;
     setIsRunning(true);
     setLastResult(null);
+    setProgressEntries([]);
+    setJobStartTime(new Date().toISOString());
 
     try {
       const body: Record<string, unknown> = { fields, source };
@@ -117,12 +570,14 @@ function PersonEnrichmentTab({
       });
 
       const data = await res.json();
+      if (data.jobId) setActiveJobId(data.jobId);
       setLastResult(data);
       onJobComplete();
     } catch {
       setLastResult({ error: "Network error" });
     } finally {
       setIsRunning(false);
+      setActiveJobId(null);
     }
   }
 
@@ -211,26 +666,57 @@ function PersonEnrichmentTab({
         </div>
       </div>
 
-      {/* Run button */}
-      <button
-        onClick={handleRun}
-        disabled={isRunning || fields.length === 0}
-        className={cn(
-          "flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-          "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20",
-          "hover:bg-[var(--accent-orange)]/25",
-          (isRunning || fields.length === 0) && "opacity-50 cursor-not-allowed"
-        )}
-      >
-        {isRunning ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Play className="h-4 w-4" />
-        )}
-        {isRunning ? "Running..." : "Run Enrichment"}
-      </button>
+      {/* Preview List */}
+      {!isRunning && !lastResult && (
+        <PreviewPersonList persons={previewPersons} isLoading={previewLoading} />
+      )}
 
-      {lastResult && (
+      {/* Run button */}
+      <div className="mt-4">
+        <button
+          onClick={handleRun}
+          disabled={isRunning || fields.length === 0}
+          className={cn(
+            "flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+            "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20",
+            "hover:bg-[var(--accent-orange)]/25",
+            (isRunning || fields.length === 0) && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          {isRunning ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Play className="h-4 w-4" />
+          )}
+          {isRunning ? "Running..." : "Run Enrichment"}
+        </button>
+      </div>
+
+      {/* Running state with real-time progress */}
+      {isRunning && (
+        <div className="mt-4 space-y-3">
+          <div className="p-4 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+            <div className="flex items-center gap-3 mb-3">
+              <Loader2 className="h-5 w-5 animate-spin text-[var(--accent-orange)]" />
+              <div>
+                <p className="text-sm text-white font-medium">
+                  Processing persons...
+                </p>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  Running Apollo enrichment for {fields.join(", ")} fields.
+                </p>
+              </div>
+            </div>
+            <ProgressBar
+              completed={progressEntries.filter((e) => e.status === "completed" || e.status === "failed").length}
+              total={previewPersons.length || 1}
+            />
+          </div>
+          <LiveStatusList entries={progressEntries} entityType="person" />
+        </div>
+      )}
+
+      {lastResult && !isRunning && (
         <div className="mt-4 p-4 rounded-lg bg-white/[0.04] border border-white/[0.06]">
           {lastResult.error ? (
             <p className="text-sm text-red-400">
@@ -337,6 +823,179 @@ function OrganizationEnrichmentTab({
   const [isRunning, setIsRunning] = useState(false);
   const [lastResult, setLastResult] = useState<OrgEnrichResponse | null>(null);
 
+  // Preview state
+  const [previewOrgs, setPreviewOrgs] = useState<PreviewOrg[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Real-time progress state
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [progressEntries, setProgressEntries] = useState<ProgressEntry[]>([]);
+  const [jobStartTime, setJobStartTime] = useState<string | null>(null);
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch preview whenever target/eventId/initiativeId/icpThreshold changes
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      setPreviewLoading(true);
+      const supabase = useSupabase();
+
+      try {
+        if (target === "selected" && preSelectedOrgs.length > 0) {
+          const { data } = await supabase
+            .from("organizations")
+            .select("id, name, icp_score, category, website")
+            .in("id", preSelectedOrgs);
+
+          setPreviewOrgs((data as PreviewOrg[]) ?? []);
+        } else if (target === "event" && eventId) {
+          const { data: participations } = await supabase
+            .from("event_participations")
+            .select("organization_id")
+            .eq("event_id", eventId)
+            .not("organization_id", "is", null);
+
+          const orgIds = Array.from(
+            new Set(
+              (participations ?? [])
+                .map((p: { organization_id: string | null }) => p.organization_id)
+                .filter((id): id is string => id !== null)
+            )
+          );
+
+          if (orgIds.length === 0) {
+            setPreviewOrgs([]);
+            setPreviewLoading(false);
+            return;
+          }
+
+          const { data } = await supabase
+            .from("organizations")
+            .select("id, name, icp_score, category, website")
+            .in("id", orgIds);
+
+          setPreviewOrgs((data as PreviewOrg[]) ?? []);
+        } else if (target === "initiative" && initiativeId) {
+          const { data: enrollments } = await supabase
+            .from("initiative_enrollments")
+            .select("organization_id")
+            .eq("initiative_id", initiativeId)
+            .not("organization_id", "is", null);
+
+          const orgIds = Array.from(
+            new Set(
+              (enrollments ?? [])
+                .map((e: { organization_id: string | null }) => e.organization_id)
+                .filter((id): id is string => id !== null)
+            )
+          );
+
+          if (orgIds.length === 0) {
+            setPreviewOrgs([]);
+            setPreviewLoading(false);
+            return;
+          }
+
+          const { data } = await supabase
+            .from("organizations")
+            .select("id, name, icp_score, category, website")
+            .in("id", orgIds);
+
+          setPreviewOrgs((data as PreviewOrg[]) ?? []);
+        } else if (target === "icp_below") {
+          const { data } = await supabase
+            .from("organizations")
+            .select("id, name, icp_score, category, website")
+            .or(`icp_score.is.null,icp_score.lt.${icpThreshold}`)
+            .limit(200);
+
+          setPreviewOrgs((data as PreviewOrg[]) ?? []);
+        } else {
+          // unenriched
+          const { data } = await supabase
+            .from("organizations")
+            .select("id, name, icp_score, category, website")
+            .is("icp_score", null)
+            .limit(200);
+
+          setPreviewOrgs((data as PreviewOrg[]) ?? []);
+        }
+      } catch {
+        setPreviewOrgs([]);
+      } finally {
+        setPreviewLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [target, eventId, initiativeId, icpThreshold, preSelectedOrgs]);
+
+  // Poll for progress while running
+  useEffect(() => {
+    if (!isRunning || !jobStartTime) {
+      if (pollRef.current) clearInterval(pollRef.current);
+      return;
+    }
+
+    const supabase = useSupabase();
+
+    const poll = async () => {
+      // Query individual org enrichment job_log entries created after job start
+      const { data } = await supabase
+        .from("job_log")
+        .select("id, target_id, status, job_type, metadata, created_at, error")
+        .eq("target_table", "organizations")
+        .in("job_type", ["enrichment_full", "enrichment_apollo", "enrichment_perplexity", "enrichment_gemini"])
+        .gte("created_at", jobStartTime)
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if (data) {
+        // Deduplicate by target_id: keep the latest entry per org
+        const byOrg = new Map<string, ProgressEntry>();
+        for (const j of data as unknown as JobLog[]) {
+          if (!j.target_id) continue;
+          const meta = (j.metadata ?? {}) as Record<string, unknown>;
+          const existing = byOrg.get(j.target_id);
+          // Prefer completed/failed over processing, prefer later entries
+          if (
+            !existing ||
+            (existing.status === "processing" && j.status !== "processing") ||
+            new Date(j.created_at) > new Date(existing.created_at)
+          ) {
+            byOrg.set(j.target_id, {
+              id: j.id,
+              target_id: j.target_id,
+              org_name: (meta.org_name as string) ?? null,
+              status: j.status,
+              icp_score: (meta.icp_score as number) ?? null,
+              job_type: j.job_type,
+              created_at: j.created_at,
+              error: j.error,
+            });
+          }
+        }
+
+        // Sort newest first
+        const entries = Array.from(byOrg.values()).sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setProgressEntries(entries);
+      }
+    };
+
+    pollRef.current = setInterval(poll, 2000);
+    poll(); // immediate first poll
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [isRunning, jobStartTime]);
+
   function toggleStage(stage: OrgStage) {
     if (stage === "full") {
       setStages(["full"]);
@@ -356,6 +1015,8 @@ function OrganizationEnrichmentTab({
   async function handleRun() {
     setIsRunning(true);
     setLastResult(null);
+    setProgressEntries([]);
+    setJobStartTime(new Date().toISOString());
 
     try {
       const body: Record<string, unknown> = {
@@ -371,7 +1032,7 @@ function OrganizationEnrichmentTab({
       } else if (target === "icp_below") {
         body.icpBelow = icpThreshold;
       }
-      // "unenriched" — API handles it (default)
+      // "unenriched" -- API handles it (default)
 
       const res = await fetch("/api/enrich/organizations", {
         method: "POST",
@@ -380,6 +1041,7 @@ function OrganizationEnrichmentTab({
       });
 
       const data: OrgEnrichResponse = await res.json();
+      if (data.jobId) setActiveJobId(data.jobId);
       setLastResult(data);
       onJobComplete();
     } catch {
@@ -392,6 +1054,7 @@ function OrganizationEnrichmentTab({
       });
     } finally {
       setIsRunning(false);
+      setActiveJobId(null);
     }
   }
 
@@ -404,6 +1067,10 @@ function OrganizationEnrichmentTab({
             (lastResult.results.filter((r) => r.icp_score != null).length || 1)
         )
       : null;
+
+  const completedCount = progressEntries.filter(
+    (e) => e.status === "completed" || e.status === "failed"
+  ).length;
 
   return (
     <GlassCard>
@@ -536,39 +1203,53 @@ function OrganizationEnrichmentTab({
         )}
       </div>
 
-      {/* Run button */}
-      <button
-        onClick={handleRun}
-        disabled={isRunning}
-        className={cn(
-          "flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-          "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20",
-          "hover:bg-[var(--accent-orange)]/25",
-          isRunning && "opacity-50 cursor-not-allowed"
-        )}
-      >
-        {isRunning ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Zap className="h-4 w-4" />
-        )}
-        {isRunning ? "Running Pipeline..." : "Run Pipeline"}
-      </button>
+      {/* Preview List */}
+      {!isRunning && !lastResult && (
+        <PreviewOrgList orgs={previewOrgs} isLoading={previewLoading} />
+      )}
 
-      {/* Running state */}
+      {/* Run button */}
+      <div className="mt-4">
+        <button
+          onClick={handleRun}
+          disabled={isRunning}
+          className={cn(
+            "flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+            "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20",
+            "hover:bg-[var(--accent-orange)]/25",
+            isRunning && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          {isRunning ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Zap className="h-4 w-4" />
+          )}
+          {isRunning ? "Running Pipeline..." : "Run Pipeline"}
+        </button>
+      </div>
+
+      {/* Running state with real-time progress */}
       {isRunning && (
-        <div className="mt-4 p-4 rounded-lg bg-white/[0.04] border border-white/[0.06]">
-          <div className="flex items-center gap-3">
-            <Loader2 className="h-5 w-5 animate-spin text-[var(--accent-orange)]" />
-            <div>
-              <p className="text-sm text-white font-medium">
-                Processing organizations...
-              </p>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                Running {stages.includes("full") ? "full pipeline" : stages.join(" + ")} enrichment. This may take a few minutes.
-              </p>
+        <div className="mt-4 space-y-3">
+          <div className="p-4 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+            <div className="flex items-center gap-3 mb-3">
+              <Loader2 className="h-5 w-5 animate-spin text-[var(--accent-orange)]" />
+              <div>
+                <p className="text-sm text-white font-medium">
+                  Processing organizations...
+                </p>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  Running {stages.includes("full") ? "full pipeline" : stages.join(" + ")} enrichment. This may take a few minutes.
+                </p>
+              </div>
             </div>
+            <ProgressBar
+              completed={completedCount}
+              total={previewOrgs.length || 1}
+            />
           </div>
+          <LiveStatusList entries={progressEntries} entityType="organization" />
         </div>
       )}
 
@@ -867,6 +1548,20 @@ export default function EnrichmentPage() {
 
   return (
     <div className="space-y-6">
+      {/* Fade-in animation for live status entries */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+
       <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)] text-white">
         Enrichment
       </h1>

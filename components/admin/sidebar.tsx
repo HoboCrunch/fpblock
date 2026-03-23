@@ -57,7 +57,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "glass border-r border-[var(--glass-border)] min-h-screen flex flex-col transition-all duration-200 shrink-0",
+        "glass border-r border-[var(--glass-border)] h-screen flex flex-col transition-all duration-200 shrink-0 overflow-y-auto scrollbar-thin",
         collapsed ? "w-16" : "w-60",
         // Auto-collapse on tablet
         "max-lg:w-16 max-md:hidden"

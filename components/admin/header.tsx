@@ -17,7 +17,7 @@ export function Header({ userEmail }: { userEmail: string }) {
   }
 
   return (
-    <header className="h-14 bg-transparent border-b border-[var(--glass-border)] px-6 flex items-center justify-between shrink-0">
+    <header className="h-14 bg-[var(--glass-bg)]/80 backdrop-blur-md border-b border-[var(--glass-border)] px-6 flex items-center justify-between shrink-0 sticky top-0 z-10">
       <Breadcrumb pathname={pathname} />
       <div className="flex items-center gap-4">
         <span className="text-sm text-[var(--text-muted)]">{userEmail}</span>
