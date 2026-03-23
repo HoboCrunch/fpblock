@@ -43,7 +43,7 @@ function SortButton({
 }) {
   const isActive = currentSort === field;
   return (
-    <th className="px-5 py-3 font-medium">
+    <th className="px-3 md:px-5 py-3 font-medium">
       <button
         onClick={() => onSort(field)}
         className="inline-flex items-center gap-1 hover:text-white transition-colors"
@@ -124,7 +124,7 @@ export function InitiativeTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[600px] text-sm">
         <thead>
           <tr className="text-left text-[var(--text-muted)] border-b border-[var(--glass-border)]">
             <SortButton label="Name" field="name" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
@@ -139,14 +139,14 @@ export function InitiativeTable({
         <tbody className="divide-y divide-white/[0.04]">
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={7} className="px-5 py-12 text-center">
+              <td colSpan={7} className="px-3 md:px-5 py-12 text-center">
                 <p className="text-[var(--text-muted)]">No initiatives found.</p>
               </td>
             </tr>
           )}
           {sorted.map((initiative) => (
             <tr key={initiative.id} className="hover:bg-white/[0.03] transition-all duration-200">
-              <td className="px-5 py-3">
+              <td className="px-3 md:px-5 py-3">
                 <Link
                   href={`/admin/initiatives/${initiative.id}`}
                   className="text-[var(--accent-indigo)] hover:underline font-medium"
@@ -154,22 +154,22 @@ export function InitiativeTable({
                   {initiative.name}
                 </Link>
               </td>
-              <td className="px-5 py-3">
+              <td className="px-3 md:px-5 py-3">
                 {initiative.initiative_type && (
                   <Badge variant={typeVariant[initiative.initiative_type] ?? "default"}>
                     {initiative.initiative_type}
                   </Badge>
                 )}
               </td>
-              <td className="px-5 py-3">
+              <td className="px-3 md:px-5 py-3">
                 <Badge variant={statusVariant[initiative.status] ?? "default"}>
                   {initiative.status}
                 </Badge>
               </td>
-              <td className="px-5 py-3 text-[var(--text-secondary)]">
+              <td className="px-3 md:px-5 py-3 text-[var(--text-secondary)]">
                 {initiative.owner || "\u2014"}
               </td>
-              <td className="px-5 py-3">
+              <td className="px-3 md:px-5 py-3">
                 {initiative.event ? (
                   <Link
                     href={`/admin/events/${initiative.event.id}`}
@@ -181,10 +181,10 @@ export function InitiativeTable({
                   <span className="text-[var(--text-muted)]">&mdash;</span>
                 )}
               </td>
-              <td className="px-5 py-3 text-[var(--text-muted)]">
+              <td className="px-3 md:px-5 py-3 text-[var(--text-muted)]">
                 {initiative.enrollment_count}
               </td>
-              <td className="px-5 py-3 text-[var(--text-muted)]">
+              <td className="px-3 md:px-5 py-3 text-[var(--text-muted)]">
                 {initiative.interaction_count}
               </td>
             </tr>

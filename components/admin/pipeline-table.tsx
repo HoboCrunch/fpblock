@@ -41,7 +41,7 @@ function SortButton({
 }) {
   const isActive = currentSort === field;
   return (
-    <th className="text-left px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">
+    <th className="text-left px-3 md:px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">
       <button
         onClick={() => onSort(field)}
         className="inline-flex items-center gap-1 hover:text-white/70 transition-colors"
@@ -122,7 +122,7 @@ export function PipelineTable({ contacts }: { contacts: PipelineContact[] }) {
   return (
     <GlassCard className="overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[600px] text-sm">
           <thead>
             <tr className="border-b border-[var(--glass-border)]">
               <SortButton label="ICP" field="icp_score" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
@@ -141,7 +141,7 @@ export function PipelineTable({ contacts }: { contacts: PipelineContact[] }) {
                   key={contact.id}
                   className="border-b border-white/[0.04] hover:bg-white/[0.04] transition-colors duration-200"
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-3 md:px-4 py-3">
                     {contact.icp_score != null ? (
                       <Badge className={cn("text-xs", icpBadgeClass(contact.icp_score))}>
                         {contact.icp_score}
@@ -150,7 +150,7 @@ export function PipelineTable({ contacts }: { contacts: PipelineContact[] }) {
                       <span className="text-white/30">&mdash;</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 md:px-4 py-3">
                     <Link
                       href={`/admin/persons/${contact.id}`}
                       className="text-white hover:text-[#6e86ff] transition-colors"
@@ -158,18 +158,18 @@ export function PipelineTable({ contacts }: { contacts: PipelineContact[] }) {
                       {contact.full_name}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-white/60">
+                  <td className="px-3 md:px-4 py-3 text-white/60">
                     {contact.company_name || "\u2014"}
                   </td>
-                  <td className="px-4 py-3 text-white/60 capitalize">
+                  <td className="px-3 md:px-4 py-3 text-white/60 capitalize">
                     {contact.channel || "\u2014"}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 md:px-4 py-3">
                     <Badge className={cn("text-xs", stageDef.className)}>
                       {stageDef.label}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-white/40 text-xs">
+                  <td className="px-3 md:px-4 py-3 text-white/40 text-xs">
                     {contact.last_updated
                       ? new Date(contact.last_updated).toLocaleDateString()
                       : "\u2014"}

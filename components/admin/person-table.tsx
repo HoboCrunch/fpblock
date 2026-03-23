@@ -35,7 +35,7 @@ function SortButton({
 }) {
   const isActive = currentSort === field;
   return (
-    <th className="px-5 py-3 font-medium">
+    <th className="px-3 md:px-5 py-3 font-medium">
       <button
         onClick={() => onSort(field)}
         className="inline-flex items-center gap-1 hover:text-white transition-colors"
@@ -115,14 +115,14 @@ export function PersonTable({ persons }: { persons: PersonRow[] }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[600px] text-sm">
         <thead>
           <tr className="text-left text-[var(--text-muted)] border-b border-[var(--glass-border)]">
             <SortButton label="ICP" field="icp_score" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
             <SortButton label="Name" field="full_name" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
             <SortButton label="Organization" field="primary_org_name" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
             <SortButton label="Title" field="title" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
-            <th className="px-5 py-3 font-medium">Channels</th>
+            <th className="px-3 md:px-5 py-3 font-medium">Channels</th>
             <SortButton label="Last Interaction" field="last_interaction_at" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
             <SortButton label="Interactions" field="interaction_count" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
           </tr>
@@ -130,14 +130,14 @@ export function PersonTable({ persons }: { persons: PersonRow[] }) {
         <tbody className="divide-y divide-white/[0.04]">
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={7} className="px-5 py-12 text-center">
+              <td colSpan={7} className="px-3 md:px-5 py-12 text-center">
                 <p className="text-[var(--text-muted)]">No persons found.</p>
               </td>
             </tr>
           )}
           {sorted.map((person) => (
             <tr key={person.id} className="hover:bg-white/[0.03] transition-all duration-200">
-              <td className="px-5 py-3">
+              <td className="px-3 md:px-5 py-3">
                 {person.icp_score != null ? (
                   <Badge variant={icpBadgeVariant(person.icp_score)}>
                     {person.icp_score}
@@ -146,7 +146,7 @@ export function PersonTable({ persons }: { persons: PersonRow[] }) {
                   <span className="text-[var(--text-muted)]">&mdash;</span>
                 )}
               </td>
-              <td className="px-5 py-3">
+              <td className="px-3 md:px-5 py-3">
                 <Link
                   href={`/admin/persons/${person.id}`}
                   className="text-[var(--accent-indigo)] hover:underline font-medium"
@@ -154,13 +154,13 @@ export function PersonTable({ persons }: { persons: PersonRow[] }) {
                   {person.full_name}
                 </Link>
               </td>
-              <td className="px-5 py-3 text-[var(--text-secondary)]">
+              <td className="px-3 md:px-5 py-3 text-[var(--text-secondary)]">
                 {person.primary_org_name || "\u2014"}
               </td>
-              <td className="px-5 py-3 text-[var(--text-muted)]">
+              <td className="px-3 md:px-5 py-3 text-[var(--text-muted)]">
                 {person.title || "\u2014"}
               </td>
-              <td className="px-5 py-3">
+              <td className="px-3 md:px-5 py-3">
                 <div className="flex items-center gap-1.5">
                   {person.email && <Mail className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
                   {person.linkedin_url && <Linkedin className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
@@ -169,12 +169,12 @@ export function PersonTable({ persons }: { persons: PersonRow[] }) {
                   {person.phone && <Phone className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
                 </div>
               </td>
-              <td className="px-5 py-3 text-[var(--text-muted)]">
+              <td className="px-3 md:px-5 py-3 text-[var(--text-muted)]">
                 {person.last_interaction_at
                   ? new Date(person.last_interaction_at).toLocaleDateString()
                   : "\u2014"}
               </td>
-              <td className="px-5 py-3 text-[var(--text-muted)]">
+              <td className="px-3 md:px-5 py-3 text-[var(--text-muted)]">
                 {person.interaction_count ?? 0}
               </td>
             </tr>

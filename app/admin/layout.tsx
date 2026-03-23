@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Sidebar } from "@/components/admin/sidebar";
-import { Header } from "@/components/admin/header";
+import { AdminShell } from "./admin-shell";
 
 export default async function AdminLayout({
   children,
@@ -24,12 +23,8 @@ export default async function AdminLayout({
     .order("date_start", { ascending: true });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--bg-app)] text-white">
-      <Sidebar events={events || []} />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header userEmail={user.email || ""} />
-        <main className="flex-1 p-6 bg-grid overflow-y-auto">{children}</main>
-      </div>
-    </div>
+    <AdminShell events={events || []} userEmail={user.email || ""}>
+      {children}
+    </AdminShell>
   );
 }

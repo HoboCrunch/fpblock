@@ -12,24 +12,36 @@ Email/password sign-in. Redirects to `/admin` on success. All `/admin/*` routes 
 
 ## Navigation
 
-The sidebar contains 11 sections with Lucide icons:
+The sidebar contains 12 sections with Lucide icons:
 
 | Section | URL | Icon |
 |---------|-----|------|
 | Dashboard | `/admin` | LayoutDashboard |
 | Persons | `/admin/persons` | Users |
+| Lists | `/admin/lists` | ListIcon |
 | Organizations | `/admin/organizations` | Building2 |
 | Events | `/admin/events` | Calendar |
 | Pipeline | `/admin/pipeline` | Kanban |
-| Initiatives | `/admin/initiatives` | Target |
+| Initiatives | `/admin/initiatives` | Rocket |
 | Sequences | `/admin/sequences` | GitBranch |
 | Inbox | `/admin/inbox` | Mail |
 | Enrichment | `/admin/enrichment` | Sparkles |
-| Uploads | `/admin/uploads` | Upload |
 | Correlations | `/admin/correlations` | GitMerge |
+| Uploads | `/admin/uploads` | Upload |
 | Settings | `/admin/settings` | Settings |
 
 Events sub-items expand inline under the Events nav item. The sidebar collapses to icon-only mode via a toggle at the bottom, and auto-collapses on tablet viewports.
+
+### Mobile Responsiveness
+
+On screens below `md` (768px), the sidebar is hidden by default and accessible via a hamburger menu button in the header. Tapping the hamburger slides the sidebar in as a fixed overlay (z-50) with a semi-transparent backdrop. Tapping any nav link or the backdrop closes it. A close (X) button is also available in the sidebar header.
+
+The layout uses an `AdminShell` client component (`app/admin/admin-shell.tsx`) to manage the mobile-open state shared between the sidebar and header.
+
+Additional mobile adjustments:
+- Header padding reduces from `px-6` to `px-4`, user email is hidden (sign-out button remains)
+- Main content padding reduces from `p-6` to `p-3`
+- All data tables have `min-w-[600px]` and `overflow-x-auto` for horizontal scrolling, with reduced cell padding (`px-3` vs `px-5`)
 
 The header shows a breadcrumb trail (auto-generated from the URL path) on the left and the logged-in user's email + sign out on the right.
 

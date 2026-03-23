@@ -28,7 +28,7 @@ function SortButton({
 }) {
   const isActive = currentSort === field;
   return (
-    <th className="px-5 py-3 font-medium">
+    <th className="px-3 md:px-5 py-3 font-medium">
       <button
         onClick={() => onSort(field)}
         className="inline-flex items-center gap-1 hover:text-white transition-colors"
@@ -100,7 +100,7 @@ export function OrganizationTable({ organizations }: { organizations: Organizati
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[600px] text-sm">
         <thead>
           <tr className="text-left text-[var(--text-muted)] border-b border-[var(--glass-border)]">
             <SortButton label="ICP" field="icp_score" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
@@ -109,13 +109,13 @@ export function OrganizationTable({ organizations }: { organizations: Organizati
             <SortButton label="People" field="person_count" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
             <SortButton label="Signals" field="signal_count" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
             <SortButton label="Last Signal" field="last_signal" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
-            <th className="px-5 py-3 font-medium">Events</th>
+            <th className="px-3 md:px-5 py-3 font-medium">Events</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-white/[0.04]">
           {sorted.map((org) => (
             <tr key={org.id} className="hover:bg-white/[0.03] transition-all duration-200">
-              <td className="px-5 py-3">
+              <td className="px-3 md:px-5 py-3">
                 {org.icp_score != null ? (
                   <Badge variant={org.icp_score >= 90 ? "replied" : org.icp_score >= 75 ? "scheduled" : "default"}>
                     {org.icp_score}
@@ -124,20 +124,20 @@ export function OrganizationTable({ organizations }: { organizations: Organizati
                   <span className="text-[var(--text-muted)]">&mdash;</span>
                 )}
               </td>
-              <td className="px-5 py-3">
+              <td className="px-3 md:px-5 py-3">
                 <Link href={`/admin/organizations/${org.id}`} className="text-[var(--accent-indigo)] hover:underline font-medium">
                   {org.name}
                 </Link>
               </td>
-              <td className="px-5 py-3 text-[var(--text-muted)]">{org.category || "\u2014"}</td>
-              <td className="px-5 py-3 text-[var(--text-secondary)]">{org.person_count ?? "\u2014"}</td>
-              <td className="px-5 py-3 text-[var(--text-secondary)]">{org.signal_count ?? 0}</td>
-              <td className="px-5 py-3 text-[var(--text-muted)]">
+              <td className="px-3 md:px-5 py-3 text-[var(--text-muted)]">{org.category || "\u2014"}</td>
+              <td className="px-3 md:px-5 py-3 text-[var(--text-secondary)]">{org.person_count ?? "\u2014"}</td>
+              <td className="px-3 md:px-5 py-3 text-[var(--text-secondary)]">{org.signal_count ?? 0}</td>
+              <td className="px-3 md:px-5 py-3 text-[var(--text-muted)]">
                 {org.last_signal
                   ? new Date(org.last_signal).toLocaleDateString()
                   : "\u2014"}
               </td>
-              <td className="px-5 py-3">
+              <td className="px-3 md:px-5 py-3">
                 <div className="flex flex-wrap gap-1">
                   {(org.events || []).map((ev, i) => (
                     <Badge key={i} variant={ev.tier ? "glass-orange" : "glass-indigo"}>
