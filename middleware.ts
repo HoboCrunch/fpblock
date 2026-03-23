@@ -1,8 +1,20 @@
-import { type NextRequest } from "next/server";
-import { updateSession } from "./lib/supabase/middleware";
+import { type NextRequest, NextResponse } from "next/server";
+
+export const runtime = "edge";
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request);
+  // Protect admin routes — redirect to /login if no supabase auth cookie
+  const hasAuthCookie = request.cookies.getAll().some(
+    (c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token")
+  );
+
+  if (!hasAuthCookie && request.nextUrl.pathname.startsWith("/admin")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
