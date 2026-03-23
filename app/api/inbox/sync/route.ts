@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createServerClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { fetchEmails } from "@/lib/fastmail";
 import { correlateAndNotify } from "@/lib/inbox-correlator";
 
@@ -32,7 +33,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabase = await createClient();
+  // Use service role client to bypass RLS (this is a server-side background sync)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.NEXT_SUPABASE_SECRET_KEY;
+  if (!supabaseUrl || !serviceKey) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
+  }
+  const supabase = createServiceClient(supabaseUrl, serviceKey);
 
   try {
     // Get last sync state
@@ -58,15 +65,20 @@ export async function POST(request: NextRequest) {
         .eq("message_id", email.message_id)
         .eq("account_email", accountEmail)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (existing) continue;
 
-      const { data: inserted } = await supabase
+      const { data: inserted, error: insertErr } = await supabase
         .from("inbound_emails")
         .insert(email)
         .select()
         .single();
+
+      if (insertErr) {
+        console.error(`[inbox-sync] insert error for ${email.subject}:`, insertErr.message);
+        continue;
+      }
 
       if (inserted) {
         newCount++;

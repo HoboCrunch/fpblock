@@ -162,8 +162,7 @@ export async function fetchEmails(
           "receivedAt",
           "keywords",
           "mailboxIds",
-          "header:In-Reply-To:asText",
-          "header:References:asText",
+          "headers",
         ],
       },
       "emailGet",
@@ -197,12 +196,13 @@ export async function fetchEmails(
     const from = email.from?.[0];
     const htmlBody = email.htmlBody?.[0]?.value || null;
 
-    // JMAP returns requested headers as "header:Name:asText" properties
+    // Extract In-Reply-To and References from headers array
     const raw: Record<string, unknown> = {};
-    const inReplyTo = (email as unknown as Record<string, unknown>)["header:In-Reply-To:asText"];
-    const references = (email as unknown as Record<string, unknown>)["header:References:asText"];
-    if (inReplyTo) raw["In-Reply-To"] = inReplyTo;
-    if (references) raw["References"] = references;
+    const headers = email.headers || email.header || [];
+    for (const h of headers) {
+      if (h.name?.toLowerCase() === "in-reply-to") raw["In-Reply-To"] = h.value;
+      if (h.name?.toLowerCase() === "references") raw["References"] = h.value;
+    }
 
     return {
       account_email: accountEmail,
