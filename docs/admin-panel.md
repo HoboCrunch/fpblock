@@ -8,7 +8,7 @@ The admin CRM is at `/admin/*`. All routes require authentication via Supabase A
 
 Email/password sign-in. Redirects to `/admin` on success. All `/admin/*` routes redirect here if unauthenticated. The login page lives outside the admin layout (at `app/login/page.tsx`) to avoid redirect loops.
 
-**Credentials:** `admin@gofpblock.com` / set via `ADMIN_PASSWORD` env var
+**Credentials:** Create in Supabase Dashboard > Authentication > Users. Scripts use `ADMIN_PASSWORD` env var.
 
 ## Navigation
 

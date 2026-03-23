@@ -349,13 +349,18 @@ Additional secrets (set via `npx supabase secrets set`):
 | `SENDGRID_API_KEY` | send-message, sync-status |
 | `HEYREACH_API_KEY` | send-message |
 
-**Next.js API route env vars** (in `.env.local`, not Supabase secrets):
+**Next.js API route env vars** (set in Vercel dashboard for production, `.env.local` for local dev):
 
 | Variable | Used By |
 |----------|---------|
-| `APOLLO_API_KEY` | /api/enrich/organizations (Apollo org firmographics) |
+| `NEXT_PUBLIC_SUPABASE_URL` | All Supabase clients (baked at build time) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | All Supabase clients (baked at build time, must be JWT `eyJ...` format) |
+| `NEXT_SUPABASE_SECRET_KEY` | /api/inbox/sync, /api/enrich/organizations (server-only) |
+| `APOLLO_API_KEY` | /api/enrich, /api/enrich/organizations |
 | `PERPLEXITY_API_KEY` | /api/enrich/organizations (Perplexity Sonar deep research) |
 | `GEMINI_API_KEY` | /api/enrich/organizations (Gemini synthesis + ICP scoring) |
 | `FASTMAIL_API_KEY` | /api/inbox (JMAP auth) |
 | `TELEGRAM_BOT_TOKEN` | lib/telegram.ts (Bot API) |
 | `TELEGRAM_CHAT_ID` | lib/telegram.ts (notification target) |
+
+**Note:** `NEXT_PUBLIC_*` vars are embedded at build time. After changing them in Vercel, a redeploy is required.

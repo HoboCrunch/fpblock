@@ -191,20 +191,31 @@ Cannes/
 │   ├── migrate-csv.ts            # CSV/JSON ETL into Supabase
 │   ├── import-all.ts             # Bulk import script
 │   └── seed-and-import.ts        # Seed + import runner
-├── scraping/                     # Pre-existing scraping scripts + data
+├── extra/                        # Non-app files (scraping data, old landing pages, CSVs, socials)
+│   ├── scraping/                 # Scraping scripts + data
+│   ├── fp-data-seed/             # Event seed data (EthCC, DC Blockchain, leads)
+│   └── socials/                  # Content strategy + voice profiles
 └── public/landing/               # Static assets for landing pages
 ```
 
 ## Authentication Flow
 
 1. User visits `/admin/*`
-2. `middleware.ts` intercepts, calls `updateSession()` from `lib/supabase/middleware.ts`
-3. If no authenticated session, redirects to `/login`
+2. `middleware.ts` checks for Supabase auth cookies (`sb-*-auth-token`) — no `@supabase/ssr` dependency for Edge runtime compatibility
+3. If no auth cookie, redirects to `/login`
 4. Login page (at `app/login/page.tsx`, outside admin layout) uses `supabase.auth.signInWithPassword()` (client-side)
 5. On success, redirects to `/admin` which loads `app/admin/layout.tsx`
 6. Layout server-side verifies auth via `supabase.auth.getUser()`, fetches events for sidebar
 
 **Note:** The login page must live outside `/admin/` to avoid infinite redirects — the admin layout itself redirects unauthenticated users.
+
+## Deployment
+
+- **Hosting:** Vercel (auto-deploys from `main` branch on GitHub)
+- **Domain:** gofpblock.com (www.gofpblock.com)
+- **Repository:** [github.com/HoboCrunch/fpblock](https://github.com/HoboCrunch/fpblock)
+- **Edge Functions:** Deployed separately to Supabase via `npx supabase functions deploy`
+- **Env vars:** Set in Vercel dashboard; `NEXT_PUBLIC_*` vars baked at build time
 
 ## Data Flow: End-to-End Pipeline
 

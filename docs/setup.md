@@ -12,36 +12,41 @@
 ### 1. Install dependencies
 
 ```bash
-cd /Users/evansteinhilv/genzio/Cannes
 npm install
 ```
 
-### 2. Verify .env.local
+### 2. Configure .env.local
 
-The `.env.local` file should contain:
+Create `.env.local` in the project root:
 
 ```
-# Supabase (required for the app)
+# Supabase (required — app won't load without these)
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...  # JWT anon key (NOT the sb_publishable_* format)
+NEXT_SUPABASE_SECRET_KEY=sb_secret_...  # Server-only, for API routes
 
-# External APIs (used by edge functions + migration script)
+# Enrichment APIs (used by API routes + edge functions)
 APOLLO_API_KEY=...
-GEMINI_API_KEY=...
-BRAVE_SEARCH_API_KEY=...
 PERPLEXITY_API_KEY=...
-SENDGRID_API_KEY=...
-HEYREACH_API_KEY=...
+GEMINI_API_KEY=...
 
-# Fastmail (for inbox sync)
+# Email (inbox sync)
 FASTMAIL_API_KEY=...
 
-# Telegram Bot (for reply/bounce notifications)
+# Telegram Bot (optional — notifications silently skipped if unset)
 TELEGRAM_BOT_TOKEN=...     # From @BotFather
 TELEGRAM_CHAT_ID=...       # Chat/group ID for notifications
+
+# Scraping / outreach (not used by app, only by scripts in extra/)
+BRAVE_SEARCH_API_KEY=...
+SENDGRID_API_KEY=...
+HEYREACH_API_KEY=...
 ```
 
-**Note:** Telegram vars are optional. If not set, notifications are silently skipped.
+**Important:** The anon key must be the JWT format (`eyJ...`), not the newer `sb_publishable_*` format. Retrieve it with:
+```bash
+npx supabase projects api-keys --project-ref <your-project-ref>
+```
 
 ### 3. Start dev server
 
@@ -97,16 +102,6 @@ Go to **Supabase Dashboard > Authentication > Users > Add User**. Create an acco
 
 Create an admin user with your own email/password credentials.
 
-### Important: Supabase API Keys
-
-The app requires the **JWT anon key** (starts with `eyJ...`), not the newer `sb_publishable_*` format. To retrieve it:
-
-```bash
-npx supabase projects api-keys --project-ref <your-project-ref>
-```
-
-Use the `anon` key for `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`.
-
 ---
 
 ## Data Migration
@@ -117,12 +112,7 @@ Import existing scraping/research data into Supabase:
 npx tsx scripts/migrate-csv.ts
 ```
 
-This imports from:
-- `scraping/data/sponsors.csv` — sponsor companies
-- `scraping/data/company_research.csv` — ICP scores, USP, ICP reasons
-- `scraping/data/company_news_cache.json` — company signals/context
-- `app/data/matrix/base/Cannes-Grid view.csv` — speakers + messages
-- `scraping/data/sponsor_contacts.csv` — Apollo-enriched sponsor contacts
+This imports from CSV/JSON files in `extra/scraping/data/` and `extra/fp-data-seed/`.
 
 **Prerequisites:** Seed data must be applied first (the script looks up the EthCC event ID).
 
@@ -171,17 +161,55 @@ These use `current_setting('app.settings.supabase_url')` and `current_setting('a
 
 ---
 
+## Vercel Deployment
+
+The app is deployed to Vercel at **gofpblock.com**.
+
+### Environment Variables
+
+Set these in **Vercel Dashboard > Project Settings > Environment Variables** (Production):
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | JWT anon key (`eyJ...` format) |
+| `NEXT_SUPABASE_SECRET_KEY` | Supabase service role / secret key |
+| `APOLLO_API_KEY` | Apollo.io API key |
+| `PERPLEXITY_API_KEY` | Perplexity Sonar API key |
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `FASTMAIL_API_KEY` | Fastmail JMAP API key |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot API token |
+| `TELEGRAM_CHAT_ID` | Telegram chat ID for notifications |
+
+**Important:** `NEXT_PUBLIC_*` vars are baked in at build time. After changing them, you must redeploy.
+
+### Deploy
+
+Pushes to `main` on [github.com/HoboCrunch/fpblock](https://github.com/HoboCrunch/fpblock) auto-deploy to Vercel.
+
+### API Route Timeouts
+
+Long-running routes have `maxDuration` configured:
+- `/api/enrich` — 60s
+- `/api/enrich/organizations` — 300s (requires Vercel Pro for >60s)
+- `/api/sequences/execute` — 60s
+
+### Middleware
+
+`middleware.ts` guards `/admin/*` routes by checking for Supabase auth cookies. No `@supabase/ssr` dependency — uses direct cookie inspection for Edge runtime compatibility.
+
+---
+
 ## Deployment Checklist
 
-- [ ] Apply migrations 001, 002_sequences_uploads_inbox, 002_rls, 003, 004, 005 to Supabase
+- [ ] Apply all migrations to Supabase (001 through 019)
 - [ ] Run seed.sql
-- [ ] Create auth user
-- [ ] Set edge function secrets
-- [ ] Deploy all 6 edge functions
+- [ ] Create auth user in Supabase Dashboard
+- [ ] Set Supabase edge function secrets (`npx supabase secrets set`)
+- [ ] Deploy all 6 edge functions (`npx supabase functions deploy`)
 - [ ] Set app.settings.supabase_url and app.settings.secret_key in DB config
-- [ ] Run `npx tsx scripts/migrate-csv.ts`
-- [ ] Set FASTMAIL_API_KEY in .env.local
-- [ ] Create Telegram bot and set TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID in .env.local
-- [ ] Verify: login, dashboard, contacts, companies, events, pipeline, sequences, inbox, enrichment, uploads, settings
-- [ ] Verify: `/jb` and `/wes` landing pages render
-- [ ] Deploy Next.js app (Vercel or similar)
+- [ ] Set all env vars in Vercel (see table above)
+- [ ] Verify auto-deploy from GitHub
+- [ ] Verify: login, dashboard, persons, organizations, events, pipeline, sequences, inbox, enrichment, uploads, settings
+- [ ] Verify: `/`, `/jb`, `/wes` landing pages render
+- [ ] Run data migration if needed: `npx tsx scripts/migrate-csv.ts`
