@@ -37,7 +37,7 @@ async function perplexitySearch(query: string): Promise<string> {
 
 async function geminiSynthesize(companyName: string, braveResults: string[], perplexityResult: string): Promise<{ context: string; signals: { type: string; description: string; date: string | null }[] }> {
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

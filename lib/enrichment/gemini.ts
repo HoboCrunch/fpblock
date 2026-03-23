@@ -159,7 +159,7 @@ Return ONLY the JSON object. No markdown, no code fences, no commentary.`);
 // ---------------------------------------------------------------------------
 
 const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 export async function synthesizeWithGemini(
   orgName: string,
