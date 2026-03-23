@@ -236,29 +236,44 @@ When emails are synced:
 
 **URL:** `/admin/enrichment`
 
-### Person Enrichment
-- Source: Apollo
+Tabbed interface with two tabs: Person Enrichment and Organization Enrichment.
+
+### Person Enrichment Tab
+- Source: Apollo (fixed)
 - Target: All unenriched persons / Selected persons / Persons from event
-- Fields: Email, LinkedIn, Twitter, Phone (checkboxes)
+- Fields: Email, LinkedIn, Twitter, Phone (toggle buttons)
 - Run button → creates job_log entry, kicks off enrichment
+- Results: persons processed, emails/LinkedIn/Twitter found
+- **Pre-selection:** Bulk "Enrich Selected" action from Persons page passes person IDs via URL params
 
-### Organization Enrichment Pipeline
-Three-stage pipeline for enriching organizations with firmographics, deep research, and ICP scoring:
+### Organization Enrichment Tab
+Three-stage pipeline with individual or combined execution:
 
-1. **Apollo** — firmographics: industry, employee count, revenue range, funding info, tech stack, HQ location
-2. **Perplexity Sonar** — deep research: description, products/services, strengths, weaknesses, recent news, target market
-3. **Gemini 2.0 Flash** — synthesis + ICP scoring: combines Apollo + Perplexity data, applies FP Block ICP criteria, outputs structured fields with score 0-100
+**Stage Selector** — Toggle buttons with descriptions:
+- **Apollo** (Firmographics) — industry, employee count, revenue, funding, tech stack, HQ
+- **Perplexity** (Deep Research) — description, products, strengths, weaknesses, recent news, target market
+- **Gemini** (Synthesis + ICP Score) — combines Apollo + Perplexity, applies FP Block ICP criteria, outputs score 0-100
+- **Full Pipeline** — runs all three (Apollo + Perplexity in parallel, then Gemini)
 
-**Execution:** Apollo + Perplexity run in parallel, then Gemini synthesizes. Each stage can be run independently or as a full pipeline. Batch mode supports progress callbacks.
+Selecting Full Pipeline deselects individual stages and vice versa.
 
-**Targeting:** Organizations can be filtered by event, initiative, or ICP score threshold (e.g., enrich all orgs with ICP below a threshold). Accepts specific org IDs or bulk selection.
+**Target Selector:**
+- All unenriched (no ICP score) — default
+- ICP below threshold — with configurable number input
+- From event — event dropdown
+- From initiative — initiative dropdown
+- Selected organizations — from URL params (`?organizations=id1,id2`)
 
-**Output:** Updates organization record fields + inserts structured signals into `organization_signals` table.
+**Results Display:**
+- Summary stats: Orgs Processed, Orgs Enriched, Signals Created, Average ICP Score
+- Mini table of enriched orgs with name, new ICP score (color-coded), signals created, success/failure badge
 
-### Job History
-Table of past enrichment runs from job_log: Date, Source, Persons Processed, Emails Found, LinkedIn Found, Status.
-
-**Pre-selection:** Bulk "Enrich Selected" action from Persons page passes person IDs via URL params.
+### Job History (shared)
+Table of all enrichment jobs (person + organization):
+- **Type** column with color-coded badges (orange = Person, indigo = Organization)
+- **Processed** column shows person or org count depending on type
+- **Results** column: emails/LinkedIn for person jobs, enriched/signals for org jobs
+- **Status** badge (completed/failed/processing)
 
 ## Uploads
 
