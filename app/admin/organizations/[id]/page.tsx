@@ -235,8 +235,8 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
             <div className="mt-3 pt-3 border-t border-[var(--glass-border)]">
               <div className="text-[10px] text-[var(--text-muted)] mb-1.5">Tech Stack</div>
               <div className="flex flex-wrap gap-1.5">
-                {firmographics.technologies.slice(0, 20).map((tech: string) => (
-                  <span key={tech} className="px-2 py-0.5 text-[10px] rounded-full bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] border border-[var(--accent-indigo)]/20">{tech}</span>
+                {firmographics.technologies.slice(0, 20).map((tech: string, i: number) => (
+                  <span key={`${i}-${tech}`} className="px-2 py-0.5 text-[10px] rounded-full bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] border border-[var(--accent-indigo)]/20">{tech}</span>
                 ))}
               </div>
             </div>

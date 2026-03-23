@@ -73,9 +73,7 @@ export default async function OrganizationsListPage({
   while (true) {
     let batchQuery = supabase
       .from("organizations")
-      .select(
-        "*, person_organization(id, source), organization_signals(id, date), event_participations(event_id, role, sponsor_tier, event:events(id, name))",
-      );
+      .select("*");
 
     if (params.search) {
       batchQuery = batchQuery.ilike("name", `%${params.search}%`);
@@ -104,6 +102,67 @@ export default async function OrganizationsListPage({
 
   const allOrgs = allOrgsArr;
 
+  // Fetch related data in parallel using org IDs to avoid nested query RLS issues
+  const orgIds = allOrgsArr.map((o: any) => o.id);
+
+  // Helper to fetch with batching if orgIds > 500
+  async function fetchInBatches(
+    table: string,
+    select: string,
+    ids: string[],
+    extraFilters?: (q: any) => any,
+  ) {
+    if (ids.length === 0) return { data: [] };
+    const CHUNK = 500;
+    let results: any[] = [];
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const chunk = ids.slice(i, i + CHUNK);
+      let q = supabase.from(table).select(select).in("organization_id", chunk);
+      if (extraFilters) q = extraFilters(q);
+      const { data } = await q;
+      if (data) results = results.concat(data);
+    }
+    return { data: results };
+  }
+
+  const [personLinksRes, signalsRes, eventParticipationsRes] = await Promise.all([
+    fetchInBatches("person_organization", "organization_id, id, source", orgIds),
+    fetchInBatches("organization_signals", "organization_id, id, date", orgIds),
+    fetchInBatches(
+      "event_participations",
+      "organization_id, event_id, role, sponsor_tier, event:events(id, name)",
+      orgIds,
+      (q) => q.not("organization_id", "is", null),
+    ),
+  ]);
+
+  // Build lookup maps
+  const personCountMap = new Map<string, { total: number; enriched: number }>();
+  for (const pl of (personLinksRes.data ?? []) as any[]) {
+    const existing = personCountMap.get(pl.organization_id) ?? { total: 0, enriched: 0 };
+    existing.total++;
+    if (pl.source === "org_enrichment") existing.enriched++;
+    personCountMap.set(pl.organization_id, existing);
+  }
+
+  const signalCountMap = new Map<string, { count: number; lastDate: string | null }>();
+  for (const sig of (signalsRes.data ?? []) as any[]) {
+    const existing = signalCountMap.get(sig.organization_id) ?? { count: 0, lastDate: null };
+    existing.count++;
+    if (sig.date && (!existing.lastDate || sig.date > existing.lastDate)) {
+      existing.lastDate = sig.date;
+    }
+    signalCountMap.set(sig.organization_id, existing);
+  }
+
+  const eventMap = new Map<string, any[]>();
+  for (const ep of (eventParticipationsRes.data ?? []) as any[]) {
+    if (!ep.organization_id) continue;
+    const existing = eventMap.get(ep.organization_id) ?? [];
+    existing.push(ep);
+    eventMap.set(ep.organization_id, existing);
+  }
+
   // Get unique categories for filter
   const { data: categoryData } = await supabase
     .from("organizations")
@@ -117,36 +176,25 @@ export default async function OrganizationsListPage({
   // Process rows
   const rows = (allOrgs || [])
     .map((org: any) => {
-      const personCount = org.person_organization?.length || 0;
-      const enrichedPersonCount = (org.person_organization || []).filter(
-        (po: any) => po.source === "org_enrichment"
-      ).length;
-      const signals = org.organization_signals || [];
-      const signalCount = signals.length;
-      const lastSignal =
-        signals.length > 0
-          ? signals.reduce((latest: string, s: any) =>
-              s.date && s.date > latest ? s.date : latest,
-            signals[0]?.date || "")
-          : null;
+      const personCounts = personCountMap.get(org.id) ?? { total: 0, enriched: 0 };
+      const signalData = signalCountMap.get(org.id) ?? { count: 0, lastDate: null };
+      const events = eventMap.get(org.id) ?? [];
 
       return {
         id: org.id,
         name: org.name,
         category: org.category,
         icp_score: org.icp_score,
-        person_count: personCount,
-        enriched_person_count: enrichedPersonCount,
-        signal_count: signalCount,
-        last_signal: lastSignal,
-        events: (org.event_participations || [])
-          .filter((ep: any) => ep.organization_id || ep.event)
-          .map((ep: any) => ({
-            id: ep.event?.id,
-            name: ep.event?.name,
-            role: ep.role,
-            tier: ep.sponsor_tier,
-          })),
+        person_count: personCounts.total,
+        enriched_person_count: personCounts.enriched,
+        signal_count: signalData.count,
+        last_signal: signalData.lastDate,
+        events: events.map((ep: any) => ({
+          id: ep.event?.id,
+          name: ep.event?.name,
+          role: ep.role,
+          tier: ep.sponsor_tier,
+        })),
       };
     })
     .filter((row: any) => {
