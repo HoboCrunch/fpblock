@@ -319,7 +319,7 @@ export function InboxClient({
                     "bg-white/[0.06] border-[#f58327]/30 shadow-[0_0_12px_rgba(245,131,39,0.08)]",
                   // Left accent for unread: orange if known, gray if not
                   isUnread && isKnown && "border-l-2 border-l-[#f58327]",
-                  isUnread && !isKnown && "border-l-2 border-l-white/20"
+                  isUnread && !isKnown && "border-l-2 border-l-white/70"
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
