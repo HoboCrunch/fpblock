@@ -210,3 +210,39 @@ export async function upsertEventConfig(config: {
     return { success: !error, error: error?.message ?? null };
   }
 }
+
+// ---- Company Context ----
+
+export async function getCompanyContext() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("company_context")
+    .select("*")
+    .limit(1)
+    .maybeSingle();
+  return { data: data ?? null, error: error?.message ?? null };
+}
+
+export async function updateCompanyContext(context: {
+  id: string;
+  company_name: string;
+  about: string | null;
+  icp_criteria: string | null;
+  positioning: string | null;
+  language_rules: string | null;
+  outreach_strategy: string | null;
+}) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("company_context")
+    .update({
+      company_name: context.company_name,
+      about: context.about,
+      icp_criteria: context.icp_criteria,
+      positioning: context.positioning,
+      language_rules: context.language_rules,
+      outreach_strategy: context.outreach_strategy,
+    })
+    .eq("id", context.id);
+  return { success: !error, error: error?.message ?? null };
+}

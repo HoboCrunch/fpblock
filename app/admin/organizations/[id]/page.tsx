@@ -103,7 +103,7 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
         <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)]">
           {org.name}
         </h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">{org.category || "\u2014"}</p>
+        <p className="text-[var(--text-muted)] text-sm mt-1">{typeof org.category === "string" ? org.category : "\u2014"}</p>
 
         {/* Stats row */}
         <div className="flex items-center gap-4 mt-3 flex-wrap">
@@ -263,16 +263,19 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
               <p className="text-[var(--text-muted)] text-sm">No event associations</p>
             </GlassCard>
           ) : (
-            (eventParticipations || []).map((ep: any) => (
-              <GlassCard key={ep.id} className="flex items-center gap-3 !p-3">
-                <Link href={`/admin/events/${ep.event?.id}`} className="text-[var(--accent-indigo)] hover:underline text-sm">
-                  {ep.event?.name}
-                </Link>
-                {ep.role && <Badge>{ep.role}</Badge>}
-                {ep.sponsor_tier && <Badge variant="glass-orange">{ep.sponsor_tier}</Badge>}
-                {ep.event?.location && <span className="text-xs text-[var(--text-muted)]">{ep.event.location}</span>}
-              </GlassCard>
-            ))
+            (eventParticipations || []).map((ep: any) => {
+              const evt = Array.isArray(ep.event) ? ep.event[0] : ep.event;
+              return (
+                <GlassCard key={ep.id} className="flex items-center gap-3 !p-3">
+                  <Link href={`/admin/events/${evt?.id}`} className="text-[var(--accent-indigo)] hover:underline text-sm">
+                    {evt?.name ?? "Unknown event"}
+                  </Link>
+                  {ep.role && <Badge>{String(ep.role)}</Badge>}
+                  {ep.sponsor_tier && <Badge variant="glass-orange">{String(ep.sponsor_tier)}</Badge>}
+                  {evt?.location && <span className="text-xs text-[var(--text-muted)]">{String(evt.location)}</span>}
+                </GlassCard>
+              );
+            })
           )}
         </div>
       </div>

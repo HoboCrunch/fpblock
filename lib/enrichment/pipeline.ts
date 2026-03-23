@@ -17,6 +17,28 @@ export type { PeopleFinderConfig } from "./apollo-people";
 export { DEFAULT_PEOPLE_FINDER_CONFIG } from "./apollo-people";
 
 // ---------------------------------------------------------------------------
+// Helpers — company context
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch the singleton company context from the database.
+ * Returns null if not found (will use hardcoded defaults in gemini.ts).
+ */
+async function fetchCompanyContext(supabase: SupabaseClient): Promise<{
+  company_name?: string;
+  positioning?: string | null;
+  icp_criteria?: string | null;
+  language_rules?: string | null;
+} | null> {
+  const { data } = await supabase
+    .from("company_context")
+    .select("company_name, positioning, icp_criteria, language_rules")
+    .limit(1)
+    .maybeSingle();
+  return data ?? null;
+}
+
+// ---------------------------------------------------------------------------
 // Result types
 // ---------------------------------------------------------------------------
 
@@ -503,12 +525,13 @@ export async function runGeminiSynthesis(
   });
 
   try {
+    const companyContext = await fetchCompanyContext(supabase);
     const result = await synthesizeWithGemini(org.name, apollo, perplexity, {
       description: org.description,
       context: org.context,
       usp: org.usp,
       icp_score: org.icp_score,
-    });
+    }, companyContext);
 
     // Update org fields: only update if currently null OR if Gemini produced a better result
     const updates: Record<string, unknown> = {};
@@ -640,6 +663,9 @@ export async function runFullEnrichment(
   });
 
   try {
+    // Fetch company context once for this pipeline run
+    const companyContext = await fetchCompanyContext(supabase);
+
     // Step 1: Run Apollo + Perplexity — parallel if org has a website, sequential (discovery) if not
     console.log(`[pipeline] ${org.name}: using ${org.website ? 'parallel' : 'discovery'} path`);
 
@@ -717,7 +743,8 @@ export async function runFullEnrichment(
         context: org.context,
         usp: org.usp,
         icp_score: org.icp_score,
-      }
+      },
+      companyContext
     );
 
     // Step 3: Update org fields from Gemini synthesis

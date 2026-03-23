@@ -19,7 +19,7 @@ export interface GeminiSynthesisResult {
 // ICP criteria — embedded verbatim so every Gemini call scores consistently
 // ---------------------------------------------------------------------------
 
-const ICP_CRITERIA = `
+const DEFAULT_ICP_CRITERIA = `
 FP Block — 2026 ICP One-Pager (Clean)
 
 What Defines Our ICP
@@ -64,11 +64,26 @@ We value speed where failure is cheap and correctness where failure is expensive
 Fail fast on reversible decisions. Slow down only where mistakes persist.
 `.trim();
 
-const FP_BLOCK_POSITIONING = `
+const DEFAULT_FP_BLOCK_POSITIONING = `
 FP Block is a full-stack engineering firm that builds and rescues mission-critical systems.
 They use a proprietary framework (Kolme) to give clients the performance of a dedicated infrastructure with the flexibility of a multi-system world — architecting systems where failure is not an option.
 FP Block provides a third path: application-specific infrastructure with isolation, control, and seamless interoperability — so teams own what they build without being cut off from the broader ecosystem.
 `.trim();
+
+const DEFAULT_LANGUAGE_RULES = `Lead with: permanence, ownership, irreversibility, incentives, trust boundaries.
+AVOID using these words/phrases unless absolutely essential: blockchain, DeFi, Web3, on-chain, crypto, smart contracts, TVL, rollup, ZK.
+If the problem sounds real without naming blockchain, describe it that way.`;
+
+// ---------------------------------------------------------------------------
+// Company context type
+// ---------------------------------------------------------------------------
+
+interface CompanyContext {
+  company_name?: string;
+  positioning?: string | null;
+  icp_criteria?: string | null;
+  language_rules?: string | null;
+}
 
 // ---------------------------------------------------------------------------
 // Prompt construction
@@ -83,15 +98,21 @@ function buildPrompt(
     context?: string | null;
     usp?: string | null;
     icp_score?: number | null;
-  } | null
+  } | null,
+  companyContext?: CompanyContext | null
 ): string {
   const sections: string[] = [];
 
-  sections.push(`You are an ICP analyst for FP Block. Your job is to synthesize firmographic and research data about "${orgName}" into a structured profile with an ICP score.`);
+  const companyName = companyContext?.company_name || "FP Block";
+  const positioning = companyContext?.positioning || DEFAULT_FP_BLOCK_POSITIONING;
+  const icpCriteria = companyContext?.icp_criteria || DEFAULT_ICP_CRITERIA;
+  const languageRules = companyContext?.language_rules || DEFAULT_LANGUAGE_RULES;
 
-  sections.push(`--- FP BLOCK POSITIONING ---\n${FP_BLOCK_POSITIONING}`);
+  sections.push(`You are an ICP analyst for ${companyName}. Your job is to synthesize firmographic and research data about "${orgName}" into a structured profile with an ICP score.`);
 
-  sections.push(`--- ICP SCORING CRITERIA (follow exactly) ---\n${ICP_CRITERIA}`);
+  sections.push(`--- ${companyName.toUpperCase()} POSITIONING ---\n${positioning}`);
+
+  sections.push(`--- ICP SCORING CRITERIA (follow exactly) ---\n${icpCriteria}`);
 
   if (apollo) {
     sections.push(`--- APOLLO FIRMOGRAPHIC DATA ---\n${JSON.stringify(apollo, null, 2)}`);
@@ -105,17 +126,14 @@ function buildPrompt(
     sections.push(`--- EXISTING ORG DATA (update/improve, do not regress quality) ---\n${JSON.stringify(existingOrg, null, 2)}`);
   }
 
-  sections.push(`--- LANGUAGE RULES (critical) ---
-Lead with: permanence, ownership, irreversibility, incentives, trust boundaries.
-AVOID using these words/phrases unless absolutely essential: blockchain, DeFi, Web3, on-chain, crypto, smart contracts, TVL, rollup, ZK.
-If the problem sounds real without naming blockchain, describe it that way.`);
+  sections.push(`--- LANGUAGE RULES (critical) ---\n${languageRules}`);
 
   sections.push(`--- OUTPUT FORMAT ---
 Return a single JSON object with these fields:
 {
   "description": "2-3 sentences describing what this org does. Focus on their real-world function, not jargon.",
-  "context": "Strategic context — why this org matters for FP Block, referencing specific ICP criteria they match (or fail to match).",
-  "usp": "The angle or entry point for FP Block to approach them. What pain point or pressure makes FP Block relevant?",
+  "context": "Strategic context — why this org matters for ${companyName}, referencing specific ICP criteria they match (or fail to match).",
+  "usp": "The angle or entry point for ${companyName} to approach them. What pain point or pressure makes ${companyName} relevant?",
   "icp_score": <integer 0-100, following the scoring criteria exactly>,
   "icp_reason": "1 sentence explaining the score, referencing ICP test criteria.",
   "category": "<one of: Custody, Protocol, Infrastructure, Exchange, VC, Government, L1/L2, Payments, Gaming, Identity, Analytics, Other>",
@@ -152,14 +170,15 @@ export async function synthesizeWithGemini(
     context?: string | null;
     usp?: string | null;
     icp_score?: number | null;
-  } | null
+  } | null,
+  companyContext?: CompanyContext | null
 ): Promise<GeminiSynthesisResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY environment variable is not set");
   }
 
-  const prompt = buildPrompt(orgName, apollo, perplexity, existingOrg);
+  const prompt = buildPrompt(orgName, apollo, perplexity, existingOrg, companyContext);
 
   const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
     method: "POST",

@@ -13,6 +13,7 @@ import type {
   PromptTemplate,
   AutomationRule,
   EventConfig,
+  CompanyContext,
 } from "@/lib/types/database";
 import {
   getSenderProfiles,
@@ -27,8 +28,160 @@ import {
   toggleAutomationRule,
   getEventConfigs,
   upsertEventConfig,
+  getCompanyContext,
+  updateCompanyContext,
 } from "./actions";
 import { createBrowserClient } from "@supabase/ssr";
+
+// ---- Company Profile Tab ----
+
+function CompanyProfileTab() {
+  const [context, setContext] = useState<CompanyContext | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [saved, setSaved] = useState(false);
+
+  const load = useCallback(() => {
+    startTransition(async () => {
+      const { data } = await getCompanyContext();
+      if (data) setContext(data as CompanyContext);
+    });
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  function handleChange(field: keyof CompanyContext, value: string) {
+    if (!context) return;
+    setContext({ ...context, [field]: value });
+    setSaved(false);
+  }
+
+  function handleSave() {
+    if (!context) return;
+    startTransition(async () => {
+      await updateCompanyContext({
+        id: context.id,
+        company_name: context.company_name,
+        about: context.about,
+        icp_criteria: context.icp_criteria,
+        positioning: context.positioning,
+        language_rules: context.language_rules,
+        outreach_strategy: context.outreach_strategy,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    });
+  }
+
+  if (!context) {
+    return (
+      <GlassCard className="text-center py-12">
+        <p className="text-[var(--text-muted)]">Loading company profile...</p>
+      </GlassCard>
+    );
+  }
+
+  const fields: { key: keyof CompanyContext; label: string; description: string; rows: number }[] = [
+    {
+      key: "company_name",
+      label: "Company Name",
+      description: "Your company name as used in enrichment prompts",
+      rows: 1,
+    },
+    {
+      key: "about",
+      label: "About / Company Description",
+      description: "Brief description of what your company does. Used as context in ICP scoring and message generation.",
+      rows: 4,
+    },
+    {
+      key: "positioning",
+      label: "Positioning Statement",
+      description: "How your company is positioned in the market. Embedded in Gemini ICP scoring prompts.",
+      rows: 4,
+    },
+    {
+      key: "icp_criteria",
+      label: "ICP Criteria",
+      description: "Your Ideal Customer Profile framework. Used verbatim by Gemini to score organizations (0-100).",
+      rows: 16,
+    },
+    {
+      key: "language_rules",
+      label: "Language Rules",
+      description: "Words/phrases to lead with or avoid in enrichment analysis and outreach generation.",
+      rows: 4,
+    },
+    {
+      key: "outreach_strategy",
+      label: "Outreach Strategy",
+      description: "High-level outreach strategy notes. Available for message generation prompts.",
+      rows: 8,
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-[var(--text-muted)]">
+          These fields are used by the enrichment pipeline (Gemini ICP scoring) and message generation. Changes take effect on the next enrichment run.
+        </p>
+        <button
+          onClick={handleSave}
+          disabled={isPending}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+            saved
+              ? "bg-green-500/15 text-green-400 border border-green-500/20"
+              : "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25",
+            isPending && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          <Save className="h-4 w-4" />
+          {saved ? "Saved!" : isPending ? "Saving..." : "Save Changes"}
+        </button>
+      </div>
+
+      {fields.map(({ key, label, description, rows }) => (
+        <GlassCard key={key}>
+          <div className="mb-2">
+            <label className="text-sm font-medium text-white">{label}</label>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">{description}</p>
+          </div>
+          {rows === 1 ? (
+            <input
+              type="text"
+              value={(context[key] as string) ?? ""}
+              onChange={(e) => handleChange(key, e.target.value)}
+              className={cn(
+                "w-full rounded-lg font-[family-name:var(--font-body)]",
+                "bg-[var(--glass-bg)] border border-[var(--glass-border)]",
+                "text-white px-3 py-2 text-sm transition-all duration-200",
+                "focus:outline-none focus:ring-2 focus:ring-[var(--accent-orange)]/40 focus:border-[var(--accent-orange)]/50"
+              )}
+            />
+          ) : (
+            <textarea
+              value={(context[key] as string) ?? ""}
+              onChange={(e) => handleChange(key, e.target.value)}
+              rows={rows}
+              className={cn(
+                "w-full rounded-lg font-mono text-xs leading-relaxed",
+                "bg-[var(--glass-bg)] border border-[var(--glass-border)]",
+                "text-white px-3 py-2 transition-all duration-200 resize-y",
+                "focus:outline-none focus:ring-2 focus:ring-[var(--accent-orange)]/40 focus:border-[var(--accent-orange)]/50"
+              )}
+            />
+          )}
+        </GlassCard>
+      ))}
+
+      {/* Last updated */}
+      <p className="text-[10px] text-[var(--text-muted)] text-right">
+        Last updated: {new Date(context.updated_at).toLocaleString()}
+      </p>
+    </div>
+  );
+}
 
 // ---- Sender Profiles Tab ----
 
@@ -750,6 +903,11 @@ export default function SettingsPage() {
 
       <Tabs
         tabs={[
+          {
+            id: "company",
+            label: "Company Profile",
+            content: <CompanyProfileTab />,
+          },
           {
             id: "senders",
             label: "Sender Profiles",

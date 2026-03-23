@@ -319,3 +319,14 @@ export interface InboundEmail {
   raw_headers: Record<string, unknown> | null;
   created_at: string;
 }
+
+export interface CompanyContext {
+  id: string;
+  company_name: string;
+  about: string | null;
+  icp_criteria: string | null;
+  positioning: string | null;
+  language_rules: string | null;
+  outreach_strategy: string | null;
+  updated_at: string;
+}
