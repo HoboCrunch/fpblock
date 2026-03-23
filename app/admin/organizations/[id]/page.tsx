@@ -4,7 +4,21 @@ import { Badge } from "@/components/ui/badge";
 import { GlassCard } from "@/components/ui/glass-card";
 import { SignalsTimeline } from "@/components/admin/signals-timeline";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  ExternalLink,
+  Building2,
+  Users,
+  Briefcase,
+  DollarSign,
+  TrendingUp,
+  MapPin,
+  Globe,
+  Linkedin as LinkedinIcon,
+  Calendar,
+  Sparkles,
+  UserPlus,
+} from "lucide-react";
 
 export default async function OrganizationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,6 +37,7 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
     { data: personLinks },
     { data: interactions },
     { data: eventParticipations },
+    { data: enrichmentJob },
   ] = await Promise.all([
     supabase
       .from("organization_signals")
@@ -42,6 +57,16 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
       .from("event_participations")
       .select("*, event:events(*)")
       .eq("organization_id", id),
+    supabase
+      .from("job_log")
+      .select("metadata")
+      .eq("target_id", id)
+      .eq("target_table", "organizations")
+      .in("job_type", ["enrichment_full", "enrichment_apollo"])
+      .eq("status", "completed")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const persons = (personLinks || []).map((pl: any) => ({
@@ -53,6 +78,24 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
     link_source: pl.source,
   }));
 
+  const enrichedPersonCount = (personLinks || []).filter((pl: any) => pl.source === "org_enrichment").length;
+
+  const enrichMeta = (enrichmentJob?.metadata ?? {}) as Record<string, unknown>;
+  const apolloResult = (enrichMeta.result ?? enrichMeta) as Record<string, unknown>;
+  const firmographics = {
+    industry: (apolloResult.industry as string) ?? null,
+    employee_count: (apolloResult.employee_count as number) ?? null,
+    annual_revenue: (apolloResult.annual_revenue as string) ?? null,
+    funding_total: (apolloResult.funding_total as string) ?? null,
+    latest_funding_stage: (apolloResult.latest_funding_stage as string) ?? null,
+    founded_year: (apolloResult.founded_year as number) ?? null,
+    hq_location: (apolloResult.hq_location as string) ?? null,
+    technologies: (apolloResult.technologies as string[]) ?? [],
+  };
+  const hasFirmographics = Object.entries(firmographics).some(([k, v]) =>
+    k !== 'technologies' ? v != null : (v as string[]).length > 0
+  );
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -61,11 +104,35 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
           {org.name}
         </h1>
         <p className="text-[var(--text-muted)] text-sm mt-1">{org.category || "\u2014"}</p>
-        {org.icp_score != null && (
-          <Badge variant={org.icp_score >= 90 ? "replied" : "scheduled"} className="mt-2">
-            ICP {org.icp_score}
-          </Badge>
-        )}
+
+        {/* Stats row */}
+        <div className="flex items-center gap-4 mt-3 flex-wrap">
+          {org.icp_score != null && (
+            <div className={cn(
+              "px-3 py-1.5 rounded-lg border text-sm font-bold tabular-nums",
+              org.icp_score >= 90 ? "bg-green-500/15 text-green-400 border-green-500/25" :
+              org.icp_score >= 75 ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/25" :
+              org.icp_score >= 50 ? "bg-orange-500/15 text-orange-400 border-orange-500/25" :
+              "bg-gray-500/10 text-gray-400 border-gray-500/20"
+            )}>
+              ICP {org.icp_score}
+            </div>
+          )}
+          {org.category && (
+            <Badge variant="glass-indigo">{org.category}</Badge>
+          )}
+          <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
+            <Users className="h-3 w-3" /> {persons.length} people
+            {enrichedPersonCount > 0 && (
+              <span className="text-[var(--accent-orange)]">({enrichedPersonCount} enriched)</span>
+            )}
+          </span>
+          {(signals || []).length > 0 && (
+            <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
+              <Sparkles className="h-3 w-3" /> {(signals || []).length} signals
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Organization info */}
@@ -121,6 +188,61 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
           </div>
         )}
       </GlassCard>
+
+      {/* Firmographics */}
+      {hasFirmographics && (
+        <GlassCard>
+          <h2 className="text-sm font-medium text-[var(--text-muted)] uppercase tracking-wider mb-3">Firmographics</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {firmographics.industry && (
+              <div>
+                <div className="text-[10px] text-[var(--text-muted)] mb-0.5 flex items-center gap-1"><Briefcase className="h-3 w-3" /> Industry</div>
+                <div className="text-sm text-white">{firmographics.industry}</div>
+              </div>
+            )}
+            {firmographics.employee_count != null && (
+              <div>
+                <div className="text-[10px] text-[var(--text-muted)] mb-0.5 flex items-center gap-1"><Users className="h-3 w-3" /> Employees</div>
+                <div className="text-sm text-white">{firmographics.employee_count.toLocaleString()}</div>
+              </div>
+            )}
+            {firmographics.annual_revenue && (
+              <div>
+                <div className="text-[10px] text-[var(--text-muted)] mb-0.5 flex items-center gap-1"><DollarSign className="h-3 w-3" /> Revenue</div>
+                <div className="text-sm text-white">{firmographics.annual_revenue}</div>
+              </div>
+            )}
+            {firmographics.funding_total && (
+              <div>
+                <div className="text-[10px] text-[var(--text-muted)] mb-0.5 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Funding</div>
+                <div className="text-sm text-white">{firmographics.funding_total}{firmographics.latest_funding_stage ? ` (${firmographics.latest_funding_stage})` : ''}</div>
+              </div>
+            )}
+            {firmographics.hq_location && (
+              <div>
+                <div className="text-[10px] text-[var(--text-muted)] mb-0.5 flex items-center gap-1"><MapPin className="h-3 w-3" /> Headquarters</div>
+                <div className="text-sm text-white">{firmographics.hq_location}</div>
+              </div>
+            )}
+            {firmographics.founded_year && (
+              <div>
+                <div className="text-[10px] text-[var(--text-muted)] mb-0.5 flex items-center gap-1"><Calendar className="h-3 w-3" /> Founded</div>
+                <div className="text-sm text-white">{firmographics.founded_year}</div>
+              </div>
+            )}
+          </div>
+          {firmographics.technologies.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-[var(--glass-border)]">
+              <div className="text-[10px] text-[var(--text-muted)] mb-1.5">Tech Stack</div>
+              <div className="flex flex-wrap gap-1.5">
+                {firmographics.technologies.slice(0, 20).map((tech: string) => (
+                  <span key={tech} className="px-2 py-0.5 text-[10px] rounded-full bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] border border-[var(--accent-indigo)]/20">{tech}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </GlassCard>
+      )}
 
       {/* Signals */}
       <div>

@@ -125,6 +125,7 @@ interface ProgressEntry {
   job_type: string;
   created_at: string;
   error: string | null;
+  stage: string | null;  // NEW: current pipeline stage
 }
 
 // ---------------------------------------------------------------------------
@@ -370,7 +371,7 @@ function LiveStatusList({
                   {entry.org_name ?? entry.target_id?.slice(0, 8) ?? "\u2014"}
                 </td>
                 <td className="px-3 py-1.5 text-[var(--text-muted)]">
-                  {entry.job_type.replace("enrichment_", "")}
+                  {entry.stage || entry.job_type.replace("enrichment_", "")}
                 </td>
                 {entityType === "organization" && (
                   <td className="px-3 py-1.5">
@@ -869,6 +870,7 @@ function PersonEnrichmentTab({
               job_type: j.job_type,
               created_at: j.created_at,
               error: j.error,
+              stage: null,
             };
           })
         );
@@ -1329,7 +1331,7 @@ function OrganizationEnrichmentTab({
         .from("job_log")
         .select("id, target_id, status, job_type, metadata, created_at, error")
         .eq("target_table", "organizations")
-        .in("job_type", ["enrichment_full", "enrichment_apollo", "enrichment_perplexity", "enrichment_gemini"])
+        .in("job_type", ["enrichment_full", "enrichment_apollo", "enrichment_perplexity", "enrichment_gemini", "enrichment_people_finder"])
         .gte("created_at", jobStartTime)
         .order("created_at", { ascending: false })
         .limit(500);
@@ -1347,6 +1349,17 @@ function OrganizationEnrichmentTab({
             (existing.status === "processing" && j.status !== "processing") ||
             new Date(j.created_at) > new Date(existing.created_at)
           ) {
+            const stageLabel = (() => {
+              switch (j.job_type) {
+                case "enrichment_apollo": return "Firmographics";
+                case "enrichment_perplexity": return "Researching";
+                case "enrichment_gemini": return "ICP Scoring";
+                case "enrichment_people_finder": return "Finding People";
+                case "enrichment_full":
+                  return j.status === "completed" ? "Complete" : "Running Pipeline";
+                default: return null;
+              }
+            })();
             byOrg.set(j.target_id, {
               id: j.id,
               target_id: j.target_id,
@@ -1356,6 +1369,7 @@ function OrganizationEnrichmentTab({
               job_type: j.job_type,
               created_at: j.created_at,
               error: j.error,
+              stage: stageLabel,
             });
           }
         }
@@ -1725,16 +1739,26 @@ function OrganizationEnrichmentTab({
               <Loader2 className="h-5 w-5 animate-spin text-[var(--accent-orange)]" />
               <div>
                 <p className="text-sm text-white font-medium">
-                  Processing organizations...
+                  Processing {target === "pick" ? pickedOrgIds.size : previewOrgCount || previewOrgs.length} organizations...
                 </p>
                 <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                  Running {stages.includes("full") ? "full pipeline" : stages.join(" + ")} enrichment. This may take a few minutes.
+                  {(() => {
+                    const latestProcessing = progressEntries.find(e => e.status === "processing");
+                    if (latestProcessing?.stage) {
+                      return `${latestProcessing.org_name ?? "..."}: ${latestProcessing.stage}`;
+                    }
+                    return `Running ${stages.includes("full") ? "full pipeline" : stages.join(" + ")} enrichment.`;
+                  })()}
                 </p>
               </div>
             </div>
             <ProgressBar
               completed={completedCount}
-              total={previewOrgs.length || 1}
+              total={
+                target === "pick"
+                  ? pickedOrgIds.size || 1
+                  : previewOrgCount || previewOrgs.length || 1
+              }
             />
           </div>
           <LiveStatusList entries={progressEntries} entityType="organization" />
@@ -2165,69 +2189,86 @@ function JobHistoryTable({ jobs }: { jobs: JobLog[] }) {
   }
 
   return (
-    <GlassCard padding={false}>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--glass-border)] text-left">
-              <th className="px-5 py-3 text-[var(--text-muted)] font-medium">Date</th>
-              <th className="px-5 py-3 text-[var(--text-muted)] font-medium">Type</th>
-              <th className="px-5 py-3 text-[var(--text-muted)] font-medium">Processed</th>
-              <th className="px-5 py-3 text-[var(--text-muted)] font-medium">Results</th>
-              <th className="px-5 py-3 text-[var(--text-muted)] font-medium">Status</th>
-              <th className="px-5 py-3 w-8" />
-            </tr>
-          </thead>
-          <tbody>
-            {jobs.map((job) => {
-              const meta = (job.metadata ?? {}) as Record<string, unknown>;
-              const isOrgJob = job.job_type.includes("organization");
-              return (
-                <tr key={job.id} className="border-b border-[var(--glass-border)] group">
-                  <td colSpan={6} className="p-0">
-                    <Link
-                      href={`/admin/enrichment/${job.id}`}
-                      className="grid grid-cols-[1fr_1fr_1fr_1fr_auto_32px] items-center w-full hover:bg-[var(--glass-bg-hover)] transition-colors duration-200"
-                    >
-                      <span className="px-5 py-4 text-[var(--text-secondary)]">{new Date(job.created_at).toLocaleDateString()}</span>
-                      <span className="px-5 py-4">
-                        <Badge variant={isOrgJob ? "glass-indigo" : "glass-orange"} className="text-[10px]">{isOrgJob ? "Organization" : "Person"}</Badge>
-                      </span>
-                      <span className="px-5 py-4 text-[var(--text-secondary)]">
-                        {isOrgJob
-                          ? `${(meta.org_count as number) ?? (meta.orgs_enriched as number) ?? "-"} orgs`
-                          : `${(meta.contacts_processed as number) ?? (meta.persons_processed as number) ?? "-"} persons`}
-                      </span>
-                      <span className="px-5 py-4 text-[var(--text-secondary)]">
-                        {isOrgJob ? (
-                          <span className="flex items-center gap-3 text-xs">
-                            <span>{(meta.orgs_enriched as number) ?? "-"} enriched</span>
-                            <span className="text-[var(--text-muted)]">|</span>
-                            <span>{(meta.signals_created as number) ?? "-"} signals</span>
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-3 text-xs">
-                            <span>{(meta.emails_found as number) ?? "-"} emails</span>
-                            <span className="text-[var(--text-muted)]">|</span>
-                            <span>{(meta.linkedin_found as number) ?? "-"} linkedin</span>
-                          </span>
-                        )}
-                      </span>
-                      <span className="px-5 py-4">
-                        <Badge variant={job.status === "completed" ? "sent" : job.status === "failed" ? "failed" : "processing"}>{job.status}</Badge>
-                      </span>
-                      <span className="pr-4 py-4 flex items-center justify-center">
-                        <ArrowRight className="h-4 w-4 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                      </span>
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </GlassCard>
+    <div className="space-y-2">
+      {jobs.map((job) => {
+        const meta = (job.metadata ?? {}) as Record<string, unknown>;
+        const isOrgJob = job.job_type.includes("organization");
+        const timestamp = new Date(job.created_at);
+        const timeStr = timestamp.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " + timestamp.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+        // Org job stats
+        const orgCount = (meta.org_count as number) ?? (meta.orgs_enriched as number) ?? null;
+        const orgsEnriched = (meta.orgs_enriched as number) ?? null;
+        const signalsCreated = (meta.signals_created as number) ?? null;
+        const peopleFound = (meta.people_found as number) ?? null;
+
+        // Person job stats
+        const personsProcessed = (meta.contacts_processed as number) ?? (meta.persons_processed as number) ?? null;
+        const emailsFound = (meta.emails_found as number) ?? null;
+        const linkedinFound = (meta.linkedin_found as number) ?? null;
+
+        return (
+          <Link
+            key={job.id}
+            href={`/admin/enrichment/${job.id}`}
+            className="flex items-center gap-3 px-4 py-3 rounded-xl glass hover:bg-white/[0.04] transition-all duration-200 group"
+          >
+            {/* Type badge */}
+            <Badge variant={isOrgJob ? "glass-indigo" : "glass-orange"} className="text-[10px] shrink-0 w-[90px] text-center">
+              {isOrgJob ? "Organization" : "Person"}
+            </Badge>
+
+            {/* Stats */}
+            <div className="flex items-center gap-3 flex-1 min-w-0 text-xs">
+              {isOrgJob ? (
+                <>
+                  {orgCount != null && (
+                    <span className="text-white font-medium">{orgCount} org{orgCount !== 1 ? "s" : ""}</span>
+                  )}
+                  {orgsEnriched != null && (
+                    <span className="text-[var(--text-muted)]">{orgsEnriched} enriched</span>
+                  )}
+                  {signalsCreated != null && signalsCreated > 0 && (
+                    <span className="text-[var(--accent-indigo)]">{signalsCreated} signals</span>
+                  )}
+                  {peopleFound != null && peopleFound > 0 && (
+                    <span className="text-[var(--accent-orange)]">{peopleFound} people found</span>
+                  )}
+                </>
+              ) : (
+                <>
+                  {personsProcessed != null && (
+                    <span className="text-white font-medium">{personsProcessed} person{personsProcessed !== 1 ? "s" : ""}</span>
+                  )}
+                  {emailsFound != null && emailsFound > 0 && (
+                    <span className="text-[var(--accent-orange)]">{emailsFound} emails</span>
+                  )}
+                  {linkedinFound != null && linkedinFound > 0 && (
+                    <span className="text-[var(--accent-indigo)]">{linkedinFound} linkedin</span>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Timestamp */}
+            <span className="text-[10px] text-[var(--text-muted)] shrink-0 tabular-nums">
+              {timeStr}
+            </span>
+
+            {/* Status */}
+            <Badge
+              variant={job.status === "completed" ? "sent" : job.status === "failed" ? "failed" : "processing"}
+              className="text-[10px] shrink-0"
+            >
+              {job.status}
+            </Badge>
+
+            {/* Arrow */}
+            <ArrowRight className="h-3.5 w-3.5 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+          </Link>
+        );
+      })}
+    </div>
   );
 }
 
@@ -2255,7 +2296,6 @@ export default function EnrichmentPage() {
       .in("job_type", [
         "enrichment",
         "enrichment_batch_organizations",
-        "enrichment_full",
       ])
       .order("created_at", { ascending: false })
       .limit(50);

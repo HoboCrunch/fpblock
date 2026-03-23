@@ -356,7 +356,7 @@ async function insertPeopleFromOrg(
           role: person.title ?? null,
           role_type: mapSeniorityToRoleType(person.seniority),
           is_current: true,
-          is_primary: false,
+          is_primary: true,
         });
       }
     } catch (personErr) {
