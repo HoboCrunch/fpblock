@@ -10,7 +10,11 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { enrichFromApollo, ApolloOrgResult } from "./apollo";
 import { enrichFromPerplexity, PerplexityOrgResult } from "./perplexity";
 import { synthesizeWithGemini, GeminiSynthesisResult } from "./gemini";
+import { searchPeopleAtOrg, PeopleFinderConfig, DEFAULT_PEOPLE_FINDER_CONFIG, ApolloPersonResult, PeopleFinderResult } from "./apollo-people";
 import type { Organization } from "@/lib/types/database";
+
+export type { PeopleFinderConfig } from "./apollo-people";
+export { DEFAULT_PEOPLE_FINDER_CONFIG } from "./apollo-people";
 
 // ---------------------------------------------------------------------------
 // Result types
@@ -25,6 +29,7 @@ export interface EnrichmentResult {
   perplexity?: PerplexityOrgResult | null;
   gemini?: GeminiSynthesisResult | null;
   signalsCreated: number;
+  peopleFinder?: { found: number; created: number; merged: number; correlationCandidates: number } | null;
 }
 
 export interface BatchEnrichmentResult {
@@ -164,6 +169,202 @@ async function insertSignals(
   }
 
   return rows.length;
+}
+
+/**
+ * Map Apollo seniority to a role_type value.
+ */
+function mapSeniorityToRoleType(seniority: string | null | undefined): string {
+  if (!seniority) return "employee";
+  const s = seniority.toLowerCase();
+  if (s === "owner" || s === "founder") return "founder";
+  if (s === "c_suite" || s === "partner" || s === "vp" || s === "director") return "executive";
+  return "employee";
+}
+
+/**
+ * Insert people found via Apollo People Search into the DB.
+ * Deduplicates against existing people by apollo_id, email, and linkedin_url.
+ * Ensures person_organization links exist.
+ */
+async function insertPeopleFromOrg(
+  supabase: SupabaseClient,
+  orgId: string,
+  people: ApolloPersonResult[]
+): Promise<{ created: number; merged: number; correlationCandidates: number }> {
+  let created = 0;
+  let merged = 0;
+  let correlationCandidates = 0;
+
+  for (const person of people) {
+    try {
+      let existingPerson: { id: string } | null = null;
+
+      // Try to find by apollo_id first
+      if (person.apollo_id) {
+        const { data } = await supabase
+          .from("persons")
+          .select("id")
+          .eq("apollo_id", person.apollo_id)
+          .maybeSingle();
+        existingPerson = data ?? null;
+      }
+
+      // Try by email if not found
+      if (!existingPerson && person.email) {
+        const { data } = await supabase
+          .from("persons")
+          .select("id")
+          .ilike("email", person.email)
+          .maybeSingle();
+        existingPerson = data ?? null;
+      }
+
+      // Try by linkedin_url if still not found
+      if (!existingPerson && person.linkedin_url) {
+        const { data } = await supabase
+          .from("persons")
+          .select("id")
+          .ilike("linkedin_url", person.linkedin_url)
+          .maybeSingle();
+        existingPerson = data ?? null;
+      }
+
+      if (existingPerson) {
+        // COALESCE: only fill null fields on the existing record
+        const updates: Record<string, unknown> = {};
+        // Build a proper coalesce update — only set if currently null
+        const coalesceCols: Array<[string, unknown]> = [
+          ["email", person.email],
+          ["linkedin_url", person.linkedin_url],
+          ["twitter_handle", person.twitter_url],
+          ["phone", person.phone],
+          ["title", person.title],
+          ["seniority", person.seniority],
+          ["department", person.department],
+          ["photo_url", person.photo_url],
+          ["apollo_id", person.apollo_id],
+        ];
+
+        for (const [col, val] of coalesceCols) {
+          if (val != null) {
+            updates[col] = val;
+          }
+        }
+
+        if (Object.keys(updates).length > 0) {
+          // Fetch existing person to only update nulls
+          const { data: fullExisting } = await supabase
+            .from("persons")
+            .select("email,linkedin_url,twitter_handle,phone,title,seniority,department,photo_url,apollo_id")
+            .eq("id", existingPerson.id)
+            .single();
+
+          const filteredUpdates: Record<string, unknown> = {};
+          for (const [col, val] of coalesceCols) {
+            if (val != null && fullExisting && (fullExisting as Record<string, unknown>)[col] == null) {
+              filteredUpdates[col] = val;
+            }
+          }
+
+          if (Object.keys(filteredUpdates).length > 0) {
+            await supabase
+              .from("persons")
+              .update(filteredUpdates)
+              .eq("id", existingPerson.id);
+          }
+        }
+
+        merged++;
+
+        // Ensure person_organization link exists
+        const { data: existingLink } = await supabase
+          .from("person_organization")
+          .select("id")
+          .eq("person_id", existingPerson.id)
+          .eq("organization_id", orgId)
+          .maybeSingle();
+
+        if (!existingLink) {
+          await supabase.from("person_organization").insert({
+            person_id: existingPerson.id,
+            organization_id: orgId,
+            source: "org_enrichment",
+            role: person.title ?? null,
+            role_type: mapSeniorityToRoleType(person.seniority),
+            is_current: true,
+            is_primary: false,
+          });
+        }
+      } else {
+        // Insert new person
+        const { data: newPerson, error: insertError } = await supabase
+          .from("persons")
+          .insert({
+            first_name: person.first_name ?? null,
+            last_name: person.last_name ?? null,
+            full_name: person.full_name,
+            email: person.email ?? null,
+            linkedin_url: person.linkedin_url ?? null,
+            twitter_handle: person.twitter_url ?? null,
+            phone: person.phone ?? null,
+            title: person.title ?? null,
+            seniority: person.seniority ?? null,
+            department: person.department ?? null,
+            photo_url: person.photo_url ?? null,
+            apollo_id: person.apollo_id ?? null,
+            source: "org_enrichment",
+          })
+          .select("id")
+          .single();
+
+        if (insertError || !newPerson) {
+          console.error("[pipeline] Failed to insert person:", insertError?.message);
+          continue;
+        }
+
+        created++;
+
+        // Run correlation detection
+        const { data: correlations } = await supabase.rpc("find_person_correlations", {
+          p_person_id: newPerson.id,
+        });
+
+        if (correlations && Array.isArray(correlations)) {
+          const candidates = correlations
+            .filter((c: { confidence: number }) => c.confidence >= 0.6)
+            .map((c: { target_id: string; confidence: number; match_reasons: unknown }) => ({
+              entity_type: "person",
+              source_id: newPerson.id,
+              target_id: c.target_id,
+              confidence: c.confidence,
+              match_reasons: c.match_reasons,
+              status: "pending",
+            }));
+
+          if (candidates.length > 0) {
+            await supabase.from("correlation_candidates").insert(candidates);
+            correlationCandidates += candidates.length;
+          }
+        }
+
+        // Ensure person_organization link
+        await supabase.from("person_organization").insert({
+          person_id: newPerson.id,
+          organization_id: orgId,
+          source: "org_enrichment",
+          role: person.title ?? null,
+          role_type: mapSeniorityToRoleType(person.seniority),
+          is_current: true,
+          is_primary: false,
+        });
+      }
+    } catch (personErr) {
+      console.error("[pipeline] Error processing person:", personErr);
+    }
+  }
+
+  return { created, merged, correlationCandidates };
 }
 
 // ---------------------------------------------------------------------------
@@ -352,6 +553,60 @@ export async function runGeminiSynthesis(
   }
 }
 
+/**
+ * Run People Finder enrichment for an org — searches Apollo for people at the org
+ * and upserts them into the DB with person_organization links.
+ */
+export async function runPeopleFinderEnrichment(
+  supabase: SupabaseClient,
+  orgId: string,
+  config: PeopleFinderConfig = DEFAULT_PEOPLE_FINDER_CONFIG
+): Promise<{ success: boolean; data?: PeopleFinderResult; stats?: { found: number; created: number; merged: number; correlationCandidates: number } }> {
+  const org = await fetchOrg(supabase, orgId);
+  if (!org) return { success: false };
+
+  const jobId = await logJob(supabase, {
+    job_type: "enrichment_people_finder",
+    target_table: "organizations",
+    target_id: orgId,
+    status: "processing",
+    metadata: { org_name: org.name, config },
+  });
+
+  try {
+    const result = await searchPeopleAtOrg(org.name, org.website, config);
+
+    const stats = await insertPeopleFromOrg(supabase, orgId, result.people);
+    const found = result.people.length;
+
+    if (jobId) {
+      await updateJob(supabase, jobId, {
+        status: "completed",
+        metadata: {
+          org_name: org.name,
+          found,
+          total_available: result.total_available,
+          ...stats,
+          error: result.error,
+        },
+      });
+    }
+
+    return {
+      success: true,
+      data: result,
+      stats: { found, ...stats },
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[pipeline] People finder enrichment failed for ${org.name}:`, message);
+    if (jobId) {
+      await updateJob(supabase, jobId, { status: "failed", error: message });
+    }
+    return { success: false };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Full pipeline
 // ---------------------------------------------------------------------------
@@ -361,7 +616,8 @@ export async function runGeminiSynthesis(
  */
 export async function runFullEnrichment(
   supabase: SupabaseClient,
-  orgId: string
+  orgId: string,
+  peopleFinderConfig?: PeopleFinderConfig | null
 ): Promise<EnrichmentResult> {
   const org = await fetchOrg(supabase, orgId);
   if (!org) {
@@ -371,6 +627,7 @@ export async function runFullEnrichment(
       success: false,
       error: "Organization not found",
       signalsCreated: 0,
+      peopleFinder: null,
     };
   }
 
@@ -463,7 +720,16 @@ export async function runFullEnrichment(
       geminiResult.signals
     );
 
-    // Step 5: Log completion
+    // Step 5: Run People Finder if config provided
+    let peopleFinderStats: EnrichmentResult["peopleFinder"] = null;
+    if (peopleFinderConfig) {
+      const pfResult = await runPeopleFinderEnrichment(supabase, orgId, peopleFinderConfig);
+      if (pfResult.success && pfResult.stats) {
+        peopleFinderStats = pfResult.stats;
+      }
+    }
+
+    // Step 6: Log completion
     if (jobId) {
       await updateJob(supabase, jobId, {
         status: "completed",
@@ -473,6 +739,7 @@ export async function runFullEnrichment(
           gemini_fields_updated: Object.keys(geminiUpdates),
           signals_created: signalsCreated,
           icp_score: geminiResult.icp_score,
+          people_finder: peopleFinderStats,
         },
       });
     }
@@ -485,6 +752,7 @@ export async function runFullEnrichment(
       perplexity: perplexityResult,
       gemini: geminiResult,
       signalsCreated,
+      peopleFinder: peopleFinderStats,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -498,6 +766,7 @@ export async function runFullEnrichment(
       success: false,
       error: message,
       signalsCreated: 0,
+      peopleFinder: null,
     };
   }
 }
@@ -513,9 +782,10 @@ export async function runBatchEnrichment(
   supabase: SupabaseClient,
   orgIds: string[],
   options?: {
-    stages?: ("apollo" | "perplexity" | "gemini" | "full")[];
+    stages?: ("apollo" | "perplexity" | "gemini" | "full" | "people_finder")[];
     onProgress?: (completed: number, total: number, orgName: string) => void;
     concurrency?: number;
+    peopleFinderConfig?: PeopleFinderConfig | null;
   }
 ): Promise<BatchEnrichmentResult> {
   const stages = options?.stages ?? ["full"];
@@ -533,7 +803,7 @@ export async function runBatchEnrichment(
         let result: EnrichmentResult;
 
         if (stages.includes("full")) {
-          result = await runFullEnrichment(supabase, orgId);
+          result = await runFullEnrichment(supabase, orgId, options?.peopleFinderConfig);
         } else {
           // Run individual stages sequentially
           let apolloData: ApolloOrgResult | null = null;
@@ -541,6 +811,7 @@ export async function runBatchEnrichment(
           let geminiData: GeminiSynthesisResult | null = null;
           let signalsCreated = 0;
           let lastError: string | undefined;
+          let peopleFinderStats: EnrichmentResult["peopleFinder"] = null;
 
           const org = await fetchOrg(supabase, orgId);
           const orgName = org?.name ?? "unknown";
@@ -572,6 +843,19 @@ export async function runBatchEnrichment(
             }
           }
 
+          if (stages.includes("people_finder")) {
+            const res = await runPeopleFinderEnrichment(
+              supabase,
+              orgId,
+              options?.peopleFinderConfig ?? DEFAULT_PEOPLE_FINDER_CONFIG
+            );
+            if (res.success && res.stats) {
+              peopleFinderStats = res.stats;
+            } else {
+              lastError = "People finder enrichment failed";
+            }
+          }
+
           result = {
             orgId,
             orgName,
@@ -581,6 +865,7 @@ export async function runBatchEnrichment(
             perplexity: perplexityData,
             gemini: geminiData,
             signalsCreated,
+            peopleFinder: peopleFinderStats,
           };
         }
 

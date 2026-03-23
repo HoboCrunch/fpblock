@@ -20,6 +20,11 @@ export async function POST(request: NextRequest) {
     eventId?: string;
     initiativeId?: string;
     icpBelow?: number;
+    peopleFinderConfig?: {
+      perCompany?: number;
+      seniorities?: string[];
+      departments?: string[];
+    } | null;
   };
 
   try {
@@ -37,6 +42,7 @@ export async function POST(request: NextRequest) {
     eventId,
     initiativeId,
     icpBelow,
+    peopleFinderConfig,
   } = body;
 
   // -------------------------------------------------------------------------
@@ -138,20 +144,31 @@ export async function POST(request: NextRequest) {
   // -------------------------------------------------------------------------
   // Run batch enrichment
   // -------------------------------------------------------------------------
-  const validStages = stages.filter((s): s is "apollo" | "perplexity" | "gemini" | "full" =>
-    ["apollo", "perplexity", "gemini", "full"].includes(s)
+  const validStages = stages.filter((s): s is "apollo" | "perplexity" | "gemini" | "full" | "people_finder" =>
+    ["apollo", "perplexity", "gemini", "full", "people_finder"].includes(s)
   );
 
   try {
     const result = await runBatchEnrichment(supabase, orgIds, {
       stages: validStages.length > 0 ? validStages : ["full"],
       concurrency: 1, // Respect API rate limits
+      peopleFinderConfig: peopleFinderConfig
+        ? {
+            perCompany: peopleFinderConfig.perCompany ?? 5,
+            seniorities: peopleFinderConfig.seniorities ?? ["owner", "founder", "c_suite", "vp", "director"],
+            departments: peopleFinderConfig.departments ?? [],
+          }
+        : null,
     });
 
     const totalSignals = result.results.reduce(
       (sum, r) => sum + r.signalsCreated,
       0
     );
+
+    const totalPeopleFound = result.results.reduce((sum, r) => sum + (r.peopleFinder?.found ?? 0), 0);
+    const totalPeopleCreated = result.results.reduce((sum, r) => sum + (r.peopleFinder?.created ?? 0), 0);
+    const totalPeopleMerged = result.results.reduce((sum, r) => sum + (r.peopleFinder?.merged ?? 0), 0);
 
     // Update parent job
     await supabase
@@ -178,6 +195,9 @@ export async function POST(request: NextRequest) {
       orgs_enriched: result.succeeded,
       orgs_failed: result.failed,
       signals_created: totalSignals,
+      people_found: totalPeopleFound,
+      people_created: totalPeopleCreated,
+      people_merged: totalPeopleMerged,
       results: result.results.map((r) => ({
         orgId: r.orgId,
         orgName: r.orgName,
@@ -185,6 +205,7 @@ export async function POST(request: NextRequest) {
         error: r.error ?? null,
         icp_score: r.gemini?.icp_score ?? null,
         signalsCreated: r.signalsCreated,
+        peopleFinder: r.peopleFinder ?? null,
       })),
     });
   } catch (err) {

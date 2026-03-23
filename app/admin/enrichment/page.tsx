@@ -41,7 +41,31 @@ import type { Event, Initiative, JobLog, Organization, Person } from "@/lib/type
 // ---------------------------------------------------------------------------
 
 type EnrichField = "email" | "linkedin" | "twitter" | "phone";
-type OrgStage = "apollo" | "perplexity" | "gemini" | "full";
+type OrgStage = "apollo" | "perplexity" | "gemini" | "full" | "people_finder";
+const SENIORITY_OPTIONS = [
+  { value: "owner", label: "Owner" },
+  { value: "founder", label: "Founder" },
+  { value: "c_suite", label: "C-Suite" },
+  { value: "partner", label: "Partner" },
+  { value: "vp", label: "VP" },
+  { value: "director", label: "Director" },
+  { value: "manager", label: "Manager" },
+  { value: "senior", label: "Senior" },
+  { value: "entry", label: "Entry" },
+];
+
+const DEPARTMENT_OPTIONS = [
+  { value: "executive", label: "Executive" },
+  { value: "engineering", label: "Engineering" },
+  { value: "sales", label: "Sales" },
+  { value: "marketing", label: "Marketing" },
+  { value: "finance", label: "Finance" },
+  { value: "operations", label: "Operations" },
+  { value: "product", label: "Product" },
+  { value: "legal", label: "Legal" },
+  { value: "human_resources", label: "HR" },
+];
+
 type OrgTarget =
   | "unenriched"
   | "icp_below"
@@ -69,6 +93,9 @@ interface OrgEnrichResponse {
   results?: OrgEnrichResult[];
   error?: string;
   message?: string;
+  people_found?: number;
+  people_created?: number;
+  people_merged?: number;
 }
 
 interface PreviewPerson {
@@ -1123,6 +1150,12 @@ const STAGE_OPTIONS: {
     description: "Synthesis + ICP Score",
     icon: Brain,
   },
+  {
+    key: "people_finder",
+    label: "People Finder",
+    description: "Find contacts at org",
+    icon: Users,
+  },
 ];
 
 function OrganizationEnrichmentTab({
@@ -1146,6 +1179,9 @@ function OrganizationEnrichmentTab({
   const [isRunning, setIsRunning] = useState(false);
   const [lastResult, setLastResult] = useState<OrgEnrichResponse | null>(null);
   const [pickedOrgIds, setPickedOrgIds] = useState<Set<string>>(new Set());
+  const [pfPerCompany, setPfPerCompany] = useState(5);
+  const [pfSeniorities, setPfSeniorities] = useState<string[]>(["owner", "founder", "c_suite", "vp", "director"]);
+  const [pfDepartments, setPfDepartments] = useState<string[]>([]);
 
   // Preview state
   const [previewOrgs, setPreviewOrgs] = useState<PreviewOrg[]>([]);
@@ -1341,16 +1377,30 @@ function OrganizationEnrichmentTab({
   }, [isRunning, jobStartTime]);
 
   function toggleStage(stage: OrgStage) {
-    if (stage === "full") {
-      setStages(["full"]);
+    if (stage === "people_finder") {
+      setStages((prev) =>
+        prev.includes("people_finder")
+          ? prev.filter((s) => s !== "people_finder")
+          : [...prev, "people_finder"]
+      );
       return;
     }
-    // Deselect full when picking individual stages
+    if (stage === "full") {
+      setStages((prev) => {
+        const hasPf = prev.includes("people_finder");
+        return hasPf ? ["full", "people_finder"] : ["full"];
+      });
+      return;
+    }
     setStages((prev) => {
       const withoutFull = prev.filter((s) => s !== "full");
       if (withoutFull.includes(stage)) {
         const next = withoutFull.filter((s) => s !== stage);
-        return next.length === 0 ? ["full"] : next;
+        const nonPf = next.filter((s) => s !== "people_finder");
+        if (nonPf.length === 0) {
+          return next.includes("people_finder") ? ["full", "people_finder"] : ["full"];
+        }
+        return next;
       }
       return [...withoutFull, stage];
     });
@@ -1366,6 +1416,14 @@ function OrganizationEnrichmentTab({
       const body: Record<string, unknown> = {
         stages,
       };
+
+      if (stages.includes("people_finder")) {
+        body.peopleFinderConfig = {
+          perCompany: pfPerCompany,
+          seniorities: pfSeniorities,
+          departments: pfDepartments,
+        };
+      }
 
       if (target === "selected" && preSelectedOrgs.length > 0) {
         body.organizationIds = preSelectedOrgs;
@@ -1437,7 +1495,9 @@ function OrganizationEnrichmentTab({
             const isActive =
               key === "full"
                 ? stages.includes("full")
-                : stages.includes(key) && !stages.includes("full");
+                : key === "people_finder"
+                  ? stages.includes("people_finder")
+                  : stages.includes(key) && !stages.includes("full");
             return (
               <button
                 key={key}
@@ -1467,6 +1527,82 @@ function OrganizationEnrichmentTab({
             );
           })}
         </div>
+        {stages.includes("people_finder") && (
+          <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="h-4 w-4 text-[var(--accent-orange)]" />
+              <span className="text-sm font-medium text-white">People Finder Settings</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs text-[var(--text-muted)] mb-1 block">Contacts per company</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={25}
+                  value={pfPerCompany}
+                  onChange={(e) => setPfPerCompany(Math.min(25, Math.max(1, Number(e.target.value))))}
+                  className={cn(
+                    "w-full rounded-lg font-[family-name:var(--font-body)]",
+                    "bg-[var(--glass-bg)] border border-[var(--glass-border)]",
+                    "backdrop-blur-xl text-white",
+                    "px-3 py-2 text-sm transition-all duration-200",
+                    "focus:outline-none focus:ring-2 focus:ring-[var(--accent-orange)]/40 focus:border-[var(--accent-orange)]/50",
+                    "hover:bg-[var(--glass-bg-hover)] hover:border-[var(--glass-border-hover)]"
+                  )}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-[var(--text-muted)] mb-1 block">Seniority levels</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {SENIORITY_OPTIONS.map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() =>
+                        setPfSeniorities((prev) =>
+                          prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
+                        )
+                      }
+                      className={cn(
+                        "px-2 py-1 rounded-md text-[10px] font-medium border transition-all duration-150",
+                        pfSeniorities.includes(value)
+                          ? "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border-[var(--accent-orange)]/20"
+                          : "bg-[var(--glass-bg)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-white"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-[var(--text-muted)] mb-1 block">
+                  Departments <span className="text-[var(--text-muted)]">(empty = all)</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {DEPARTMENT_OPTIONS.map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() =>
+                        setPfDepartments((prev) =>
+                          prev.includes(value) ? prev.filter((d) => d !== value) : [...prev, value]
+                        )
+                      }
+                      className={cn(
+                        "px-2 py-1 rounded-md text-[10px] font-medium border transition-all duration-150",
+                        pfDepartments.includes(value)
+                          ? "bg-[var(--accent-indigo)]/15 text-[var(--accent-indigo)] border-[var(--accent-indigo)]/20"
+                          : "bg-[var(--glass-bg)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-white"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Target Selector */}
@@ -1621,40 +1757,58 @@ function OrganizationEnrichmentTab({
                     {lastResult.message}
                   </p>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <div className="text-xs text-[var(--text-muted)]">
-                        Orgs Processed
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <div className="text-xs text-[var(--text-muted)]">
+                          Orgs Processed
+                        </div>
+                        <div className="text-lg font-semibold text-white">
+                          {lastResult.orgs_processed}
+                        </div>
                       </div>
-                      <div className="text-lg font-semibold text-white">
-                        {lastResult.orgs_processed}
+                      <div>
+                        <div className="text-xs text-[var(--text-muted)]">
+                          Orgs Enriched
+                        </div>
+                        <div className="text-lg font-semibold text-[var(--accent-orange)]">
+                          {lastResult.orgs_enriched}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-[var(--text-muted)]">
+                          Signals Created
+                        </div>
+                        <div className="text-lg font-semibold text-[var(--accent-indigo)]">
+                          {lastResult.signals_created}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-[var(--text-muted)]">
+                          Avg ICP Score
+                        </div>
+                        <div className="text-lg font-semibold text-[var(--text-secondary)]">
+                          {avgIcp ?? "-"}
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <div className="text-xs text-[var(--text-muted)]">
-                        Orgs Enriched
+                    {(lastResult.people_found ?? 0) > 0 && (
+                      <div className="grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-white/[0.06]">
+                        <div>
+                          <div className="text-xs text-[var(--text-muted)]">People Found</div>
+                          <div className="text-lg font-semibold text-white">{lastResult.people_found}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-[var(--text-muted)]">New Persons Created</div>
+                          <div className="text-lg font-semibold text-[var(--accent-orange)]">{lastResult.people_created}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-[var(--text-muted)]">Merged with Existing</div>
+                          <div className="text-lg font-semibold text-[var(--accent-indigo)]">{lastResult.people_merged}</div>
+                        </div>
                       </div>
-                      <div className="text-lg font-semibold text-[var(--accent-orange)]">
-                        {lastResult.orgs_enriched}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-[var(--text-muted)]">
-                        Signals Created
-                      </div>
-                      <div className="text-lg font-semibold text-[var(--accent-indigo)]">
-                        {lastResult.signals_created}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-[var(--text-muted)]">
-                        Avg ICP Score
-                      </div>
-                      <div className="text-lg font-semibold text-[var(--text-secondary)]">
-                        {avgIcp ?? "-"}
-                      </div>
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
               </div>
 
