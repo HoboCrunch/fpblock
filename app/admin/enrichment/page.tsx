@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo, Fragment } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ import {
   Globe,
   ChevronDown,
   ChevronRight,
+  ArrowRight,
   AlertCircle,
   TrendingUp,
   Users,
@@ -31,6 +32,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
 import type { Event, Initiative, JobLog, Organization, Person } from "@/lib/types/database";
 
@@ -1999,67 +2001,6 @@ function PersonChildRow({ entry, isLast }: { entry: ChildJobEntry; isLast: boole
 // ---------------------------------------------------------------------------
 
 function JobHistoryTable({ jobs }: { jobs: JobLog[] }) {
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [childEntries, setChildEntries] = useState<ChildJobEntry[]>([]);
-  const [loadingChildren, setLoadingChildren] = useState(false);
-
-  async function handleJobClick(job: JobLog) {
-    const nextId = selectedJobId === job.id ? null : job.id;
-    setSelectedJobId(nextId);
-    if (!nextId) { setChildEntries([]); return; }
-
-    setLoadingChildren(true);
-    try {
-      const supabase = useSupabase();
-      const { data } = await supabase
-        .from("job_log")
-        .select("id, target_id, status, job_type, error, metadata, created_at")
-        .or(`metadata->>parent_job_id.eq.${nextId},metadata->>batch_job_id.eq.${nextId}`)
-        .order("created_at", { ascending: true })
-        .limit(500);
-
-      if (data && data.length > 0) {
-        setChildEntries(data as ChildJobEntry[]);
-      } else {
-        const isOrgJob = job.job_type.includes("organization");
-        const jobMeta = (job.metadata ?? {}) as Record<string, unknown>;
-        const jobDate = new Date(job.created_at);
-        const startTime = new Date(jobDate.getTime() - 5000).toISOString();
-        const endTime = new Date(jobDate.getTime() + 30 * 60 * 1000).toISOString();
-        const targetTable = isOrgJob ? "organizations" : "contacts";
-        const jobTypes = isOrgJob
-          ? ["enrichment_full", "enrichment_apollo", "enrichment_perplexity", "enrichment_gemini"]
-          : ["enrichment", "enrichment_apollo"];
-        const orgIds = (jobMeta.organization_ids as string[]) ?? (jobMeta.org_ids as string[]) ?? null;
-
-        let fallbackQuery = supabase
-          .from("job_log")
-          .select("id, target_id, status, job_type, error, metadata, created_at")
-          .eq("target_table", targetTable)
-          .in("job_type", jobTypes)
-          .gte("created_at", startTime)
-          .lte("created_at", endTime)
-          .neq("id", nextId)
-          .order("created_at", { ascending: true })
-          .limit(500);
-        if (orgIds && orgIds.length > 0) { fallbackQuery = fallbackQuery.in("target_id", orgIds); }
-
-        const fallback = await fallbackQuery;
-        if (fallback.data) {
-          const byTarget = new Map<string, ChildJobEntry>();
-          for (const fbEntry of fallback.data as ChildJobEntry[]) {
-            if (!fbEntry.target_id) continue;
-            const existing = byTarget.get(fbEntry.target_id);
-            if (!existing || (existing.status === "processing" && fbEntry.status !== "processing") || new Date(fbEntry.created_at) > new Date(existing.created_at)) {
-              byTarget.set(fbEntry.target_id, fbEntry);
-            }
-          }
-          setChildEntries(Array.from(byTarget.values()));
-        }
-      }
-    } catch { setChildEntries([]); } finally { setLoadingChildren(false); }
-  }
-
   if (jobs.length === 0) {
     return (
       <GlassCard className="text-center py-8">
@@ -2075,105 +2016,58 @@ function JobHistoryTable({ jobs }: { jobs: JobLog[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--glass-border)] text-left">
-              <th className="pl-5 pr-1 py-3 w-8" />
               <th className="px-5 py-3 text-[var(--text-muted)] font-medium">Date</th>
               <th className="px-5 py-3 text-[var(--text-muted)] font-medium">Type</th>
               <th className="px-5 py-3 text-[var(--text-muted)] font-medium">Processed</th>
               <th className="px-5 py-3 text-[var(--text-muted)] font-medium">Results</th>
               <th className="px-5 py-3 text-[var(--text-muted)] font-medium">Status</th>
+              <th className="px-5 py-3 w-8" />
             </tr>
           </thead>
           <tbody>
             {jobs.map((job) => {
               const meta = (job.metadata ?? {}) as Record<string, unknown>;
               const isOrgJob = job.job_type.includes("organization");
-              const isSelected = selectedJobId === job.id;
               return (
-                <Fragment key={job.id}>
-                  <tr
-                    onClick={() => handleJobClick(job)}
-                    className={cn(
-                      "border-b border-[var(--glass-border)] cursor-pointer transition-all duration-200",
-                      isSelected ? "bg-[var(--accent-orange)]/[0.04] border-l-2 border-l-[var(--accent-orange)]/40" : "hover:bg-[var(--glass-bg-hover)]",
-                      isSelected && "border-b-0"
-                    )}
-                  >
-                    <td className="pl-5 pr-1 py-4 w-8">
-                      {isSelected ? <ChevronDown className="h-4 w-4 text-[var(--accent-orange)]" /> : <ChevronRight className="h-4 w-4 text-[var(--text-muted)]" />}
-                    </td>
-                    <td className="px-5 py-4 text-[var(--text-secondary)]">{new Date(job.created_at).toLocaleDateString()}</td>
-                    <td className="px-5 py-4">
-                      <Badge variant={isOrgJob ? "glass-indigo" : "glass-orange"} className="text-[10px]">{isOrgJob ? "Organization" : "Person"}</Badge>
-                    </td>
-                    <td className="px-5 py-4 text-[var(--text-secondary)]">
-                      {isOrgJob
-                        ? `${(meta.org_count as number) ?? (meta.orgs_enriched as number) ?? "-"} orgs`
-                        : `${(meta.contacts_processed as number) ?? (meta.persons_processed as number) ?? "-"} persons`}
-                    </td>
-                    <td className="px-5 py-4 text-[var(--text-secondary)]">
-                      {isOrgJob ? (
-                        <span className="flex items-center gap-3 text-xs">
-                          <span>{(meta.orgs_enriched as number) ?? "-"} enriched</span>
-                          <span className="text-[var(--text-muted)]">|</span>
-                          <span>{(meta.signals_created as number) ?? "-"} signals</span>
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-3 text-xs">
-                          <span>{(meta.emails_found as number) ?? "-"} emails</span>
-                          <span className="text-[var(--text-muted)]">|</span>
-                          <span>{(meta.linkedin_found as number) ?? "-"} linkedin</span>
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4">
-                      <Badge variant={job.status === "completed" ? "sent" : job.status === "failed" ? "failed" : "processing"}>{job.status}</Badge>
-                    </td>
-                  </tr>
-                  {isSelected && (
-                    <tr>
-                      <td colSpan={6} className="p-0">
-                        <div className="border-b border-[var(--glass-border)] bg-white/[0.01]">
-                          {loadingChildren ? (
-                            <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs px-6 py-4">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading job results...
-                            </div>
-                          ) : childEntries.length === 0 ? (
-                            <div className="px-6 py-4 text-xs text-[var(--text-muted)]">No individual result entries found for this job.</div>
-                          ) : (
-                            <div className="max-h-[500px] overflow-y-auto scrollbar-thin">
-                              <table className="w-full text-xs">
-                                <thead className="sticky top-0 bg-[var(--glass-bg)] z-10">
-                                  <tr className="border-b border-[var(--glass-border)] text-left">
-                                    <th className="pl-6 pr-2 py-2 w-6" />
-                                    <th className="px-3 py-2 text-[var(--text-muted)] font-medium">{isOrgJob ? "Organization" : "Person"}</th>
-                                    {isOrgJob ? (
-                                      <>
-                                        <th className="px-3 py-2 text-[var(--text-muted)] font-medium">ICP</th>
-                                        <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Stage</th>
-                                        <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Signals</th>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <th className="px-3 py-2 text-[var(--text-muted)] font-medium" colSpan={2}>Fields Found</th>
-                                        <th className="px-3 py-2" />
-                                      </>
-                                    )}
-                                    <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Status</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {isOrgJob
-                                    ? childEntries.map((childEntry, idx) => <OrgChildRow key={childEntry.id} entry={childEntry} isLast={idx === childEntries.length - 1} />)
-                                    : childEntries.map((childEntry, idx) => <PersonChildRow key={childEntry.id} entry={childEntry} isLast={idx === childEntries.length - 1} />)}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
+                <tr key={job.id} className="border-b border-[var(--glass-border)] group">
+                  <td colSpan={6} className="p-0">
+                    <Link
+                      href={`/admin/enrichment/${job.id}`}
+                      className="grid grid-cols-[1fr_1fr_1fr_1fr_auto_32px] items-center w-full hover:bg-[var(--glass-bg-hover)] transition-colors duration-200"
+                    >
+                      <span className="px-5 py-4 text-[var(--text-secondary)]">{new Date(job.created_at).toLocaleDateString()}</span>
+                      <span className="px-5 py-4">
+                        <Badge variant={isOrgJob ? "glass-indigo" : "glass-orange"} className="text-[10px]">{isOrgJob ? "Organization" : "Person"}</Badge>
+                      </span>
+                      <span className="px-5 py-4 text-[var(--text-secondary)]">
+                        {isOrgJob
+                          ? `${(meta.org_count as number) ?? (meta.orgs_enriched as number) ?? "-"} orgs`
+                          : `${(meta.contacts_processed as number) ?? (meta.persons_processed as number) ?? "-"} persons`}
+                      </span>
+                      <span className="px-5 py-4 text-[var(--text-secondary)]">
+                        {isOrgJob ? (
+                          <span className="flex items-center gap-3 text-xs">
+                            <span>{(meta.orgs_enriched as number) ?? "-"} enriched</span>
+                            <span className="text-[var(--text-muted)]">|</span>
+                            <span>{(meta.signals_created as number) ?? "-"} signals</span>
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-3 text-xs">
+                            <span>{(meta.emails_found as number) ?? "-"} emails</span>
+                            <span className="text-[var(--text-muted)]">|</span>
+                            <span>{(meta.linkedin_found as number) ?? "-"} linkedin</span>
+                          </span>
+                        )}
+                      </span>
+                      <span className="px-5 py-4">
+                        <Badge variant={job.status === "completed" ? "sent" : job.status === "failed" ? "failed" : "processing"}>{job.status}</Badge>
+                      </span>
+                      <span className="pr-4 py-4 flex items-center justify-center">
+                        <ArrowRight className="h-4 w-4 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                      </span>
+                    </Link>
+                  </td>
+                </tr>
               );
             })}
           </tbody>
