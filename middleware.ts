@@ -1,7 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-export const runtime = "edge";
-
 export async function middleware(request: NextRequest) {
   // Protect admin routes — redirect to /login if no supabase auth cookie
   const hasAuthCookie = request.cookies.getAll().some(
