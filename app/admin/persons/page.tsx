@@ -192,8 +192,16 @@ export default async function PersonsListPage({
     }
   }
 
+  // Deduplicate persons (view may return duplicates if multiple primary org links)
+  const seenIds = new Set<string>();
+  const dedupedPersons = allPersons.filter((p: any) => {
+    if (seenIds.has(p.id)) return false;
+    seenIds.add(p.id);
+    return true;
+  });
+
   // Process rows
-  const rows = allPersons
+  const rows = dedupedPersons
     .map((person: any) => {
       const stats = interactionStats[person.id];
       return {
