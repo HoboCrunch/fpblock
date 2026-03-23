@@ -112,11 +112,14 @@ export default async function PipelinePage({
     interactionsByPerson.set(interaction.person_id, existing);
   }
 
-  // Build pipeline contacts
+  // Build pipeline contacts (deduplicate persons — view may return duplicates if multiple primary orgs)
   const pipelineContacts: PipelineContact[] = [];
+  const seenPersonIds = new Set<string>();
 
   if (allPersons) {
     for (const person of allPersons) {
+      if (seenPersonIds.has(person.id)) continue;
+      seenPersonIds.add(person.id);
       const interactions = interactionsByPerson.get(person.id) || [];
 
       // Find most advanced interaction status
