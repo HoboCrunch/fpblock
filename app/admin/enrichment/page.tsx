@@ -105,7 +105,7 @@ function useSupabase() {
 // Preview List Component (shared)
 // ---------------------------------------------------------------------------
 
-function PreviewPersonList({ persons, isLoading }: { persons: PreviewPerson[]; isLoading: boolean }) {
+function PreviewPersonList({ persons, isLoading, totalCount }: { persons: PreviewPerson[]; isLoading: boolean; totalCount?: number }) {
   if (isLoading) {
     return (
       <div className="mt-4 p-4 rounded-lg bg-white/[0.02] border border-white/[0.06]">
@@ -124,7 +124,7 @@ function PreviewPersonList({ persons, isLoading }: { persons: PreviewPerson[]; i
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-[var(--text-muted)]">Preview</span>
         <span className="text-xs font-medium text-[var(--accent-orange)]">
-          {persons.length} person{persons.length !== 1 ? "s" : ""} will be enriched
+          {(totalCount ?? persons.length)} person{(totalCount ?? persons.length) !== 1 ? "s" : ""} will be enriched{(totalCount ?? 0) > persons.length ? ` (showing ${persons.length})` : ""}
         </span>
       </div>
       <div className="rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
@@ -193,7 +193,7 @@ function PreviewPersonList({ persons, isLoading }: { persons: PreviewPerson[]; i
   );
 }
 
-function PreviewOrgList({ orgs, isLoading }: { orgs: PreviewOrg[]; isLoading: boolean }) {
+function PreviewOrgList({ orgs, isLoading, totalCount }: { orgs: PreviewOrg[]; isLoading: boolean; totalCount?: number }) {
   if (isLoading) {
     return (
       <div className="mt-4 p-4 rounded-lg bg-white/[0.02] border border-white/[0.06]">
@@ -212,7 +212,7 @@ function PreviewOrgList({ orgs, isLoading }: { orgs: PreviewOrg[]; isLoading: bo
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-[var(--text-muted)]">Preview</span>
         <span className="text-xs font-medium text-[var(--accent-orange)]">
-          {orgs.length} organization{orgs.length !== 1 ? "s" : ""} will be enriched
+          {(totalCount ?? orgs.length)} organization{(totalCount ?? orgs.length) !== 1 ? "s" : ""} will be enriched{(totalCount ?? 0) > orgs.length ? ` (showing ${orgs.length})` : ""}
         </span>
       </div>
       <div className="rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
@@ -404,6 +404,7 @@ function PersonEnrichmentTab({
 
   // Preview state
   const [previewPersons, setPreviewPersons] = useState<PreviewPerson[]>([]);
+  const [previewPersonCount, setPreviewPersonCount] = useState(0);
   const [previewLoading, setPreviewLoading] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -424,7 +425,7 @@ function PersonEnrichmentTab({
       try {
         let query = supabase
           .from("persons")
-          .select("id, full_name, email, linkedin_url, twitter_handle, phone");
+          .select("id, full_name, email, linkedin_url, twitter_handle, phone", { count: "exact" });
 
         if (target === "selected" && preSelectedPersons.length > 0) {
           query = query.in("id", preSelectedPersons);
@@ -442,6 +443,7 @@ function PersonEnrichmentTab({
 
           if (personIds.length === 0) {
             setPreviewPersons([]);
+            setPreviewPersonCount(0);
             setPreviewLoading(false);
             return;
           }
@@ -451,7 +453,8 @@ function PersonEnrichmentTab({
           query = query.is("apollo_id", null);
         }
 
-        const { data } = await query.limit(200);
+        const { data, count } = await query.limit(200);
+        setPreviewPersonCount(count ?? data?.length ?? 0);
 
         if (data) {
           // Fetch primary org names for the preview
@@ -668,7 +671,7 @@ function PersonEnrichmentTab({
 
       {/* Preview List */}
       {!isRunning && !lastResult && (
-        <PreviewPersonList persons={previewPersons} isLoading={previewLoading} />
+        <PreviewPersonList persons={previewPersons} isLoading={previewLoading} totalCount={previewPersonCount} />
       )}
 
       {/* Run button */}
@@ -825,6 +828,7 @@ function OrganizationEnrichmentTab({
 
   // Preview state
   const [previewOrgs, setPreviewOrgs] = useState<PreviewOrg[]>([]);
+  const [previewOrgCount, setPreviewOrgCount] = useState(0);
   const [previewLoading, setPreviewLoading] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -843,13 +847,19 @@ function OrganizationEnrichmentTab({
       const supabase = useSupabase();
 
       try {
+        // Helper to set preview with count
+        const setResult = (data: PreviewOrg[] | null, count: number | null) => {
+          setPreviewOrgs((data as PreviewOrg[]) ?? []);
+          setPreviewOrgCount(count ?? data?.length ?? 0);
+        };
+
         if (target === "selected" && preSelectedOrgs.length > 0) {
-          const { data } = await supabase
+          const { data, count } = await supabase
             .from("organizations")
-            .select("id, name, icp_score, category, website")
+            .select("id, name, icp_score, category, website", { count: "exact" })
             .in("id", preSelectedOrgs);
 
-          setPreviewOrgs((data as PreviewOrg[]) ?? []);
+          setResult(data as PreviewOrg[], count);
         } else if (target === "event" && eventId) {
           const { data: participations } = await supabase
             .from("event_participations")
@@ -867,16 +877,18 @@ function OrganizationEnrichmentTab({
 
           if (orgIds.length === 0) {
             setPreviewOrgs([]);
+            setPreviewOrgCount(0);
             setPreviewLoading(false);
             return;
           }
 
-          const { data } = await supabase
+          const { data, count } = await supabase
             .from("organizations")
-            .select("id, name, icp_score, category, website")
-            .in("id", orgIds);
+            .select("id, name, icp_score, category, website", { count: "exact" })
+            .in("id", orgIds)
+            .limit(200);
 
-          setPreviewOrgs((data as PreviewOrg[]) ?? []);
+          setResult(data as PreviewOrg[], count);
         } else if (target === "initiative" && initiativeId) {
           const { data: enrollments } = await supabase
             .from("initiative_enrollments")
@@ -894,36 +906,39 @@ function OrganizationEnrichmentTab({
 
           if (orgIds.length === 0) {
             setPreviewOrgs([]);
+            setPreviewOrgCount(0);
             setPreviewLoading(false);
             return;
           }
 
-          const { data } = await supabase
+          const { data, count } = await supabase
             .from("organizations")
-            .select("id, name, icp_score, category, website")
-            .in("id", orgIds);
+            .select("id, name, icp_score, category, website", { count: "exact" })
+            .in("id", orgIds)
+            .limit(200);
 
-          setPreviewOrgs((data as PreviewOrg[]) ?? []);
+          setResult(data as PreviewOrg[], count);
         } else if (target === "icp_below") {
-          const { data } = await supabase
+          const { data, count } = await supabase
             .from("organizations")
-            .select("id, name, icp_score, category, website")
+            .select("id, name, icp_score, category, website", { count: "exact" })
             .or(`icp_score.is.null,icp_score.lt.${icpThreshold}`)
             .limit(200);
 
-          setPreviewOrgs((data as PreviewOrg[]) ?? []);
+          setResult(data as PreviewOrg[], count);
         } else {
           // unenriched
-          const { data } = await supabase
+          const { data, count } = await supabase
             .from("organizations")
-            .select("id, name, icp_score, category, website")
+            .select("id, name, icp_score, category, website", { count: "exact" })
             .is("icp_score", null)
             .limit(200);
 
-          setPreviewOrgs((data as PreviewOrg[]) ?? []);
+          setResult(data as PreviewOrg[], count);
         }
       } catch {
         setPreviewOrgs([]);
+        setPreviewOrgCount(0);
       } finally {
         setPreviewLoading(false);
       }
@@ -1205,7 +1220,7 @@ function OrganizationEnrichmentTab({
 
       {/* Preview List */}
       {!isRunning && !lastResult && (
-        <PreviewOrgList orgs={previewOrgs} isLoading={previewLoading} />
+        <PreviewOrgList orgs={previewOrgs} isLoading={previewLoading} totalCount={previewOrgCount} />
       )}
 
       {/* Run button */}
