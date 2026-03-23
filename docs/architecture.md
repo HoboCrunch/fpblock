@@ -7,7 +7,7 @@
 | Frontend | Next.js 16 (App Router), React 19, Tailwind CSS v4 |
 | UI | Glassmorphic design system (Poppins + Inter fonts, orange/indigo accents) |
 | Backend | Supabase (Postgres, Auth, Edge Functions, Realtime, pg_cron) |
-| AI/Enrichment | Gemini 2.0 Flash, Apollo, Brave Search, Perplexity |
+| AI/Enrichment | Gemini 2.0 Flash, Apollo (persons + organizations), Perplexity Sonar (org deep research) |
 | Email Sync | Fastmail JMAP API |
 | Notifications | Telegram Bot API |
 | Sending | SendGrid (email), HeyReach (LinkedIn) |
@@ -31,13 +31,15 @@ Supabase
     ├── Postgres (17 tables with RLS)
     ├── Auth (email/password, guards /admin/*)
     ├── Edge Functions (6 Deno functions)
-    ├── pg_cron (hourly send + status sync)
+    ├── pg_cron (hourly send + status sync, 15-min inbox sync)
     └── pg_notify (automation triggers)
 
 External Services
     ├── Fastmail JMAP (inbound email sync)
     ├── Telegram Bot (reply/bounce notifications)
-    ├── Apollo (contact enrichment)
+    ├── Apollo (person enrichment + org firmographics)
+    ├── Perplexity Sonar (org deep research)
+    ├── Gemini 2.0 Flash (org synthesis + ICP scoring, message generation)
     ├── SendGrid (email sending + status)
     └── HeyReach (LinkedIn sending)
 ```
@@ -112,7 +114,9 @@ Cannes/
 │   │       ├── page.tsx          # Settings (4 tabs: senders, prompts, rules, events)
 │   │       └── actions.ts        # Server actions for settings CRUD
 │   └── api/
-│       ├── enrich/route.ts       # Apollo enrichment API route (targets persons)
+│       ├── enrich/
+│       │   ├── route.ts              # Apollo enrichment API route (targets persons)
+│       │   └── organizations/route.ts # Organization enrichment pipeline (Apollo + Perplexity + Gemini)
 │       ├── messages/
 │       │   ├── generate/route.ts # Generate interactions (cold_email, cold_linkedin, etc.)
 │       │   └── send/route.ts     # Send interactions, update status
@@ -159,7 +163,12 @@ Cannes/
 │   ├── types/
 │   │   ├── database.ts           # TypeScript types for all tables
 │   │   └── pipeline.ts           # Pipeline-specific types
-│   ├── fastmail.ts               # Fastmail JMAP client (session + email fetch)
+│   ├── enrichment/
+│   │   ├── apollo.ts             # Apollo org API — firmographics (industry, employees, revenue, funding, tech stack, HQ)
+│   │   ├── perplexity.ts         # Perplexity Sonar — deep research (description, products, strengths, weaknesses, news, target market)
+│   │   ├── gemini.ts             # Gemini 2.0 Flash — synthesis + ICP scoring (applies FP Block ICP criteria, score 0-100)
+│   │   └── pipeline.ts           # Orchestrator — runApolloEnrichment(), runPerplexityEnrichment(), runGeminiSynthesis(), runFullEnrichment(), runBatchEnrichment() with progress callback
+│   ├── fastmail.ts               # Fastmail JMAP client (session + email fetch, uses 'headers' array property syntax)
 │   ├── inbox-correlator.ts       # Email-to-person correlation engine
 │   ├── telegram.ts               # Telegram Bot API notifications
 │   └── utils.ts                  # cn() utility (clsx + tailwind-merge)
@@ -205,9 +214,12 @@ Cannes/
    → /admin/enrichment → POST /api/enrich
    → fills email, LinkedIn, phone, seniority on persons table
          │
-4. Enrich organizations (Brave + Perplexity + Gemini)
-   → Edge Function: enrich-company
-   → fills organization context, creates organization signals
+4. Enrich organizations (Apollo + Perplexity + Gemini pipeline)
+   → POST /api/enrich/organizations
+   → Apollo firmographics (industry, employees, revenue, funding, tech stack, HQ)
+   → Perplexity Sonar deep research (description, products, strengths, weaknesses, news, target market)
+   → Apollo + Perplexity run in parallel, then Gemini 2.0 Flash synthesizes + ICP scores (0-100)
+   → Updates org record + inserts organization_signals
          │
 5. Create initiatives and outreach sequences
    → /admin/initiatives (campaign grouping)
@@ -253,7 +265,8 @@ Cannes/
 - **RLS with simple policy**: All tables use "authenticated full access" — this is an internal tool with a small, trusted user base.
 - **Next.js API routes for enrichment/inbox**: Apollo enrichment and Fastmail sync run via API routes (not edge functions) for easier debugging and access to Node.js APIs.
 - **Edge Functions for external APIs**: Generation, sending, and company enrichment go through Supabase Edge Functions, keeping API keys server-side.
-- **Fastmail JMAP for inbox**: Direct JMAP protocol integration for email sync from jb@gofpblock.com and wes@gofpblock.com. Correlation matches against `persons` table.
+- **Fastmail JMAP for inbox**: Direct JMAP protocol integration for email sync from jb@gofpblock.com and wes@gofpblock.com. Uses `headers` array property syntax (not `header:Name:asText`). Service role client bypasses RLS in sync route. Correlation matches against `persons` table. Organization data joined via `person_organization` -> `organizations`.
+- **Organization enrichment pipeline**: Three-stage pipeline in `lib/enrichment/` — Apollo (firmographics) + Perplexity Sonar (deep research) run in parallel, then Gemini 2.0 Flash synthesizes into structured fields + ICP score. Each stage is independently runnable. ICP scoring applies FP Block criteria from `scraping/context/fpblock-icp.md`. Pipeline supports batch processing with progress callbacks.
 - **Telegram for notifications**: Lightweight push notifications for reply detection and enrichment completion.
 - **Interaction versioning**: Interactions use `sequence_number` + `iteration` to track position in a sequence and regeneration count. Old iterations are marked `superseded`.
 - **Pipeline operates on persons**: Kanban/table views show one card per person at their most advanced outreach stage, not one card per interaction.

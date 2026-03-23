@@ -20,6 +20,8 @@ Supabase Postgres. Project: `<your-project-ref>`.
 | `013_crm_drop_old_tables.sql` | Drop old tables (contacts, companies, etc.) |
 | `014_crm_upsert_constraints.sql` | Unique constraint on organizations.name, fix correlation functions |
 | `015_crm_enrollment_constraint_and_correlation_fix.sql` | Unique constraint on initiatives.name, final correlation function fix |
+| `016_inbox_sync_cron.sql` | pg_cron job: auto-syncs Fastmail inbox every 15 min per account (JB at :00/:15/:30/:45, Wes offset by 1 min) via pg_net HTTP POST to `/api/inbox/sync` |
+| `017_fix_persons_with_icp_view.sql` | Fixes `persons_with_icp` view with `DISTINCT ON (p.id)` to prevent duplicate rows when a person has multiple organization affiliations |
 
 ## Extensions
 
@@ -422,7 +424,7 @@ Audit trail for all background operations.
 Joins persons with their primary organization's ICP data for sortable list views.
 
 ```sql
-SELECT
+SELECT DISTINCT ON (p.id)
   p.*,
   o.name AS primary_org_name,
   o.icp_score,
@@ -431,8 +433,11 @@ SELECT
   po.role AS org_role
 FROM persons p
 LEFT JOIN person_organization po ON po.person_id = p.id AND po.is_primary = true
-LEFT JOIN organizations o ON o.id = po.organization_id;
+LEFT JOIN organizations o ON o.id = po.organization_id
+ORDER BY p.id;
 ```
+
+**Note:** `DISTINCT ON (p.id)` prevents duplicate rows when a person has multiple organization affiliations (fixed in migration 017).
 
 ## Functions
 

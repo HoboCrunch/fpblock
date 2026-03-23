@@ -192,6 +192,41 @@ Triggers Apollo enrichment for selected persons. Creates a `job_log` entry with 
 
 **Note:** Currently creates the job log entry only. Full Apollo API integration to be ported from `scripts/apollo_enrich.py`.
 
+### POST /api/enrich/organizations
+
+**Path:** `app/api/enrich/organizations/route.ts`
+
+Organization enrichment pipeline orchestrator. Runs a three-stage enrichment: Apollo (firmographics) + Perplexity Sonar (deep research) in parallel, then Gemini 2.0 Flash synthesis + ICP scoring.
+
+**Input:**
+```json
+{
+  "orgIds": ["uuid1", "uuid2"],       // specific orgs (optional)
+  "eventId": "uuid",                   // enrich orgs from this event (optional)
+  "initiativeId": "uuid",              // enrich orgs from this initiative (optional)
+  "icpBelow": 50,                      // enrich orgs with ICP below threshold (optional)
+  "stages": ["apollo", "perplexity", "gemini"]  // run specific stages (optional, default: all)
+}
+```
+
+**Pipeline stages:**
+1. `runApolloEnrichment(orgId)` — Apollo org API for firmographics (industry, employees, revenue, funding, tech stack, HQ)
+2. `runPerplexityEnrichment(orgId)` — Perplexity Sonar for deep research (description, products, strengths, weaknesses, recent news, target market)
+3. `runGeminiSynthesis(orgId)` — Gemini 2.0 Flash combines Apollo + Perplexity data, applies FP Block ICP criteria from `scraping/context/fpblock-icp.md`, outputs structured fields with ICP score 0-100
+
+**Full pipeline:** `runFullEnrichment(orgId)` runs stages 1+2 in parallel, then stage 3.
+**Batch mode:** `runBatchEnrichment(orgIds, progressCallback)` processes multiple orgs with progress reporting.
+
+**Output:** Updates `organizations` record (icp_score, icp_reason, context, description, etc.) + inserts rows into `organization_signals` table.
+
+**Modules:** All pipeline logic lives in `lib/enrichment/`:
+- `lib/enrichment/apollo.ts` — Apollo org API client
+- `lib/enrichment/perplexity.ts` — Perplexity Sonar client
+- `lib/enrichment/gemini.ts` — Gemini synthesis + ICP scoring
+- `lib/enrichment/pipeline.ts` — Orchestrator with individual + batch runners
+
+---
+
 ### POST /api/messages/generate
 
 **Path:** `app/api/messages/generate/route.ts`
@@ -239,9 +274,13 @@ Merges or dismisses duplicate person records surfaced by the correlation engine.
 
 **Path:** `app/api/inbox/route.ts`
 
-Fetches emails from both Fastmail accounts via JMAP, runs auto-correlation against persons in the pipeline (matching by email, name, and organization), stores in `inbound_emails` table, and sends Telegram notifications for matches.
+Fetches emails from both Fastmail accounts via JMAP, runs auto-correlation against persons in the pipeline (matching by email, name, and organization), stores in `inbound_emails` table, and sends Telegram notifications for matches. Uses a service role Supabase client to bypass RLS in the sync route.
 
-Returns the fetched and correlated emails.
+Returns the fetched and correlated emails with organization data joined via `person_organization` -> `organizations`.
+
+**JMAP implementation notes:**
+- Uses `headers` array property syntax (not the `header:Name:asText` shorthand, which is unreliable)
+- Mark-as-read uses a separate JMAP `Email/set` call with `keywords/$seen`
 
 ### POST /api/inbox
 
@@ -259,7 +298,7 @@ Manual "Link to Person" action for uncorrelated emails.
 
 **Path:** `app/api/inbox/sync/route.ts`
 
-Triggers sync for a specific Fastmail account. Updates `inbox_sync_state` with timestamps and counts.
+Triggers sync for a specific Fastmail account. Updates `inbox_sync_state` with timestamps and counts. Uses service role client (not user session) since pg_cron calls this without auth.
 
 **Input:**
 ```json
@@ -267,6 +306,8 @@ Triggers sync for a specific Fastmail account. Updates `inbox_sync_state` with t
   "accountEmail": "jb@gofpblock.com"
 }
 ```
+
+**Auto-sync:** pg_cron job (`016_inbox_sync_cron.sql`) calls this endpoint every 15 minutes per account via pg_net HTTP POST. JB syncs at :00/:15/:30/:45, Wes offset by 1 minute.
 
 ---
 
@@ -291,6 +332,9 @@ Additional secrets (set via `npx supabase secrets set`):
 
 | Variable | Used By |
 |----------|---------|
+| `APOLLO_API_KEY` | /api/enrich/organizations (Apollo org firmographics) |
+| `PERPLEXITY_API_KEY` | /api/enrich/organizations (Perplexity Sonar deep research) |
+| `GEMINI_API_KEY` | /api/enrich/organizations (Gemini synthesis + ICP scoring) |
 | `FASTMAIL_API_KEY` | /api/inbox (JMAP auth) |
 | `TELEGRAM_BOT_TOKEN` | lib/telegram.ts (Bot API) |
 | `TELEGRAM_CHAT_ID` | lib/telegram.ts (notification target) |

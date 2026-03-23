@@ -10,6 +10,12 @@ Outreach management & enrichment HQ for FP Block's conference preparation. Built
 - **Initiatives** — campaign tracking units (e.g., "EthCC 2026 Outreach") that group interactions
 - **Interactions** — unified timeline of all touchpoints (cold_email, cold_linkedin, reply, meeting, note, etc.), replacing the old messages table
 
+## Key Subsystems
+
+- **Organization Enrichment Pipeline** — three-stage enrichment: Apollo (firmographics) + Perplexity Sonar (deep research) run in parallel, then Gemini 2.0 Flash synthesizes both into structured fields + ICP score (0-100). Each stage runnable independently or as a full pipeline. See [Architecture](./architecture.md) and [Edge Functions & API Routes](./edge-functions.md).
+- **Inbox System** — Fastmail JMAP sync for jb@gofpblock.com and wes@gofpblock.com with auto-correlation against persons, pipeline-aware styling, and pg_cron auto-sync every 15 minutes.
+- **Correlation Engine** — pg_trgm fuzzy matching for deduplication of persons and organizations with merge/dismiss workflow.
+
 ## Quick Links
 
 - [Architecture Overview](./architecture.md)

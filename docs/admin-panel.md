@@ -111,7 +111,7 @@ Card grid layout. Each event as a glass card showing name, dates, location, even
 Five tabs:
 
 #### Speakers
-Confirmed speakers from event_participations (role = "speaker"). Table columns: Name, Organization, Talk Title, Track, Time Slot, Room. Links to person detail.
+Confirmed speakers from event_participations (role = "speaker"). Table columns: Name, Organization, Talk Title, Track, Time Slot, Room. Links to person detail. Organization name resolved via `person_organization` join (not event participation lookup).
 
 #### Sponsors
 Sponsoring organizations from event_participations (role = "sponsor"). Table columns: Organization Name, Sponsor Tier (badge), Person Count (from affiliated persons). Links to organization detail.
@@ -236,11 +236,24 @@ When emails are synced:
 
 **URL:** `/admin/enrichment`
 
-### Run Enrichment
-- Source: Apollo (only option currently)
+### Person Enrichment
+- Source: Apollo
 - Target: All unenriched persons / Selected persons / Persons from event
 - Fields: Email, LinkedIn, Twitter, Phone (checkboxes)
 - Run button → creates job_log entry, kicks off enrichment
+
+### Organization Enrichment Pipeline
+Three-stage pipeline for enriching organizations with firmographics, deep research, and ICP scoring:
+
+1. **Apollo** — firmographics: industry, employee count, revenue range, funding info, tech stack, HQ location
+2. **Perplexity Sonar** — deep research: description, products/services, strengths, weaknesses, recent news, target market
+3. **Gemini 2.0 Flash** — synthesis + ICP scoring: combines Apollo + Perplexity data, applies FP Block ICP criteria, outputs structured fields with score 0-100
+
+**Execution:** Apollo + Perplexity run in parallel, then Gemini synthesizes. Each stage can be run independently or as a full pipeline. Batch mode supports progress callbacks.
+
+**Targeting:** Organizations can be filtered by event, initiative, or ICP score threshold (e.g., enrich all orgs with ICP below a threshold). Accepts specific org IDs or bulk selection.
+
+**Output:** Updates organization record fields + inserts structured signals into `organization_signals` table.
 
 ### Job History
 Table of past enrichment runs from job_log: Date, Source, Persons Processed, Emails Found, LinkedIn Found, Status.
