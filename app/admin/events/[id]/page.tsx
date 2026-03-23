@@ -106,7 +106,7 @@ export default async function EventPage({
   // ---------- person_organization for org-person mapping ----------
   const { data: personOrgs } = await supabase
     .from("person_organization")
-    .select("*");
+    .select("*, organization:organizations(id, name)");
 
   // ---------- Initiatives for this event ----------
   const { data: initiatives } = await supabase
@@ -142,30 +142,17 @@ export default async function EventPage({
   const speakers: SpeakerRow[] = (participations || [])
     .filter((p: any) => speakerRoles.has(p.role) && p.person)
     .map((p: any) => {
-      // Find primary org for this person
+      // Find primary org for this person (joined org name from person_organization query)
       const po = (personOrgs || []).find(
-        (po: PersonOrganization) =>
-          po.person_id === p.person_id && po.is_primary
+        (po: any) => po.person_id === p.person_id && po.is_primary
       );
-      let orgName: string | null = null;
-      if (po) {
-        // Find the org in sponsor participations or from person_org join
-        const orgPart = (participations || []).find(
-          (op: any) => op.organization_id === po.organization_id && op.organization
-        );
-        orgName = orgPart?.organization?.name || null;
-      }
-      // Fallback: look for any org link
+      let orgName: string | null = po?.organization?.name || null;
+      // Fallback: any org link for this person
       if (!orgName) {
         const anyPo = (personOrgs || []).find(
-          (po: PersonOrganization) => po.person_id === p.person_id
+          (po: any) => po.person_id === p.person_id
         );
-        if (anyPo) {
-          const orgPart = (participations || []).find(
-            (op: any) => op.organization_id === anyPo.organization_id && op.organization
-          );
-          orgName = orgPart?.organization?.name || null;
-        }
+        orgName = anyPo?.organization?.name || null;
       }
       return { ...p, orgName };
     });
