@@ -209,15 +209,17 @@ async function handleJobLogInsert(job: JobLog): Promise<void> {
   if (job.status !== "processing") return;
 
   const meta = (job.metadata ?? {}) as Record<string, unknown>;
-  const orgCount = (meta.org_count as number) ?? 0;
+  const isOrg = job.job_type.includes("organization");
+  const total = (isOrg ? meta.org_count : meta.person_count) as number ?? 0;
   const stages = (meta.stages as string[]) ?? ["full"];
+  const targetLabel = (meta.target_label as string) ?? "";
 
-  const text = formatEnrichmentStart(job.job_type, orgCount, stages);
+  const text = formatEnrichmentStart(job.job_type, total, stages, targetLabel, job.id);
   const messageId = await sendMessage(text);
 
   if (messageId) {
     batchTracker.track(job.id, messageId, {
-      total: orgCount,
+      total,
       jobType: job.job_type,
       createdAt: job.created_at,
       stages,
@@ -235,7 +237,7 @@ async function handleJobLogUpdate(job: JobLog): Promise<void> {
 
   if (job.status === "completed" || job.status === "failed") {
     const meta = (job.metadata ?? {}) as Record<string, unknown>;
-    const msg = formatEnrichmentComplete(job.job_type, meta);
+    const msg = formatEnrichmentComplete(job.job_type, meta, job.id);
     await editMessage(messageId, msg);
     batchTracker.complete(job.id);
     return;
@@ -286,11 +288,37 @@ async function pollBatchProgress(): Promise<void> {
 
     // Deduplicate by target_id — keep terminal status over "processing"
     const byTarget = new Map<string, string>();
+    // Aggregate per-stage completion and metrics
+    const stageComplete = new Map<string, number>(); // stage -> count of orgs completed
+    let icpScored = 0;
+    let signalsCreated = 0;
+    let peopleFound = 0;
+
     for (const child of children) {
       if (!child.target_id) continue;
+      const childMeta = (child.metadata ?? {}) as Record<string, unknown>;
+
+      // Track overall completion per target
       const existing = byTarget.get(child.target_id);
       if (!existing || (existing === "processing" && child.status !== "processing")) {
         byTarget.set(child.target_id, child.status);
+      }
+
+      // Track per-stage completion
+      if (child.status === "completed") {
+        const stage = child.job_type.replace("enrichment_", "");
+        stageComplete.set(stage, (stageComplete.get(stage) ?? 0) + 1);
+
+        // Aggregate metrics from completed stages
+        if (child.job_type === "enrichment_gemini" && childMeta.icp_score != null) {
+          icpScored++;
+        }
+        if (child.job_type === "enrichment_gemini") {
+          signalsCreated += (childMeta.signals_created as number) ?? 0;
+        }
+        if (child.job_type === "enrichment_people_finder") {
+          peopleFound += (childMeta.found as number) ?? (childMeta.people_found as number) ?? 0;
+        }
       }
     }
 
@@ -303,12 +331,29 @@ async function pollBatchProgress(): Promise<void> {
     // Only edit if progress actually changed and throttle is satisfied
     if (!batchTracker.shouldUpdate(jobId, completed + failed)) continue;
 
+    // Determine which stages are fully complete (all orgs done for that stage)
+    const completedStages = new Set<string>();
+    const doneCount = completed + failed;
+    for (const [stage, count] of stageComplete) {
+      if (count >= doneCount && doneCount > 0) completedStages.add(stage);
+    }
+
+    // Fetch parent job metadata for target_label
+    const { data: parentJob } = await sb
+      .from("job_log")
+      .select("metadata")
+      .eq("id", jobId)
+      .single();
+    const parentMeta = (parentJob?.metadata ?? {}) as Record<string, unknown>;
+    const targetLabel = (parentMeta.target_label as string) ?? "";
+
     const msg = formatEnrichmentProgress(
       total,
-      completed,
-      failed,
       trackedJob.stages,
-      isOrgJob
+      targetLabel,
+      jobId,
+      isOrgJob,
+      { completed, failed, completedStages, icpScored, signalsCreated, peopleFound }
     );
     await editMessage(trackedJob.messageId, msg);
   }

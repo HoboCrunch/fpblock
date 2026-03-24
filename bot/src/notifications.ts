@@ -166,64 +166,104 @@ export function formatBatchComplete(
 
 // ─── Enrichment-specific formatters ───
 
-function stageLabels(stages: string[]): string[] {
-  return stages.map((s) => {
-    switch (s) {
-      case "full": return "Full Pipeline";
-      case "apollo": return "Apollo";
-      case "perplexity": return "Perplexity";
-      case "gemini": return "Gemini";
-      case "people_finder": return "People Finder";
-      default: return s;
-    }
-  });
+const APP_URL = () => process.env.APP_URL ?? "https://gofpblock.com";
+
+function stageCheck(label: string, done: boolean): string {
+  return done ? `✅ ${label}` : `☐ ${label}`;
 }
 
-export function formatEnrichmentStart(jobType: string, total: number, stages: string[]): string {
+function stageChecklist(stages: string[], completedStages?: Set<string>): string {
+  const done = completedStages ?? new Set<string>();
+  const labels: [string, string][] = [];
+  const hasFullPipeline = stages.includes("full");
+  if (hasFullPipeline || stages.includes("apollo")) labels.push(["apollo", "Firmographics"]);
+  if (hasFullPipeline || stages.includes("perplexity")) labels.push(["perplexity", "Research"]);
+  if (hasFullPipeline || stages.includes("gemini")) labels.push(["gemini", "ICP Score"]);
+  if (stages.includes("people_finder")) labels.push(["people_finder", "People Finder"]);
+  return labels.map(([key, label]) => stageCheck(label, done.has(key))).join("  ");
+}
+
+function formatDuration(ms: number): string | null {
+  if (ms <= 0) return null;
+  if (ms >= 60000) return `${Math.floor(ms / 60000)}m ${Math.round((ms % 60000) / 1000)}s`;
+  return `${(ms / 1000).toFixed(0)}s`;
+}
+
+export interface EnrichmentProgressStats {
+  completed: number;
+  failed: number;
+  completedStages: Set<string>;
+  icpScored: number;
+  signalsCreated: number;
+  peopleFound: number;
+}
+
+export function formatEnrichmentStart(
+  jobType: string,
+  total: number,
+  stages: string[],
+  targetLabel: string,
+  jobId: string
+): string {
   const isOrg = jobType.includes("organization");
-  const entity = isOrg ? "organization" : "person";
-  const stagesStr = stageLabels(stages).join(", ");
+  const entity = isOrg ? "companies" : "persons";
+  const link = `<a href="${APP_URL()}/admin/enrichment/${jobId}">View job</a>`;
+
   return [
-    `⏳ <b>Enrichment started</b>`,
-    `${total} ${entity}${total !== 1 ? "s" : ""} queued`,
-    `Stages: ${stagesStr}`,
+    `⏳ <b>${isOrg ? "Org" : "Person"} Enrichment</b>  ${link}`,
+    ``,
+    `${total} ${entity} · ${targetLabel}`,
+    stageChecklist(stages),
   ].join("\n");
 }
 
 export function formatEnrichmentProgress(
   total: number,
-  completed: number,
-  failed: number,
   stages: string[],
-  isOrg: boolean
+  targetLabel: string,
+  jobId: string,
+  isOrg: boolean,
+  stats: EnrichmentProgressStats
 ): string {
-  const done = completed + failed;
+  const done = stats.completed + stats.failed;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const bar = "█".repeat(Math.floor(pct / 10)) + "░".repeat(10 - Math.floor(pct / 10));
-  const entity = isOrg ? "org" : "person";
+  const entity = isOrg ? "companies" : "persons";
+  const link = `<a href="${APP_URL()}/admin/enrichment/${jobId}">View job</a>`;
 
   const lines = [
-    `⏳ <b>Enrichment in progress</b>`,
-    `${bar} ${pct}%`,
-    `${completed} of ${total} ${entity}s enriched`,
+    `⏳ <b>${isOrg ? "Org" : "Person"} Enrichment</b>  ${link}`,
+    ``,
+    `${total} ${entity} · ${targetLabel}`,
+    stageChecklist(stages, stats.completedStages),
+    ``,
+    `${bar} ${pct}%  (${done}/${total})`,
   ];
-  if (failed > 0) lines.push(`${failed} failed`);
+
+  const metrics: string[] = [];
+  if (stats.completed > 0) metrics.push(`${stats.completed} enriched`);
+  if (stats.failed > 0) metrics.push(`${stats.failed} failed`);
+  if (metrics.length > 0) lines.push(metrics.join(" · "));
+
+  const details: string[] = [];
+  if (stats.icpScored > 0) details.push(`${stats.icpScored} ICP scored`);
+  if (stats.signalsCreated > 0) details.push(`${stats.signalsCreated} signals`);
+  if (stats.peopleFound > 0) details.push(`${stats.peopleFound} people found`);
+  if (details.length > 0) lines.push(details.join(" · "));
+
   return lines.join("\n");
 }
 
 export function formatEnrichmentComplete(
   jobType: string,
-  meta: Record<string, unknown>
+  meta: Record<string, unknown>,
+  jobId: string
 ): string {
   const isOrg = jobType.includes("organization");
   const durationMs = (meta.duration_ms as number) ?? 0;
   const error = (meta.error as string) ?? null;
-
-  const duration = durationMs > 60000
-    ? `${Math.floor(durationMs / 60000)}m ${Math.round((durationMs % 60000) / 1000)}s`
-    : durationMs > 0
-      ? `${(durationMs / 1000).toFixed(0)}s`
-      : null;
+  const duration = formatDuration(durationMs);
+  const link = `<a href="${APP_URL()}/admin/enrichment/${jobId}">View results</a>`;
 
   const lines: string[] = [];
 
@@ -233,36 +273,49 @@ export function formatEnrichmentComplete(
     const failed = (meta.orgs_failed as number) ?? 0;
     const signals = (meta.signals_created as number) ?? 0;
     const people = (meta.people_found as number) ?? 0;
+    const peopleCreated = (meta.people_created as number) ?? 0;
+    const peopleMerged = (meta.people_merged as number) ?? 0;
+    const stages = (meta.stages as string[]) ?? ["full"];
+    const targetLabel = (meta.target_label as string) ?? "";
 
-    if (error || failed > enriched) {
-      lines.push(`❌ <b>Enrichment failed</b>`);
-      if (error) lines.push(error);
-    } else {
-      lines.push(`✅ <b>Enrichment complete</b>`);
-    }
+    const icon = (error || failed > enriched) ? "❌" : "✅";
+    lines.push(`${icon} <b>Org Enrichment ${error ? "Failed" : "Complete"}</b>  ${link}`);
+    if (error) lines.push(`⚠️ ${error}`);
+    lines.push(``);
+    lines.push(`${total} companies · ${targetLabel}`);
+    // All stages considered complete for final message
+    const allStages = new Set(["apollo", "perplexity", "gemini", "people_finder"]);
+    lines.push(stageChecklist(stages, allStages));
+    lines.push(``);
 
-    lines.push(`${enriched} of ${total} orgs enriched`);
-    if (failed > 0) lines.push(`${failed} failed`);
+    lines.push(`<b>Results</b>`);
+    lines.push(`${enriched} enriched · ${failed} failed`);
     if (signals > 0) lines.push(`${signals} signals created`);
-    if (people > 0) lines.push(`${people} people found`);
+    if (people > 0) {
+      let peopleLine = `${people} people found`;
+      if (peopleCreated > 0) peopleLine += ` · ${peopleCreated} new`;
+      if (peopleMerged > 0) peopleLine += ` · ${peopleMerged} merged`;
+      lines.push(peopleLine);
+    }
   } else {
     const total = (meta.person_count as number) ?? 0;
     const enriched = (meta.persons_enriched as number) ?? 0;
     const failed = (meta.persons_failed as number) ?? 0;
     const orgsCreated = (meta.orgs_created as number) ?? 0;
+    const targetLabel = (meta.target_label as string) ?? "";
 
-    if (error || failed > enriched) {
-      lines.push(`❌ <b>Enrichment failed</b>`);
-      if (error) lines.push(error);
-    } else {
-      lines.push(`✅ <b>Enrichment complete</b>`);
-    }
+    const icon = (error || failed > enriched) ? "❌" : "✅";
+    lines.push(`${icon} <b>Person Enrichment ${error ? "Failed" : "Complete"}</b>  ${link}`);
+    if (error) lines.push(`⚠️ ${error}`);
+    lines.push(``);
+    lines.push(`${total} persons · ${targetLabel}`);
+    lines.push(``);
 
-    lines.push(`${enriched} of ${total} persons enriched`);
-    if (failed > 0) lines.push(`${failed} failed`);
-    if (orgsCreated > 0) lines.push(`${orgsCreated} new orgs created`);
+    lines.push(`<b>Results</b>`);
+    lines.push(`${enriched} enriched · ${failed} failed`);
+    if (orgsCreated > 0) lines.push(`${orgsCreated} new orgs linked`);
   }
 
-  if (duration) lines.push(`${duration}`);
+  if (duration) lines.push(`⏱ ${duration}`);
   return lines.join("\n");
 }

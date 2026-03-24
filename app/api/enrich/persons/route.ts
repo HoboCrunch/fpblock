@@ -131,6 +131,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         person_count: personIds.length,
         person_ids: personIds.length <= 500 ? personIds : null,
+        target_label: inputPersonIds ? `${personIds.length} selected` : eventId ? "from event" : organizationId ? "from organization" : failedOnly ? "retry failed" : sourceFilter ? `source: ${sourceFilter}` : "unenriched",
         event_id: eventId ?? null,
         organization_id: organizationId ?? null,
       },

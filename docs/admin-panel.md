@@ -292,7 +292,7 @@ Five-stage pipeline with individual or combined execution:
 - **Gemini** (Synthesis + ICP Score) — combines Apollo + Perplexity, reads ICP criteria from company_context DB, outputs score 0-100
 - **People Finder** (Find Contacts at Org) — searches Apollo for people, enriches for contact details, deduplicates against existing persons
 
-People Finder can be combined with Full Pipeline or individual stages (additive toggle).
+All stages are independently toggleable — Full Pipeline can be deselected to run only People Finder (or any subset). Run button disables when no stages are selected. People Finder can be combined with any other stages (additive toggle). Batch concurrency: 3 orgs process in parallel.
 
 **People Finder Settings** (shown when People Finder is selected):
 - Contacts per company (1-25, default 5)

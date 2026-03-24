@@ -140,6 +140,7 @@ export async function POST(request: NextRequest) {
         stages,
         org_count: orgIds.length,
         organization_ids: orgIds.length <= 500 ? orgIds : null,
+        target_label: organizationIds ? `${orgIds.length} selected` : eventId ? "from event" : initiativeId ? "from initiative" : failedIncomplete ? "retry failed/incomplete" : icpBelow != null ? `ICP below ${icpBelow}` : "unenriched",
         event_id: eventId ?? null,
         initiative_id: initiativeId ?? null,
         icp_below: icpBelow ?? null,
