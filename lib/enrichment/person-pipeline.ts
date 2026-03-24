@@ -691,6 +691,7 @@ export async function runBatchPersonEnrichment(
   personIds: string[],
   options?: {
     onProgress?: (completed: number, total: number, personName: string) => void;
+    parentJobId?: string;
   }
 ): Promise<BatchPersonEnrichmentResult> {
   const total = personIds.length;
@@ -745,6 +746,20 @@ export async function runBatchPersonEnrichment(
 
       completed++;
       options?.onProgress?.(completed, total, "unknown");
+    }
+
+    // Check if job was cancelled between persons
+    if (options?.parentJobId) {
+      const { data: jobCheck } = await supabase
+        .from("job_log")
+        .select("status")
+        .eq("id", options.parentJobId)
+        .single();
+
+      if (jobCheck?.status === "cancelled") {
+        console.log(`[person-pipeline] Batch cancelled after ${completed}/${total} persons`);
+        break;
+      }
     }
   }
 

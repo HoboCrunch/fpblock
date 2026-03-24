@@ -1,157 +1,35 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { GlassCard } from "@/components/ui/glass-card";
-import { GlassSelect } from "@/components/ui/glass-select";
-import { Badge } from "@/components/ui/badge";
-import { Tabs } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
-import {
-  Sparkles,
-  Play,
-  Loader2,
-  Building2,
-  User,
-  Search,
-  Zap,
-  Brain,
-  FlaskConical,
-  CheckCircle2,
-  Mail,
-  Linkedin,
-  Twitter,
-  Phone,
-  Globe,
-  ChevronDown,
-  ChevronRight,
-  ArrowRight,
-  AlertCircle,
-  X,
-  TrendingUp,
-  Users,
-  DollarSign,
-  Briefcase,
-} from "lucide-react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
-import type { Event, Initiative, JobLog, Organization, Person } from "@/lib/types/database";
+import { GlassCard } from "@/components/ui/glass-card";
+import { cn } from "@/lib/utils";
+import { Settings2 } from "lucide-react";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type EnrichField = "email" | "linkedin" | "twitter" | "phone";
-type OrgStage = "apollo" | "perplexity" | "gemini" | "full" | "people_finder";
-const SENIORITY_OPTIONS = [
-  { value: "owner", label: "Owner" },
-  { value: "founder", label: "Founder" },
-  { value: "c_suite", label: "C-Suite" },
-  { value: "partner", label: "Partner" },
-  { value: "vp", label: "VP" },
-  { value: "director", label: "Director" },
-  { value: "manager", label: "Manager" },
-  { value: "senior", label: "Senior" },
-  { value: "entry", label: "Entry" },
-];
-
-const DEPARTMENT_OPTIONS = [
-  { value: "executive", label: "Executive" },
-  { value: "engineering", label: "Engineering" },
-  { value: "sales", label: "Sales" },
-  { value: "marketing", label: "Marketing" },
-  { value: "finance", label: "Finance" },
-  { value: "operations", label: "Operations" },
-  { value: "product", label: "Product" },
-  { value: "legal", label: "Legal" },
-  { value: "human_resources", label: "HR" },
-];
-
-type OrgTarget =
-  | "unenriched"
-  | "failed_incomplete"
-  | "icp_below"
-  | "event"
-  | "initiative"
-  | "selected"
-  | "pick";
-
-interface OrgEnrichResult {
-  orgId: string;
-  orgName: string;
-  success: boolean;
-  error: string | null;
-  icp_score: number | null;
-  signalsCreated: number;
-}
-
-interface OrgEnrichResponse {
-  jobId?: string;
-  status?: string;
-  orgs_processed: number;
-  orgs_enriched: number;
-  orgs_failed: number;
-  signals_created: number;
-  results?: OrgEnrichResult[];
-  error?: string;
-  message?: string;
-  people_found?: number;
-  people_created?: number;
-  people_merged?: number;
-}
-
-interface PreviewPerson {
-  id: string;
-  full_name: string;
-  email: string | null;
-  linkedin_url: string | null;
-  twitter_handle: string | null;
-  phone: string | null;
-  primary_org?: string | null;
-}
-
-interface PreviewOrg {
-  id: string;
-  name: string;
-  icp_score: number | null;
-  category: string | null;
-  website: string | null;
-  enrichment_status?: string;
-  enrichment_stages?: Record<string, { status?: string; error?: string; at?: string; [key: string]: unknown }>;
-  last_enriched_at?: string | null;
-}
-
-interface ProgressEntry {
-  id: string;
-  target_id: string | null;
-  org_name: string | null;
-  status: string;
-  icp_score: number | null;
-  job_type: string;
-  created_at: string;
-  error: string | null;
-  stage: string | null;  // NEW: current pipeline stage
-}
-
-interface OrgStageStatus {
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  icp_score?: number | null;
-  found?: number;
-}
-
-interface OrgProgress {
-  target_id: string;
-  org_name: string | null;
-  overall_status: string;
-  icp_score: number | null;
-  created_at: string;
-  stages: {
-    apollo: OrgStageStatus | null;
-    perplexity: OrgStageStatus | null;
-    gemini: OrgStageStatus | null;
-    people_finder: OrgStageStatus | null;
-  };
-}
+import {
+  CenterPanel,
+  type CenterState,
+} from "./components/center-panel";
+import {
+  ConfigPanel,
+  type OrgStage,
+  type EnrichField,
+  type TargetType,
+} from "./components/config-panel";
+import {
+  JobHistory,
+  type JobHistoryJob,
+} from "./components/job-history";
+import type { FilterState } from "./components/filter-bar";
+import type { OrgRow, PersonRow, OrgProgress } from "./components/entity-table";
+import type { SummaryStripProps } from "./components/summary-strip";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -164,3001 +42,134 @@ function useSupabase() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Preview List Component (shared)
-// ---------------------------------------------------------------------------
-
-function PreviewPersonList({ persons, isLoading, totalCount }: { persons: PreviewPerson[]; isLoading: boolean; totalCount?: number }) {
-  if (isLoading) {
-    return (
-      <div className="mt-4 p-4 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-        <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading preview...
-        </div>
-      </div>
-    );
-  }
-
-  if (persons.length === 0) return null;
-
-  return (
-    <div className="mt-4">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-[var(--text-muted)]">Preview</span>
-        <span className="text-xs font-medium text-[var(--accent-orange)]">
-          {(totalCount ?? persons.length)} person{(totalCount ?? persons.length) !== 1 ? "s" : ""} will be enriched{(totalCount ?? 0) > persons.length ? ` (showing ${persons.length})` : ""}
-        </span>
-      </div>
-      <div className="rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
-        <div className="max-h-[300px] overflow-y-auto">
-          <table className="w-full text-xs">
-            <thead className="sticky top-0 bg-[var(--glass-bg)] z-10">
-              <tr className="border-b border-[var(--glass-border)] text-left">
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Name</th>
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Organization</th>
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center">
-                  <Mail className="h-3 w-3 inline" />
-                </th>
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center">
-                  <Linkedin className="h-3 w-3 inline" />
-                </th>
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center">
-                  <Twitter className="h-3 w-3 inline" />
-                </th>
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center">
-                  <Phone className="h-3 w-3 inline" />
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {persons.map((p) => (
-                <tr key={p.id} className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02]">
-                  <td className="px-3 py-1.5 text-white truncate max-w-[180px]">{p.full_name}</td>
-                  <td className="px-3 py-1.5 text-[var(--text-muted)] truncate max-w-[140px]">
-                    {p.primary_org ?? "\u2014"}
-                  </td>
-                  <td className="px-3 py-1.5 text-center">
-                    {p.email ? (
-                      <CheckCircle2 className="h-3 w-3 text-green-400 inline" />
-                    ) : (
-                      <span className="text-[var(--text-muted)]">\u2014</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-1.5 text-center">
-                    {p.linkedin_url ? (
-                      <CheckCircle2 className="h-3 w-3 text-green-400 inline" />
-                    ) : (
-                      <span className="text-[var(--text-muted)]">\u2014</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-1.5 text-center">
-                    {p.twitter_handle ? (
-                      <CheckCircle2 className="h-3 w-3 text-green-400 inline" />
-                    ) : (
-                      <span className="text-[var(--text-muted)]">\u2014</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-1.5 text-center">
-                    {p.phone ? (
-                      <CheckCircle2 className="h-3 w-3 text-green-400 inline" />
-                    ) : (
-                      <span className="text-[var(--text-muted)]">\u2014</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PreviewOrgList({ orgs, isLoading, totalCount }: { orgs: PreviewOrg[]; isLoading: boolean; totalCount?: number }) {
-  if (isLoading) {
-    return (
-      <div className="mt-4 p-4 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-        <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading preview...
-        </div>
-      </div>
-    );
-  }
-
-  if (orgs.length === 0) return null;
-
-  return (
-    <div className="mt-4">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-[var(--text-muted)]">Preview</span>
-        <span className="text-xs font-medium text-[var(--accent-orange)]">
-          {(totalCount ?? orgs.length)} organization{(totalCount ?? orgs.length) !== 1 ? "s" : ""} will be enriched{(totalCount ?? 0) > orgs.length ? ` (showing ${orgs.length})` : ""}
-        </span>
-      </div>
-      <div className="rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
-        <div className="max-h-[300px] overflow-y-auto">
-          <table className="w-full text-xs">
-            <thead className="sticky top-0 bg-[var(--glass-bg)] z-10">
-              <tr className="border-b border-[var(--glass-border)] text-left">
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Name</th>
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">ICP Score</th>
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Category</th>
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Website</th>
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orgs.map((o) => (
-                <tr key={o.id} className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02]">
-                  <td className="px-3 py-1.5 text-white truncate max-w-[200px]">{o.name}</td>
-                  <td className="px-3 py-1.5">
-                    {o.icp_score != null ? (
-                      <span
-                        className={cn(
-                          "font-semibold",
-                          o.icp_score >= 75
-                            ? "text-[var(--accent-orange)]"
-                            : o.icp_score >= 50
-                              ? "text-yellow-400"
-                              : "text-[var(--text-muted)]"
-                        )}
-                      >
-                        {o.icp_score}
-                      </span>
-                    ) : (
-                      <span className="text-[var(--text-muted)]">\u2014</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-1.5 text-[var(--text-muted)] truncate max-w-[120px]">
-                    {typeof o.category === "string" ? o.category : "\u2014"}
-                  </td>
-                  <td className="px-3 py-1.5 text-[var(--text-muted)] truncate max-w-[160px]">
-                    {o.website ? (
-                      <span className="flex items-center gap-1">
-                        <Globe className="h-3 w-3 shrink-0" />
-                        {o.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
-                      </span>
-                    ) : (
-                      "\u2014"
-                    )}
-                  </td>
-                  <td className="px-3 py-1.5">
-                    {o.enrichment_status === 'complete' ? (
-                      <CheckCircle2 className="h-3 w-3 text-green-400 inline" />
-                    ) : o.enrichment_status === 'failed' ? (
-                      <Badge variant="failed" className="text-[9px]">failed</Badge>
-                    ) : o.enrichment_status === 'partial' ? (
-                      <Badge variant="processing" className="text-[9px]">partial</Badge>
-                    ) : o.enrichment_status === 'in_progress' ? (
-                      <Loader2 className="h-3 w-3 text-orange-400 animate-spin inline" />
-                    ) : (
-                      <span className="text-[var(--text-muted)]">{"\u2014"}</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PreviewOrgFailedList({ orgs, isLoading, totalCount }: { orgs: PreviewOrg[]; isLoading: boolean; totalCount?: number }) {
-  if (isLoading) {
-    return (
-      <div className="mt-4 p-4 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-        <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading preview...
-        </div>
-      </div>
-    );
-  }
-
-  if (orgs.length === 0) return null;
-
-  return (
-    <div className="mt-4">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-[var(--text-muted)]">Retry Preview</span>
-        <span className="text-xs font-medium text-[var(--accent-orange)]">
-          {(totalCount ?? orgs.length)} organization{(totalCount ?? orgs.length) !== 1 ? "s" : ""} to retry
-        </span>
-      </div>
-      <div className="rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
-        <div className="max-h-[400px] overflow-y-auto">
-          <table className="w-full text-xs">
-            <thead className="sticky top-0 bg-[var(--glass-bg)] z-10">
-              <tr className="border-b border-[var(--glass-border)] text-left">
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Organization</th>
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Status</th>
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Completed Stages</th>
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Failed Stage</th>
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Last Attempt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orgs.map((o) => {
-                const stages = (o.enrichment_stages ?? {}) as Record<string, { status?: string; error?: string; at?: string }>;
-                const stageEntries = Object.entries(stages).filter(([_, v]) => v && typeof v === 'object');
-                const completedStages = stageEntries.filter(([_, v]) => v.status === 'completed');
-                const failedStage = stageEntries.find(([_, v]) => v.status === 'failed');
-
-                return (
-                  <tr key={o.id} className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02]">
-                    <td className="px-3 py-2 text-white truncate max-w-[180px]">{o.name}</td>
-                    <td className="px-3 py-2">
-                      <span className={cn(
-                        "text-[10px] px-2 py-0.5 rounded-full border font-medium",
-                        o.enrichment_status === 'failed'
-                          ? "bg-red-500/10 text-red-400 border-red-500/20"
-                          : "bg-orange-500/10 text-orange-400 border-orange-500/20"
-                      )}>
-                        {o.enrichment_status}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      {completedStages.length > 0 ? (
-                        <div className="flex items-center gap-1">
-                          {completedStages.map(([name]) => (
-                            <span key={name} className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20">
-                              {name === 'people_finder' ? 'people' : name}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-[var(--text-muted)]">none</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">
-                      {failedStage ? (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20" title={failedStage[1].error ?? ''}>
-                          {failedStage[0] === 'people_finder' ? 'people' : failedStage[0]}
-                        </span>
-                      ) : (
-                        <span className="text-[var(--text-muted)]">{"\u2014"}</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-[var(--text-muted)] tabular-nums">
-                      {o.last_enriched_at
-                        ? new Date(o.last_enriched_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                        : "\u2014"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
+const EMPTY_FILTERS: FilterState = {
+  search: "",
+  event: "",
+  initiative: "",
+  icpMin: "",
+  icpMax: "",
+  status: "",
+  categoryOrSource: "",
+};
 
 // ---------------------------------------------------------------------------
-// Progress Bar + Live Status Component
-// ---------------------------------------------------------------------------
-
-function ProgressBar({ completed, total }: { completed: number; total: number }) {
-  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-  return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-[var(--text-muted)]">
-          {completed} / {total} processed
-        </span>
-        <span className="text-xs font-medium text-[var(--accent-orange)]">{pct}%</span>
-      </div>
-      <div className="h-1.5 w-full rounded-full bg-white/[0.06] overflow-hidden">
-        <div
-          className="h-full rounded-full bg-[var(--accent-orange)] transition-all duration-500 ease-out"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function LiveStatusList({
-  entries,
-  entityType,
-}: {
-  entries: ProgressEntry[];
-  entityType: "organization" | "person";
-}) {
-  if (entries.length === 0) return null;
-
-  return (
-    <div className="mt-3 rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
-      <div className="max-h-[240px] overflow-y-auto">
-        <table className="w-full text-xs">
-          <thead className="sticky top-0 bg-[var(--glass-bg)] z-10">
-            <tr className="border-b border-[var(--glass-border)] text-left">
-              <th className="px-3 py-2 text-[var(--text-muted)] font-medium">
-                {entityType === "organization" ? "Organization" : "Person"}
-              </th>
-              <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Stage</th>
-              {entityType === "organization" && (
-                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">ICP</th>
-              )}
-              <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((entry, idx) => (
-              <tr
-                key={entry.id}
-                className={cn(
-                  "border-b border-white/[0.03] last:border-0",
-                  idx === 0 && "animate-[fadeIn_0.3s_ease-in-out]"
-                )}
-              >
-                <td className="px-3 py-1.5 text-white truncate max-w-[200px]">
-                  {entry.org_name ?? entry.target_id?.slice(0, 8) ?? "\u2014"}
-                </td>
-                <td className="px-3 py-1.5 text-[var(--text-muted)]">
-                  {entry.stage || entry.job_type.replace("enrichment_", "")}
-                </td>
-                {entityType === "organization" && (
-                  <td className="px-3 py-1.5">
-                    {entry.icp_score != null ? (
-                      <span
-                        className={cn(
-                          "font-semibold",
-                          entry.icp_score >= 75
-                            ? "text-[var(--accent-orange)]"
-                            : entry.icp_score >= 50
-                              ? "text-yellow-400"
-                              : "text-[var(--text-muted)]"
-                        )}
-                      >
-                        {entry.icp_score}
-                      </span>
-                    ) : (
-                      <span className="text-[var(--text-muted)]">\u2014</span>
-                    )}
-                  </td>
-                )}
-                <td className="px-3 py-1.5">
-                  <Badge
-                    variant={
-                      entry.status === "completed"
-                        ? "sent"
-                        : entry.status === "failed"
-                          ? "failed"
-                          : "processing"
-                    }
-                    className="text-[10px]"
-                  >
-                    {entry.status}
-                  </Badge>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Org Live Status List (per-stage icon columns)
-// ---------------------------------------------------------------------------
-
-function OrgLiveStatusList({ entries }: { entries: OrgProgress[] }) {
-  // Track which entries are new for animation
-  const seenIdsRef = useRef<Set<string>>(new Set());
-  const newIds = useMemo(() => {
-    const fresh = new Set<string>();
-    for (const e of entries) {
-      if (!seenIdsRef.current.has(e.target_id)) {
-        fresh.add(e.target_id);
-      }
-    }
-    // Update seen set after computing new
-    for (const e of entries) seenIdsRef.current.add(e.target_id);
-    return fresh;
-  }, [entries]);
-
-  if (entries.length === 0) return null;
-
-  const StageIcon = ({ stage }: { stage: OrgStageStatus | null }) => {
-    if (!stage) return <span className="text-white/10">○</span>;
-    switch (stage.status) {
-      case "processing":
-        return <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--accent-orange)]" />;
-      case "completed":
-        if (stage.found !== undefined && stage.found === 0) {
-          return <CheckCircle2 className="h-3.5 w-3.5 text-[var(--text-muted)]" />;
-        }
-        return <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />;
-      case "failed":
-        return <AlertCircle className="h-3.5 w-3.5 text-red-400" />;
-      case "pending":
-        return <span className="text-white/20">◦</span>;
-      default:
-        return <span className="text-white/10">○</span>;
-    }
-  };
-
-  return (
-    <div className="mt-3 rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
-      <div className="max-h-[280px] overflow-y-auto">
-        <table className="w-full text-xs">
-          <thead className="sticky top-0 bg-[var(--glass-bg)] z-10">
-            <tr className="border-b border-[var(--glass-border)] text-left">
-              <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Organization</th>
-              <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center w-8" title="Apollo">
-                <Search className="h-3 w-3 inline" />
-              </th>
-              <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center w-8" title="Perplexity">
-                <FlaskConical className="h-3 w-3 inline" />
-              </th>
-              <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center w-8" title="Gemini">
-                <Brain className="h-3 w-3 inline" />
-              </th>
-              <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center w-8" title="People Finder">
-                <Users className="h-3 w-3 inline" />
-              </th>
-              <th className="px-3 py-2 text-[var(--text-muted)] font-medium">ICP</th>
-              <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-right">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((entry, idx) => (
-              <tr
-                key={entry.target_id}
-                className={cn(
-                  "border-b border-white/[0.03] last:border-0 transition-all duration-300 ease-out",
-                  newIds.has(entry.target_id) && "animate-[slideIn_0.35s_ease-out]"
-                )}
-              >
-                <td className="px-3 py-1.5 text-white truncate max-w-[200px]">
-                  {entry.org_name ?? entry.target_id?.slice(0, 8) ?? "\u2014"}
-                </td>
-                <td className="px-3 py-1.5 text-center"><StageIcon stage={entry.stages.apollo} /></td>
-                <td className="px-3 py-1.5 text-center"><StageIcon stage={entry.stages.perplexity} /></td>
-                <td className="px-3 py-1.5 text-center"><StageIcon stage={entry.stages.gemini} /></td>
-                <td className="px-3 py-1.5 text-center"><StageIcon stage={entry.stages.people_finder} /></td>
-                <td className="px-3 py-1.5">
-                  {entry.icp_score != null ? (
-                    <span
-                      className={cn(
-                        "font-semibold",
-                        entry.icp_score >= 75
-                          ? "text-[var(--accent-orange)]"
-                          : entry.icp_score >= 50
-                            ? "text-yellow-400"
-                            : "text-[var(--text-muted)]"
-                      )}
-                    >
-                      {entry.icp_score}
-                    </span>
-                  ) : (
-                    <span className="text-[var(--text-muted)]">{"\u2014"}</span>
-                  )}
-                </td>
-                <td className="px-3 py-1.5 text-right">
-                  <Badge
-                    variant={
-                      entry.overall_status === "completed"
-                        ? "sent"
-                        : entry.overall_status === "failed"
-                          ? "failed"
-                          : "processing"
-                    }
-                    className="text-[10px]"
-                  >
-                    {entry.overall_status}
-                  </Badge>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Pick-from-list Panel: Persons
-// ---------------------------------------------------------------------------
-
-function PickPersonPanel({
-  selectedIds,
-  onSelectionChange,
-}: {
-  selectedIds: Set<string>;
-  onSelectionChange: (ids: Set<string>) => void;
-}) {
-  const [search, setSearch] = useState("");
-  const [allPersons, setAllPersons] = useState<
-    { id: string; full_name: string; email: string | null; primary_org: string | null }[]
-  >([]);
-  const [loading, setLoading] = useState(true);
-
-  // Load persons once
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const supabase = useSupabase();
-      // Fetch up to 2000 from the view; search is done client-side
-      const { data } = await supabase
-        .from("persons_with_icp")
-        .select("id, full_name, email, primary_org_name")
-        .order("full_name")
-        .limit(2000);
-
-      if (data) {
-        setAllPersons(
-          (data as { id: string; full_name: string; email: string | null; primary_org_name: string | null }[]).map((p) => ({
-            id: p.id,
-            full_name: p.full_name,
-            email: p.email,
-            primary_org: p.primary_org_name,
-          }))
-        );
-      }
-      setLoading(false);
-    })();
-  }, []);
-
-  const filtered = useMemo(() => {
-    if (!search.trim()) return allPersons;
-    const q = search.toLowerCase();
-    return allPersons.filter(
-      (p) =>
-        p.full_name.toLowerCase().includes(q) ||
-        (p.email && p.email.toLowerCase().includes(q))
-    );
-  }, [allPersons, search]);
-
-  const toggleOne = (id: string) => {
-    const next = new Set(selectedIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    onSelectionChange(next);
-  };
-
-  const selectAllVisible = () => {
-    const next = new Set(selectedIds);
-    for (const p of filtered) next.add(p.id);
-    onSelectionChange(next);
-  };
-
-  const deselectAllVisible = () => {
-    const visibleIds = new Set(filtered.map((p) => p.id));
-    const next = new Set(selectedIds);
-    for (const id of visibleIds) next.delete(id);
-    onSelectionChange(next);
-  };
-
-  if (loading) {
-    return (
-      <div className="mt-3 p-4 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-        <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading persons...
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-3 rounded-xl glass p-4">
-      {/* Search + actions */}
-      <div className="flex items-center gap-3 mb-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-muted)]" />
-          <input
-            type="text"
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className={cn(
-              "w-full rounded-lg pl-8 pr-3 py-1.5 text-xs",
-              "bg-[var(--glass-bg)] border border-[var(--glass-border)]",
-              "text-white placeholder:text-[var(--text-muted)]",
-              "focus:outline-none focus:ring-2 focus:ring-[var(--accent-orange)]/40 focus:border-[var(--accent-orange)]/50"
-            )}
-          />
-        </div>
-        <button
-          onClick={selectAllVisible}
-          className="text-[10px] font-medium text-[var(--accent-orange)] hover:text-[var(--accent-orange)]/80 whitespace-nowrap"
-        >
-          Select all
-        </button>
-        <button
-          onClick={deselectAllVisible}
-          className="text-[10px] font-medium text-[var(--text-muted)] hover:text-white whitespace-nowrap"
-        >
-          Deselect all
-        </button>
-      </div>
-
-      {/* Selection count */}
-      <div className="text-xs text-[var(--text-muted)] mb-2">
-        <span className="text-[var(--accent-orange)] font-medium">{selectedIds.size}</span>
-        {" "}of {allPersons.length} selected
-      </div>
-
-      {/* Scrollable list */}
-      <div className="max-h-[400px] overflow-y-auto rounded-lg bg-white/[0.02] border border-white/[0.06]">
-        {filtered.length === 0 ? (
-          <div className="p-4 text-xs text-[var(--text-muted)] text-center">No persons found</div>
-        ) : (
-          filtered.map((p) => (
-            <label
-              key={p.id}
-              className="flex items-center gap-3 px-3 py-1.5 hover:bg-white/[0.04] cursor-pointer transition-colors duration-100 border-b border-white/[0.03] last:border-0"
-            >
-              <input
-                type="checkbox"
-                checked={selectedIds.has(p.id)}
-                onChange={() => toggleOne(p.id)}
-                className="accent-[var(--accent-orange)] h-3.5 w-3.5 shrink-0"
-              />
-              <span className="text-xs text-white truncate min-w-[140px] max-w-[200px]">{p.full_name}</span>
-              <span className="text-xs text-[var(--text-muted)] truncate max-w-[160px]">{p.primary_org ?? ""}</span>
-              <span className="text-xs text-[var(--text-muted)] truncate max-w-[180px] ml-auto">{p.email ?? ""}</span>
-            </label>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Pick-from-list Panel: Organizations
-// ---------------------------------------------------------------------------
-
-function PickOrgPanel({
-  selectedIds,
-  onSelectionChange,
-}: {
-  selectedIds: Set<string>;
-  onSelectionChange: (ids: Set<string>) => void;
-}) {
-  const [search, setSearch] = useState("");
-  const [allOrgs, setAllOrgs] = useState<PreviewOrg[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const supabase = useSupabase();
-      const { data } = await supabase
-        .from("organizations")
-        .select("id, name, icp_score, category, website")
-        .order("name")
-        .limit(2000);
-
-      if (data) setAllOrgs(data as PreviewOrg[]);
-      setLoading(false);
-    })();
-  }, []);
-
-  const filtered = useMemo(() => {
-    if (!search.trim()) return allOrgs;
-    const q = search.toLowerCase();
-    return allOrgs.filter((o) => o.name.toLowerCase().includes(q));
-  }, [allOrgs, search]);
-
-  const toggleOne = (id: string) => {
-    const next = new Set(selectedIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    onSelectionChange(next);
-  };
-
-  const selectAllVisible = () => {
-    const next = new Set(selectedIds);
-    for (const o of filtered) next.add(o.id);
-    onSelectionChange(next);
-  };
-
-  const deselectAllVisible = () => {
-    const visibleIds = new Set(filtered.map((o) => o.id));
-    const next = new Set(selectedIds);
-    for (const id of visibleIds) next.delete(id);
-    onSelectionChange(next);
-  };
-
-  if (loading) {
-    return (
-      <div className="mt-3 p-4 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-        <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading organizations...
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-3 rounded-xl glass p-4">
-      {/* Search + actions */}
-      <div className="flex items-center gap-3 mb-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-muted)]" />
-          <input
-            type="text"
-            placeholder="Search by name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className={cn(
-              "w-full rounded-lg pl-8 pr-3 py-1.5 text-xs",
-              "bg-[var(--glass-bg)] border border-[var(--glass-border)]",
-              "text-white placeholder:text-[var(--text-muted)]",
-              "focus:outline-none focus:ring-2 focus:ring-[var(--accent-orange)]/40 focus:border-[var(--accent-orange)]/50"
-            )}
-          />
-        </div>
-        <button
-          onClick={selectAllVisible}
-          className="text-[10px] font-medium text-[var(--accent-orange)] hover:text-[var(--accent-orange)]/80 whitespace-nowrap"
-        >
-          Select all
-        </button>
-        <button
-          onClick={deselectAllVisible}
-          className="text-[10px] font-medium text-[var(--text-muted)] hover:text-white whitespace-nowrap"
-        >
-          Deselect all
-        </button>
-      </div>
-
-      {/* Selection count */}
-      <div className="text-xs text-[var(--text-muted)] mb-2">
-        <span className="text-[var(--accent-orange)] font-medium">{selectedIds.size}</span>
-        {" "}of {allOrgs.length} selected
-      </div>
-
-      {/* Scrollable list */}
-      <div className="max-h-[400px] overflow-y-auto rounded-lg bg-white/[0.02] border border-white/[0.06]">
-        {filtered.length === 0 ? (
-          <div className="p-4 text-xs text-[var(--text-muted)] text-center">No organizations found</div>
-        ) : (
-          filtered.map((o) => (
-            <label
-              key={o.id}
-              className="flex items-center gap-3 px-3 py-1.5 hover:bg-white/[0.04] cursor-pointer transition-colors duration-100 border-b border-white/[0.03] last:border-0"
-            >
-              <input
-                type="checkbox"
-                checked={selectedIds.has(o.id)}
-                onChange={() => toggleOne(o.id)}
-                className="accent-[var(--accent-orange)] h-3.5 w-3.5 shrink-0"
-              />
-              <span className="text-xs text-white truncate min-w-[140px] max-w-[200px]">{o.name}</span>
-              {o.icp_score != null && (
-                <Badge
-                  variant={o.icp_score >= 75 ? "glass-orange" : o.icp_score >= 50 ? "draft" : "default"}
-                  className="text-[10px] shrink-0"
-                >
-                  {o.icp_score}
-                </Badge>
-              )}
-              <span className="text-xs text-[var(--text-muted)] truncate max-w-[100px]">{typeof o.category === "string" ? o.category : ""}</span>
-              <span className="text-xs text-[var(--text-muted)] truncate max-w-[160px] ml-auto">
-                {o.website ? o.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "") : ""}
-              </span>
-            </label>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Person Enrichment Tab
-// ---------------------------------------------------------------------------
-
-function PersonEnrichmentTab({
-  preSelectedPersons,
-  events,
-  onJobComplete,
-}: {
-  preSelectedPersons: string[];
-  events: Pick<Event, "id" | "name">[];
-  onJobComplete: () => void;
-}) {
-  const [source] = useState("apollo");
-  const [target, setTarget] = useState<string>(
-    preSelectedPersons.length > 0 ? "selected" : "unenriched"
-  );
-  const [eventId, setEventId] = useState("");
-  const [fields, setFields] = useState<EnrichField[]>(["email", "linkedin"]);
-  const [pickedPersonIds, setPickedPersonIds] = useState<Set<string>>(new Set());
-  const [isRunning, setIsRunning] = useState(false);
-  const [lastResult, setLastResult] = useState<Record<string, unknown> | null>(
-    null
-  );
-
-  // Preview state
-  const [previewPersons, setPreviewPersons] = useState<PreviewPerson[]>([]);
-  const [previewPersonCount, setPreviewPersonCount] = useState(0);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Saved lists state
-  const [savedLists, setSavedLists] = useState<{ id: string; name: string; count: number }[]>([]);
-  const [selectedListId, setSelectedListId] = useState("");
-
-  // Real-time progress state
-  const [activeJobId, setActiveJobId] = useState<string | null>(null);
-  const [progressEntries, setProgressEntries] = useState<ProgressEntry[]>([]);
-  const [jobStartTime, setJobStartTime] = useState<string | null>(null);
-  const pollRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Auto-dismiss completed results when user changes job configuration
-  const fieldsKey = fields.join(",");
-  useEffect(() => {
-    if (lastResult) {
-      setLastResult(null);
-      setProgressEntries([]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target, eventId, selectedListId, fieldsKey]);
-
-  // Load saved lists on mount
-  useEffect(() => {
-    (async () => {
-      const supabase = useSupabase();
-      const { data } = await supabase
-        .from("person_lists")
-        .select("id, name, person_list_items(count)")
-        .order("name");
-      if (data) {
-        setSavedLists(data.map((l: any) => ({
-          id: l.id,
-          name: l.name,
-          count: l.person_list_items?.[0]?.count ?? 0,
-        })));
-      }
-    })();
-  }, []);
-
-  // Fetch preview whenever target/eventId changes
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(async () => {
-      // "pick" target uses its own panel instead of the preview list
-      if (target === "pick") {
-        setPreviewPersons([]);
-        setPreviewPersonCount(0);
-        setPreviewLoading(false);
-        return;
-      }
-
-      setPreviewLoading(true);
-      const supabase = useSupabase();
-
-      try {
-        let query = supabase
-          .from("persons")
-          .select("id, full_name, email, linkedin_url, twitter_handle, phone", { count: "exact" });
-
-        if (target === "selected" && preSelectedPersons.length > 0) {
-          query = query.in("id", preSelectedPersons);
-        } else if (target === "event" && eventId) {
-          // Get person IDs from event participations
-          const { data: participations } = await supabase
-            .from("event_participations")
-            .select("person_id")
-            .eq("event_id", eventId)
-            .not("person_id", "is", null);
-
-          const personIds = (participations ?? [])
-            .map((p: { person_id: string | null }) => p.person_id)
-            .filter((id): id is string => id !== null);
-
-          if (personIds.length === 0) {
-            setPreviewPersons([]);
-            setPreviewPersonCount(0);
-            setPreviewLoading(false);
-            return;
-          }
-          query = query.in("id", personIds);
-        } else if (target === "saved_list" && selectedListId) {
-          const { data: listItems } = await supabase
-            .from("person_list_items")
-            .select("person_id")
-            .eq("list_id", selectedListId);
-
-          const personIds = (listItems ?? []).map((i: any) => i.person_id).filter(Boolean);
-          if (personIds.length === 0) {
-            setPreviewPersons([]);
-            setPreviewPersonCount(0);
-            setPreviewLoading(false);
-            return;
-          }
-          query = query.in("id", personIds);
-        } else {
-          // unenriched: persons never enriched
-          query = query.eq("enrichment_status", "none");
-        }
-
-        const { data, count } = await query.limit(200);
-        setPreviewPersonCount(count ?? data?.length ?? 0);
-
-        if (data) {
-          // Fetch primary org names for the preview
-          const personIds = data.map((p: Pick<Person, "id">) => p.id);
-          const { data: orgLinks } = personIds.length > 0
-            ? await supabase
-                .from("person_organizations")
-                .select("person_id, organization:organizations(name)")
-                .in("person_id", personIds)
-                .eq("is_primary", true)
-            : { data: [] };
-
-          const orgMap = new Map<string, string>();
-          for (const link of orgLinks ?? []) {
-            const l = link as unknown as { person_id: string; organization: { name: string } | null };
-            const orgName = l.organization?.name;
-            if (orgName) orgMap.set(l.person_id, orgName);
-          }
-
-          setPreviewPersons(
-            (data as Pick<Person, "id" | "full_name" | "email" | "linkedin_url" | "twitter_handle" | "phone">[]).map((p) => ({
-              id: p.id,
-              full_name: p.full_name,
-              email: p.email,
-              linkedin_url: p.linkedin_url,
-              twitter_handle: p.twitter_handle,
-              phone: p.phone,
-              primary_org: orgMap.get(p.id) ?? null,
-            }))
-          );
-        }
-      } catch {
-        setPreviewPersons([]);
-      } finally {
-        setPreviewLoading(false);
-      }
-    }, 300);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [target, eventId, preSelectedPersons, selectedListId]);
-
-  // Poll for progress while running
-  useEffect(() => {
-    if (!isRunning || !activeJobId) {
-      if (pollRef.current) clearInterval(pollRef.current);
-      return;
-    }
-
-    const supabase = useSupabase();
-
-    const poll = async () => {
-      const { data } = await supabase
-        .from("job_log")
-        .select("id, target_id, status, job_type, metadata, created_at, error")
-        .eq("target_table", "contacts")
-        .gte("created_at", jobStartTime!)
-        .neq("id", activeJobId)
-        .order("created_at", { ascending: false })
-        .limit(100);
-
-      if (data) {
-        setProgressEntries(
-          (data as unknown as JobLog[]).map((j) => {
-            const meta = (j.metadata ?? {}) as Record<string, unknown>;
-            return {
-              id: j.id,
-              target_id: j.target_id,
-              org_name: (meta.full_name as string) ?? (meta.contact_name as string) ?? null,
-              status: j.status,
-              icp_score: null,
-              job_type: j.job_type,
-              created_at: j.created_at,
-              error: j.error,
-              stage: null,
-            };
-          })
-        );
-      }
-    };
-
-    pollRef.current = setInterval(poll, 2000);
-    poll(); // immediate first poll
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [isRunning, activeJobId, jobStartTime]);
-
-  function toggleField(field: EnrichField) {
-    setFields((prev) =>
-      prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
-    );
-  }
-
-  async function handleRun() {
-    if (fields.length === 0) return;
-    setIsRunning(true);
-    setLastResult(null);
-    setProgressEntries([]);
-    setJobStartTime(new Date().toISOString());
-
-    try {
-      const body: Record<string, unknown> = { fields, source };
-
-      if (target === "selected" && preSelectedPersons.length > 0) {
-        body.personIds = preSelectedPersons;
-      } else if (target === "pick" && pickedPersonIds.size > 0) {
-        body.personIds = Array.from(pickedPersonIds);
-      } else if (target === "event" && eventId) {
-        body.eventId = eventId;
-      } else if (target === "saved_list" && selectedListId) {
-        const supabase = useSupabase();
-        const { data: listItems } = await supabase
-          .from("person_list_items")
-          .select("person_id")
-          .eq("list_id", selectedListId);
-        const ids = (listItems ?? []).map((i: any) => i.person_id).filter(Boolean);
-        if (ids.length > 0) body.personIds = ids;
-      }
-
-      const res = await fetch("/api/enrich", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      const data = await res.json();
-      if (data.jobId) setActiveJobId(data.jobId);
-      setLastResult(data);
-      onJobComplete();
-    } catch {
-      setLastResult({ error: "Network error" });
-    } finally {
-      setIsRunning(false);
-      setActiveJobId(null);
-    }
-  }
-
-  const fieldOptions: { key: EnrichField; label: string }[] = [
-    { key: "email", label: "Email" },
-    { key: "linkedin", label: "LinkedIn" },
-    { key: "twitter", label: "Twitter" },
-    { key: "phone", label: "Phone" },
-  ];
-
-  return (
-    <GlassCard>
-      <div className="flex items-center gap-2 mb-4">
-        <User className="h-5 w-5 text-[var(--accent-orange)]" />
-        <h2 className="text-lg font-semibold font-[family-name:var(--font-heading)] text-white">
-          Person Enrichment
-        </h2>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div>
-          <label className="text-xs text-[var(--text-muted)] mb-1 block">
-            Source
-          </label>
-          <GlassSelect
-            options={[{ value: "apollo", label: "Apollo" }]}
-            value={source}
-            disabled
-          />
-        </div>
-        <div>
-          <label className="text-xs text-[var(--text-muted)] mb-1 block">
-            Target
-          </label>
-          <GlassSelect
-            options={[
-              { value: "unenriched", label: "All unenriched persons" },
-              {
-                value: "selected",
-                label: `Selected persons (${preSelectedPersons.length})`,
-              },
-              { value: "event", label: "Persons from event" },
-              { value: "saved_list", label: "From saved list" },
-              { value: "pick", label: "Select from list" },
-            ]}
-            value={target}
-            onChange={(e) => setTarget(e.target.value)}
-          />
-        </div>
-        {target === "event" && (
-          <div>
-            <label className="text-xs text-[var(--text-muted)] mb-1 block">
-              Event
-            </label>
-            <GlassSelect
-              options={events.map((e) => ({
-                value: e.id,
-                label: e.name,
-              }))}
-              placeholder="Select event"
-              value={eventId}
-              onChange={(e) => setEventId(e.target.value)}
-            />
-          </div>
-        )}
-        {target === "saved_list" && (
-          <div>
-            <label className="text-xs text-[var(--text-muted)] mb-1 block">List</label>
-            <GlassSelect
-              options={savedLists.map((l) => ({
-                value: l.id,
-                label: `${l.name} (${l.count})`,
-              }))}
-              placeholder="Select list"
-              value={selectedListId}
-              onChange={(e) => setSelectedListId(e.target.value)}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Pick-from-list panel */}
-      {target === "pick" && (
-        <PickPersonPanel selectedIds={pickedPersonIds} onSelectionChange={setPickedPersonIds} />
-      )}
-
-      {/* Field checkboxes */}
-      <div className="mb-6">
-        <label className="text-xs text-[var(--text-muted)] mb-2 block">
-          Fields to Enrich
-        </label>
-        <div className="flex flex-wrap gap-3">
-          {fieldOptions.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => toggleField(key)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium border transition-all duration-200",
-                fields.includes(key)
-                  ? "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border-[var(--accent-orange)]/20"
-                  : "bg-[var(--glass-bg)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-white"
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Preview List */}
-      {!isRunning && !lastResult && (
-        <PreviewPersonList persons={previewPersons} isLoading={previewLoading} totalCount={previewPersonCount} />
-      )}
-
-      {/* Run button */}
-      <div className="mt-4">
-        <button
-          onClick={handleRun}
-          disabled={isRunning || fields.length === 0 || (target === "pick" && pickedPersonIds.size === 0)}
-          className={cn(
-            "flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-            "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20",
-            "hover:bg-[var(--accent-orange)]/25",
-            (isRunning || fields.length === 0 || (target === "pick" && pickedPersonIds.size === 0)) && "opacity-50 cursor-not-allowed"
-          )}
-        >
-          {isRunning ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Play className="h-4 w-4" />
-          )}
-          {isRunning ? "Running..." : "Run Enrichment"}
-        </button>
-      </div>
-
-      {/* Running state with real-time progress */}
-      {isRunning && (
-        <div className="mt-4 space-y-3">
-          <div className="p-4 rounded-lg bg-white/[0.04] border border-white/[0.06]">
-            <div className="flex items-center gap-3 mb-3">
-              <Loader2 className="h-5 w-5 animate-spin text-[var(--accent-orange)]" />
-              <div>
-                <p className="text-sm text-white font-medium">
-                  Processing persons...
-                </p>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                  Running Apollo enrichment for {fields.join(", ")} fields.
-                </p>
-              </div>
-            </div>
-            <ProgressBar
-              completed={progressEntries.filter((e) => e.status === "completed" || e.status === "failed").length}
-              total={previewPersons.length || 1}
-            />
-          </div>
-          <LiveStatusList entries={progressEntries} entityType="person" />
-        </div>
-      )}
-
-      {lastResult && !isRunning && (
-        <div className="mt-4 p-4 rounded-lg bg-white/[0.04] border border-white/[0.06] animate-[fadeIn_0.3s_ease-in-out]">
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-400" />
-              <span className="text-xs font-medium text-green-400">Job Complete</span>
-            </div>
-            <button
-              onClick={() => { setLastResult(null); setProgressEntries([]); }}
-              className="p-1 rounded-md text-[var(--text-muted)] hover:text-white hover:bg-white/[0.06] transition-colors"
-              title="Dismiss results"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          {lastResult.error ? (
-            <p className="text-sm text-red-400">
-              {lastResult.error as string}
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <div className="text-xs text-[var(--text-muted)]">
-                  Persons Processed
-                </div>
-                <div className="text-lg font-semibold text-white">
-                  {(lastResult.contacts_processed as number) ??
-                    (lastResult.persons_processed as number) ??
-                    0}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-[var(--text-muted)]">
-                  Emails Found
-                </div>
-                <div className="text-lg font-semibold text-[var(--accent-orange)]">
-                  {(lastResult.emails_found as number) ?? 0}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-[var(--text-muted)]">
-                  LinkedIn Found
-                </div>
-                <div className="text-lg font-semibold text-[var(--accent-indigo)]">
-                  {(lastResult.linkedin_found as number) ?? 0}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-[var(--text-muted)]">
-                  Twitter Found
-                </div>
-                <div className="text-lg font-semibold text-[var(--text-secondary)]">
-                  {(lastResult.twitter_found as number) ?? 0}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </GlassCard>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Organization Enrichment Tab
-// ---------------------------------------------------------------------------
-
-const STAGE_OPTIONS: {
-  key: OrgStage;
-  label: string;
-  description: string;
-  icon: typeof Zap;
-}[] = [
-  {
-    key: "full",
-    label: "Full Pipeline",
-    description: "All three stages",
-    icon: Sparkles,
-  },
-  {
-    key: "apollo",
-    label: "Apollo",
-    description: "Firmographics",
-    icon: Search,
-  },
-  {
-    key: "perplexity",
-    label: "Perplexity",
-    description: "Deep Research",
-    icon: FlaskConical,
-  },
-  {
-    key: "gemini",
-    label: "Gemini",
-    description: "Synthesis + ICP Score",
-    icon: Brain,
-  },
-  {
-    key: "people_finder",
-    label: "People Finder",
-    description: "Find contacts at org",
-    icon: Users,
-  },
-];
-
-function OrganizationEnrichmentTab({
-  preSelectedOrgs,
-  events,
-  initiatives,
-  onJobComplete,
-  retryJobId,
-}: {
-  preSelectedOrgs: string[];
-  events: Pick<Event, "id" | "name">[];
-  initiatives: Pick<Initiative, "id" | "name">[];
-  onJobComplete: () => void;
-  retryJobId?: string | null;
-}) {
-  const [stages, setStages] = useState<OrgStage[]>(["full"]);
-  const [target, setTarget] = useState<OrgTarget>(
-    preSelectedOrgs.length > 0 ? "selected" : "unenriched"
-  );
-  const [eventId, setEventId] = useState("");
-  const [initiativeId, setInitiativeId] = useState("");
-  const [icpThreshold, setIcpThreshold] = useState(75);
-  const [isRunning, setIsRunning] = useState(false);
-  const [lastResult, setLastResult] = useState<OrgEnrichResponse | null>(null);
-  const [pickedOrgIds, setPickedOrgIds] = useState<Set<string>>(new Set());
-  const [pfPerCompany, setPfPerCompany] = useState(5);
-  const [pfSeniorities, setPfSeniorities] = useState<string[]>(["owner", "founder", "c_suite", "vp", "director"]);
-  const [pfDepartments, setPfDepartments] = useState<string[]>([]);
-
-  // Preview state
-  const [previewOrgs, setPreviewOrgs] = useState<PreviewOrg[]>([]);
-  const [previewOrgCount, setPreviewOrgCount] = useState(0);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Auto-select failed orgs from retry job
-  useEffect(() => {
-    if (!retryJobId) return;
-
-    (async () => {
-      const supabase = useSupabase();
-
-      // Fetch the parent job to get org_ids
-      const { data: job } = await supabase
-        .from("job_log")
-        .select("metadata")
-        .eq("id", retryJobId)
-        .single();
-
-      if (!job?.metadata) return;
-      const meta = job.metadata as Record<string, unknown>;
-      const allOrgIds = (meta.organization_ids as string[]) ?? [];
-
-      if (allOrgIds.length === 0) {
-        // Fall back to failed_incomplete target
-        setTarget("failed_incomplete");
-        return;
-      }
-
-      // Find which orgs from this job are NOT complete
-      const { data: orgs } = await supabase
-        .from("organizations")
-        .select("id")
-        .in("id", allOrgIds)
-        .neq("enrichment_status", "complete");
-
-      const incompleteIds = (orgs ?? []).map((o: { id: string }) => o.id);
-
-      if (incompleteIds.length > 0) {
-        // Pre-select these orgs using the "pick" target
-        setTarget("pick");
-        setPickedOrgIds(new Set(incompleteIds));
-      }
-    })();
-  }, [retryJobId]);
-
-  // Real-time progress state
-  const [activeJobId, setActiveJobId] = useState<string | null>(null);
-  const [progressEntries, setProgressEntries] = useState<ProgressEntry[]>([]);
-  const [orgProgressEntries, setOrgProgressEntries] = useState<OrgProgress[]>([]);
-  const [jobStartTime, setJobStartTime] = useState<string | null>(null);
-  const pollRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Auto-dismiss completed results when user changes job configuration
-  const stagesKey = stages.join(",");
-  useEffect(() => {
-    if (lastResult) {
-      setLastResult(null);
-      setProgressEntries([]);
-      setOrgProgressEntries([]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target, eventId, initiativeId, icpThreshold, stagesKey]);
-
-  // Fetch preview whenever target/eventId/initiativeId/icpThreshold changes
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(async () => {
-      // "pick" target uses its own panel instead of the preview list
-      if (target === "pick") {
-        setPreviewOrgs([]);
-        setPreviewOrgCount(0);
-        setPreviewLoading(false);
-        return;
-      }
-
-      setPreviewLoading(true);
-      const supabase = useSupabase();
-
-      try {
-        // Helper to set preview with count
-        const setResult = (data: PreviewOrg[] | null, count: number | null) => {
-          setPreviewOrgs((data as PreviewOrg[]) ?? []);
-          setPreviewOrgCount(count ?? data?.length ?? 0);
-        };
-
-        if (target === "selected" && preSelectedOrgs.length > 0) {
-          const { data, count } = await supabase
-            .from("organizations")
-            .select("id, name, icp_score, category, website, enrichment_status", { count: "exact" })
-            .in("id", preSelectedOrgs);
-
-          setResult(data as PreviewOrg[], count);
-        } else if (target === "event" && eventId) {
-          const { data: participations } = await supabase
-            .from("event_participations")
-            .select("organization_id")
-            .eq("event_id", eventId)
-            .not("organization_id", "is", null);
-
-          const orgIds = Array.from(
-            new Set(
-              (participations ?? [])
-                .map((p: { organization_id: string | null }) => p.organization_id)
-                .filter((id): id is string => id !== null)
-            )
-          );
-
-          if (orgIds.length === 0) {
-            setPreviewOrgs([]);
-            setPreviewOrgCount(0);
-            setPreviewLoading(false);
-            return;
-          }
-
-          const { data, count } = await supabase
-            .from("organizations")
-            .select("id, name, icp_score, category, website, enrichment_status", { count: "exact" })
-            .in("id", orgIds)
-            .limit(200);
-
-          setResult(data as PreviewOrg[], count);
-        } else if (target === "initiative" && initiativeId) {
-          const { data: enrollments } = await supabase
-            .from("initiative_enrollments")
-            .select("organization_id")
-            .eq("initiative_id", initiativeId)
-            .not("organization_id", "is", null);
-
-          const orgIds = Array.from(
-            new Set(
-              (enrollments ?? [])
-                .map((e: { organization_id: string | null }) => e.organization_id)
-                .filter((id): id is string => id !== null)
-            )
-          );
-
-          if (orgIds.length === 0) {
-            setPreviewOrgs([]);
-            setPreviewOrgCount(0);
-            setPreviewLoading(false);
-            return;
-          }
-
-          const { data, count } = await supabase
-            .from("organizations")
-            .select("id, name, icp_score, category, website, enrichment_status", { count: "exact" })
-            .in("id", orgIds)
-            .limit(200);
-
-          setResult(data as PreviewOrg[], count);
-        } else if (target === "icp_below") {
-          const { data, count } = await supabase
-            .from("organizations")
-            .select("id, name, icp_score, category, website, enrichment_status", { count: "exact" })
-            .or(`icp_score.is.null,icp_score.lt.${icpThreshold}`)
-            .limit(200);
-
-          setResult(data as PreviewOrg[], count);
-        } else if (target === "failed_incomplete") {
-          const { data, count } = await supabase
-            .from("organizations")
-            .select("id, name, icp_score, category, website, enrichment_status, enrichment_stages, last_enriched_at", { count: "exact" })
-            .in("enrichment_status", ["failed", "partial"])
-            .limit(200);
-
-          setResult(data as PreviewOrg[], count);
-        } else {
-          // unenriched (never enriched)
-          const { data, count } = await supabase
-            .from("organizations")
-            .select("id, name, icp_score, category, website, enrichment_status", { count: "exact" })
-            .eq("enrichment_status", "none")
-            .limit(200);
-
-          setResult(data as PreviewOrg[], count);
-        }
-      } catch {
-        setPreviewOrgs([]);
-        setPreviewOrgCount(0);
-      } finally {
-        setPreviewLoading(false);
-      }
-    }, 300);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [target, eventId, initiativeId, icpThreshold, preSelectedOrgs]);
-
-  // Cache for existing enrichment stages from prior runs
-  const existingStagesCache = useRef<Map<string, Record<string, unknown>>>(new Map());
-
-  // Poll for progress while running
-  useEffect(() => {
-    if (!isRunning || !jobStartTime) {
-      if (pollRef.current) clearInterval(pollRef.current);
-      existingStagesCache.current = new Map();
-      return;
-    }
-
-    const supabase = useSupabase();
-
-    // Determine which stage keys are active for overall_status computation
-    const activeStageKeys: string[] = [];
-    if (stages.includes("full")) {
-      activeStageKeys.push("apollo", "perplexity", "gemini");
-    } else {
-      if (stages.includes("apollo")) activeStageKeys.push("apollo");
-      if (stages.includes("perplexity")) activeStageKeys.push("perplexity");
-      if (stages.includes("gemini")) activeStageKeys.push("gemini");
-    }
-    if (stages.includes("people_finder")) activeStageKeys.push("people_finder");
-
-    const poll = async () => {
-      const { data } = await supabase
-        .from("job_log")
-        .select("id, target_id, status, job_type, metadata, created_at, error")
-        .eq("target_table", "organizations")
-        .in("job_type", ["enrichment_full", "enrichment_apollo", "enrichment_perplexity", "enrichment_gemini", "enrichment_people_finder"])
-        .gte("created_at", jobStartTime)
-        .order("created_at", { ascending: false })
-        .limit(500);
-
-      if (data) {
-        const byOrg = new Map<string, OrgProgress>();
-
-        // Collect org IDs we haven't fetched existing data for
-        const newOrgIds: string[] = [];
-        for (const j of data as unknown as JobLog[]) {
-          if (j.target_id && !existingStagesCache.current.has(j.target_id)) {
-            newOrgIds.push(j.target_id);
-          }
-        }
-
-        // Fetch existing enrichment_stages for new orgs (batch, once per org)
-        if (newOrgIds.length > 0) {
-          const uniqueIds = Array.from(new Set(newOrgIds));
-          const { data: orgsData } = await supabase
-            .from("organizations")
-            .select("id, name, enrichment_stages, icp_score")
-            .in("id", uniqueIds);
-          if (orgsData) {
-            for (const org of orgsData as { id: string; name: string; enrichment_stages: Record<string, unknown> | null; icp_score: number | null }[]) {
-              existingStagesCache.current.set(org.id, {
-                ...(org.enrichment_stages ?? {}),
-                _name: org.name,
-                _icp_score: org.icp_score,
-              });
-            }
-          }
-          // Mark fetched even if no data returned
-          for (const id of uniqueIds) {
-            if (!existingStagesCache.current.has(id)) {
-              existingStagesCache.current.set(id, {});
-            }
-          }
-        }
-
-        for (const j of data as unknown as JobLog[]) {
-          if (!j.target_id) continue;
-          const meta = (j.metadata ?? {}) as Record<string, unknown>;
-
-          let progress = byOrg.get(j.target_id);
-          if (!progress) {
-            // Initialize from existing enrichment data
-            const existing = existingStagesCache.current.get(j.target_id) ?? {};
-            const exApollo = existing.apollo as { status?: string } | undefined;
-            const exPerplexity = existing.perplexity as { status?: string } | undefined;
-            const exGemini = existing.gemini as { status?: string; icp_score?: number } | undefined;
-            const exPeopleFinder = existing.people_finder as { status?: string; found?: number } | undefined;
-
-            progress = {
-              target_id: j.target_id,
-              org_name: (meta.org_name as string) ?? (existing._name as string) ?? null,
-              overall_status: "processing",
-              icp_score: (existing._icp_score as number) ?? null,
-              created_at: j.created_at,
-              stages: {
-                apollo: exApollo?.status === "completed" ? { status: "completed" } : null,
-                perplexity: exPerplexity?.status === "completed" ? { status: "completed" } : null,
-                gemini: exGemini?.status === "completed" ? { status: "completed", icp_score: exGemini.icp_score } : null,
-                people_finder: exPeopleFinder?.status === "completed" ? { status: "completed", found: exPeopleFinder.found } : null,
-              },
-            };
-            byOrg.set(j.target_id, progress);
-          }
-
-          if (meta.org_name && !progress.org_name) {
-            progress.org_name = meta.org_name as string;
-          }
-
-          // Live data from this run overrides existing data
-          switch (j.job_type) {
-            case "enrichment_apollo":
-              progress.stages.apollo = { status: j.status as OrgStageStatus["status"] };
-              break;
-            case "enrichment_perplexity":
-              progress.stages.perplexity = { status: j.status as OrgStageStatus["status"] };
-              break;
-            case "enrichment_gemini":
-              progress.stages.gemini = {
-                status: j.status as OrgStageStatus["status"],
-                icp_score: (meta.icp_score as number) ?? null,
-              };
-              if (progress.stages.gemini.icp_score != null) {
-                progress.icp_score = progress.stages.gemini.icp_score;
-              }
-              break;
-            case "enrichment_people_finder":
-              progress.stages.people_finder = {
-                status: j.status as OrgStageStatus["status"],
-                found: (meta.found as number) ?? (meta.people_found as number) ?? 0,
-              };
-              break;
-            case "enrichment_full":
-              progress.overall_status = j.status;
-              if (j.status === "completed" && meta.icp_score != null) {
-                progress.icp_score = meta.icp_score as number;
-              }
-              if (new Date(j.created_at) < new Date(progress.created_at)) {
-                progress.created_at = j.created_at;
-              }
-              // When full pipeline is processing, mark active stages as pending if not yet started
-              if (j.status === "processing") {
-                for (const key of activeStageKeys) {
-                  const sk = key as keyof typeof progress.stages;
-                  if (!progress.stages[sk]) {
-                    progress.stages[sk] = { status: "pending" };
-                  }
-                }
-              }
-              break;
-          }
-        }
-
-        // Compute overall_status from active stages (not just enrichment_full)
-        for (const [, progress] of byOrg) {
-          if (progress.overall_status === "completed" || progress.overall_status === "failed") continue;
-          const relevantStatuses = activeStageKeys.map((key) => {
-            const stage = progress.stages[key as keyof typeof progress.stages];
-            return stage?.status ?? "pending";
-          });
-          if (relevantStatuses.length > 0 && relevantStatuses.every((s) => s === "completed")) {
-            progress.overall_status = "completed";
-          } else if (relevantStatuses.some((s) => s === "failed")) {
-            progress.overall_status = "failed";
-          }
-        }
-
-        const entries = Array.from(byOrg.values()).sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        setOrgProgressEntries(entries);
-
-        setProgressEntries(
-          entries.map((p) => ({
-            id: p.target_id,
-            target_id: p.target_id,
-            org_name: p.org_name,
-            status: p.overall_status,
-            icp_score: p.icp_score,
-            job_type: "enrichment_full",
-            created_at: p.created_at,
-            error: null,
-            stage: null,
-          }))
-        );
-      }
-    };
-
-    pollRef.current = setInterval(poll, 2000);
-    poll();
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [isRunning, jobStartTime, stages]);
-
-  function toggleStage(stage: OrgStage) {
-    if (stage === "people_finder") {
-      setStages((prev) =>
-        prev.includes("people_finder")
-          ? prev.filter((s) => s !== "people_finder")
-          : [...prev, "people_finder"]
-      );
-      return;
-    }
-    if (stage === "full") {
-      setStages((prev) => {
-        const hasPf = prev.includes("people_finder");
-        // Toggle full off → clear pipeline stages (keep people_finder if active)
-        if (prev.includes("full")) {
-          return hasPf ? ["people_finder"] : [];
-        }
-        // Toggle full on → set full (keep people_finder if active)
-        return hasPf ? ["full", "people_finder"] : ["full"];
-      });
-      return;
-    }
-    setStages((prev) => {
-      const withoutFull = prev.filter((s) => s !== "full");
-      if (withoutFull.includes(stage)) {
-        // Toggling off — just remove it, allow empty pipeline stages
-        return withoutFull.filter((s) => s !== stage);
-      }
-      return [...withoutFull, stage];
-    });
-  }
-
-  async function handleRun() {
-    setIsRunning(true);
-    setLastResult(null);
-    setProgressEntries([]);
-    setOrgProgressEntries([]);
-    setJobStartTime(new Date().toISOString());
-
-    try {
-      const body: Record<string, unknown> = {
-        stages,
-      };
-
-      if (stages.includes("people_finder")) {
-        body.peopleFinderConfig = {
-          perCompany: pfPerCompany,
-          seniorities: pfSeniorities,
-          departments: pfDepartments,
-        };
-      }
-
-      if (target === "selected" && preSelectedOrgs.length > 0) {
-        body.organizationIds = preSelectedOrgs;
-      } else if (target === "pick" && pickedOrgIds.size > 0) {
-        body.organizationIds = Array.from(pickedOrgIds);
-      } else if (target === "event" && eventId) {
-        body.eventId = eventId;
-      } else if (target === "initiative" && initiativeId) {
-        body.initiativeId = initiativeId;
-      } else if (target === "icp_below") {
-        body.icpBelow = icpThreshold;
-      } else if (target === "failed_incomplete") {
-        body.failedIncomplete = true;
-      }
-      // "unenriched" -- API handles it (default)
-
-      const res = await fetch("/api/enrich/organizations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      const data: OrgEnrichResponse = await res.json();
-      if (data.jobId) setActiveJobId(data.jobId);
-      setLastResult(data);
-      onJobComplete();
-    } catch {
-      setLastResult({
-        error: "Network error",
-        orgs_processed: 0,
-        orgs_enriched: 0,
-        orgs_failed: 0,
-        signals_created: 0,
-      });
-    } finally {
-      setIsRunning(false);
-      setActiveJobId(null);
-    }
-  }
-
-  const avgIcp =
-    lastResult?.results && lastResult.results.length > 0
-      ? Math.round(
-          lastResult.results
-            .filter((r) => r.icp_score != null)
-            .reduce((sum, r) => sum + (r.icp_score ?? 0), 0) /
-            (lastResult.results.filter((r) => r.icp_score != null).length || 1)
-        )
-      : null;
-
-  const completedCount = orgProgressEntries.length > 0
-    ? orgProgressEntries.filter((e) => e.overall_status === "completed" || e.overall_status === "failed").length
-    : progressEntries.filter((e) => e.status === "completed" || e.status === "failed").length;
-
-  return (
-    <GlassCard>
-      <div className="flex items-center gap-2 mb-4">
-        <Building2 className="h-5 w-5 text-[var(--accent-orange)]" />
-        <h2 className="text-lg font-semibold font-[family-name:var(--font-heading)] text-white">
-          Organization Enrichment
-        </h2>
-      </div>
-
-      {/* Stage Selector */}
-      <div className="mb-6">
-        <label className="text-xs text-[var(--text-muted)] mb-2 block">
-          Pipeline Stages
-        </label>
-        <div className="flex flex-wrap gap-3">
-          {STAGE_OPTIONS.map(({ key, label, description, icon: Icon }) => {
-            const isActive =
-              key === "full"
-                ? stages.includes("full")
-                : key === "people_finder"
-                  ? stages.includes("people_finder")
-                  : stages.includes(key) && !stages.includes("full");
-            return (
-              <button
-                key={key}
-                onClick={() => toggleStage(key)}
-                className={cn(
-                  "flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200",
-                  isActive
-                    ? "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border-[var(--accent-orange)]/20"
-                    : "bg-[var(--glass-bg)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-white"
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <div className="text-left">
-                  <div>{label}</div>
-                  <div
-                    className={cn(
-                      "text-[10px] font-normal",
-                      isActive
-                        ? "text-[var(--accent-orange)]/70"
-                        : "text-[var(--text-muted)]"
-                    )}
-                  >
-                    {description}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        {stages.includes("people_finder") && (
-          <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-            <div className="flex items-center gap-2 mb-3">
-              <Users className="h-4 w-4 text-[var(--accent-orange)]" />
-              <span className="text-sm font-medium text-white">People Finder Settings</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="text-xs text-[var(--text-muted)] mb-1 block">Contacts per company</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={25}
-                  value={pfPerCompany}
-                  onChange={(e) => setPfPerCompany(Math.min(25, Math.max(1, Number(e.target.value))))}
-                  className={cn(
-                    "w-full rounded-lg font-[family-name:var(--font-body)]",
-                    "bg-[var(--glass-bg)] border border-[var(--glass-border)]",
-                    "backdrop-blur-xl text-white",
-                    "px-3 py-2 text-sm transition-all duration-200",
-                    "focus:outline-none focus:ring-2 focus:ring-[var(--accent-orange)]/40 focus:border-[var(--accent-orange)]/50",
-                    "hover:bg-[var(--glass-bg-hover)] hover:border-[var(--glass-border-hover)]"
-                  )}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-[var(--text-muted)] mb-1 block">Seniority levels</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {SENIORITY_OPTIONS.map(({ value, label }) => (
-                    <button
-                      key={value}
-                      onClick={() =>
-                        setPfSeniorities((prev) =>
-                          prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
-                        )
-                      }
-                      className={cn(
-                        "px-2 py-1 rounded-md text-[10px] font-medium border transition-all duration-150",
-                        pfSeniorities.includes(value)
-                          ? "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border-[var(--accent-orange)]/20"
-                          : "bg-[var(--glass-bg)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-white"
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-[var(--text-muted)] mb-1 block">
-                  Departments <span className="text-[var(--text-muted)]">(empty = all)</span>
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {DEPARTMENT_OPTIONS.map(({ value, label }) => (
-                    <button
-                      key={value}
-                      onClick={() =>
-                        setPfDepartments((prev) =>
-                          prev.includes(value) ? prev.filter((d) => d !== value) : [...prev, value]
-                        )
-                      }
-                      className={cn(
-                        "px-2 py-1 rounded-md text-[10px] font-medium border transition-all duration-150",
-                        pfDepartments.includes(value)
-                          ? "bg-[var(--accent-indigo)]/15 text-[var(--accent-indigo)] border-[var(--accent-indigo)]/20"
-                          : "bg-[var(--glass-bg)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-white"
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Target Selector */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div>
-          <label className="text-xs text-[var(--text-muted)] mb-1 block">
-            Target
-          </label>
-          <GlassSelect
-            options={[
-              { value: "unenriched", label: "Never enriched" },
-              { value: "failed_incomplete", label: "Failed / Incomplete" },
-              { value: "icp_below", label: "ICP below threshold" },
-              { value: "event", label: "From event" },
-              { value: "initiative", label: "From initiative" },
-              {
-                value: "selected",
-                label: `Selected organizations (${preSelectedOrgs.length})`,
-              },
-              { value: "pick", label: "Select from list" },
-            ]}
-            value={target}
-            onChange={(e) => setTarget(e.target.value as OrgTarget)}
-          />
-        </div>
-
-        {target === "icp_below" && (
-          <div>
-            <label className="text-xs text-[var(--text-muted)] mb-1 block">
-              ICP Threshold
-            </label>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              value={icpThreshold}
-              onChange={(e) => setIcpThreshold(Number(e.target.value))}
-              className={cn(
-                "w-full rounded-lg font-[family-name:var(--font-body)]",
-                "bg-[var(--glass-bg)] border border-[var(--glass-border)]",
-                "backdrop-blur-xl text-white",
-                "px-3 py-2 text-sm transition-all duration-200",
-                "focus:outline-none focus:ring-2 focus:ring-[var(--accent-orange)]/40 focus:border-[var(--accent-orange)]/50",
-                "hover:bg-[var(--glass-bg-hover)] hover:border-[var(--glass-border-hover)]"
-              )}
-            />
-          </div>
-        )}
-
-        {target === "event" && (
-          <div>
-            <label className="text-xs text-[var(--text-muted)] mb-1 block">
-              Event
-            </label>
-            <GlassSelect
-              options={events.map((e) => ({
-                value: e.id,
-                label: e.name,
-              }))}
-              placeholder="Select event"
-              value={eventId}
-              onChange={(e) => setEventId(e.target.value)}
-            />
-          </div>
-        )}
-
-        {target === "initiative" && (
-          <div>
-            <label className="text-xs text-[var(--text-muted)] mb-1 block">
-              Initiative
-            </label>
-            <GlassSelect
-              options={initiatives.map((i) => ({
-                value: i.id,
-                label: i.name,
-              }))}
-              placeholder="Select initiative"
-              value={initiativeId}
-              onChange={(e) => setInitiativeId(e.target.value)}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Pick-from-list panel */}
-      {target === "pick" && (
-        <PickOrgPanel selectedIds={pickedOrgIds} onSelectionChange={setPickedOrgIds} />
-      )}
-
-      {/* Preview List */}
-      {!isRunning && !lastResult && (
-        target === "failed_incomplete"
-          ? <PreviewOrgFailedList orgs={previewOrgs} isLoading={previewLoading} totalCount={previewOrgCount} />
-          : <PreviewOrgList orgs={previewOrgs} isLoading={previewLoading} totalCount={previewOrgCount} />
-      )}
-
-      {/* Run button */}
-      <div className="mt-4">
-        <button
-          onClick={handleRun}
-          disabled={isRunning || stages.length === 0 || (target === "pick" && pickedOrgIds.size === 0)}
-          className={cn(
-            "flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-            "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20",
-            "hover:bg-[var(--accent-orange)]/25",
-            (isRunning || stages.length === 0 || (target === "pick" && pickedOrgIds.size === 0)) && "opacity-50 cursor-not-allowed"
-          )}
-        >
-          {isRunning ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Zap className="h-4 w-4" />
-          )}
-          {isRunning ? "Running Pipeline..." : "Run Pipeline"}
-        </button>
-      </div>
-
-      {/* Running state with real-time progress */}
-      {isRunning && (
-        <div className="mt-4 space-y-3">
-          <div className="p-4 rounded-lg bg-white/[0.04] border border-white/[0.06]">
-            <div className="flex items-center gap-3 mb-3">
-              <Loader2 className="h-5 w-5 animate-spin text-[var(--accent-orange)]" />
-              <div>
-                <p className="text-sm text-white font-medium">
-                  Processing {target === "pick" ? pickedOrgIds.size : previewOrgCount || previewOrgs.length} organizations...
-                </p>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                  {(() => {
-                    const latestProcessing = progressEntries.find(e => e.status === "processing");
-                    if (latestProcessing?.stage) {
-                      return `${latestProcessing.org_name ?? "..."}: ${latestProcessing.stage}`;
-                    }
-                    return `Running ${stages.includes("full") ? "full pipeline" : stages.join(" + ")} enrichment.`;
-                  })()}
-                </p>
-              </div>
-            </div>
-            <ProgressBar
-              completed={completedCount}
-              total={
-                target === "pick"
-                  ? pickedOrgIds.size || 1
-                  : previewOrgCount || previewOrgs.length || 1
-              }
-            />
-          </div>
-          <OrgLiveStatusList entries={orgProgressEntries} />
-        </div>
-      )}
-
-      {/* Results */}
-      {lastResult && !isRunning && (
-        <div className="mt-4 space-y-4 animate-[fadeIn_0.3s_ease-in-out]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-400" />
-              <span className="text-xs font-medium text-green-400">Job Complete</span>
-            </div>
-            <button
-              onClick={() => { setLastResult(null); setProgressEntries([]); setOrgProgressEntries([]); }}
-              className="p-1 rounded-md text-[var(--text-muted)] hover:text-white hover:bg-white/[0.06] transition-colors"
-              title="Dismiss results"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          {lastResult.error && !lastResult.results ? (
-            <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/15">
-              <p className="text-sm text-red-400">{lastResult.error}</p>
-            </div>
-          ) : (
-            <>
-              {/* Summary Stats */}
-              <div className="p-4 rounded-lg bg-white/[0.04] border border-white/[0.06]">
-                {lastResult.message ? (
-                  <p className="text-sm text-[var(--text-muted)]">
-                    {lastResult.message}
-                  </p>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div>
-                        <div className="text-xs text-[var(--text-muted)]">
-                          Orgs Processed
-                        </div>
-                        <div className="text-lg font-semibold text-white">
-                          {lastResult.orgs_processed}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-[var(--text-muted)]">
-                          Orgs Enriched
-                        </div>
-                        <div className="text-lg font-semibold text-[var(--accent-orange)]">
-                          {lastResult.orgs_enriched}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-[var(--text-muted)]">
-                          Signals Created
-                        </div>
-                        <div className="text-lg font-semibold text-[var(--accent-indigo)]">
-                          {lastResult.signals_created}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-[var(--text-muted)]">
-                          Avg ICP Score
-                        </div>
-                        <div className="text-lg font-semibold text-[var(--text-secondary)]">
-                          {avgIcp ?? "-"}
-                        </div>
-                      </div>
-                    </div>
-                    {(lastResult.people_found ?? 0) > 0 && (
-                      <div className="grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-white/[0.06]">
-                        <div>
-                          <div className="text-xs text-[var(--text-muted)]">People Found</div>
-                          <div className="text-lg font-semibold text-white">{lastResult.people_found}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-[var(--text-muted)]">New Persons Created</div>
-                          <div className="text-lg font-semibold text-[var(--accent-orange)]">{lastResult.people_created}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-[var(--text-muted)]">Merged with Existing</div>
-                          <div className="text-lg font-semibold text-[var(--accent-indigo)]">{lastResult.people_merged}</div>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-
-              {/* Results mini-table */}
-              {lastResult.results && lastResult.results.length > 0 && (
-                <div className="rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
-                  <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
-                    <table className="w-full text-sm">
-                      <thead className="sticky top-0 bg-[var(--glass-bg)]">
-                        <tr className="border-b border-[var(--glass-border)] text-left">
-                          <th className="px-4 py-2.5 text-[var(--text-muted)] font-medium text-xs">
-                            Organization
-                          </th>
-                          <th className="px-4 py-2.5 text-[var(--text-muted)] font-medium text-xs">
-                            ICP Score
-                          </th>
-                          <th className="px-4 py-2.5 text-[var(--text-muted)] font-medium text-xs">
-                            Signals
-                          </th>
-                          <th className="px-4 py-2.5 text-[var(--text-muted)] font-medium text-xs">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {lastResult.results.map((r) => (
-                          <tr
-                            key={r.orgId}
-                            className="border-b border-white/[0.04] last:border-0"
-                          >
-                            <td className="px-4 py-2.5 text-white text-xs">
-                              {r.orgName}
-                            </td>
-                            <td className="px-4 py-2.5 text-xs">
-                              {r.icp_score != null ? (
-                                <span
-                                  className={cn(
-                                    "font-semibold",
-                                    r.icp_score >= 75
-                                      ? "text-[var(--accent-orange)]"
-                                      : r.icp_score >= 50
-                                        ? "text-yellow-400"
-                                        : "text-[var(--text-muted)]"
-                                  )}
-                                >
-                                  {r.icp_score}
-                                </span>
-                              ) : (
-                                <span className="text-[var(--text-muted)]">
-                                  -
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-2.5 text-[var(--text-secondary)] text-xs">
-                              {r.signalsCreated}
-                            </td>
-                            <td className="px-4 py-2.5">
-                              <Badge
-                                variant={r.success ? "sent" : "failed"}
-                                className="text-[10px]"
-                              >
-                                {r.success ? "enriched" : "failed"}
-                              </Badge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
-    </GlassCard>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// ICP Score Badge helper
-// ---------------------------------------------------------------------------
-
-function IcpScoreBadge({ score }: { score: number | null }) {
-  if (score == null) return <span className="text-[var(--text-muted)]">{"\u2014"}</span>;
-  const variant =
-    score >= 90
-      ? "bg-green-500/15 text-green-400 border-green-500/25"
-      : score >= 75
-        ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/25"
-        : score >= 50
-          ? "bg-orange-500/15 text-orange-400 border-orange-500/25"
-          : "bg-gray-500/15 text-gray-400 border-gray-500/25";
-  return (
-    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border", variant)}>
-      {score}
-    </span>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Child Job Result Types
-// ---------------------------------------------------------------------------
-
-interface ChildJobEntry {
-  id: string;
-  target_id: string | null;
-  status: string;
-  job_type: string;
-  error: string | null;
-  metadata: Record<string, unknown> | null;
-  created_at: string;
-}
-
-interface OrgDetail {
-  id: string;
-  name: string;
-  description: string | null;
-  context: string | null;
-  usp: string | null;
-  icp_score: number | null;
-  icp_reason: string | null;
-  website: string | null;
-  category: string | null;
-}
-
-interface OrgSignalEntry {
-  id: string;
-  signal_type: string;
-  description: string;
-  date: string | null;
-  source: string | null;
-}
-
-// ---------------------------------------------------------------------------
-// Org Child Row (expandable detail for one org within a job)
-// ---------------------------------------------------------------------------
-
-function OrgChildRow({ entry, isLast }: { entry: ChildJobEntry; isLast: boolean }) {
-  const [expanded, setExpanded] = useState(false);
-  const [orgDetail, setOrgDetail] = useState<OrgDetail | null>(null);
-  const [signals, setSignals] = useState<OrgSignalEntry[]>([]);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-
-  const meta = (entry.metadata ?? {}) as Record<string, unknown>;
-  const orgName = (meta.org_name as string) ?? (meta.organization_name as string) ?? entry.target_id?.slice(0, 8) ?? "Unknown";
-  const icpScore = (meta.icp_score as number) ?? null;
-  const stageCompleted = entry.job_type.replace("enrichment_", "");
-  const signalsCount = (meta.signals_created as number) ?? (meta.signal_count as number) ?? 0;
-
-  async function loadDetail() {
-    if (!entry.target_id || orgDetail) return;
-    setLoadingDetail(true);
-    try {
-      const supabase = useSupabase();
-      const [orgRes, sigRes] = await Promise.all([
-        supabase
-          .from("organizations")
-          .select("id, name, description, context, usp, icp_score, icp_reason, website, category")
-          .eq("id", entry.target_id)
-          .single(),
-        supabase
-          .from("organization_signals")
-          .select("id, signal_type, description, date, source")
-          .eq("organization_id", entry.target_id)
-          .order("date", { ascending: false })
-          .limit(20),
-      ]);
-      if (orgRes.data) setOrgDetail(orgRes.data as OrgDetail);
-      if (sigRes.data) setSignals(sigRes.data as OrgSignalEntry[]);
-    } catch {
-      // silently fail
-    } finally {
-      setLoadingDetail(false);
-    }
-  }
-
-  function handleToggle() {
-    const next = !expanded;
-    setExpanded(next);
-    if (next) loadDetail();
-  }
-
-  const firmographics = {
-    industry: (meta.industry as string) ?? (meta.apollo_industry as string) ?? null,
-    employees: (meta.employee_count as number) ?? (meta.employees as number) ?? (meta.estimated_num_employees as number) ?? null,
-    revenue: (meta.annual_revenue as string) ?? (meta.revenue as string) ?? (meta.annual_revenue_printed as string) ?? null,
-    funding: (meta.total_funding as string) ?? (meta.funding as string) ?? (meta.total_funding_printed as string) ?? null,
-  };
-  const hasFirmographics = Object.values(firmographics).some(Boolean);
-  const strengths = (meta.strengths as string[]) ?? null;
-  const weaknesses = (meta.weaknesses as string[]) ?? null;
-
-  return (
-    <>
-      <tr
-        onClick={handleToggle}
-        className={cn(
-          "border-b border-white/[0.03] cursor-pointer transition-all duration-150",
-          expanded ? "bg-white/[0.04]" : "hover:bg-white/[0.02]",
-          isLast && !expanded && "border-0"
-        )}
-      >
-        <td className="pl-6 pr-2 py-2 w-6">
-          {expanded ? <ChevronDown className="h-3.5 w-3.5 text-[var(--text-muted)]" /> : <ChevronRight className="h-3.5 w-3.5 text-[var(--text-muted)]" />}
-        </td>
-        <td className="px-3 py-2 text-white text-xs truncate max-w-[200px]">{orgName}</td>
-        <td className="px-3 py-2"><IcpScoreBadge score={icpScore} /></td>
-        <td className="px-3 py-2 text-[var(--text-muted)] text-xs capitalize">{stageCompleted}</td>
-        <td className="px-3 py-2 text-[var(--text-secondary)] text-xs">{signalsCount}</td>
-        <td className="px-3 py-2">
-          <Badge variant={entry.status === "completed" ? "sent" : entry.status === "failed" ? "failed" : "processing"} className="text-[10px]">{entry.status}</Badge>
-        </td>
-      </tr>
-      {expanded && (
-        <tr className={cn("border-b border-white/[0.03]", isLast && "border-0")}>
-          <td colSpan={6} className="px-6 py-4">
-            {loadingDetail && !orgDetail ? (
-              <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs py-2">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading details...
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {(orgDetail?.description || (meta.description as string)) && (
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">Description</div>
-                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{orgDetail?.description ?? (meta.description as string)}</p>
-                  </div>
-                )}
-                {(orgDetail?.context || (meta.context as string)) && (
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">Context</div>
-                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{orgDetail?.context ?? (meta.context as string)}</p>
-                  </div>
-                )}
-                {(orgDetail?.usp || (meta.usp as string)) && (
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">Entry Angle (USP)</div>
-                    <p className="text-xs text-[var(--accent-orange)] leading-relaxed">{orgDetail?.usp ?? (meta.usp as string)}</p>
-                  </div>
-                )}
-                {(orgDetail?.icp_reason || (meta.icp_reason as string)) && (
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">ICP Reason</div>
-                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{orgDetail?.icp_reason ?? (meta.icp_reason as string)}</p>
-                  </div>
-                )}
-                {(strengths || weaknesses) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {strengths && strengths.length > 0 && (
-                      <div>
-                        <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Strengths</div>
-                        <ul className="space-y-0.5">
-                          {strengths.map((s, i) => (<li key={i} className="text-xs text-green-400/80 flex items-start gap-1.5"><span className="text-green-400/50 mt-0.5">+</span>{s}</li>))}
-                        </ul>
-                      </div>
-                    )}
-                    {weaknesses && weaknesses.length > 0 && (
-                      <div>
-                        <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1 flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Weaknesses</div>
-                        <ul className="space-y-0.5">
-                          {weaknesses.map((w, i) => (<li key={i} className="text-xs text-red-400/80 flex items-start gap-1.5"><span className="text-red-400/50 mt-0.5">-</span>{w}</li>))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {signals.length > 0 && (
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Signals ({signals.length})</div>
-                    <div className="space-y-1.5 max-h-[160px] overflow-y-auto scrollbar-thin">
-                      {signals.map((sig) => (
-                        <div key={sig.id} className="flex items-start gap-2 text-xs">
-                          <Badge variant="glass-indigo" className="text-[9px] shrink-0 mt-0.5">{sig.signal_type}</Badge>
-                          <span className="text-[var(--text-secondary)] flex-1">{sig.description}</span>
-                          {sig.date && <span className="text-[var(--text-muted)] shrink-0 text-[10px]">{new Date(sig.date).toLocaleDateString()}</span>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {hasFirmographics && (
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Firmographics</div>
-                    <div className="flex flex-wrap gap-4 text-xs">
-                      {firmographics.industry && (<div className="flex items-center gap-1.5 text-[var(--text-secondary)]"><Briefcase className="h-3 w-3 text-[var(--text-muted)]" />{firmographics.industry}</div>)}
-                      {firmographics.employees != null && (<div className="flex items-center gap-1.5 text-[var(--text-secondary)]"><Users className="h-3 w-3 text-[var(--text-muted)]" />{typeof firmographics.employees === "number" ? firmographics.employees.toLocaleString() : firmographics.employees} employees</div>)}
-                      {firmographics.revenue && (<div className="flex items-center gap-1.5 text-[var(--text-secondary)]"><DollarSign className="h-3 w-3 text-[var(--text-muted)]" />{firmographics.revenue}</div>)}
-                      {firmographics.funding && (<div className="flex items-center gap-1.5 text-[var(--text-secondary)]"><TrendingUp className="h-3 w-3 text-[var(--text-muted)]" />{firmographics.funding} funding</div>)}
-                    </div>
-                  </div>
-                )}
-                {entry.error && (
-                  <div className="p-2 rounded bg-red-500/5 border border-red-500/15">
-                    <p className="text-xs text-red-400">{entry.error}</p>
-                  </div>
-                )}
-                {!orgDetail?.description && !(meta.description as string) && !orgDetail?.context && !(meta.context as string) && !orgDetail?.usp && !(meta.usp as string) && signals.length === 0 && !hasFirmographics && !entry.error && (
-                  <p className="text-xs text-[var(--text-muted)] italic">No enrichment details available for this organization.</p>
-                )}
-              </div>
-            )}
-          </td>
-        </tr>
-      )}
-    </>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Person Child Row (one person within an expanded person enrichment job)
-// ---------------------------------------------------------------------------
-
-function PersonChildRow({ entry, isLast }: { entry: ChildJobEntry; isLast: boolean }) {
-  const meta = (entry.metadata ?? {}) as Record<string, unknown>;
-  const personName = (meta.full_name as string) ?? (meta.contact_name as string) ?? (meta.person_name as string) ?? entry.target_id?.slice(0, 8) ?? "Unknown";
-  const emailFound = !!(meta.email_found ?? meta.email);
-  const linkedinFound = !!(meta.linkedin_found ?? meta.linkedin_url);
-  const twitterFound = !!(meta.twitter_found ?? meta.twitter_handle);
-  const phoneFound = !!(meta.phone_found ?? meta.phone);
-
-  return (
-    <tr className={cn("border-b border-white/[0.03] hover:bg-white/[0.02] transition-all duration-150", isLast && "border-0")}>
-      <td className="pl-6 pr-2 py-2 w-6"><User className="h-3 w-3 text-[var(--text-muted)]" /></td>
-      <td className="px-3 py-2 text-white text-xs truncate max-w-[200px]">{personName}</td>
-      <td className="px-3 py-2" colSpan={2}>
-        <div className="flex items-center gap-3 text-xs">
-          <span className={emailFound ? "text-green-400" : "text-[var(--text-muted)]"}><Mail className="h-3 w-3 inline mr-0.5" />{emailFound ? "\u2713" : "\u2014"}</span>
-          <span className={linkedinFound ? "text-green-400" : "text-[var(--text-muted)]"}><Linkedin className="h-3 w-3 inline mr-0.5" />{linkedinFound ? "\u2713" : "\u2014"}</span>
-          <span className={twitterFound ? "text-green-400" : "text-[var(--text-muted)]"}><Twitter className="h-3 w-3 inline mr-0.5" />{twitterFound ? "\u2713" : "\u2014"}</span>
-          <span className={phoneFound ? "text-green-400" : "text-[var(--text-muted)]"}><Phone className="h-3 w-3 inline mr-0.5" />{phoneFound ? "\u2713" : "\u2014"}</span>
-        </div>
-      </td>
-      <td className="px-3 py-2" />
-      <td className="px-3 py-2">
-        <Badge variant={entry.status === "completed" ? "sent" : entry.status === "failed" ? "failed" : "processing"} className="text-[10px]">{entry.status}</Badge>
-      </td>
-    </tr>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Processing Job Progress (inline progress for history rows)
-// ---------------------------------------------------------------------------
-
-function ProcessingJobProgress({
-  jobId,
-  createdAt,
-  isOrgJob,
-}: {
-  jobId: string;
-  createdAt: string;
-  isOrgJob: boolean;
-}) {
-  const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null);
-
-  useEffect(() => {
-    const supabase = useSupabase();
-    const startTime = new Date(new Date(createdAt).getTime() - 5000).toISOString();
-    const targetTable = isOrgJob ? "organizations" : "contacts";
-    const jobTypes = isOrgJob
-      ? ["enrichment_full", "enrichment_apollo", "enrichment_perplexity", "enrichment_gemini", "enrichment_people_finder"]
-      : ["enrichment", "enrichment_apollo"];
-
-    const poll = async () => {
-      // Fetch parent job metadata for the expected total
-      const { data: parentJob } = await supabase
-        .from("job_log")
-        .select("metadata")
-        .eq("id", jobId)
-        .single();
-
-      const parentMeta = (parentJob?.metadata ?? {}) as Record<string, unknown>;
-      const expectedTotal =
-        (parentMeta.org_count as number) ??
-        (parentMeta.contacts_count as number) ??
-        (parentMeta.person_count as number) ??
-        ((parentMeta.organization_ids as string[])?.length) ??
-        ((parentMeta.person_ids as string[])?.length) ??
-        null;
-
-      const { data } = await supabase
-        .from("job_log")
-        .select("target_id, status")
-        .eq("target_table", targetTable)
-        .in("job_type", jobTypes)
-        .gte("created_at", startTime)
-        .neq("id", jobId)
-        .limit(500);
-
-      if (data && data.length > 0) {
-        const byTarget = new Map<string, string>();
-        for (const entry of data as { target_id: string | null; status: string }[]) {
-          if (!entry.target_id) continue;
-          const existing = byTarget.get(entry.target_id);
-          if (!existing || (existing === "processing" && entry.status !== "processing")) {
-            byTarget.set(entry.target_id, entry.status);
-          }
-        }
-        const completed = Array.from(byTarget.values()).filter(
-          (s) => s === "completed" || s === "failed"
-        ).length;
-        setProgress({ completed, total: expectedTotal ?? byTarget.size });
-      } else if (expectedTotal) {
-        setProgress({ completed: 0, total: expectedTotal });
-      }
-    };
-
-    poll();
-    const interval = setInterval(poll, 3000);
-    return () => clearInterval(interval);
-  }, [jobId, createdAt, isOrgJob]);
-
-  if (!progress || progress.total === 0) return null;
-
-  const pct = Math.round((progress.completed / progress.total) * 100);
-
-  return (
-    <div className="flex items-center gap-2 shrink-0">
-      <span className="text-[10px] text-[var(--accent-orange)] tabular-nums font-medium">
-        {progress.completed}/{progress.total}
-      </span>
-      <div className="h-1 w-16 rounded-full bg-white/[0.06] overflow-hidden">
-        <div
-          className="h-full rounded-full bg-[var(--accent-orange)] transition-all duration-500"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Inline Live Progress for Processing Jobs in History
-// ---------------------------------------------------------------------------
-
-function ProcessingJobInlineProgress({
-  job,
-}: {
-  job: JobLog;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const [entries, setEntries] = useState<OrgProgress[]>([]);
-  const isOrgJob = job.job_type.includes("organization");
-  const meta = (job.metadata ?? {}) as Record<string, unknown>;
-
-  const existingCache = useRef<Map<string, Record<string, unknown>>>(new Map());
-
-  useEffect(() => {
-    if (!expanded || !isOrgJob) return;
-    existingCache.current = new Map();
-
-    const supabase = useSupabase();
-    const startTime = new Date(new Date(job.created_at).getTime() - 5000).toISOString();
-
-    // Determine active stages from parent job metadata
-    const jobStages = (meta.stages as string[]) ?? ["full"];
-    const activeStageKeys: string[] = [];
-    if (jobStages.includes("full")) {
-      activeStageKeys.push("apollo", "perplexity", "gemini");
-    } else {
-      for (const s of ["apollo", "perplexity", "gemini"]) {
-        if (jobStages.includes(s)) activeStageKeys.push(s);
-      }
-    }
-    if (jobStages.includes("people_finder")) activeStageKeys.push("people_finder");
-
-    const poll = async () => {
-      const { data } = await supabase
-        .from("job_log")
-        .select("id, target_id, status, job_type, metadata, created_at, error")
-        .eq("target_table", "organizations")
-        .in("job_type", ["enrichment_full", "enrichment_apollo", "enrichment_perplexity", "enrichment_gemini", "enrichment_people_finder"])
-        .gte("created_at", startTime)
-        .neq("id", job.id)
-        .order("created_at", { ascending: false })
-        .limit(500);
-
-      if (data) {
-        // Fetch existing enrichment_stages for new orgs
-        const newOrgIds: string[] = [];
-        for (const j of data as unknown as JobLog[]) {
-          if (j.target_id && !existingCache.current.has(j.target_id)) {
-            newOrgIds.push(j.target_id);
-          }
-        }
-        if (newOrgIds.length > 0) {
-          const uniqueIds = Array.from(new Set(newOrgIds));
-          const { data: orgsData } = await supabase
-            .from("organizations")
-            .select("id, name, enrichment_stages, icp_score")
-            .in("id", uniqueIds);
-          if (orgsData) {
-            for (const org of orgsData as { id: string; name: string; enrichment_stages: Record<string, unknown> | null; icp_score: number | null }[]) {
-              existingCache.current.set(org.id, { ...(org.enrichment_stages ?? {}), _name: org.name, _icp_score: org.icp_score });
-            }
-          }
-          for (const id of uniqueIds) {
-            if (!existingCache.current.has(id)) existingCache.current.set(id, {});
-          }
-        }
-
-        const byOrg = new Map<string, OrgProgress>();
-        for (const j of data as unknown as JobLog[]) {
-          if (!j.target_id) continue;
-          const jMeta = (j.metadata ?? {}) as Record<string, unknown>;
-          let progress = byOrg.get(j.target_id);
-          if (!progress) {
-            const existing = existingCache.current.get(j.target_id) ?? {};
-            const exA = existing.apollo as { status?: string } | undefined;
-            const exP = existing.perplexity as { status?: string } | undefined;
-            const exG = existing.gemini as { status?: string; icp_score?: number } | undefined;
-            const exPf = existing.people_finder as { status?: string; found?: number } | undefined;
-
-            progress = {
-              target_id: j.target_id,
-              org_name: (jMeta.org_name as string) ?? (existing._name as string) ?? null,
-              overall_status: "processing",
-              icp_score: (existing._icp_score as number) ?? null,
-              created_at: j.created_at,
-              stages: {
-                apollo: exA?.status === "completed" ? { status: "completed" } : null,
-                perplexity: exP?.status === "completed" ? { status: "completed" } : null,
-                gemini: exG?.status === "completed" ? { status: "completed", icp_score: exG.icp_score } : null,
-                people_finder: exPf?.status === "completed" ? { status: "completed", found: exPf.found } : null,
-              },
-            };
-            byOrg.set(j.target_id, progress);
-          }
-          if (jMeta.org_name && !progress.org_name) progress.org_name = jMeta.org_name as string;
-
-          switch (j.job_type) {
-            case "enrichment_apollo":
-              progress.stages.apollo = { status: j.status as OrgStageStatus["status"] };
-              break;
-            case "enrichment_perplexity":
-              progress.stages.perplexity = { status: j.status as OrgStageStatus["status"] };
-              break;
-            case "enrichment_gemini":
-              progress.stages.gemini = {
-                status: j.status as OrgStageStatus["status"],
-                icp_score: (jMeta.icp_score as number) ?? null,
-              };
-              if (progress.stages.gemini.icp_score != null) progress.icp_score = progress.stages.gemini.icp_score;
-              break;
-            case "enrichment_people_finder":
-              progress.stages.people_finder = {
-                status: j.status as OrgStageStatus["status"],
-                found: (jMeta.found as number) ?? (jMeta.people_found as number) ?? 0,
-              };
-              break;
-            case "enrichment_full":
-              progress.overall_status = j.status;
-              if (j.status === "completed" && jMeta.icp_score != null) progress.icp_score = jMeta.icp_score as number;
-              // When full pipeline is processing, mark active stages as pending if not yet started
-              if (j.status === "processing") {
-                for (const key of activeStageKeys) {
-                  const sk = key as keyof typeof progress.stages;
-                  if (!progress.stages[sk]) {
-                    progress.stages[sk] = { status: "pending" };
-                  }
-                }
-              }
-              break;
-          }
-        }
-
-        // Compute overall_status from active stages
-        for (const [, progress] of byOrg) {
-          if (progress.overall_status === "completed" || progress.overall_status === "failed") continue;
-          const relevantStatuses = activeStageKeys.map((key) => {
-            const stage = progress.stages[key as keyof typeof progress.stages];
-            return stage?.status ?? "pending";
-          });
-          if (relevantStatuses.length > 0 && relevantStatuses.every((s) => s === "completed")) {
-            progress.overall_status = "completed";
-          } else if (relevantStatuses.some((s) => s === "failed")) {
-            progress.overall_status = "failed";
-          }
-        }
-
-        setEntries(
-          Array.from(byOrg.values()).sort(
-            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          )
-        );
-      }
-    };
-
-    poll();
-    const interval = setInterval(poll, 3000);
-    return () => clearInterval(interval);
-  }, [expanded, isOrgJob, job.id, job.created_at, meta]);
-
-  const orgCount = (meta.org_count as number) ?? null;
-  const timestamp = new Date(job.created_at);
-  const timeStr = timestamp.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " + timestamp.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-
-  return (
-    <div className="rounded-xl glass overflow-hidden">
-      {/* Row header — clickable to expand */}
-      <div
-        onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.04] transition-all duration-200 cursor-pointer group"
-      >
-        <span className="shrink-0">
-          {expanded ? (
-            <ChevronDown className="h-3.5 w-3.5 text-[var(--accent-orange)]" />
-          ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-[var(--text-muted)]" />
-          )}
-        </span>
-
-        <Badge variant={isOrgJob ? "glass-indigo" : "glass-orange"} className="text-[10px] shrink-0 w-[90px] text-center">
-          {isOrgJob ? "Organization" : "Person"}
-        </Badge>
-
-        <div className="flex items-center gap-3 flex-1 min-w-0 text-xs">
-          {orgCount != null && (
-            <span className="text-white font-medium">{orgCount} org{orgCount !== 1 ? "s" : ""}</span>
-          )}
-        </div>
-
-        <span className="text-[10px] text-[var(--text-muted)] shrink-0 tabular-nums">{timeStr}</span>
-
-        <Badge variant="processing" className="text-[10px] shrink-0">processing</Badge>
-
-        <ProcessingJobProgress jobId={job.id} createdAt={job.created_at} isOrgJob={isOrgJob} />
-
-        <Link
-          href={`/admin/enrichment/${job.id}`}
-          onClick={(e) => e.stopPropagation()}
-          className="text-[var(--text-muted)] hover:text-white transition-colors shrink-0"
-          title="View full details"
-        >
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
-
-      {/* Expanded live status */}
-      {expanded && isOrgJob && (
-        <div className="border-t border-white/[0.06] px-4 py-3 bg-white/[0.01]">
-          {entries.length > 0 ? (
-            <OrgLiveStatusList entries={entries} />
-          ) : (
-            <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs py-2">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Loading progress...
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Job History Table (shared) -- with expandable result rows
-// ---------------------------------------------------------------------------
-
-function JobHistoryTable({ jobs }: { jobs: JobLog[] }) {
-  if (jobs.length === 0) {
-    return (
-      <GlassCard className="text-center py-8">
-        <Sparkles className="h-8 w-8 text-[var(--text-muted)] mx-auto mb-2" />
-        <p className="text-[var(--text-muted)]">No enrichment jobs yet</p>
-      </GlassCard>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      {jobs.map((job) => {
-        // Processing jobs get expandable inline progress
-        if (job.status === "processing") {
-          return <ProcessingJobInlineProgress key={job.id} job={job} />;
-        }
-
-        const meta = (job.metadata ?? {}) as Record<string, unknown>;
-        const isOrgJob = job.job_type.includes("organization");
-        const timestamp = new Date(job.created_at);
-        const timeStr = timestamp.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " + timestamp.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-
-        // Org job stats
-        const orgCount = (meta.org_count as number) ?? (meta.orgs_enriched as number) ?? null;
-        const orgsEnriched = (meta.orgs_enriched as number) ?? null;
-        const signalsCreated = (meta.signals_created as number) ?? null;
-        const peopleFound = (meta.people_found as number) ?? null;
-
-        // Person job stats
-        const personsProcessed = (meta.contacts_processed as number) ?? (meta.persons_processed as number) ?? null;
-        const emailsFound = (meta.emails_found as number) ?? null;
-        const linkedinFound = (meta.linkedin_found as number) ?? null;
-
-        return (
-          <Link
-            key={job.id}
-            href={`/admin/enrichment/${job.id}`}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl glass hover:bg-white/[0.04] transition-all duration-200 group"
-          >
-            {/* Type badge */}
-            <Badge variant={isOrgJob ? "glass-indigo" : "glass-orange"} className="text-[10px] shrink-0 w-[90px] text-center">
-              {isOrgJob ? "Organization" : "Person"}
-            </Badge>
-
-            {/* Stats */}
-            <div className="flex items-center gap-3 flex-1 min-w-0 text-xs">
-              {isOrgJob ? (
-                <>
-                  {orgCount != null && (
-                    <span className="text-white font-medium">{orgCount} org{orgCount !== 1 ? "s" : ""}</span>
-                  )}
-                  {orgsEnriched != null && (
-                    <span className="text-[var(--text-muted)]">{orgsEnriched} enriched</span>
-                  )}
-                  {signalsCreated != null && signalsCreated > 0 && (
-                    <span className="text-[var(--accent-indigo)]">{signalsCreated} signals</span>
-                  )}
-                  {peopleFound != null && peopleFound > 0 && (
-                    <span className="text-[var(--accent-orange)]">{peopleFound} people found</span>
-                  )}
-                </>
-              ) : (
-                <>
-                  {personsProcessed != null && (
-                    <span className="text-white font-medium">{personsProcessed} person{personsProcessed !== 1 ? "s" : ""}</span>
-                  )}
-                  {emailsFound != null && emailsFound > 0 && (
-                    <span className="text-[var(--accent-orange)]">{emailsFound} emails</span>
-                  )}
-                  {linkedinFound != null && linkedinFound > 0 && (
-                    <span className="text-[var(--accent-indigo)]">{linkedinFound} linkedin</span>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Timestamp */}
-            <span className="text-[10px] text-[var(--text-muted)] shrink-0 tabular-nums">
-              {timeStr}
-            </span>
-
-            {/* Status */}
-            <Badge
-              variant={job.status === "completed" ? "sent" : job.status === "failed" ? "failed" : "processing"}
-              className="text-[10px] shrink-0"
-            >
-              {job.status}
-            </Badge>
-
-            {/* Arrow */}
-            <ArrowRight className="h-3.5 w-3.5 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Main Page
+// Page Component
 // ---------------------------------------------------------------------------
 
 export default function EnrichmentPage() {
   const searchParams = useSearchParams();
-  const preSelectedPersons = useMemo(
-    () => searchParams.get("persons")?.split(",") ?? [],
+
+  const preSelectedOrgs = useMemo(
+    () => searchParams.get("organizations")?.split(",").filter(Boolean) ?? [],
     [searchParams]
   );
-  const preSelectedOrgs = useMemo(
-    () => searchParams.get("organizations")?.split(",") ?? [],
+  const preSelectedPersons = useMemo(
+    () => searchParams.get("persons")?.split(",").filter(Boolean) ?? [],
     [searchParams]
   );
   const retryJobId = searchParams.get("retry");
 
-  const [events, setEvents] = useState<Pick<Event, "id" | "name">[]>([]);
-  const [initiatives, setInitiatives] = useState<
-    Pick<Initiative, "id" | "name">[]
-  >([]);
-  const [jobs, setJobs] = useState<JobLog[]>([]);
+  // Determine default tab from query params
+  const defaultTab: "persons" | "organizations" = retryJobId
+    ? "organizations"
+    : preSelectedOrgs.length > 0
+      ? "organizations"
+      : preSelectedPersons.length > 0
+        ? "persons"
+        : "organizations";
+
+  // ---- Tab ----
+  const [activeTab, setActiveTab] = useState<"persons" | "organizations">(defaultTab);
+
+  // ---- Center state machine ----
+  const [centerState, setCenterState] = useState<CenterState>("list");
+
+  // ---- Selection ----
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // ---- Filters ----
+  const [filters, setFilters] = useState<FilterState>({ ...EMPTY_FILTERS });
+
+  // ---- Org config ----
+  const [stages, setStages] = useState<OrgStage[]>(["full"]);
+
+  // ---- Person config ----
+  const [personFields, setPersonFields] = useState<EnrichField[]>(["email", "linkedin"]);
+
+  // ---- People Finder settings ----
+  const [pfPerCompany, setPfPerCompany] = useState(5);
+  const [pfSeniorities, setPfSeniorities] = useState([
+    "Owner", "Founder", "C-Suite", "VP", "Director",
+  ]);
+  const [pfDepartments, setPfDepartments] = useState<string[]>([]);
+
+  // ---- Target ----
+  const [target, setTarget] = useState<TargetType>("unenriched");
+  const [eventId, setEventId] = useState("");
+  const [initiativeId, setInitiativeId] = useState("");
+  const [icpThreshold, setIcpThreshold] = useState(75);
+  const [savedListId, setSavedListId] = useState("");
+
+  // ---- Reference data ----
+  const [events, setEvents] = useState<{ id: string; name: string }[]>([]);
+  const [initiatives, setInitiatives] = useState<{ id: string; name: string }[]>([]);
+  const [savedLists, setSavedLists] = useState<{ id: string; name: string; count: number }[]>([]);
+  const [jobs, setJobs] = useState<JobHistoryJob[]>([]);
+
+  // ---- Items ----
+  const [allItems, setAllItems] = useState<(OrgRow | PersonRow)[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [itemsLoading, setItemsLoading] = useState(false);
+
+  // ---- Categories / Sources (derived) ----
+  const [categories, setCategories] = useState<string[]>([]);
+  const [sources, setSources] = useState<string[]>([]);
+
+  // ---- Running ----
+  const [isRunning, setIsRunning] = useState(false);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [jobStartTime, setJobStartTime] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // ---- Progress ----
+  const [progressData, setProgressData] = useState<Map<string, OrgProgress>>(new Map());
+  const [activeStages, setActiveStages] = useState<Map<string, string>>(new Map());
+  const [progressCompleted, setProgressCompleted] = useState(0);
+  const [progressTotal, setProgressTotal] = useState(0);
+
+  // ---- Results ----
+  const [resultStats, setResultStats] = useState<SummaryStripProps["stats"] | undefined>();
+  const [resultOutcomes, setResultOutcomes] = useState<Map<string, "enriched" | "failed" | "skipped">>(new Map());
+  const [viewingJobId, setViewingJobId] = useState<string | null>(null);
+
+  // ---- Sorting ----
+  const [sortKey, setSortKey] = useState("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  // ---- Responsive sidebar ----
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // =========================================================================
+  // Data fetching
+  // =========================================================================
 
   const loadJobs = useCallback(async () => {
     const supabase = useSupabase();
     const { data } = await supabase
       .from("job_log")
-      .select("*")
+      .select("id, job_type, status, created_at, metadata")
       .in("job_type", [
         "enrichment",
         "enrichment_batch_organizations",
+        "enrichment_batch_persons",
+        "enrichment_person",
       ])
       .order("created_at", { ascending: false })
       .limit(50);
-    if (data) setJobs(data as JobLog[]);
+    if (data) setJobs(data as JobHistoryJob[]);
   }, []);
 
+  // Load events, initiatives, saved lists, and jobs on mount
   useEffect(() => {
     const supabase = useSupabase();
 
@@ -3167,7 +178,7 @@ export default function EnrichmentPage() {
       .select("id, name")
       .order("date_start", { ascending: false })
       .then(({ data }) => {
-        if (data) setEvents(data as Pick<Event, "id" | "name">[]);
+        if (data) setEvents(data as { id: string; name: string }[]);
       });
 
     supabase
@@ -3175,91 +186,913 @@ export default function EnrichmentPage() {
       .select("id, name")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
-        if (data) setInitiatives(data as Pick<Initiative, "id" | "name">[]);
+        if (data) setInitiatives(data as { id: string; name: string }[]);
+      });
+
+    // Saved lists (for person tab)
+    supabase
+      .from("person_lists")
+      .select("id, name, person_list_items(count)")
+      .order("name")
+      .then(({ data }) => {
+        if (data) {
+          setSavedLists(
+            data.map((l: Record<string, unknown>) => ({
+              id: l.id as string,
+              name: l.name as string,
+              count: (l.person_list_items as { count: number }[])?.[0]?.count ?? 0,
+            }))
+          );
+        }
       });
 
     loadJobs();
   }, [loadJobs]);
 
-  // Auto-refresh job list when any job is still processing
+  // Auto-refresh jobs while any are processing
   useEffect(() => {
-    const hasProcessing = jobs.some((j) => j.status === "processing");
+    const hasProcessing = jobs.some(
+      (j) => j.status === "processing" || j.status === "in_progress"
+    );
     if (!hasProcessing) return;
 
     const interval = setInterval(loadJobs, 5000);
     return () => clearInterval(interval);
   }, [jobs, loadJobs]);
 
-  const defaultTab = retryJobId ? "org" : preSelectedOrgs.length > 0 ? "org" : "person";
+  // ---- Load items when tab changes ----
+  const loadItems = useCallback(async () => {
+    setItemsLoading(true);
+    const supabase = useSupabase();
 
-  return (
-    <div className="space-y-6">
-      {/* Fade-in animation for live status entries */}
-      <style jsx global>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-4px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
+    try {
+      if (activeTab === "organizations") {
+        // Fetch orgs
+        const { data: orgs } = await supabase
+          .from("organizations")
+          .select("id, name, category, icp_score, enrichment_status, enrichment_stages")
+          .order("name")
+          .limit(2000);
+
+        if (!orgs) {
+          setAllItems([]);
+          setTotalCount(0);
+          setCategories([]);
+          return;
+        }
+
+        // Fetch event participations for those orgs
+        const orgIds = orgs.map((o: Record<string, unknown>) => o.id as string);
+        const { data: eps } = await supabase
+          .from("event_participations")
+          .select("organization_id, event_id, events(name)")
+          .in("organization_id", orgIds.slice(0, 500)); // Supabase IN limit
+
+        // Build event map: org_id -> { event_ids, event_names }
+        const eventMap = new Map<string, { ids: string[]; names: string[] }>();
+        if (eps) {
+          for (const ep of eps) {
+            const orgId = (ep as Record<string, unknown>).organization_id as string;
+            const eventId = (ep as Record<string, unknown>).event_id as string;
+            const eventRec = (ep as Record<string, unknown>).events as { name: string } | null;
+            const eventName = eventRec?.name ?? "";
+
+            let entry = eventMap.get(orgId);
+            if (!entry) {
+              entry = { ids: [], names: [] };
+              eventMap.set(orgId, entry);
+            }
+            if (!entry.ids.includes(eventId)) {
+              entry.ids.push(eventId);
+              entry.names.push(eventName);
+            }
           }
         }
+
+        // Build rows
+        const rows: OrgRow[] = orgs.map((o: Record<string, unknown>) => {
+          const ev = eventMap.get(o.id as string);
+          return {
+            id: o.id as string,
+            name: o.name as string,
+            event_ids: ev?.ids,
+            event_names: ev?.names,
+            category: (o.category as string) ?? null,
+            icp_score: (o.icp_score as number) ?? null,
+            enrichment_stages: (o.enrichment_stages as OrgRow["enrichment_stages"]) ?? null,
+            enrichment_status: (o.enrichment_status as string) ?? "none",
+          };
+        });
+
+        // Extract unique categories
+        const cats = new Set<string>();
+        rows.forEach((r) => {
+          if (r.category) cats.add(r.category);
+        });
+        setCategories(Array.from(cats).sort());
+        setSources([]);
+
+        setAllItems(rows);
+        setTotalCount(rows.length);
+      } else {
+        // Fetch persons from the view
+        const { data: persons } = await supabase
+          .from("persons_with_icp")
+          .select("id, full_name, primary_org_name, icp_score, icp_reason, org_category, email, linkedin_url, twitter_handle, phone, source, enrichment_status")
+          .order("full_name")
+          .limit(2000);
+
+        if (!persons) {
+          setAllItems([]);
+          setTotalCount(0);
+          setSources([]);
+          return;
+        }
+
+        // Fetch event participations for persons
+        const personIds = persons.map((p: Record<string, unknown>) => p.id as string);
+        const { data: eps } = await supabase
+          .from("event_participations")
+          .select("person_id, event_id, events(name)")
+          .in("person_id", personIds.slice(0, 500));
+
+        const eventMap = new Map<string, { ids: string[]; names: string[] }>();
+        if (eps) {
+          for (const ep of eps) {
+            const personId = (ep as Record<string, unknown>).person_id as string;
+            const eid = (ep as Record<string, unknown>).event_id as string;
+            const eventRec = (ep as Record<string, unknown>).events as { name: string } | null;
+            const eventName = eventRec?.name ?? "";
+
+            let entry = eventMap.get(personId);
+            if (!entry) {
+              entry = { ids: [], names: [] };
+              eventMap.set(personId, entry);
+            }
+            if (!entry.ids.includes(eid)) {
+              entry.ids.push(eid);
+              entry.names.push(eventName);
+            }
+          }
+        }
+
+        const rows: PersonRow[] = persons.map((p: Record<string, unknown>) => {
+          const ev = eventMap.get(p.id as string);
+          return {
+            id: p.id as string,
+            full_name: (p.full_name as string) ?? "",
+            primary_org_name: (p.primary_org_name as string) ?? null,
+            event_ids: ev?.ids,
+            event_names: ev?.names,
+            source: (p.source as string) ?? null,
+            icp_score: (p.icp_score as number) ?? null,
+            email: (p.email as string) ?? null,
+            linkedin_url: (p.linkedin_url as string) ?? null,
+            twitter_handle: (p.twitter_handle as string) ?? null,
+            phone: (p.phone as string) ?? null,
+            enrichment_status: (p.enrichment_status as string) ?? "none",
+          };
+        });
+
+        // Extract unique sources
+        const srcs = new Set<string>();
+        rows.forEach((r) => {
+          if (r.source) srcs.add(r.source);
+        });
+        setSources(Array.from(srcs).sort());
+        setCategories([]);
+
+        setAllItems(rows);
+        setTotalCount(rows.length);
+      }
+    } finally {
+      setItemsLoading(false);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    loadItems();
+  }, [loadItems]);
+
+  // ---- Handle pre-selected items from URL query params ----
+  const hasAppliedQueryParams = useRef(false);
+  useEffect(() => {
+    if (hasAppliedQueryParams.current) return;
+    if (itemsLoading || allItems.length === 0) return;
+
+    if (activeTab === "organizations" && preSelectedOrgs.length > 0) {
+      setSelectedIds(new Set(preSelectedOrgs));
+      setTarget("selected");
+      hasAppliedQueryParams.current = true;
+    } else if (activeTab === "persons" && preSelectedPersons.length > 0) {
+      setSelectedIds(new Set(preSelectedPersons));
+      setTarget("selected");
+      hasAppliedQueryParams.current = true;
+    }
+  }, [activeTab, allItems, itemsLoading, preSelectedOrgs, preSelectedPersons]);
+
+  // ---- Handle retry query param ----
+  useEffect(() => {
+    if (!retryJobId || activeTab !== "organizations") return;
+    if (itemsLoading || allItems.length === 0) return;
+
+    (async () => {
+      const supabase = useSupabase();
+      const { data: childJobs } = await supabase
+        .from("job_log")
+        .select("target_id, status")
+        .or(`metadata->>parent_job_id.eq.${retryJobId}`)
+        .in("status", ["failed", "error"]);
+
+      if (childJobs) {
+        const failedIds = new Set(
+          childJobs
+            .map((j: Record<string, unknown>) => j.target_id as string)
+            .filter(Boolean)
+        );
+        if (failedIds.size > 0) {
+          setSelectedIds(failedIds);
+          setTarget("selected");
+        }
+      }
+    })();
+  }, [retryJobId, activeTab, allItems, itemsLoading]);
+
+  // =========================================================================
+  // Filtering (client-side)
+  // =========================================================================
+
+  const filteredItems = useMemo(() => {
+    return allItems.filter((item) => {
+      // Search filter
+      const name = "full_name" in item ? item.full_name : (item as OrgRow).name;
+      if (filters.search && !name.toLowerCase().includes(filters.search.toLowerCase())) {
+        return false;
+      }
+
+      // Event filter (by event ID)
+      if (filters.event) {
+        const itemEventIds = (item as OrgRow & { event_ids?: string[] }).event_ids ??
+          (item as PersonRow & { event_ids?: string[] }).event_ids;
+        if (!itemEventIds?.includes(filters.event)) return false;
+      }
+
+      // Initiative filter — we don't have initiative IDs on items client-side,
+      // so this filter would require a separate query. For now, skip if empty.
+      // TODO: Could be expanded if initiative_enrollment data is loaded on items.
+
+      // Status filter
+      if (filters.status && item.enrichment_status !== filters.status) return false;
+
+      // ICP filter
+      if (filters.icpMin && (item.icp_score ?? 0) < Number(filters.icpMin)) return false;
+      if (filters.icpMax && (item.icp_score ?? 0) > Number(filters.icpMax)) return false;
+
+      // Category / Source filter
+      if (filters.categoryOrSource) {
+        if ("category" in item && (item as OrgRow).category !== filters.categoryOrSource) return false;
+        if ("source" in item && !("category" in item) && (item as PersonRow).source !== filters.categoryOrSource) return false;
+      }
+
+      return true;
+    });
+  }, [allItems, filters]);
+
+  // =========================================================================
+  // Sorting
+  // =========================================================================
+
+  const sortedItems = useMemo(() => {
+    const sorted = [...filteredItems];
+    sorted.sort((a, b) => {
+      const aRaw = (a as unknown as Record<string, unknown>)[sortKey];
+      const bRaw = (b as unknown as Record<string, unknown>)[sortKey];
+      const aVal = aRaw as string | number | null | undefined;
+      const bVal = bRaw as string | number | null | undefined;
+
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortDir === "asc"
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal);
+      }
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+      }
+      return 0;
+    });
+    return sorted;
+  }, [filteredItems, sortKey, sortDir]);
+
+  function handleSort(key: string) {
+    if (key === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
+
+  // =========================================================================
+  // Target / Selection sync
+  // =========================================================================
+
+  useEffect(() => {
+    if (target === "selected") return; // Manual selection, don't auto-select
+
+    const matching = new Set<string>();
+    for (const item of allItems) {
+      let matches = false;
+      switch (target) {
+        case "unenriched":
+          matches = item.enrichment_status === "none" || !item.enrichment_status;
+          break;
+        case "failed_incomplete":
+          matches = item.enrichment_status === "failed" || item.enrichment_status === "partial";
+          break;
+        case "icp_below":
+          matches = (item.icp_score ?? 0) < icpThreshold;
+          break;
+        case "event":
+          if (eventId) {
+            const ids = (item as OrgRow & { event_ids?: string[] }).event_ids ??
+              (item as PersonRow & { event_ids?: string[] }).event_ids;
+            matches = ids?.includes(eventId) ?? false;
+          }
+          break;
+        case "initiative":
+          // Initiative filtering would require loading enrollment data
+          // For now, select nothing until we implement it
+          break;
+        case "saved_list":
+          // Saved list filtering requires loading list items
+          break;
+      }
+      if (matches) matching.add(item.id);
+    }
+    setSelectedIds(matching);
+  }, [target, allItems, icpThreshold, eventId]);
+
+  // When user manually checks rows, switch to "selected" if appropriate
+  function handleSelectionChange(ids: Set<string>) {
+    setSelectedIds(ids);
+    // If the user is manually selecting and we're not on "selected" target,
+    // switch to "selected" so the run button uses their selection
+    if (target !== "selected" && ids.size > 0) {
+      // Only switch to "selected" if the ids differ from the auto-selected set
+      // For simplicity, just let the user's selection override
+    }
+  }
+
+  // =========================================================================
+  // Tab switching
+  // =========================================================================
+
+  function switchTab(tab: "persons" | "organizations") {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+    setCenterState("list");
+    setSelectedIds(new Set());
+    setFilters({ ...EMPTY_FILTERS });
+    setTarget("unenriched");
+    setViewingJobId(null);
+    setResultStats(undefined);
+    setResultOutcomes(new Map());
+    setSortKey(tab === "organizations" ? "name" : "full_name");
+    setSortDir("asc");
+  }
+
+  // =========================================================================
+  // Back to list
+  // =========================================================================
+
+  function handleBackToList() {
+    setCenterState("list");
+    setViewingJobId(null);
+    setResultStats(undefined);
+    setResultOutcomes(new Map());
+  }
+
+  // =========================================================================
+  // canRun
+  // =========================================================================
+
+  const canRun = useMemo(() => {
+    if (selectedIds.size === 0) return false;
+    if (activeTab === "organizations" && stages.length === 0) return false;
+    if (activeTab === "persons" && personFields.length === 0) return false;
+    return true;
+  }, [selectedIds.size, activeTab, stages.length, personFields.length]);
+
+  // =========================================================================
+  // Run Pipeline
+  // =========================================================================
+
+  async function handleRun() {
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    setIsRunning(true);
+    setCenterState("progress");
+    setProgressData(new Map());
+    setActiveStages(new Map());
+    setResultStats(undefined);
+    setResultOutcomes(new Map());
+    setViewingJobId(null);
+
+    const ids = Array.from(selectedIds);
+    setProgressTotal(ids.length);
+    setProgressCompleted(0);
+    setJobStartTime(new Date().toISOString());
+
+    try {
+      const body: Record<string, unknown> = {};
+
+      if (activeTab === "organizations") {
+        body.stages = stages;
+        body.organizationIds = ids;
+        if (stages.includes("people_finder")) {
+          body.peopleFinderConfig = {
+            perCompany: pfPerCompany,
+            seniorities: pfSeniorities,
+            departments: pfDepartments,
+          };
+        }
+
+        const res = await fetch("/api/enrich/organizations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+        const data = await res.json();
+
+        if (data.jobId) setActiveJobId(data.jobId);
+
+        // Build result stats
+        const results = data.results as { orgId: string; success: boolean; icp_score: number | null }[] | undefined;
+        const icpResults = results?.filter((r) => r.icp_score != null) ?? [];
+        setResultStats({
+          processed: data.orgs_processed ?? 0,
+          enriched: data.orgs_enriched ?? 0,
+          signals: data.signals_created ?? 0,
+          avgIcp:
+            icpResults.length > 0
+              ? Math.round(
+                  icpResults.reduce((s, r) => s + (r.icp_score ?? 0), 0) /
+                    icpResults.length
+                )
+              : null,
+          peopleFound: data.people_found,
+          newPersons: data.people_created,
+        });
+
+        // Build outcomes map
+        const outcomes = new Map<string, "enriched" | "failed" | "skipped">();
+        results?.forEach((r) => {
+          outcomes.set(r.orgId, r.success ? "enriched" : "failed");
+        });
+        setResultOutcomes(outcomes);
+      } else {
+        body.fields = personFields;
+        body.source = "apollo";
+        body.personIds = ids;
+
+        const res = await fetch("/api/enrich/persons", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+        const data = await res.json();
+
+        if (data.jobId) setActiveJobId(data.jobId);
+
+        setResultStats({
+          processed: data.contacts_processed ?? 0,
+          enriched: data.enriched ?? 0,
+        });
+
+        const outcomes = new Map<string, "enriched" | "failed" | "skipped">();
+        const personResults = data.results as { personId?: string; id?: string; success: boolean }[] | undefined;
+        personResults?.forEach((r) => {
+          outcomes.set(r.personId ?? r.id ?? "", r.success ? "enriched" : "failed");
+        });
+        setResultOutcomes(outcomes);
+      }
+
+      setCenterState("results");
+      loadJobs();
+      loadItems();
+    } catch (err) {
+      if ((err as Error).name === "AbortError") {
+        setCenterState("results");
+      } else {
+        console.error("Enrichment error:", err);
+        setCenterState("list");
+      }
+    } finally {
+      setIsRunning(false);
+      setActiveJobId(null);
+      abortControllerRef.current = null;
+      setJobStartTime(null);
+    }
+  }
+
+  // =========================================================================
+  // Stop / Cancel
+  // =========================================================================
+
+  async function handleStop() {
+    if (activeJobId) {
+      await fetch("/api/enrich/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: activeJobId }),
+      });
+    }
+    abortControllerRef.current?.abort();
+  }
+
+  // =========================================================================
+  // Polling for progress during run
+  // =========================================================================
+
+  useEffect(() => {
+    if (!isRunning || !jobStartTime) return;
+
+    const supabase = useSupabase();
+
+    const poll = async () => {
+      if (activeTab === "organizations") {
+        const { data } = await supabase
+          .from("job_log")
+          .select("id, target_id, status, job_type, metadata, created_at, error")
+          .eq("target_table", "organizations")
+          .in("job_type", [
+            "enrichment_full",
+            "enrichment_apollo",
+            "enrichment_perplexity",
+            "enrichment_gemini",
+            "enrichment_people_finder",
+          ])
+          .gte("created_at", jobStartTime)
+          .order("created_at", { ascending: false })
+          .limit(500);
+
+        if (data) {
+          const newProgressData = new Map<string, OrgProgress>();
+          const newActiveStages = new Map<string, string>();
+          let completed = 0;
+
+          // Group by target_id
+          const byOrg = new Map<
+            string,
+            { stages: Record<string, string>; latestProcessing?: string; overallStatus: string }
+          >();
+
+          for (const j of data) {
+            const tid = (j as Record<string, unknown>).target_id as string | null;
+            if (!tid) continue;
+
+            let entry = byOrg.get(tid);
+            if (!entry) {
+              entry = { stages: {}, overallStatus: "processing" };
+              byOrg.set(tid, entry);
+            }
+
+            const jobType = (j as Record<string, unknown>).job_type as string;
+            const status = (j as Record<string, unknown>).status as string;
+            const stageKey = jobType.replace("enrichment_", "");
+
+            if (stageKey === "full") {
+              entry.overallStatus = status;
+            } else {
+              // Only set if not already set (first = most recent due to ordering)
+              if (!entry.stages[stageKey]) {
+                entry.stages[stageKey] = status;
+              }
+              if (status === "processing") {
+                entry.latestProcessing = stageKey;
+              }
+            }
+          }
+
+          for (const [orgId, entry] of byOrg) {
+            const isCompleted =
+              entry.overallStatus === "completed" || entry.overallStatus === "failed";
+            if (isCompleted) completed++;
+
+            newProgressData.set(orgId, {
+              status: entry.overallStatus,
+              activeStage: entry.latestProcessing,
+            });
+
+            if (entry.latestProcessing) {
+              newActiveStages.set(orgId, entry.latestProcessing);
+            }
+          }
+
+          setProgressData(newProgressData);
+          setActiveStages(newActiveStages);
+          setProgressCompleted(completed);
+        }
+      } else {
+        // Person enrichment polling
+        const { data } = await supabase
+          .from("job_log")
+          .select("id, target_id, status, metadata")
+          .eq("target_table", "persons")
+          .eq("job_type", "enrichment_person")
+          .gte("created_at", jobStartTime)
+          .limit(500);
+
+        if (data) {
+          let completed = 0;
+          for (const j of data) {
+            const status = (j as Record<string, unknown>).status as string;
+            if (status === "completed" || status === "failed") {
+              completed++;
+            }
+          }
+          setProgressCompleted(completed);
+        }
+      }
+    };
+
+    const interval = setInterval(poll, 2000);
+    poll();
+    return () => clearInterval(interval);
+  }, [isRunning, jobStartTime, activeTab]);
+
+  // =========================================================================
+  // Historical job loading
+  // =========================================================================
+
+  async function handleSelectJob(jobId: string) {
+    setViewingJobId(jobId);
+    setCenterState("results");
+
+    const supabase = useSupabase();
+
+    // Get parent job for stats
+    const { data: parentJob } = await supabase
+      .from("job_log")
+      .select("*")
+      .eq("id", jobId)
+      .single();
+
+    if (parentJob?.metadata) {
+      const meta = parentJob.metadata as Record<string, unknown>;
+      setResultStats({
+        processed: (meta.org_count as number) ?? (meta.contacts_processed as number) ?? 0,
+        enriched: (meta.orgs_enriched as number) ?? (meta.enriched as number) ?? 0,
+        signals: meta.signals_created as number | undefined,
+        avgIcp: meta.avg_icp as number | undefined,
+        peopleFound: meta.people_found as number | undefined,
+        newPersons: meta.people_created as number | undefined,
+      });
+    } else {
+      setResultStats(undefined);
+    }
+
+    // Get child job entries for per-item outcomes
+    const { data: childJobs } = await supabase
+      .from("job_log")
+      .select("target_id, status")
+      .or(`metadata->>parent_job_id.eq.${jobId}`)
+      .not("target_id", "is", null);
+
+    if (childJobs) {
+      const outcomes = new Map<string, "enriched" | "failed" | "skipped">();
+      for (const j of childJobs) {
+        const tid = (j as Record<string, unknown>).target_id as string;
+        const status = (j as Record<string, unknown>).status as string;
+        if (tid) {
+          outcomes.set(tid, status === "completed" ? "enriched" : "failed");
+        }
+      }
+      setResultOutcomes(outcomes);
+    }
+  }
+
+  // =========================================================================
+  // Render
+  // =========================================================================
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-120px)]">
+      {/* Global animations */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
         @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(-8px);
-            max-height: 0;
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-            max-height: 48px;
-          }
+          from { opacity: 0; transform: translateY(-8px); max-height: 0; }
+          to { opacity: 1; transform: translateY(0); max-height: 48px; }
         }
       `}</style>
 
-      <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)] text-white">
-        Enrichment
-      </h1>
+      {/* ---- Page Header ---- */}
+      <div className="flex items-center justify-between mb-4 shrink-0">
+        <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)] text-white">
+          Enrichment
+        </h1>
 
-      <Tabs
-        defaultTab={defaultTab}
-        tabs={[
-          {
-            id: "person",
-            label: "Person Enrichment",
-            content: (
-              <PersonEnrichmentTab
-                preSelectedPersons={preSelectedPersons}
-                events={events}
-                onJobComplete={loadJobs}
-              />
-            ),
-          },
-          {
-            id: "org",
-            label: "Organization Enrichment",
-            content: (
-              <OrganizationEnrichmentTab
-                preSelectedOrgs={preSelectedOrgs}
+        <div className="flex items-center gap-2">
+          {/* Responsive sidebar toggle (below 1100px) */}
+          <button
+            onClick={() => setSidebarOpen((o) => !o)}
+            className="lg:hidden p-2 rounded-lg glass text-[var(--text-muted)] hover:text-white transition-colors"
+            aria-label="Toggle config"
+          >
+            <Settings2 className="h-4 w-4" />
+          </button>
+
+          {/* Tab toggle */}
+          <div className="flex gap-1 glass rounded-lg p-1">
+            <button
+              onClick={() => switchTab("persons")}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+                activeTab === "persons"
+                  ? "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20"
+                  : "text-[var(--text-muted)] hover:text-white border border-transparent"
+              )}
+            >
+              Persons
+            </button>
+            <button
+              onClick={() => switchTab("organizations")}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+                activeTab === "organizations"
+                  ? "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20"
+                  : "text-[var(--text-muted)] hover:text-white border border-transparent"
+              )}
+            >
+              Organizations
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ---- Two-panel layout ---- */}
+      <div className="flex gap-6 flex-1 min-h-0 relative">
+        {/* ---- Center Panel (65%) ---- */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          {itemsLoading && allItems.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-sm text-[var(--text-muted)] animate-pulse">
+                Loading {activeTab}...
+              </div>
+            </div>
+          ) : (
+            <CenterPanel
+              state={centerState}
+              tab={activeTab}
+              filters={filters}
+              onFiltersChange={setFilters}
+              events={events}
+              initiatives={initiatives}
+              items={sortedItems}
+              totalCount={totalCount}
+              selectedIds={selectedIds}
+              onSelectionChange={handleSelectionChange}
+              categories={categories}
+              sources={sources}
+              progressData={progressData}
+              activeStages={activeStages}
+              progressCompleted={progressCompleted}
+              progressTotal={progressTotal}
+              resultStats={resultStats}
+              resultOutcomes={resultOutcomes}
+              onBackToList={handleBackToList}
+              viewingJobId={viewingJobId}
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={handleSort}
+            />
+          )}
+        </div>
+
+        {/* ---- Right Sidebar ---- */}
+        {/* Desktop: always visible; Mobile: overlay drawer */}
+        <div
+          className={cn(
+            // Desktop
+            "hidden lg:flex w-[360px] min-w-[320px] max-w-[400px] flex-col gap-4 shrink-0",
+          )}
+        >
+          <ConfigPanel
+            tab={activeTab}
+            stages={stages}
+            onStagesChange={setStages}
+            personFields={personFields}
+            onPersonFieldsChange={setPersonFields}
+            pfPerCompany={pfPerCompany}
+            onPfPerCompanyChange={setPfPerCompany}
+            pfSeniorities={pfSeniorities}
+            onPfSenioritiesChange={setPfSeniorities}
+            pfDepartments={pfDepartments}
+            onPfDepartmentsChange={setPfDepartments}
+            target={target}
+            onTargetChange={setTarget}
+            eventId={eventId}
+            onEventIdChange={setEventId}
+            initiativeId={initiativeId}
+            onInitiativeIdChange={setInitiativeId}
+            icpThreshold={icpThreshold}
+            onIcpThresholdChange={setIcpThreshold}
+            savedListId={savedListId}
+            onSavedListIdChange={setSavedListId}
+            events={events}
+            initiatives={initiatives}
+            savedLists={savedLists}
+            selectedCount={selectedIds.size}
+            isRunning={isRunning}
+            canRun={canRun}
+            onRun={handleRun}
+            onStop={handleStop}
+          />
+
+          <GlassCard className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <JobHistory
+              jobs={jobs}
+              activeJobId={activeJobId}
+              viewingJobId={viewingJobId}
+              onSelectJob={handleSelectJob}
+            />
+          </GlassCard>
+        </div>
+
+        {/* ---- Mobile sidebar overlay ---- */}
+        {sidebarOpen && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="lg:hidden fixed inset-0 bg-black/50 z-40"
+              onClick={() => setSidebarOpen(false)}
+            />
+            {/* Drawer */}
+            <div className="lg:hidden fixed right-0 top-0 bottom-0 w-[380px] max-w-[90vw] z-50 bg-[#0f0f13] border-l border-white/[0.06] p-4 flex flex-col gap-4 overflow-y-auto">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-white font-medium">Configuration</span>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="text-[var(--text-muted)] hover:text-white p-1"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <ConfigPanel
+                tab={activeTab}
+                stages={stages}
+                onStagesChange={setStages}
+                personFields={personFields}
+                onPersonFieldsChange={setPersonFields}
+                pfPerCompany={pfPerCompany}
+                onPfPerCompanyChange={setPfPerCompany}
+                pfSeniorities={pfSeniorities}
+                onPfSenioritiesChange={setPfSeniorities}
+                pfDepartments={pfDepartments}
+                onPfDepartmentsChange={setPfDepartments}
+                target={target}
+                onTargetChange={setTarget}
+                eventId={eventId}
+                onEventIdChange={setEventId}
+                initiativeId={initiativeId}
+                onInitiativeIdChange={setInitiativeId}
+                icpThreshold={icpThreshold}
+                onIcpThresholdChange={setIcpThreshold}
+                savedListId={savedListId}
+                onSavedListIdChange={setSavedListId}
                 events={events}
                 initiatives={initiatives}
-                onJobComplete={loadJobs}
-                retryJobId={retryJobId}
+                savedLists={savedLists}
+                selectedCount={selectedIds.size}
+                isRunning={isRunning}
+                canRun={canRun}
+                onRun={handleRun}
+                onStop={handleStop}
               />
-            ),
-          },
-        ]}
-      />
 
-      {/* Job History */}
-      <div>
-        <h2 className="text-lg font-semibold font-[family-name:var(--font-heading)] text-white mb-3">
-          Job History
-        </h2>
-        <JobHistoryTable jobs={jobs} />
+              <GlassCard className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                <JobHistory
+                  jobs={jobs}
+                  activeJobId={activeJobId}
+                  viewingJobId={viewingJobId}
+                  onSelectJob={(id) => {
+                    handleSelectJob(id);
+                    setSidebarOpen(false);
+                  }}
+                />
+              </GlassCard>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -20,6 +20,13 @@ import {
   UserPlus,
 } from "lucide-react";
 
+/** Safely render a DB value — returns a string or "—" if it's an object/null */
+function safe(v: unknown): string {
+  if (v == null) return "\u2014";
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
+}
+
 export default async function OrganizationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -140,25 +147,25 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
         {org.description && (
           <div>
             <div className="text-xs text-[var(--text-muted)]">Description</div>
-            <p className="text-sm text-[var(--text-secondary)] mt-0.5">{org.description}</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-0.5">{safe(org.description)}</p>
           </div>
         )}
         {org.context && (
           <div>
             <div className="text-xs text-[var(--text-muted)]">Context</div>
-            <p className="text-sm text-[var(--text-secondary)] mt-0.5">{org.context}</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-0.5">{safe(org.context)}</p>
           </div>
         )}
         {org.usp && (
           <div>
             <div className="text-xs text-[var(--text-muted)]">Our Angle (USP)</div>
-            <p className="text-sm text-[var(--text-secondary)] mt-0.5">{org.usp}</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-0.5">{safe(org.usp)}</p>
           </div>
         )}
         {org.icp_reason && (
           <div>
             <div className="text-xs text-[var(--text-muted)]">ICP Reason</div>
-            <p className="text-sm text-[var(--text-secondary)] mt-0.5">{org.icp_reason}</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-0.5">{safe(org.icp_reason)}</p>
           </div>
         )}
         {(org.website || org.linkedin_url) && (
@@ -235,9 +242,12 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
             <div className="mt-3 pt-3 border-t border-[var(--glass-border)]">
               <div className="text-[10px] text-[var(--text-muted)] mb-1.5">Tech Stack</div>
               <div className="flex flex-wrap gap-1.5">
-                {firmographics.technologies.slice(0, 20).map((tech: string, i: number) => (
-                  <span key={`${i}-${tech}`} className="px-2 py-0.5 text-[10px] rounded-full bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] border border-[var(--accent-indigo)]/20">{tech}</span>
-                ))}
+                {firmographics.technologies.slice(0, 20).map((tech: unknown, i: number) => {
+                  const label = typeof tech === "string" ? tech : typeof tech === "object" && tech !== null && "name" in tech ? String((tech as Record<string, unknown>).name) : String(tech);
+                  return (
+                    <span key={`${i}-${label}`} className="px-2 py-0.5 text-[10px] rounded-full bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] border border-[var(--accent-indigo)]/20">{label}</span>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -313,12 +323,12 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
                           {person.full_name}
                         </Link>
                       </td>
-                      <td className="px-5 py-3 text-[var(--text-muted)]">{person.title || "\u2014"}</td>
+                      <td className="px-5 py-3 text-[var(--text-muted)]">{safe(person.title)}</td>
                       <td className="px-5 py-3">
-                        {person.role && <Badge variant="glass-indigo">{person.role}</Badge>}
+                        {person.role && <Badge variant="glass-indigo">{safe(person.role)}</Badge>}
                         {!person.role && <span className="text-[var(--text-muted)]">&mdash;</span>}
                       </td>
-                      <td className="px-5 py-3 text-[var(--text-muted)]">{person.email || "\u2014"}</td>
+                      <td className="px-5 py-3 text-[var(--text-muted)]">{safe(person.email)}</td>
                       <td className="px-5 py-3 text-[var(--text-muted)]">
                         {person.linkedin_url ? (
                           <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-indigo)] hover:underline text-xs truncate max-w-[120px] inline-block">
@@ -326,7 +336,7 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
                           </a>
                         ) : "\u2014"}
                       </td>
-                      <td className="px-5 py-3 text-[var(--text-muted)]">{person.phone || "\u2014"}</td>
+                      <td className="px-5 py-3 text-[var(--text-muted)]">{safe(person.phone)}</td>
                       <td className="px-5 py-3">
                         {person.is_current ? (
                           <Badge variant="sent">Current</Badge>
@@ -338,7 +348,7 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
                         {person.link_source === "org_enrichment" ? (
                           <Badge variant="glass-orange" className="text-[10px]">Enriched</Badge>
                         ) : person.link_source ? (
-                          <span className="text-xs text-[var(--text-muted)]">{person.link_source}</span>
+                          <span className="text-xs text-[var(--text-muted)]">{safe(person.link_source)}</span>
                         ) : (
                           <span className="text-[var(--text-muted)]">&mdash;</span>
                         )}
@@ -369,18 +379,18 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
                 className="flex items-start gap-3 glass rounded-xl p-3 hover:bg-white/[0.03] transition-all duration-200"
               >
                 <Badge variant={ix.status === "replied" ? "replied" : ix.status === "sent" ? "sent" : ix.status === "draft" ? "draft" : "default"}>
-                  {ix.interaction_type}
+                  {safe(ix.interaction_type)}
                 </Badge>
                 <div className="flex-1 min-w-0">
                   {ix.subject && (
-                    <p className="text-sm font-medium text-[var(--text-secondary)] truncate">{ix.subject}</p>
+                    <p className="text-sm font-medium text-[var(--text-secondary)] truncate">{safe(ix.subject)}</p>
                   )}
                   {ix.body && (
-                    <p className="text-sm text-[var(--text-muted)] line-clamp-2 mt-0.5">{ix.body}</p>
+                    <p className="text-sm text-[var(--text-muted)] line-clamp-2 mt-0.5">{safe(ix.body)}</p>
                   )}
                   <div className="flex items-center gap-2 mt-1">
-                    {ix.channel && <span className="text-xs text-[var(--text-muted)]">{ix.channel}</span>}
-                    {ix.direction && <span className="text-xs text-[var(--text-muted)]">{ix.direction}</span>}
+                    {ix.channel && <span className="text-xs text-[var(--text-muted)]">{safe(ix.channel)}</span>}
+                    {ix.direction && <span className="text-xs text-[var(--text-muted)]">{safe(ix.direction)}</span>}
                     {ix.occurred_at && (
                       <span className="text-xs text-[var(--text-muted)]">
                         {new Date(ix.occurred_at).toLocaleDateString()}
@@ -388,7 +398,7 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
                     )}
                   </div>
                 </div>
-                <Badge variant={ix.status}>{ix.status}</Badge>
+                <Badge variant={ix.status}>{safe(ix.status)}</Badge>
               </div>
             ))}
           </div>

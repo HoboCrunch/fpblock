@@ -150,7 +150,9 @@ export async function POST(request: NextRequest) {
   // Run batch enrichment
   // -------------------------------------------------------------------------
   try {
-    const result = await runBatchPersonEnrichment(supabase, personIds);
+    const result = await runBatchPersonEnrichment(supabase, personIds, {
+      parentJobId: job.id,
+    });
 
     const personsEnriched = result.results.filter((r) => r.success).length;
     const personsFailed = result.results.filter((r) => !r.success).length;

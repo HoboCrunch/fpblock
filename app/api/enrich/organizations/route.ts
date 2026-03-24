@@ -167,6 +167,7 @@ export async function POST(request: NextRequest) {
     const result = await runBatchEnrichment(supabase, orgIds, {
       stages: validStages.length > 0 ? validStages : ["full"],
       concurrency: 3, // Parallel org processing (Apollo rate-limited internally via fetch-with-retry backoff)
+      parentJobId: job.id,
       peopleFinderConfig: peopleFinderConfig
         ? {
             perCompany: peopleFinderConfig.perCompany ?? 5,
