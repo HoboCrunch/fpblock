@@ -501,18 +501,13 @@ export default function EnrichmentPage() {
       return sortedItems.filter((item) => resultOutcomes.has(item.id));
     }
 
-    // When a target preset is active (not "selected"), filter to selected items
-    if (target !== "unenriched" && target !== "selected" && selectedIds.size > 0 && selectedIds.size < allItems.length) {
-      return sortedItems.filter((item) => selectedIds.has(item.id));
-    }
-
-    // When user has manually selected items, filter to those
-    if (target === "selected" && selectedIds.size > 0) {
+    // When items are selected (by target preset or manual), filter table to them
+    if (selectedIds.size > 0 && selectedIds.size < sortedItems.length) {
       return sortedItems.filter((item) => selectedIds.has(item.id));
     }
 
     return sortedItems;
-  }, [sortedItems, centerState, queuedItems, viewingJobId, resultOutcomes, target, selectedIds, allItems.length]);
+  }, [sortedItems, centerState, queuedItems, viewingJobId, resultOutcomes, selectedIds]);
 
   function handleSort(key: string) {
     if (key === sortKey) {
@@ -877,15 +872,18 @@ export default function EnrichmentPage() {
 
     const supabase = useSupabase();
 
-    // Get parent job for stats
+    // Get parent job for stats + organization_ids
     const { data: parentJob } = await supabase
       .from("job_log")
       .select("*")
       .eq("id", jobId)
       .single();
 
-    if (parentJob?.metadata) {
-      const meta = parentJob.metadata as Record<string, unknown>;
+    if (!parentJob) return;
+
+    const meta = (parentJob.metadata ?? {}) as Record<string, unknown>;
+
+    if (parentJob.metadata) {
       setResultStats({
         processed: (meta.org_count as number) ?? (meta.contacts_processed as number) ?? 0,
         enriched: (meta.orgs_enriched as number) ?? (meta.enriched as number) ?? 0,
@@ -898,23 +896,40 @@ export default function EnrichmentPage() {
       setResultStats(undefined);
     }
 
-    // Get child job entries for per-item outcomes
-    const { data: childJobs } = await supabase
-      .from("job_log")
-      .select("target_id, status")
-      .or(`metadata->>parent_job_id.eq.${jobId}`)
-      .not("target_id", "is", null);
+    // Get the item IDs from the parent job metadata
+    const itemIds = (meta.organization_ids as string[]) ?? (meta.person_ids as string[]);
 
-    if (childJobs) {
+    if (itemIds && itemIds.length > 0) {
+      // Query child job entries by target_id + time range for per-item outcomes
+      const { data: childJobs } = await supabase
+        .from("job_log")
+        .select("target_id, status")
+        .in("target_id", itemIds)
+        .in("job_type", [
+          "enrichment_full", "enrichment_apollo", "enrichment_perplexity",
+          "enrichment_gemini", "enrichment_people_finder", "enrichment_person",
+        ])
+        .gte("created_at", parentJob.created_at)
+        .not("target_id", "is", null);
+
       const outcomes = new Map<string, "enriched" | "failed" | "skipped">();
-      for (const j of childJobs) {
-        const tid = (j as Record<string, unknown>).target_id as string;
-        const status = (j as Record<string, unknown>).status as string;
-        if (tid) {
-          outcomes.set(tid, status === "completed" ? "enriched" : "failed");
+      if (childJobs) {
+        for (const j of childJobs) {
+          const tid = (j as Record<string, unknown>).target_id as string;
+          const status = (j as Record<string, unknown>).status as string;
+          if (tid && !outcomes.has(tid)) {
+            // First entry per target (most relevant since we don't aggregate)
+            outcomes.set(tid, status === "completed" ? "enriched" : status === "failed" ? "failed" : "enriched");
+          }
         }
       }
+      // Also mark items that were in the job but had no child entries as skipped
+      for (const id of itemIds) {
+        if (!outcomes.has(id)) outcomes.set(id, "skipped");
+      }
       setResultOutcomes(outcomes);
+    } else {
+      setResultOutcomes(new Map());
     }
   }
 
