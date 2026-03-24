@@ -299,7 +299,7 @@ function OrgExpandedCard({
           )}
 
           {/* Category */}
-          {org?.category && (
+          {org?.category && typeof org.category === "string" && (
             <div className="rounded-lg bg-white/[0.02] border border-white/[0.06] p-3">
               <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1 font-medium">
                 Category
@@ -434,7 +434,8 @@ function OrgResultRow({
   const meta = (entry.metadata ?? {}) as Record<string, unknown>;
   const orgName = org?.name ?? getOrgName(entry);
   const icpScore = getOrgIcpScore(entry, orgMap);
-  const category = org?.category ?? (meta.category as string) ?? null;
+  const rawCat = org?.category ?? meta.category ?? null;
+  const category = typeof rawCat === "string" ? rawCat : typeof rawCat === "object" && rawCat && "name" in rawCat ? (rawCat as any).name : null;
   const stageCompleted = entry.job_type.replace("enrichment_", "");
   const signalsCount =
     (meta.signals_created as number) ?? (meta.signal_count as number) ?? signals.length;

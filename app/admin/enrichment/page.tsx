@@ -313,7 +313,7 @@ function PreviewOrgList({ orgs, isLoading, totalCount }: { orgs: PreviewOrg[]; i
                     )}
                   </td>
                   <td className="px-3 py-1.5 text-[var(--text-muted)] truncate max-w-[120px]">
-                    {o.category ?? "\u2014"}
+                    {typeof o.category === "string" ? o.category : "\u2014"}
                   </td>
                   <td className="px-3 py-1.5 text-[var(--text-muted)] truncate max-w-[160px]">
                     {o.website ? (
@@ -948,7 +948,7 @@ function PickOrgPanel({
                   {o.icp_score}
                 </Badge>
               )}
-              <span className="text-xs text-[var(--text-muted)] truncate max-w-[100px]">{o.category ?? ""}</span>
+              <span className="text-xs text-[var(--text-muted)] truncate max-w-[100px]">{typeof o.category === "string" ? o.category : ""}</span>
               <span className="text-xs text-[var(--text-muted)] truncate max-w-[160px] ml-auto">
                 {o.website ? o.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "") : ""}
               </span>

@@ -170,7 +170,7 @@ export default async function OrganizationsListPage({
     .not("category", "is", null);
 
   const categories = [
-    ...new Set((categoryData || []).map((c: any) => c.category).filter(Boolean)),
+    ...new Set((categoryData || []).map((c: any) => typeof c.category === "string" ? c.category : null).filter(Boolean)),
   ].sort();
 
   // Process rows
@@ -347,7 +347,7 @@ export default async function OrganizationsListPage({
                     </Link>
                   </td>
                   <td className="px-5 py-3 text-[var(--text-muted)]">
-                    {row.category || "\u2014"}
+                    {typeof row.category === "string" ? row.category : "\u2014"}
                   </td>
                   <td className="px-5 py-3 text-[var(--text-secondary)]">
                     {row.person_count}
