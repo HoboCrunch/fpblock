@@ -14,6 +14,12 @@ export function getSupabase(): SupabaseClient {
     throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
   }
 
-  client = createClient(url, key);
+  client = createClient(url, key, {
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
+  });
   return client;
 }

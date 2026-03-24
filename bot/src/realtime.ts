@@ -28,30 +28,45 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 export function startRealtimeSubscriptions(): RealtimeChannel {
   const sb = getSupabase();
 
+  console.log("[realtime] Setting up channel subscriptions...");
+
   const channel = sb
     .channel("crm-notifications")
     .on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "inbound_emails" },
-      (payload) => handleInboundEmail(payload.new as InboundEmail)
+      (payload) => {
+        console.log("[realtime] inbound_emails INSERT received");
+        handleInboundEmail(payload.new as InboundEmail);
+      }
     )
     .on(
       "postgres_changes",
       { event: "UPDATE", schema: "public", table: "interactions" },
-      (payload) => handleInteractionUpdate(payload.new as Interaction)
+      (payload) => {
+        console.log("[realtime] interactions UPDATE received:", (payload.new as any).status);
+        handleInteractionUpdate(payload.new as Interaction);
+      }
     )
     .on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "job_log" },
-      (payload) => handleJobLogInsert(payload.new as JobLog)
+      (payload) => {
+        console.log("[realtime] job_log INSERT received:", (payload.new as any).job_type);
+        handleJobLogInsert(payload.new as JobLog);
+      }
     )
     .on(
       "postgres_changes",
       { event: "UPDATE", schema: "public", table: "job_log" },
-      (payload) => handleJobLogUpdate(payload.new as JobLog)
+      (payload) => {
+        console.log("[realtime] job_log UPDATE received:", (payload.new as any).status);
+        handleJobLogUpdate(payload.new as JobLog);
+      }
     )
-    .subscribe((status) => {
+    .subscribe((status, err) => {
       console.log(`[realtime] Subscription status: ${status}`);
+      if (err) console.error("[realtime] Subscription error:", err);
     });
 
   pollTimer = setInterval(() => pollBatchProgress(), 5000);
