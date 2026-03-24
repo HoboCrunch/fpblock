@@ -4,6 +4,8 @@ import { Bot } from "grammy";
 import { registerMenuHandlers } from "./menus/main.js";
 import { startRealtimeSubscriptions, stopRealtime } from "./realtime.js";
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function main() {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) throw new Error("Missing TELEGRAM_BOT_TOKEN");
@@ -13,6 +15,14 @@ async function main() {
   // Initialize Grammy bot
   const bot = new Bot(token);
   registerMenuHandlers(bot);
+
+  // Drop any pending getUpdates from a previous instance
+  try {
+    await bot.api.deleteWebhook({ drop_pending_updates: true });
+    console.log("[bot] Cleared pending updates");
+  } catch (err) {
+    console.warn("[bot] Could not clear pending updates:", err);
+  }
 
   // Start Supabase Realtime subscriptions
   const channel = startRealtimeSubscriptions();
@@ -34,10 +44,23 @@ async function main() {
     console.log(`[bot] heartbeat — ${new Date().toISOString()}`);
   }, 60_000);
 
-  // Start long-polling
-  await bot.start({
-    onStart: () => console.log("[bot] Grammy polling started"),
-  });
+  // Start long-polling with retry on conflict
+  const maxRetries = 5;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await bot.start({
+        onStart: () => console.log("[bot] Grammy polling started"),
+      });
+      break; // Clean exit from bot.stop()
+    } catch (err: any) {
+      if (err?.error_code === 409 && attempt < maxRetries) {
+        console.warn(`[bot] Grammy conflict (attempt ${attempt}/${maxRetries}), retrying in ${attempt * 3}s...`);
+        await sleep(attempt * 3000);
+      } else {
+        throw err;
+      }
+    }
+  }
 }
 
 main().catch((err) => {
