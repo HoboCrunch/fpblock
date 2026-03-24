@@ -32,6 +32,8 @@ export interface Person {
   photo_url: string | null;
   source: string | null;
   apollo_id: string | null;
+  enrichment_status: 'none' | 'in_progress' | 'complete' | 'failed';
+  last_enriched_at: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -49,6 +51,9 @@ export interface Organization {
   icp_reason: string | null;
   context: string | null;
   usp: string | null;
+  enrichment_status: 'none' | 'in_progress' | 'partial' | 'complete' | 'failed';
+  enrichment_stages: Record<string, { status: string; at?: string; error?: string; [key: string]: unknown }>;
+  last_enriched_at: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;

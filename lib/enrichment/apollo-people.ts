@@ -9,6 +9,8 @@
  * Auth uses X-Api-Key header (consistent with apollo.ts).
  */
 
+import { fetchWithRetry } from "./fetch-with-retry";
+
 const APOLLO_PEOPLE_SEARCH_URL =
   "https://api.apollo.io/api/v1/mixed_people/api_search";
 const APOLLO_PEOPLE_MATCH_URL = "https://api.apollo.io/v1/people/match";
@@ -64,7 +66,7 @@ export interface PeopleFinderResult {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function extractDomain(url: string): string | null {
+export function extractDomain(url: string): string | null {
   try {
     const normalized = url.startsWith("http") ? url : `https://${url}`;
     return new URL(normalized).hostname.replace(/^www\./, "");
@@ -152,15 +154,23 @@ async function doSearch(
   }
 
   try {
-    const res = await fetch(APOLLO_PEOPLE_SEARCH_URL, {
-      method: "POST",
-      headers: {
-        "X-Api-Key": apiKey,
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
+    const res = await fetchWithRetry(
+      APOLLO_PEOPLE_SEARCH_URL,
+      {
+        method: "POST",
+        headers: {
+          "X-Api-Key": apiKey,
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    });
+      {
+        timeoutMs: 30_000,
+        maxRetries: 2,
+        context: `apollo-people-search:${orgName}`,
+      },
+    );
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
@@ -208,7 +218,7 @@ async function doSearch(
  * Enrich a single person via Apollo People Match to get email, phone, etc.
  * Returns updated person with contact details filled in.
  */
-async function enrichPerson(
+export async function enrichPerson(
   apiKey: string,
   person: ApolloPersonResult,
   orgName: string,
@@ -229,15 +239,23 @@ async function enrichPerson(
   if (person.apollo_id) body.id = person.apollo_id;
 
   try {
-    const res = await fetch(APOLLO_PEOPLE_MATCH_URL, {
-      method: "POST",
-      headers: {
-        "X-Api-Key": apiKey,
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
+    const res = await fetchWithRetry(
+      APOLLO_PEOPLE_MATCH_URL,
+      {
+        method: "POST",
+        headers: {
+          "X-Api-Key": apiKey,
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    });
+      {
+        timeoutMs: 20_000,
+        maxRetries: 2,
+        context: `apollo-people-match:${person.full_name}`,
+      },
+    );
 
     if (!res.ok) return person; // Keep what we have
 
@@ -356,8 +374,16 @@ export async function searchPeopleAtOrg(
 
   const enrichedPeople: ApolloPersonResult[] = [];
   for (const person of searchResult.people) {
-    const enriched = await enrichPerson(apiKey, person, orgName, domain);
-    enrichedPeople.push(enriched);
+    try {
+      const enriched = await enrichPerson(apiKey, person, orgName, domain);
+      enrichedPeople.push(enriched);
+    } catch (err) {
+      console.error(
+        `[apollo-people] Failed to enrich "${person.full_name}" at "${orgName}", keeping unenriched data:`,
+        err instanceof Error ? err.message : String(err)
+      );
+      enrichedPeople.push(person);
+    }
   }
 
   return {
