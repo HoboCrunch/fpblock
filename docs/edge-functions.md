@@ -41,7 +41,7 @@ All functions handle OPTIONS preflight and return JSON responses.
 ## enrich-company
 
 **Path:** `supabase/functions/enrich-company/index.ts`
-**External APIs:** Brave Search, Perplexity (sonar model), Gemini 2.0 Flash
+**External APIs:** Brave Search, Perplexity (sonar model), Gemini 2.5 Flash
 
 **Purpose:** Research organizations using web search and AI synthesis. Produces a context paragraph and structured signals.
 
@@ -66,7 +66,7 @@ All functions handle OPTIONS preflight and return JSON responses.
 ## generate-messages
 
 **Path:** `supabase/functions/generate-messages/index.ts`
-**External API:** Gemini 2.0 Flash
+**External API:** Gemini 2.5 Flash
 
 **Purpose:** Generate outreach interactions using templated prompts with person/organization context. Creates interactions of type `cold_email`, `cold_linkedin`, etc.
 
@@ -217,7 +217,7 @@ Organization enrichment pipeline orchestrator. Runs a five-stage enrichment with
 **Pipeline stages:**
 1. `runPerplexityEnrichment(orgId)` — Perplexity Sonar for deep research + website/domain discovery
 2. `runApolloEnrichment(orgId)` — Apollo org API for firmographics (industry, employees, revenue, funding, tech stack, HQ). Retries with name-based lookup if domain fails.
-3. `runGeminiSynthesis(orgId)` — Gemini 2.0 Flash combines Apollo + Perplexity data, reads ICP criteria from `company_context` table, outputs structured fields with ICP score 0-100
+3. `runGeminiSynthesis(orgId)` — Gemini 2.5 Flash combines Apollo + Perplexity data, reads ICP criteria from `company_context` table, outputs structured fields with ICP score 0-100
 4. `runPeopleFinderEnrichment(orgId, config)` — Apollo People Search finds contacts at org, deduplicates against existing persons, creates/merges person records with source tracking
 5. Signal extraction — inserts typed signals into `organization_signals`
 

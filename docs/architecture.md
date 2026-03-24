@@ -7,9 +7,9 @@
 | Frontend | Next.js 16 (App Router), React 19, Tailwind CSS v4 |
 | UI | Glassmorphic design system (Poppins + Inter fonts, orange/indigo accents) |
 | Backend | Supabase (Postgres, Auth, Edge Functions, Realtime, pg_cron) |
-| AI/Enrichment | Gemini 2.0 Flash, Apollo (persons + organizations), Perplexity Sonar (org deep research) |
+| AI/Enrichment | Gemini 2.5 Flash, Apollo (persons + organizations), Perplexity Sonar (org deep research) |
 | Email Sync | Fastmail JMAP API |
-| Notifications | Telegram Bot API |
+| Notifications | Telegram Bot (Grammy, long-running on Railway) |
 | Sending | SendGrid (email), HeyReach (LinkedIn) |
 | Drag & Drop | @hello-pangea/dnd |
 | CSV Parsing | PapaParse |
@@ -19,27 +19,28 @@
 ## High-Level Flow
 
 ```
-Browser (Admin CRM)
-    │
-    ├── Direct Supabase queries via client SDK (reads, writes)
-    ├── Next.js API routes (enrichment, inbox sync)
-    ├── Server actions (uploads, pipeline moves, settings CRUD)
-    ├── Edge Function invocations (generation, sending)
-    │
-    v
+Browser (Admin CRM)                    Telegram Bot (Railway)
+    │                                      │
+    ├── Direct Supabase queries            ├── Supabase Realtime subscriptions
+    ├── Next.js API routes                 │   (inbound_emails, interactions,
+    ├── Server actions                     │    job_log, persons, organizations)
+    ├── Edge Function invocations          ├── Grammy long-polling (getUpdates)
+    │                                      ├── Inline keyboard menus
+    v                                      └── Rate-limited notification queue
 Supabase
     ├── Postgres (18 tables with RLS)
     ├── Auth (email/password, guards /admin/*)
+    ├── Realtime (Postgres changes → bot notifications)
     ├── Edge Functions (6 Deno functions)
     ├── pg_cron (hourly send + status sync, 15-min inbox sync)
     └── pg_notify (automation triggers)
 
 External Services
     ├── Fastmail JMAP (inbound email sync)
-    ├── Telegram Bot (reply/bounce notifications)
+    ├── Telegram Bot API (real-time notifications + mobile CRM control)
     ├── Apollo (person enrichment + org firmographics + people search at orgs)
     ├── Perplexity Sonar (org deep research)
-    ├── Gemini 2.0 Flash (org synthesis + ICP scoring, message generation)
+    ├── Gemini 2.5 Flash (org synthesis + ICP scoring, message generation)
     ├── SendGrid (email sending + status)
     └── HeyReach (LinkedIn sending)
 ```
@@ -171,7 +172,7 @@ Cannes/
 │   │   ├── apollo.ts             # Apollo org API — firmographics, with domain→name fallback
 │   │   ├── apollo-people.ts      # Apollo People Search — find contacts at orgs (search + enrich)
 │   │   ├── perplexity.ts         # Perplexity Sonar — deep research + website discovery
-│   │   ├── gemini.ts             # Gemini 2.0 Flash — synthesis + ICP scoring (reads from company_context DB)
+│   │   ├── gemini.ts             # Gemini 2.5 Flash — synthesis + ICP scoring (reads from company_context DB)
 │   │   └── pipeline.ts           # Orchestrator — 5 stages (Apollo, Perplexity, Gemini, People Finder, Signals), smart ordering, batch + progress
 │   ├── fastmail.ts               # Fastmail JMAP client (session + email fetch, uses 'headers' array property syntax)
 │   ├── inbox-correlator.ts       # Email-to-person correlation engine
@@ -191,6 +192,20 @@ Cannes/
 │   ├── migrate-csv.ts            # CSV/JSON ETL into Supabase
 │   ├── import-all.ts             # Bulk import script
 │   └── seed-and-import.ts        # Seed + import runner
+├── bot/                          # Telegram bot (separate Railway service)
+│   ├── src/
+│   │   ├── index.ts              # Entry point — starts Grammy + Supabase Realtime
+│   │   ├── supabase.ts           # Service role client singleton
+│   │   ├── realtime.ts           # Supabase Realtime subscriptions + event routing
+│   │   ├── notifications.ts     # Rate limiter, send/edit, message formatters
+│   │   ├── batch-tracker.ts     # In-memory job tracking for progress messages
+│   │   ├── menus/               # Inline keyboard menus (dashboard, inbox, enrich, activity, settings)
+│   │   │   └── main.ts          # Callback router
+│   │   └── types.ts             # Minimal type subset from app
+│   ├── tests/                   # Vitest tests
+│   ├── package.json             # grammy, @supabase/supabase-js
+│   ├── tsconfig.json
+│   └── Dockerfile               # node:20-alpine
 ├── extra/                        # Non-app files (scraping data, old landing pages, CSVs, socials)
 │   ├── scraping/                 # Scraping scripts + data
 │   ├── fp-data-seed/             # Event seed data (EthCC, DC Blockchain, leads)
@@ -211,11 +226,12 @@ Cannes/
 
 ## Deployment
 
-- **Hosting:** Vercel (auto-deploys from `main` branch on GitHub)
+- **Web App:** Vercel (auto-deploys from `main` branch on GitHub)
+- **Telegram Bot:** Railway (separate service from `bot/` directory, Dockerfile-based)
 - **Domain:** gofpblock.com (www.gofpblock.com)
 - **Repository:** [github.com/HoboCrunch/fpblock](https://github.com/HoboCrunch/fpblock)
 - **Edge Functions:** Deployed separately to Supabase via `npx supabase functions deploy`
-- **Env vars:** Set in Vercel dashboard; `NEXT_PUBLIC_*` vars baked at build time
+- **Env vars:** Vercel for web app (`NEXT_PUBLIC_*` baked at build time); Railway for bot
 
 ## Data Flow: End-to-End Pipeline
 
@@ -236,7 +252,7 @@ Cannes/
    → Smart ordering: parallel path if org has website, discovery path if not
    → Perplexity Sonar discovers website/domain + deep research
    → Apollo firmographics (industry, employees, revenue, funding, tech stack, HQ)
-   → Gemini 2.0 Flash synthesizes + ICP scores (reads criteria from company_context table)
+   → Gemini 2.5 Flash synthesizes + ICP scores (reads criteria from company_context table)
    → People Finder: Apollo People Search finds contacts → dedup → insert/merge persons
    → Updates org record + inserts signals + creates person records with source tracking
          │
@@ -286,7 +302,7 @@ Cannes/
 - **Edge Functions for external APIs**: Generation, sending, and company enrichment go through Supabase Edge Functions, keeping API keys server-side.
 - **Fastmail JMAP for inbox**: Direct JMAP protocol integration for email sync from jb@gofpblock.com and wes@gofpblock.com. Uses `headers` array property syntax (not `header:Name:asText`). Service role client bypasses RLS in sync route. Correlation matches against `persons` table. Organization data joined via `person_organization` -> `organizations`.
 - **Organization enrichment pipeline**: Five-stage pipeline in `lib/enrichment/` — smart ordering based on data availability. If org has a website: Apollo + Perplexity run in parallel (fast). If no website: Perplexity runs first to discover domain, then Apollo uses discovered domain. Gemini synthesizes into structured fields + ICP score using criteria from `company_context` table (editable in Settings). People Finder searches Apollo for contacts at each org, deduplicates against existing persons, and creates `person_organization` links with source tracking. Apollo modules retry with name-based fallback when domain lookups fail.
-- **Telegram for notifications**: Lightweight push notifications for reply detection and enrichment completion.
+- **Telegram bot (Railway)**: Long-running Node.js process in `bot/` deployed as a separate Railway service. Uses Grammy for Telegram long-polling and Supabase Realtime for DB change notifications. Provides real-time push notifications (inbound replies, bounces, batch job progress) and inline-keyboard menus for mobile CRM control (dashboard stats, inbox, enrichment triggers, mute settings). Rate-limited at 1 msg/sec with queue overflow collapse. Replaces the cron-triggered notification approach — the existing `lib/telegram.ts` in the Next.js app remains as a fallback.
 - **Interaction versioning**: Interactions use `sequence_number` + `iteration` to track position in a sequence and regeneration count. Old iterations are marked `superseded`.
 - **Pipeline operates on persons**: Kanban/table views show one card per person at their most advanced outreach stage, not one card per interaction.
 - **Correlation engine**: Uses `pg_trgm` extension for fuzzy matching across name, email, LinkedIn, and Twitter fields. The `find_person_correlations` RPC surfaces potential duplicates; `merge_persons` RPC handles the merge, reassigning all related records to the surviving person.

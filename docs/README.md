@@ -12,7 +12,8 @@ Outreach management & enrichment HQ for FP Block's conference preparation. Built
 
 ## Key Subsystems
 
-- **Organization Enrichment Pipeline** — three-stage enrichment: Apollo (firmographics) + Perplexity Sonar (deep research) run in parallel, then Gemini 2.0 Flash synthesizes both into structured fields + ICP score (0-100). Each stage runnable independently or as a full pipeline. See [Architecture](./architecture.md) and [Edge Functions & API Routes](./edge-functions.md).
+- **Organization Enrichment Pipeline** — five-stage enrichment: Apollo (firmographics) + Perplexity Sonar (deep research) run in parallel, then Gemini 2.5 Flash synthesizes both into structured fields + ICP score (0-100), followed by People Finder and signal extraction. Each stage runnable independently or as a full pipeline. See [Architecture](./architecture.md) and [Edge Functions & API Routes](./edge-functions.md).
+- **Telegram Bot** — Long-running Node.js process on Railway with Grammy + Supabase Realtime. Provides real-time push notifications for inbound replies, bounces, and batch job progress, plus inline-keyboard menus for mobile CRM control (dashboard, inbox, enrichment triggers, settings). See [Architecture](./architecture.md) and [Setup Guide](./setup.md#telegram-bot-railway).
 - **Inbox System** — Fastmail JMAP sync for jb@gofpblock.com and wes@gofpblock.com with auto-correlation against persons, pipeline-aware styling, and pg_cron auto-sync every 15 minutes.
 - **Correlation Engine** — pg_trgm fuzzy matching for deduplication of persons and organizations with merge/dismiss workflow.
 
@@ -23,3 +24,4 @@ Outreach management & enrichment HQ for FP Block's conference preparation. Built
 - [Edge Functions](./edge-functions.md)
 - [Setup & Deployment Guide](./setup.md)
 - [Admin CRM Guide](./admin-panel.md)
+- [Telegram Bot Design Spec](./superpowers/specs/2026-03-23-telegram-bot-design.md)

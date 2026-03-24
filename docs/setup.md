@@ -200,6 +200,49 @@ Long-running routes have `maxDuration` configured:
 
 ---
 
+## Telegram Bot (Railway)
+
+The Telegram bot runs as a separate Railway service from the `bot/` directory.
+
+### Setup
+
+1. **Create Railway service** — New Service → GitHub Repo, select this repo
+2. **Set Root Directory** — Settings → Source → Root Directory: `bot`
+3. **Set environment variables:**
+
+| Variable | Description |
+|----------|-------------|
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (bypasses RLS) |
+| `TELEGRAM_BOT_TOKEN` | Bot API token from @BotFather |
+| `TELEGRAM_CHAT_ID` | Private group chat ID |
+| `APP_URL` | Web app URL (e.g., `https://gofpblock.com`) — used for inbox sync |
+
+4. **Deploy** — Railway auto-builds from the Dockerfile
+
+### Verify
+
+Check Railway logs for:
+```
+[bot] Starting FP Block CRM Bot...
+[bot] Realtime subscriptions active
+[bot] Grammy polling started
+```
+
+Send `/start` in the Telegram group to see the inline keyboard menu.
+
+### Local Development
+
+```bash
+cd bot
+npm install
+npm run dev
+```
+
+Requires the same env vars set in a `.env` file in `bot/`.
+
+---
+
 ## Deployment Checklist
 
 - [ ] Apply all migrations to Supabase (001 through 019)
@@ -209,7 +252,9 @@ Long-running routes have `maxDuration` configured:
 - [ ] Deploy all 6 edge functions (`npx supabase functions deploy`)
 - [ ] Set app.settings.supabase_url and app.settings.secret_key in DB config
 - [ ] Set all env vars in Vercel (see table above)
+- [ ] Deploy Telegram bot on Railway (see section above)
 - [ ] Verify auto-deploy from GitHub
 - [ ] Verify: login, dashboard, persons, organizations, events, pipeline, sequences, inbox, enrichment, uploads, settings
 - [ ] Verify: `/`, `/jb`, `/wes` landing pages render
+- [ ] Verify: `/start` in Telegram group shows bot menu
 - [ ] Run data migration if needed: `npx tsx scripts/migrate-csv.ts`
