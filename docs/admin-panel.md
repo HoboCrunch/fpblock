@@ -254,9 +254,30 @@ When emails are synced:
 Tabbed interface with two tabs: Person Enrichment and Organization Enrichment.
 
 ### Person Enrichment Tab
-- Source: Apollo (fixed)
-- Target: All unenriched persons / Selected persons / Persons from event / **Select from list** (searchable checkbox panel)
-- Fields: Email, LinkedIn, Twitter, Phone (toggle buttons)
+
+**API:** `POST /api/enrich/persons`
+
+**Source:** Apollo People Match (fills email, LinkedIn, Twitter, phone, title, seniority, department, photo, apollo_id)
+
+**Targets** (mutually exclusive, first-match-wins):
+- Explicit person IDs (from bulk selection on Persons page)
+- All persons from event (via event_participations)
+- All persons from organization (via person_organization)
+- Failed only (enrichment_status = 'failed')
+- By source (e.g., 'org_enrichment', 'csv_import') — combined with unenriched filter
+- Default: all unenriched (enrichment_status = 'none' OR apollo_id IS NULL)
+
+**Limit:** 200 persons per batch.
+
+**Behavior:**
+- COALESCE updates: only fills fields that are currently null on the person record
+- Reverse org linkage: if a person has no organization and Apollo returns org data, searches existing orgs by domain/name and links. Creates stub orgs (enrichment_status = 'none') when no match exists.
+- Persons with insufficient identifiers (no linkedin, no apollo_id, no org) are skipped and marked failed
+- Tracks enrichment_status (none → in_progress → complete/failed) and last_enriched_at
+- Per-person errors don't halt the batch
+
+**UI:**
+- Target selector, field toggle buttons
 - **Preview list:** Shows matching persons before running (name, org, field availability icons, true total count)
 - **Real-time progress:** During enrichment, polls job_log every 2s showing progress bar + per-person status
 - **Pre-selection:** Bulk "Enrich Selected" action from Persons page passes person IDs via URL params
@@ -282,45 +303,61 @@ People Finder can be combined with Full Pipeline or individual stages (additive 
 - If org has a website: Apollo + Perplexity run in parallel (fast path)
 - If org has no website: Perplexity runs first to discover domain, then Apollo uses discovered domain
 
-**Target Selector:** Same as before (unenriched, ICP below threshold, from event, from initiative, selected, select from list)
+**Target Selector:**
+- **Never enriched** — orgs with `enrichment_status = 'none'`
+- **Failed / Incomplete** — orgs with `enrichment_status` of `'failed'` or `'partial'`. Shows rich preview with completed stages (green pills), failed stage (red pill with error tooltip), and last attempt date
+- ICP below threshold, from event, from initiative, selected, select from list
 
-**Preview list:** Shows matching organizations before running
+**Retry flow:** Job detail pages link to `/admin/enrichment?retry={jobId}`, which auto-selects the org tab and pre-picks the incomplete orgs from that job. The pipeline skips already-completed stages on re-runs.
 
-**Real-time progress:** Polls job_log every 2s showing progress bar + per-org live status with pipeline stage labels:
-- "Researching" (Perplexity)
-- "Firmographics" (Apollo)
-- "ICP Scoring" (Gemini)
-- "Finding People" (People Finder)
-- "Complete"
+**Preview list:** Shows matching organizations before running (includes enrichment status column)
+
+**Real-time progress:** Per-stage icon columns showing real-time status for each org:
+- **4 stage columns** (Apollo/Search, Perplexity/Flask, Gemini/Brain, People Finder/Users) — each shows: hollow circle (pending), spinning loader (processing), green checkmark (completed with results), gray checkmark (completed with zero results), red alert (failed)
+- **ICP column** — appears as soon as Gemini completes (score color-coded by tier)
+- **Status badge** — right-aligned overall job status
 
 **Results include:** Orgs processed/enriched, signals created, people found/created/merged
 
+**Results dismissal:** Completed job results auto-dismiss when config changes. Manual dismiss via X button. Preview list reappears for new job configuration.
+
 ### Job History (shared)
-Compact card list of enrichment batch jobs (person + organization). Each row shows:
-- **Type badge** (orange = Person, indigo = Organization)
-- **Inline stats:** org count, enriched, signals, people found (org) or persons, emails, linkedin (person)
-- **Timestamp** (date + time)
-- **Status badge** (completed/failed/processing)
-- Click to navigate to job detail page
+Compact card list of enrichment batch jobs (person + organization).
+
+**Completed/failed jobs** render as links to the job detail page showing:
+- Type badge, inline stats, timestamp, status badge, arrow
+
+**Processing jobs** render as expandable rows:
+- **Collapsed:** Type badge, org count, timestamp, "processing" badge, X/Y progress bar. Arrow icon links to full job details.
+- **Expanded:** Click to toggle open an inline live status table (same per-stage icon columns as the enrichment tab). Polls every 3s only when expanded. Allows monitoring active jobs without leaving the page.
+- **Auto-refresh:** job list re-fetches every 5s when any job is processing, so status transitions are caught
 
 ### Job Detail Page
 
 **URL:** `/admin/enrichment/{jobId}`
 
-Dedicated results dashboard for a completed enrichment job.
+Dedicated results dashboard for an enrichment job. Supports both completed and in-progress jobs.
 
 **Header:** Back link, job title with date, status badge, duration.
+
+**Live Progress Banner** (processing jobs only): Pulsing orange indicator with progress bar, shows currently-processing entity name and pipeline stage (e.g. "Acme Corp: Deep Research — 3 of 8 completed"). Auto-refreshes stat cards via `router.refresh()` when the job completes.
+
+**Live Results** (processing jobs only): Results list polls child entries every 3s, showing result rows as they stream in during processing. ICP scores appear as soon as Gemini synthesis completes per org (not deferred to full pipeline completion).
 
 **Summary Stats:**
 - Org jobs: Orgs Processed / Enriched / Signals Created / Avg ICP Score
 - Org jobs with People Finder: + People Found / New Persons Created / Merged with Existing
-- Person jobs: Persons Processed / Emails / LinkedIn / Twitter Found
+- Person jobs: Persons Processed / Enriched / Failed / Orgs Created (stub orgs from reverse linkage)
 
 **Organization Results:** Collapsible cards with search and sort (by name, ICP, status):
 - **Collapsed:** Org name (linked), ICP score badge (color-coded), category, signals count, people found count, stage, status
 - **Expanded:** Two-column layout — left: description, context, USP, ICP reason; right: ICP score display, firmographics, category, People Finder stats (found/new/merged). Below: strengths/weaknesses, signals timeline.
 
 **Person Results:** Flat list with name (linked), field-found indicators, status badge.
+
+**Unprocessed Organizations** (failed/partial jobs only): Muted table below results showing orgs that were in the batch but never started processing. Shows org name (linked), previous enrichment status badge, and any prior stage history as colored pills. Toolbar count shows "X of Y results · N not processed".
+
+**Retry CTA** (failed/partial jobs only): Banner between stat cards and results showing "Job failed — N organizations not processed" with a "Retry N Remaining" button linking to `/admin/enrichment?retry={jobId}`.
 
 ## Uploads
 

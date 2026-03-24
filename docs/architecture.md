@@ -52,7 +52,7 @@ The CRM is built around five core entities:
 | Entity | Table | Description |
 |--------|-------|-------------|
 | **Persons** | `persons` | Individuals — speakers, founders, partners, etc. ICP scoring via `persons_with_icp` Postgres view |
-| **Organizations** | `organizations` | Companies, DAOs, protocols, funds |
+| **Organizations** | `organizations` | Companies, DAOs, protocols, funds. Tracks `enrichment_status`, `enrichment_stages` (per-stage jsonb), `last_enriched_at` |
 | **Events** | `events` | Conferences and gatherings |
 | **Initiatives** | `initiatives` | Campaign tracking units (e.g., "EthCC 2026 Outreach") |
 | **Interactions** | `interactions` | Unified timeline of all touchpoints (cold_email, cold_linkedin, reply, meeting, note, etc.) |
@@ -120,7 +120,8 @@ Cannes/
 │   │       └── actions.ts        # Server actions for settings CRUD + company context
 │   └── api/
 │       ├── enrich/
-│       │   ├── route.ts              # Apollo enrichment API route (targets persons)
+│       │   ├── route.ts              # Legacy Apollo enrichment (targets old contacts table)
+│       │   ├── persons/route.ts      # Person enrichment pipeline (Apollo People Match + reverse org linkage)
 │       │   └── organizations/route.ts # Organization enrichment pipeline (Apollo + Perplexity + Gemini)
 │       ├── messages/
 │       │   ├── generate/route.ts # Generate interactions (cold_email, cold_linkedin, etc.)
@@ -169,11 +170,13 @@ Cannes/
 │   │   ├── database.ts           # TypeScript types for all tables
 │   │   └── pipeline.ts           # Pipeline-specific types
 │   ├── enrichment/
+│   │   ├── fetch-with-retry.ts   # Resilient fetch wrapper — timeout (AbortController), exponential backoff retry, structured logging
 │   │   ├── apollo.ts             # Apollo org API — firmographics, with domain→name fallback
 │   │   ├── apollo-people.ts      # Apollo People Search — find contacts at orgs (search + enrich)
 │   │   ├── perplexity.ts         # Perplexity Sonar — deep research + website discovery
 │   │   ├── gemini.ts             # Gemini 2.5 Flash — synthesis + ICP scoring (reads from company_context DB)
-│   │   └── pipeline.ts           # Orchestrator — 5 stages (Apollo, Perplexity, Gemini, People Finder, Signals), smart ordering, batch + progress
+│   │   ├── pipeline.ts           # Org enrichment orchestrator — 5 stages, smart ordering, batch + progress, per-org timeouts, stale job cleanup
+│   │   └── person-pipeline.ts    # Person enrichment orchestrator — Apollo Match, COALESCE updates, reverse org linkage, batch runner
 │   ├── fastmail.ts               # Fastmail JMAP client (session + email fetch, uses 'headers' array property syntax)
 │   ├── inbox-correlator.ts       # Email-to-person correlation engine
 │   ├── telegram.ts               # Telegram Bot API notifications
@@ -186,6 +189,7 @@ Cannes/
 │   │   ├── 008_sequence_status.sql          # Sequence status tracking
 │   │   ├── 009_rls_new_tables.sql           # RLS policies for new tables
 │   │   ├── 019_company_context.sql         # Company context singleton (ICP, positioning, language rules)
+│   │   ├── 022_enrichment_status.sql      # Enrichment status tracking (enrichment_status, enrichment_stages, last_enriched_at on orgs + persons)
 │   ├── functions/                # Deno edge functions
 │   └── seed.sql                  # Seed data
 ├── scripts/
@@ -243,9 +247,11 @@ Cannes/
    → /admin/correlations (pg_trgm fuzzy matching)
    → review and merge duplicate persons
          │
-3. Enrich persons via Apollo
-   → /admin/enrichment → POST /api/enrich
-   → fills email, LinkedIn, phone, seniority on persons table
+3. Enrich persons via Apollo People Match
+   → POST /api/enrich/persons
+   → fills email, LinkedIn, Twitter, phone, title, seniority, photo on persons table
+   → reverse org linkage: links unassociated persons to discovered orgs (creates stubs if needed)
+   → tracks enrichment_status (none → in_progress → complete/failed) + last_enriched_at
          │
 4. Enrich organizations (5-stage pipeline)
    → POST /api/enrich/organizations
@@ -302,6 +308,9 @@ Cannes/
 - **Edge Functions for external APIs**: Generation, sending, and company enrichment go through Supabase Edge Functions, keeping API keys server-side.
 - **Fastmail JMAP for inbox**: Direct JMAP protocol integration for email sync from jb@gofpblock.com and wes@gofpblock.com. Uses `headers` array property syntax (not `header:Name:asText`). Service role client bypasses RLS in sync route. Correlation matches against `persons` table. Organization data joined via `person_organization` -> `organizations`.
 - **Organization enrichment pipeline**: Five-stage pipeline in `lib/enrichment/` — smart ordering based on data availability. If org has a website: Apollo + Perplexity run in parallel (fast). If no website: Perplexity runs first to discover domain, then Apollo uses discovered domain. Gemini synthesizes into structured fields + ICP score using criteria from `company_context` table (editable in Settings). People Finder searches Apollo for contacts at each org, deduplicates against existing persons, and creates `person_organization` links with source tracking. Apollo modules retry with name-based fallback when domain lookups fail.
+- **Enrichment resilience**: All external API calls go through `fetch-with-retry.ts` — a shared wrapper providing per-request timeouts (AbortController), exponential backoff retry (skip on 4xx, retry on 5xx/network errors), and structured logging (`[enrichment] [module:orgName] attempt X/N`). Timeouts: Apollo 30s, Perplexity 60s, Gemini 45s, People Match 20s. Pipeline stages are wrapped in `withTimeout()` (Apollo+Perplexity 60s, Gemini 60s, People Finder 45s). Batch runner catches per-org errors gracefully so one failure doesn't block remaining orgs. `cleanupStaleJobs()` runs at batch start, marking any "processing" jobs older than 15 minutes as failed (catches orphaned jobs from server timeouts). Full pipeline logs individual `enrichment_gemini` child jobs with `icp_score` at the metadata top level so the UI can poll ICP scores during processing (not deferred to full completion).
+- **Person enrichment pipeline**: Dedicated pipeline in `lib/enrichment/person-pipeline.ts` for enriching existing persons directly (not just as a side effect of org enrichment). Calls Apollo People Match to fill missing contact details (email, phone, LinkedIn, Twitter, title, seniority, photo) using COALESCE logic (only fills nulls). Performs reverse org linkage: if a person has no organization association and Apollo returns org data, searches existing orgs by domain then name, creating a stub org if not found. Persons need at least one of linkedin_url, apollo_id, or org context to attempt a match — insufficient identifiers are marked as failed. Source tracking: persons from org enrichment are tagged `source: "org_enrichment"`, person_organization links from direct enrichment are tagged `source: "direct_enrichment"`. The `person.source` field itself is never overwritten — it tracks how the person entered the system. API route at `POST /api/enrich/persons` supports filters: personIds, eventId, organizationId, failedOnly, sourceFilter (mutually exclusive, first-match-wins pattern matching the org route).
+- **Enrichment status tracking**: Organizations and persons have `enrichment_status` ('none'/'in_progress'/'partial'/'complete'/'failed') and `last_enriched_at` columns. Organizations also have `enrichment_stages` (jsonb) tracking per-stage status, timestamp, and error. Pipeline writes status progressively as each stage completes. On re-runs, already-completed stages are skipped (cached data loaded from job_log). Parent batch jobs store `organization_ids` in metadata (up to 500) for unprocessed org detection. The enrichment UI offers "Never enriched" and "Failed/Incomplete" targets, with a retry flow from job detail pages via `?retry={jobId}` query param.
 - **Telegram bot (Railway)**: Long-running Node.js process in `bot/` deployed as a separate Railway service. Uses Grammy for Telegram long-polling and Supabase Realtime for DB change notifications. Provides real-time push notifications (inbound replies, bounces, batch job progress) and inline-keyboard menus for mobile CRM control (dashboard stats, inbox, enrichment triggers, mute settings). Rate-limited at 1 msg/sec with queue overflow collapse. Replaces the cron-triggered notification approach — the existing `lib/telegram.ts` in the Next.js app remains as a fallback.
 - **Interaction versioning**: Interactions use `sequence_number` + `iteration` to track position in a sequence and regeneration count. Old iterations are marked `superseded`.
 - **Pipeline operates on persons**: Kanban/table views show one card per person at their most advanced outreach stage, not one card per interaction.
