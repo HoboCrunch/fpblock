@@ -300,21 +300,37 @@ export default function EnrichmentPage() {
         setTotalCount(rows.length);
       } else {
         // Fetch persons from the view
+        // persons_with_icp view doesn't include enrichment_status,
+        // so fetch from base persons table with ICP fields from the view
         const { data: persons } = await supabase
           .from("persons_with_icp")
-          .select("id, full_name, primary_org_name, icp_score, icp_reason, org_category, email, linkedin_url, twitter_handle, phone, source, enrichment_status")
+          .select("id, full_name, primary_org_name, icp_score, email, linkedin_url, twitter_handle, phone, source")
           .order("full_name")
           .limit(2000);
 
-        if (!persons) {
+        if (!persons || persons.length === 0) {
           setAllItems([]);
           setTotalCount(0);
           setSources([]);
           return;
         }
 
-        // Fetch event participations for persons
         const personIds = persons.map((p: Record<string, unknown>) => p.id as string);
+
+        // Fetch enrichment_status from base persons table
+        const enrichmentMap = new Map<string, string>();
+        const { data: statusData } = await supabase
+          .from("persons")
+          .select("id, enrichment_status")
+          .in("id", personIds.slice(0, 2000));
+        if (statusData) {
+          for (const s of statusData) {
+            enrichmentMap.set(
+              (s as Record<string, unknown>).id as string,
+              ((s as Record<string, unknown>).enrichment_status as string) ?? "none"
+            );
+          }
+        }
         const { data: eps } = await supabase
           .from("event_participations")
           .select("person_id, event_id, events(name)")
@@ -354,7 +370,7 @@ export default function EnrichmentPage() {
             linkedin_url: (p.linkedin_url as string) ?? null,
             twitter_handle: (p.twitter_handle as string) ?? null,
             phone: (p.phone as string) ?? null,
-            enrichment_status: (p.enrichment_status as string) ?? "none",
+            enrichment_status: enrichmentMap.get(p.id as string) ?? "none",
           };
         });
 
