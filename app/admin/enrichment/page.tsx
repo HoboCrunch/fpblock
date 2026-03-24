@@ -488,6 +488,32 @@ export default function EnrichmentPage() {
     return sorted;
   }, [filteredItems, sortKey, sortDir]);
 
+  // =========================================================================
+  // Display items — filter to selection when a target or job is active
+  // =========================================================================
+
+  const displayItems = useMemo(() => {
+    // During progress, queued items are handled separately
+    if (centerState === "progress" && queuedItems.length > 0) return queuedItems;
+
+    // When viewing a historical job's results, show only items from that job
+    if (centerState === "results" && viewingJobId && resultOutcomes.size > 0) {
+      return sortedItems.filter((item) => resultOutcomes.has(item.id));
+    }
+
+    // When a target preset is active (not "selected"), filter to selected items
+    if (target !== "unenriched" && target !== "selected" && selectedIds.size > 0 && selectedIds.size < allItems.length) {
+      return sortedItems.filter((item) => selectedIds.has(item.id));
+    }
+
+    // When user has manually selected items, filter to those
+    if (target === "selected" && selectedIds.size > 0) {
+      return sortedItems.filter((item) => selectedIds.has(item.id));
+    }
+
+    return sortedItems;
+  }, [sortedItems, centerState, queuedItems, viewingJobId, resultOutcomes, target, selectedIds, allItems.length]);
+
   function handleSort(key: string) {
     if (key === sortKey) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -972,7 +998,7 @@ export default function EnrichmentPage() {
               onFiltersChange={setFilters}
               events={events}
               initiatives={initiatives}
-              items={centerState === "progress" && queuedItems.length > 0 ? queuedItems : sortedItems}
+              items={displayItems}
               totalCount={totalCount}
               selectedIds={selectedIds}
               onSelectionChange={handleSelectionChange}
