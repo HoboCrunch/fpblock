@@ -1,30 +1,38 @@
-// bot/src/supabase.ts — Supabase client singleton
-// Uses anon key for Realtime WebSocket auth + service role key for REST queries
+// bot/src/supabase.ts — Supabase clients
+// Anon key client for Realtime (WebSocket needs JWT auth)
+// Service role client for queries (bypasses RLS)
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-let client: SupabaseClient | null = null;
+let realtimeClient: SupabaseClient | null = null;
+let queryClient: SupabaseClient | null = null;
 
-export function getSupabase(): SupabaseClient {
-  if (client) return client;
+/** Client for Realtime subscriptions — uses anon key (JWT required for WebSocket) */
+export function getRealtimeSupabase(): SupabaseClient {
+  if (realtimeClient) return realtimeClient;
 
   const url = process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const anonKey = process.env.SUPABASE_ANON_KEY;
 
-  if (!url || !serviceKey) {
+  if (!url || !anonKey) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY");
+  }
+
+  realtimeClient = createClient(url, anonKey);
+  return realtimeClient;
+}
+
+/** Client for database queries — uses service role key (bypasses RLS) */
+export function getSupabase(): SupabaseClient {
+  if (queryClient) return queryClient;
+
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
     throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
   }
 
-  // Use service role key for REST (bypasses RLS)
-  // Use anon key for Realtime WebSocket if available (sb_secret_ keys don't work with Realtime)
-  client = createClient(url, serviceKey, {
-    realtime: {
-      params: {
-        eventsPerSecond: 10,
-        ...(anonKey ? { apikey: anonKey } : {}),
-      },
-    },
-  });
-  return client;
+  queryClient = createClient(url, key);
+  return queryClient;
 }

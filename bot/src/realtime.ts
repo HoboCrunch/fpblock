@@ -1,7 +1,7 @@
 // bot/src/realtime.ts — Supabase Realtime subscriptions + event routing
 
 import { RealtimeChannel } from "@supabase/supabase-js";
-import { getSupabase } from "./supabase.js";
+import { getSupabase, getRealtimeSupabase } from "./supabase.js";
 import { BatchTracker } from "./batch-tracker.js";
 import {
   sendMessage,
@@ -26,7 +26,7 @@ const rateLimiter = new RateLimiter(async (msg) => {
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 export function startRealtimeSubscriptions(): RealtimeChannel {
-  const sb = getSupabase();
+  const sb = getRealtimeSupabase();
 
   console.log("[realtime] Setting up channel subscriptions...");
 
