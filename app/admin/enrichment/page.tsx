@@ -53,6 +53,47 @@ const EMPTY_FILTERS: FilterState = {
 };
 
 // ---------------------------------------------------------------------------
+// Supabase pagination helper — fetches all rows beyond the 1000-row default
+// ---------------------------------------------------------------------------
+
+const PAGE_SIZE = 1000;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function fetchAll(query: any): Promise<Record<string, unknown>[]> {
+  const all: Record<string, unknown>[] = [];
+  let from = 0;
+  while (true) {
+    const { data } = await query.range(from, from + PAGE_SIZE - 1);
+    if (!data || data.length === 0) break;
+    all.push(...data);
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return all;
+}
+
+/** Batch .in() queries for arrays > 500 items (Supabase IN limit) */
+async function fetchInBatches<T = Record<string, unknown>>(
+  supabase: ReturnType<typeof useSupabase>,
+  table: string,
+  selectCols: string,
+  inColumn: string,
+  ids: string[],
+  batchSize = 500
+): Promise<T[]> {
+  const all: T[] = [];
+  for (let i = 0; i < ids.length; i += batchSize) {
+    const batch = ids.slice(i, i + batchSize);
+    const { data } = await supabase
+      .from(table)
+      .select(selectCols)
+      .in(inColumn, batch);
+    if (data) all.push(...(data as T[]));
+  }
+  return all;
+}
+
+// ---------------------------------------------------------------------------
 // Page Component
 // ---------------------------------------------------------------------------
 
@@ -230,26 +271,28 @@ export default function EnrichmentPage() {
 
     try {
       if (activeTab === "organizations") {
-        // Fetch orgs
-        const { data: orgs } = await supabase
-          .from("organizations")
-          .select("id, name, category, icp_score, description, enrichment_status, enrichment_stages")
-          .order("name")
-          .limit(2000);
+        // Fetch all orgs (paginated past 1000-row limit)
+        const orgs = await fetchAll(
+          supabase
+            .from("organizations")
+            .select("id, name, category, icp_score, description, enrichment_status, enrichment_stages")
+            .order("name")
+        );
 
-        if (!orgs) {
+        if (orgs.length === 0) {
           setAllItems([]);
           setTotalCount(0);
           setCategories([]);
           return;
         }
 
-        // Fetch event participations for those orgs
+        // Fetch event participations (batched for large ID lists)
         const orgIds = orgs.map((o: Record<string, unknown>) => o.id as string);
-        const { data: eps } = await supabase
-          .from("event_participations")
-          .select("organization_id, event_id, events(name)")
-          .in("organization_id", orgIds.slice(0, 500)); // Supabase IN limit
+        const eps = await fetchInBatches(
+          supabase, "event_participations",
+          "organization_id, event_id, events(name)",
+          "organization_id", orgIds
+        );
 
         // Build event map: org_id -> { event_ids, event_names }
         const eventMap = new Map<string, { ids: string[]; names: string[] }>();
@@ -301,14 +344,15 @@ export default function EnrichmentPage() {
       } else {
         // Fetch persons from the view
         // persons_with_icp view doesn't include enrichment_status,
-        // so fetch from base persons table with ICP fields from the view
-        const { data: persons } = await supabase
-          .from("persons_with_icp")
-          .select("id, full_name, primary_org_name, icp_score, email, linkedin_url, twitter_handle, phone, source")
-          .order("full_name")
-          .limit(2000);
+        // so fetch it separately from the base persons table
+        const persons = await fetchAll(
+          supabase
+            .from("persons_with_icp")
+            .select("id, full_name, primary_org_name, icp_score, email, linkedin_url, twitter_handle, phone, source")
+            .order("full_name")
+        );
 
-        if (!persons || persons.length === 0) {
+        if (persons.length === 0) {
           setAllItems([]);
           setTotalCount(0);
           setSources([]);
@@ -317,24 +361,24 @@ export default function EnrichmentPage() {
 
         const personIds = persons.map((p: Record<string, unknown>) => p.id as string);
 
-        // Fetch enrichment_status from base persons table
+        // Fetch enrichment_status from base persons table (batched)
         const enrichmentMap = new Map<string, string>();
-        const { data: statusData } = await supabase
-          .from("persons")
-          .select("id, enrichment_status")
-          .in("id", personIds.slice(0, 2000));
-        if (statusData) {
-          for (const s of statusData) {
-            enrichmentMap.set(
-              (s as Record<string, unknown>).id as string,
-              ((s as Record<string, unknown>).enrichment_status as string) ?? "none"
-            );
-          }
+        const statusData = await fetchInBatches(
+          supabase, "persons", "id, enrichment_status", "id", personIds
+        );
+        for (const s of statusData) {
+          enrichmentMap.set(
+            (s as Record<string, unknown>).id as string,
+            ((s as Record<string, unknown>).enrichment_status as string) ?? "none"
+          );
         }
-        const { data: eps } = await supabase
-          .from("event_participations")
-          .select("person_id, event_id, events(name)")
-          .in("person_id", personIds.slice(0, 500));
+
+        // Fetch event participations (batched)
+        const eps = await fetchInBatches(
+          supabase, "event_participations",
+          "person_id, event_id, events(name)",
+          "person_id", personIds
+        );
 
         const eventMap = new Map<string, { ids: string[]; names: string[] }>();
         if (eps) {
