@@ -233,7 +233,7 @@ export default function EnrichmentPage() {
         // Fetch orgs
         const { data: orgs } = await supabase
           .from("organizations")
-          .select("id, name, category, icp_score, enrichment_status, enrichment_stages")
+          .select("id, name, category, icp_score, description, enrichment_status, enrichment_stages")
           .order("name")
           .limit(2000);
 
@@ -282,6 +282,7 @@ export default function EnrichmentPage() {
             event_names: ev?.names,
             category: (o.category as string) ?? null,
             icp_score: (o.icp_score as number) ?? null,
+            description: (o.description as string) ?? null,
             enrichment_stages: (o.enrichment_stages as OrgRow["enrichment_stages"]) ?? null,
             enrichment_status: (o.enrichment_status as string) ?? "none",
           };

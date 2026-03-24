@@ -22,6 +22,8 @@ export interface OrgStatusIconsProps {
   > | null;
   mode?: "static" | "live";
   activeStage?: string;
+  /** Org-level data used to infer results for legacy stages without counts */
+  orgData?: { icp_score?: number | null; description?: string | null } | null;
 }
 
 const ORG_STAGE_ICONS: { key: string; icon: LucideIcon; label: string }[] = [
@@ -52,31 +54,38 @@ function stageColor(
  * Determine whether a completed stage actually produced meaningful results.
  * Stages store numeric fields (found, signals) when they complete.
  * If those fields are present and zero, the stage ran but found nothing → gray.
- * If no numeric field is present (legacy data), assume it has results → green.
+ * For legacy data without these fields, we use the org's own data as a proxy.
  */
 function stageHasResults(
   key: string,
-  stage: { status?: string; [key: string]: unknown }
+  stage: { status?: string; [key: string]: unknown },
+  orgData?: { icp_score?: number | null; description?: string | null } | null
 ): boolean {
   if (stage.status !== "completed") return false;
 
   // People Finder: check `found` count
   if (key === "people_finder") {
     if (typeof stage.found === "number") return stage.found > 0;
-    // Legacy data without found field — treat as has results
-    return true;
+    if (typeof stage.people_found === "number") return (stage.people_found as number) > 0;
+    // Legacy data without found field — default to gray (many had 0 results)
+    return false;
   }
 
-  // Gemini: check `signals` count
+  // Gemini: check `signals` count, fall back to icp_score presence
   if (key === "gemini") {
     if (typeof stage.signals === "number") return stage.signals > 0;
-    return true;
+    if (typeof stage.icp_score === "number") return true;
+    // Legacy: if org has an ICP score, gemini likely produced results
+    if (orgData?.icp_score != null && orgData.icp_score > 0) return true;
+    return false;
   }
 
-  // Apollo / Perplexity: check `found` (1 = got data, 0 = empty)
+  // Apollo / Perplexity: check `found`, fall back to org description
   if (key === "apollo" || key === "perplexity") {
     if (typeof stage.found === "number") return stage.found > 0;
-    return true;
+    // Legacy: if org has a description, these stages likely produced data
+    if (orgData?.description) return true;
+    return false;
   }
 
   return true;
@@ -86,6 +95,7 @@ export function OrgStatusIcons({
   stages,
   mode = "static",
   activeStage,
+  orgData,
 }: OrgStatusIconsProps) {
   if (!stages) return null;
 
@@ -96,7 +106,7 @@ export function OrgStatusIcons({
         if (!stage) return null;
 
         const isActive = mode === "live" && activeStage === key;
-        const hasResults = stageHasResults(key, stage);
+        const hasResults = stageHasResults(key, stage, orgData);
         const effectiveStatus =
           stage.status === "completed" && !hasResults
             ? "completed_empty"

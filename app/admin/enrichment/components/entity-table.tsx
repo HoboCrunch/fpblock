@@ -17,6 +17,7 @@ export interface OrgRow {
   event_names?: string[];
   category: string | null;
   icp_score: number | null;
+  description: string | null;
   enrichment_stages: Record<
     string,
     { status?: string; [key: string]: unknown }
@@ -349,6 +350,7 @@ export function EntityTable({
                             stages={item.enrichment_stages}
                             mode={mode === "progress" ? "live" : "static"}
                             activeStage={activeStage}
+                            orgData={{ icp_score: item.icp_score, description: item.description }}
                           />
                         )}
                       </td>
