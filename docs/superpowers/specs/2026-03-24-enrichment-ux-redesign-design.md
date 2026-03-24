@@ -86,7 +86,10 @@ Single row of compact controls above the table:
 ```
 
 - All filters AND-combined.
-- Status dropdown options: All, New (maps to `enrichment_status: 'none'`), Partial (`'partial'`, orgs only), Complete (`'complete'`), Failed (`'failed'`). In-progress items display as "Processing" but are not a filter option (they appear under All).
+- Status dropdown options differ by tab:
+  - **Org tab:** All, New (`'none'`), Partial (`'partial'`), Complete (`'complete'`), Failed (`'failed'`)
+  - **Person tab:** All, New (`'none'`), Complete (`'complete'`), Failed (`'failed'`) — no Partial since persons lack that status
+  - In-progress items display as "Processing" but are not a filter option (they appear under All).
 - Last filter is **Category** on org tab, **Source** on person tab.
 - **Initiative** filter appears on both tabs (via `initiative_enrollments` which links to both `person_id` and `organization_id`).
 - Count summary on right shows filtered count and selection count.
@@ -119,7 +122,7 @@ Triggered when a job starts. Center panel transitions from LIST:
 **During PROGRESS:**
 - Config panel dims/locks — not interactive.
 - Run button becomes red **[◼ Stop]** button.
-- **Stop/Cancel mechanism:** Client-side AbortController aborts the fetch request. A new `POST /api/enrich/cancel` endpoint sets a `cancelled` flag on the parent `job_log` row. The enrichment pipeline checks this flag between each item (before starting the next org/person). Items already in-flight complete normally; remaining items are marked `status: 'cancelled'` in their job_log entries. The center panel transitions to RESULTS with partial data. This requires a small addition to the pipeline loop and a new 3-line API route.
+- **Stop/Cancel mechanism:** Client-side AbortController aborts the fetch request. A new `POST /api/enrich/cancel` endpoint sets a `cancelled` flag on the parent `job_log` row. The enrichment pipeline checks this flag between each item (before starting the next org/person). Items already in-flight complete normally; remaining items are marked `status: 'cancelled'` in their job_log entries. The center panel transitions to RESULTS with partial data. The cancel sets `status = 'cancelled'` on the parent `job_log` row (status is a freeform text column, no migration needed). The pipeline checks `status === 'cancelled'` between items. This requires a small addition to the pipeline loop and a new 3-line API route.
 
 ### State 3: RESULTS
 
