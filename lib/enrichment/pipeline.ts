@@ -792,8 +792,8 @@ export async function runFullEnrichment(
         apolloResult = cachedApollo;
         perplexityResult = cachedPerplexity;
         console.log(`[pipeline] ${org.name}: skipping Apollo+Perplexity (already completed)`);
-        stageResults.apollo = { status: 'completed', at: (existingStages.apollo as Record<string, string>).at ?? new Date().toISOString() };
-        stageResults.perplexity = { status: 'completed', at: (existingStages.perplexity as Record<string, string>).at ?? new Date().toISOString() };
+        stageResults.apollo = { status: 'completed', at: (existingStages.apollo as Record<string, string>).at ?? new Date().toISOString(), found: apolloResult?.description || apolloResult?.industry ? 1 : 0 };
+        stageResults.perplexity = { status: 'completed', at: (existingStages.perplexity as Record<string, string>).at ?? new Date().toISOString(), found: perplexityResult?.description || perplexityResult?.products ? 1 : 0 };
       } else {
         // Cache miss — re-run both
         [apolloResult, perplexityResult] = await withTimeout(async () => {
@@ -802,8 +802,8 @@ export async function runFullEnrichment(
             enrichFromPerplexity(org.name, org.website, org.context),
           ]) as [ApolloOrgResult, PerplexityOrgResult];
         }, 60000, org.name + ": Apollo+Perplexity");
-        stageResults.apollo = { status: 'completed', at: new Date().toISOString() };
-        stageResults.perplexity = { status: 'completed', at: new Date().toISOString() };
+        stageResults.apollo = { status: 'completed', at: new Date().toISOString(), found: apolloResult?.description || apolloResult?.industry ? 1 : 0 };
+        stageResults.perplexity = { status: 'completed', at: new Date().toISOString(), found: perplexityResult?.description || perplexityResult?.products ? 1 : 0 };
       }
     } else {
       // Run the stages that need running
@@ -872,8 +872,8 @@ export async function runFullEnrichment(
         return [apollo, perplexity] as [ApolloOrgResult, PerplexityOrgResult];
       }, 60000, org.name + ": Apollo+Perplexity");
 
-      stageResults.apollo = { status: 'completed', at: new Date().toISOString() };
-      stageResults.perplexity = { status: 'completed', at: new Date().toISOString() };
+      stageResults.apollo = { status: 'completed', at: new Date().toISOString(), found: apolloResult?.description || apolloResult?.industry ? 1 : 0 };
+      stageResults.perplexity = { status: 'completed', at: new Date().toISOString(), found: perplexityResult?.description || perplexityResult?.products ? 1 : 0 };
     }
 
     // Log individual stage results
@@ -922,7 +922,7 @@ export async function runFullEnrichment(
       if (cached) {
         geminiResult = cached;
         console.log(`[pipeline] ${org.name}: skipping Gemini (already completed)`);
-        stageResults.gemini = { status: 'completed', at: (existingStages.gemini as Record<string, string>).at ?? new Date().toISOString() };
+        stageResults.gemini = { status: 'completed', at: (existingStages.gemini as Record<string, string>).at ?? new Date().toISOString(), signals: geminiResult?.signals?.length ?? 0 };
       } else {
         geminiResult = await withTimeout(
           () => synthesizeWithGemini(
@@ -940,7 +940,7 @@ export async function runFullEnrichment(
           60000,
           org.name + ": Gemini synthesis"
         );
-        stageResults.gemini = { status: 'completed', at: new Date().toISOString() };
+        stageResults.gemini = { status: 'completed', at: new Date().toISOString(), signals: geminiResult?.signals?.length ?? 0 };
       }
     } else {
       geminiResult = await withTimeout(
@@ -959,7 +959,7 @@ export async function runFullEnrichment(
         60000,
         org.name + ": Gemini synthesis"
       );
-      stageResults.gemini = { status: 'completed', at: new Date().toISOString() };
+      stageResults.gemini = { status: 'completed', at: new Date().toISOString(), signals: geminiResult?.signals?.length ?? 0 };
     }
 
     // Update enrichment stages after Gemini
@@ -1011,7 +1011,7 @@ export async function runFullEnrichment(
     if (peopleFinderConfig) {
       if (existingStages.people_finder?.status === 'completed') {
         console.log(`[pipeline] ${org.name}: skipping People Finder (already completed)`);
-        stageResults.people_finder = { status: 'completed', at: (existingStages.people_finder as Record<string, string>).at ?? new Date().toISOString() };
+        stageResults.people_finder = { status: 'completed', at: (existingStages.people_finder as Record<string, string>).at ?? new Date().toISOString(), found: (existingStages.people_finder as Record<string, unknown>)?.found as number ?? 0 };
       } else {
         const pfResult = await withTimeout(
           () => runPeopleFinderEnrichment(supabase, orgId, peopleFinderConfig),
@@ -1020,7 +1020,7 @@ export async function runFullEnrichment(
         );
         if (pfResult.success && pfResult.stats) {
           peopleFinderStats = pfResult.stats;
-          stageResults.people_finder = { status: 'completed', at: new Date().toISOString() };
+          stageResults.people_finder = { status: 'completed', at: new Date().toISOString(), found: pfResult.stats.found ?? 0 };
         } else {
           stageResults.people_finder = { status: 'failed', at: new Date().toISOString() };
         }
