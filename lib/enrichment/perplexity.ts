@@ -1,3 +1,5 @@
+import { fetchWithRetry } from "./fetch-with-retry";
+
 export interface PerplexityOrgResult {
   description: string | null;
   products: string | null;
@@ -164,27 +166,35 @@ export async function enrichFromPerplexity(
   }
 
   try {
-    const response = await fetch(PERPLEXITY_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+    const response = await fetchWithRetry(
+      PERPLEXITY_API_URL,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "sonar",
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a business research analyst. Provide structured, factual analysis of companies. Use the exact section headers requested.",
+            },
+            {
+              role: "user",
+              content: buildPrompt(orgName, website, existingContext),
+            },
+          ],
+        }),
       },
-      body: JSON.stringify({
-        model: "sonar",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a business research analyst. Provide structured, factual analysis of companies. Use the exact section headers requested.",
-          },
-          {
-            role: "user",
-            content: buildPrompt(orgName, website, existingContext),
-          },
-        ],
-      }),
-    });
+      {
+        timeoutMs: 60000,
+        maxRetries: 2,
+        context: `perplexity:${orgName}`,
+      }
+    );
 
     if (!response.ok) {
       console.error(

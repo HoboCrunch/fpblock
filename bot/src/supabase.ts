@@ -1,35 +1,14 @@
-// bot/src/supabase.ts — Supabase clients
-// Anon key client for Realtime (WebSocket needs JWT auth)
-// Service role client for queries (bypasses RLS)
+// bot/src/supabase.ts — Single Supabase client using service_role key
+// Service role bypasses RLS — correct for a server-side bot
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import ws from "ws";
 
-let realtimeClient: SupabaseClient | null = null;
-let queryClient: SupabaseClient | null = null;
+let client: SupabaseClient | null = null;
 
-/** Client for Realtime subscriptions — uses anon key (JWT required for WebSocket) */
-export function getRealtimeSupabase(): SupabaseClient {
-  if (realtimeClient) return realtimeClient;
-
-  const url = process.env.SUPABASE_URL;
-  const anonKey = process.env.SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY");
-  }
-
-  console.log(`[supabase] Realtime client using key: ${anonKey.slice(0, 20)}...`);
-  realtimeClient = createClient(url, anonKey, {
-    realtime: {
-      timeout: 30000,
-    },
-  });
-  return realtimeClient;
-}
-
-/** Client for database queries — uses service role key (bypasses RLS) */
+/** Single client for both Realtime and queries — service_role key bypasses RLS */
 export function getSupabase(): SupabaseClient {
-  if (queryClient) return queryClient;
+  if (client) return client;
 
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -38,6 +17,15 @@ export function getSupabase(): SupabaseClient {
     throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
   }
 
-  queryClient = createClient(url, key);
-  return queryClient;
+  console.log(`[supabase] Client using key: ${key.slice(0, 20)}...`);
+  client = createClient(url, key, {
+    realtime: {
+      timeout: 30000,
+      transport: ws as any,
+    },
+  });
+  return client;
 }
+
+/** @deprecated Use getSupabase() — kept for import compatibility */
+export const getRealtimeSupabase = getSupabase;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Organization } from "@/lib/types/database";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronsUpDown, CheckCircle2, AlertCircle, XCircle, Circle } from "lucide-react";
 
 export type OrganizationRow = Organization & {
   person_count?: number;
@@ -109,6 +109,7 @@ export function OrganizationTable({ organizations }: { organizations: Organizati
             <SortButton label="People" field="person_count" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
             <SortButton label="Signals" field="signal_count" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
             <SortButton label="Last Signal" field="last_signal" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
+            <th className="px-3 md:px-5 py-3 font-medium" title="Enrichment Status">Enrich</th>
             <th className="px-3 md:px-5 py-3 font-medium">Events</th>
           </tr>
         </thead>
@@ -136,6 +137,17 @@ export function OrganizationTable({ organizations }: { organizations: Organizati
                 {org.last_signal
                   ? new Date(org.last_signal).toLocaleDateString()
                   : "\u2014"}
+              </td>
+              <td className="px-3 md:px-5 py-3 text-center">
+                {(org as any).enrichment_status === 'complete' ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-400 inline" />
+                ) : (org as any).enrichment_status === 'partial' ? (
+                  <AlertCircle className="h-3.5 w-3.5 text-orange-400 inline" />
+                ) : (org as any).enrichment_status === 'failed' ? (
+                  <XCircle className="h-3.5 w-3.5 text-red-400 inline" />
+                ) : (
+                  <span className="text-[var(--text-muted)]">&mdash;</span>
+                )}
               </td>
               <td className="px-3 md:px-5 py-3">
                 <div className="flex flex-wrap gap-1">

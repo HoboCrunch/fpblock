@@ -26,6 +26,7 @@ import {
   ChevronRight,
   ArrowRight,
   AlertCircle,
+  X,
   TrendingUp,
   Users,
   DollarSign,
@@ -68,6 +69,7 @@ const DEPARTMENT_OPTIONS = [
 
 type OrgTarget =
   | "unenriched"
+  | "failed_incomplete"
   | "icp_below"
   | "event"
   | "initiative"
@@ -114,6 +116,9 @@ interface PreviewOrg {
   icp_score: number | null;
   category: string | null;
   website: string | null;
+  enrichment_status?: string;
+  enrichment_stages?: Record<string, { status?: string; error?: string; at?: string; [key: string]: unknown }>;
+  last_enriched_at?: string | null;
 }
 
 interface ProgressEntry {
@@ -126,6 +131,26 @@ interface ProgressEntry {
   created_at: string;
   error: string | null;
   stage: string | null;  // NEW: current pipeline stage
+}
+
+interface OrgStageStatus {
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  icp_score?: number | null;
+  found?: number;
+}
+
+interface OrgProgress {
+  target_id: string;
+  org_name: string | null;
+  overall_status: string;
+  icp_score: number | null;
+  created_at: string;
+  stages: {
+    apollo: OrgStageStatus | null;
+    perplexity: OrgStageStatus | null;
+    gemini: OrgStageStatus | null;
+    people_finder: OrgStageStatus | null;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -262,6 +287,7 @@ function PreviewOrgList({ orgs, isLoading, totalCount }: { orgs: PreviewOrg[]; i
                 <th className="px-3 py-2 text-[var(--text-muted)] font-medium">ICP Score</th>
                 <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Category</th>
                 <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Website</th>
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -299,8 +325,113 @@ function PreviewOrgList({ orgs, isLoading, totalCount }: { orgs: PreviewOrg[]; i
                       "\u2014"
                     )}
                   </td>
+                  <td className="px-3 py-1.5">
+                    {o.enrichment_status === 'complete' ? (
+                      <CheckCircle2 className="h-3 w-3 text-green-400 inline" />
+                    ) : o.enrichment_status === 'failed' ? (
+                      <Badge variant="failed" className="text-[9px]">failed</Badge>
+                    ) : o.enrichment_status === 'partial' ? (
+                      <Badge variant="processing" className="text-[9px]">partial</Badge>
+                    ) : o.enrichment_status === 'in_progress' ? (
+                      <Loader2 className="h-3 w-3 text-orange-400 animate-spin inline" />
+                    ) : (
+                      <span className="text-[var(--text-muted)]">{"\u2014"}</span>
+                    )}
+                  </td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewOrgFailedList({ orgs, isLoading, totalCount }: { orgs: PreviewOrg[]; isLoading: boolean; totalCount?: number }) {
+  if (isLoading) {
+    return (
+      <div className="mt-4 p-4 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+        <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading preview...
+        </div>
+      </div>
+    );
+  }
+
+  if (orgs.length === 0) return null;
+
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs text-[var(--text-muted)]">Retry Preview</span>
+        <span className="text-xs font-medium text-[var(--accent-orange)]">
+          {(totalCount ?? orgs.length)} organization{(totalCount ?? orgs.length) !== 1 ? "s" : ""} to retry
+        </span>
+      </div>
+      <div className="rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
+        <div className="max-h-[400px] overflow-y-auto">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 bg-[var(--glass-bg)] z-10">
+              <tr className="border-b border-[var(--glass-border)] text-left">
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Organization</th>
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Status</th>
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Completed Stages</th>
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Failed Stage</th>
+                <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Last Attempt</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orgs.map((o) => {
+                const stages = (o.enrichment_stages ?? {}) as Record<string, { status?: string; error?: string; at?: string }>;
+                const stageEntries = Object.entries(stages).filter(([_, v]) => v && typeof v === 'object');
+                const completedStages = stageEntries.filter(([_, v]) => v.status === 'completed');
+                const failedStage = stageEntries.find(([_, v]) => v.status === 'failed');
+
+                return (
+                  <tr key={o.id} className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02]">
+                    <td className="px-3 py-2 text-white truncate max-w-[180px]">{o.name}</td>
+                    <td className="px-3 py-2">
+                      <span className={cn(
+                        "text-[10px] px-2 py-0.5 rounded-full border font-medium",
+                        o.enrichment_status === 'failed'
+                          ? "bg-red-500/10 text-red-400 border-red-500/20"
+                          : "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                      )}>
+                        {o.enrichment_status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      {completedStages.length > 0 ? (
+                        <div className="flex items-center gap-1">
+                          {completedStages.map(([name]) => (
+                            <span key={name} className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20">
+                              {name === 'people_finder' ? 'people' : name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-[var(--text-muted)]">none</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      {failedStage ? (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20" title={failedStage[1].error ?? ''}>
+                          {failedStage[0] === 'people_finder' ? 'people' : failedStage[0]}
+                        </span>
+                      ) : (
+                        <span className="text-[var(--text-muted)]">{"\u2014"}</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-[var(--text-muted)] tabular-nums">
+                      {o.last_enriched_at
+                        ? new Date(o.last_enriched_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                        : "\u2014"}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -405,6 +536,126 @@ function LiveStatusList({
                     className="text-[10px]"
                   >
                     {entry.status}
+                  </Badge>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Org Live Status List (per-stage icon columns)
+// ---------------------------------------------------------------------------
+
+function OrgLiveStatusList({ entries }: { entries: OrgProgress[] }) {
+  // Track which entries are new for animation
+  const seenIdsRef = useRef<Set<string>>(new Set());
+  const newIds = useMemo(() => {
+    const fresh = new Set<string>();
+    for (const e of entries) {
+      if (!seenIdsRef.current.has(e.target_id)) {
+        fresh.add(e.target_id);
+      }
+    }
+    // Update seen set after computing new
+    for (const e of entries) seenIdsRef.current.add(e.target_id);
+    return fresh;
+  }, [entries]);
+
+  if (entries.length === 0) return null;
+
+  const StageIcon = ({ stage }: { stage: OrgStageStatus | null }) => {
+    if (!stage) return <span className="text-white/10">○</span>;
+    switch (stage.status) {
+      case "processing":
+        return <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--accent-orange)]" />;
+      case "completed":
+        if (stage.found !== undefined && stage.found === 0) {
+          return <CheckCircle2 className="h-3.5 w-3.5 text-[var(--text-muted)]" />;
+        }
+        return <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />;
+      case "failed":
+        return <AlertCircle className="h-3.5 w-3.5 text-red-400" />;
+      case "pending":
+        return <span className="text-white/20">◦</span>;
+      default:
+        return <span className="text-white/10">○</span>;
+    }
+  };
+
+  return (
+    <div className="mt-3 rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
+      <div className="max-h-[280px] overflow-y-auto">
+        <table className="w-full text-xs">
+          <thead className="sticky top-0 bg-[var(--glass-bg)] z-10">
+            <tr className="border-b border-[var(--glass-border)] text-left">
+              <th className="px-3 py-2 text-[var(--text-muted)] font-medium">Organization</th>
+              <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center w-8" title="Apollo">
+                <Search className="h-3 w-3 inline" />
+              </th>
+              <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center w-8" title="Perplexity">
+                <FlaskConical className="h-3 w-3 inline" />
+              </th>
+              <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center w-8" title="Gemini">
+                <Brain className="h-3 w-3 inline" />
+              </th>
+              <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-center w-8" title="People Finder">
+                <Users className="h-3 w-3 inline" />
+              </th>
+              <th className="px-3 py-2 text-[var(--text-muted)] font-medium">ICP</th>
+              <th className="px-3 py-2 text-[var(--text-muted)] font-medium text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry, idx) => (
+              <tr
+                key={entry.target_id}
+                className={cn(
+                  "border-b border-white/[0.03] last:border-0 transition-all duration-300 ease-out",
+                  newIds.has(entry.target_id) && "animate-[slideIn_0.35s_ease-out]"
+                )}
+              >
+                <td className="px-3 py-1.5 text-white truncate max-w-[200px]">
+                  {entry.org_name ?? entry.target_id?.slice(0, 8) ?? "\u2014"}
+                </td>
+                <td className="px-3 py-1.5 text-center"><StageIcon stage={entry.stages.apollo} /></td>
+                <td className="px-3 py-1.5 text-center"><StageIcon stage={entry.stages.perplexity} /></td>
+                <td className="px-3 py-1.5 text-center"><StageIcon stage={entry.stages.gemini} /></td>
+                <td className="px-3 py-1.5 text-center"><StageIcon stage={entry.stages.people_finder} /></td>
+                <td className="px-3 py-1.5">
+                  {entry.icp_score != null ? (
+                    <span
+                      className={cn(
+                        "font-semibold",
+                        entry.icp_score >= 75
+                          ? "text-[var(--accent-orange)]"
+                          : entry.icp_score >= 50
+                            ? "text-yellow-400"
+                            : "text-[var(--text-muted)]"
+                      )}
+                    >
+                      {entry.icp_score}
+                    </span>
+                  ) : (
+                    <span className="text-[var(--text-muted)]">{"\u2014"}</span>
+                  )}
+                </td>
+                <td className="px-3 py-1.5 text-right">
+                  <Badge
+                    variant={
+                      entry.overall_status === "completed"
+                        ? "sent"
+                        : entry.overall_status === "failed"
+                          ? "failed"
+                          : "processing"
+                    }
+                    className="text-[10px]"
+                  >
+                    {entry.overall_status}
                   </Badge>
                 </td>
               </tr>
@@ -750,6 +1001,16 @@ function PersonEnrichmentTab({
   const [jobStartTime, setJobStartTime] = useState<string | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Auto-dismiss completed results when user changes job configuration
+  const fieldsKey = fields.join(",");
+  useEffect(() => {
+    if (lastResult) {
+      setLastResult(null);
+      setProgressEntries([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, eventId, selectedListId, fieldsKey]);
+
   // Load saved lists on mount
   useEffect(() => {
     (async () => {
@@ -825,8 +1086,8 @@ function PersonEnrichmentTab({
           }
           query = query.in("id", personIds);
         } else {
-          // unenriched: persons without apollo_id
-          query = query.is("apollo_id", null);
+          // unenriched: persons never enriched
+          query = query.eq("enrichment_status", "none");
         }
 
         const { data, count } = await query.limit(200);
@@ -1128,7 +1389,20 @@ function PersonEnrichmentTab({
       )}
 
       {lastResult && !isRunning && (
-        <div className="mt-4 p-4 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+        <div className="mt-4 p-4 rounded-lg bg-white/[0.04] border border-white/[0.06] animate-[fadeIn_0.3s_ease-in-out]">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-400" />
+              <span className="text-xs font-medium text-green-400">Job Complete</span>
+            </div>
+            <button
+              onClick={() => { setLastResult(null); setProgressEntries([]); }}
+              className="p-1 rounded-md text-[var(--text-muted)] hover:text-white hover:bg-white/[0.06] transition-colors"
+              title="Dismiss results"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
           {lastResult.error ? (
             <p className="text-sm text-red-400">
               {lastResult.error as string}
@@ -1224,11 +1498,13 @@ function OrganizationEnrichmentTab({
   events,
   initiatives,
   onJobComplete,
+  retryJobId,
 }: {
   preSelectedOrgs: string[];
   events: Pick<Event, "id" | "name">[];
   initiatives: Pick<Initiative, "id" | "name">[];
   onJobComplete: () => void;
+  retryJobId?: string | null;
 }) {
   const [stages, setStages] = useState<OrgStage[]>(["full"]);
   const [target, setTarget] = useState<OrgTarget>(
@@ -1250,11 +1526,64 @@ function OrganizationEnrichmentTab({
   const [previewLoading, setPreviewLoading] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Auto-select failed orgs from retry job
+  useEffect(() => {
+    if (!retryJobId) return;
+
+    (async () => {
+      const supabase = useSupabase();
+
+      // Fetch the parent job to get org_ids
+      const { data: job } = await supabase
+        .from("job_log")
+        .select("metadata")
+        .eq("id", retryJobId)
+        .single();
+
+      if (!job?.metadata) return;
+      const meta = job.metadata as Record<string, unknown>;
+      const allOrgIds = (meta.organization_ids as string[]) ?? [];
+
+      if (allOrgIds.length === 0) {
+        // Fall back to failed_incomplete target
+        setTarget("failed_incomplete");
+        return;
+      }
+
+      // Find which orgs from this job are NOT complete
+      const { data: orgs } = await supabase
+        .from("organizations")
+        .select("id")
+        .in("id", allOrgIds)
+        .neq("enrichment_status", "complete");
+
+      const incompleteIds = (orgs ?? []).map((o: { id: string }) => o.id);
+
+      if (incompleteIds.length > 0) {
+        // Pre-select these orgs using the "pick" target
+        setTarget("pick");
+        setPickedOrgIds(new Set(incompleteIds));
+      }
+    })();
+  }, [retryJobId]);
+
   // Real-time progress state
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [progressEntries, setProgressEntries] = useState<ProgressEntry[]>([]);
+  const [orgProgressEntries, setOrgProgressEntries] = useState<OrgProgress[]>([]);
   const [jobStartTime, setJobStartTime] = useState<string | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-dismiss completed results when user changes job configuration
+  const stagesKey = stages.join(",");
+  useEffect(() => {
+    if (lastResult) {
+      setLastResult(null);
+      setProgressEntries([]);
+      setOrgProgressEntries([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, eventId, initiativeId, icpThreshold, stagesKey]);
 
   // Fetch preview whenever target/eventId/initiativeId/icpThreshold changes
   useEffect(() => {
@@ -1282,7 +1611,7 @@ function OrganizationEnrichmentTab({
         if (target === "selected" && preSelectedOrgs.length > 0) {
           const { data, count } = await supabase
             .from("organizations")
-            .select("id, name, icp_score, category, website", { count: "exact" })
+            .select("id, name, icp_score, category, website, enrichment_status", { count: "exact" })
             .in("id", preSelectedOrgs);
 
           setResult(data as PreviewOrg[], count);
@@ -1310,7 +1639,7 @@ function OrganizationEnrichmentTab({
 
           const { data, count } = await supabase
             .from("organizations")
-            .select("id, name, icp_score, category, website", { count: "exact" })
+            .select("id, name, icp_score, category, website, enrichment_status", { count: "exact" })
             .in("id", orgIds)
             .limit(200);
 
@@ -1339,7 +1668,7 @@ function OrganizationEnrichmentTab({
 
           const { data, count } = await supabase
             .from("organizations")
-            .select("id, name, icp_score, category, website", { count: "exact" })
+            .select("id, name, icp_score, category, website, enrichment_status", { count: "exact" })
             .in("id", orgIds)
             .limit(200);
 
@@ -1347,17 +1676,25 @@ function OrganizationEnrichmentTab({
         } else if (target === "icp_below") {
           const { data, count } = await supabase
             .from("organizations")
-            .select("id, name, icp_score, category, website", { count: "exact" })
+            .select("id, name, icp_score, category, website, enrichment_status", { count: "exact" })
             .or(`icp_score.is.null,icp_score.lt.${icpThreshold}`)
             .limit(200);
 
           setResult(data as PreviewOrg[], count);
-        } else {
-          // unenriched
+        } else if (target === "failed_incomplete") {
           const { data, count } = await supabase
             .from("organizations")
-            .select("id, name, icp_score, category, website", { count: "exact" })
-            .is("icp_score", null)
+            .select("id, name, icp_score, category, website, enrichment_status, enrichment_stages, last_enriched_at", { count: "exact" })
+            .in("enrichment_status", ["failed", "partial"])
+            .limit(200);
+
+          setResult(data as PreviewOrg[], count);
+        } else {
+          // unenriched (never enriched)
+          const { data, count } = await supabase
+            .from("organizations")
+            .select("id, name, icp_score, category, website, enrichment_status", { count: "exact" })
+            .eq("enrichment_status", "none")
             .limit(200);
 
           setResult(data as PreviewOrg[], count);
@@ -1375,17 +1712,31 @@ function OrganizationEnrichmentTab({
     };
   }, [target, eventId, initiativeId, icpThreshold, preSelectedOrgs]);
 
+  // Cache for existing enrichment stages from prior runs
+  const existingStagesCache = useRef<Map<string, Record<string, unknown>>>(new Map());
+
   // Poll for progress while running
   useEffect(() => {
     if (!isRunning || !jobStartTime) {
       if (pollRef.current) clearInterval(pollRef.current);
+      existingStagesCache.current = new Map();
       return;
     }
 
     const supabase = useSupabase();
 
+    // Determine which stage keys are active for overall_status computation
+    const activeStageKeys: string[] = [];
+    if (stages.includes("full")) {
+      activeStageKeys.push("apollo", "perplexity", "gemini");
+    } else {
+      if (stages.includes("apollo")) activeStageKeys.push("apollo");
+      if (stages.includes("perplexity")) activeStageKeys.push("perplexity");
+      if (stages.includes("gemini")) activeStageKeys.push("gemini");
+    }
+    if (stages.includes("people_finder")) activeStageKeys.push("people_finder");
+
     const poll = async () => {
-      // Query individual org enrichment job_log entries created after job start
       const { data } = await supabase
         .from("job_log")
         .select("id, target_id, status, job_type, metadata, created_at, error")
@@ -1396,58 +1747,159 @@ function OrganizationEnrichmentTab({
         .limit(500);
 
       if (data) {
-        // Deduplicate by target_id: keep the latest entry per org
-        const byOrg = new Map<string, ProgressEntry>();
+        const byOrg = new Map<string, OrgProgress>();
+
+        // Collect org IDs we haven't fetched existing data for
+        const newOrgIds: string[] = [];
         for (const j of data as unknown as JobLog[]) {
-          if (!j.target_id) continue;
-          const meta = (j.metadata ?? {}) as Record<string, unknown>;
-          const existing = byOrg.get(j.target_id);
-          // Prefer completed/failed over processing, prefer later entries
-          if (
-            !existing ||
-            (existing.status === "processing" && j.status !== "processing") ||
-            new Date(j.created_at) > new Date(existing.created_at)
-          ) {
-            const stageLabel = (() => {
-              switch (j.job_type) {
-                case "enrichment_apollo": return "Firmographics";
-                case "enrichment_perplexity": return "Researching";
-                case "enrichment_gemini": return "ICP Scoring";
-                case "enrichment_people_finder": return "Finding People";
-                case "enrichment_full":
-                  return j.status === "completed" ? "Complete" : "Running Pipeline";
-                default: return null;
-              }
-            })();
-            byOrg.set(j.target_id, {
-              id: j.id,
-              target_id: j.target_id,
-              org_name: (meta.org_name as string) ?? null,
-              status: j.status,
-              icp_score: (meta.icp_score as number) ?? null,
-              job_type: j.job_type,
-              created_at: j.created_at,
-              error: j.error,
-              stage: stageLabel,
-            });
+          if (j.target_id && !existingStagesCache.current.has(j.target_id)) {
+            newOrgIds.push(j.target_id);
           }
         }
 
-        // Sort newest first
+        // Fetch existing enrichment_stages for new orgs (batch, once per org)
+        if (newOrgIds.length > 0) {
+          const uniqueIds = Array.from(new Set(newOrgIds));
+          const { data: orgsData } = await supabase
+            .from("organizations")
+            .select("id, name, enrichment_stages, icp_score")
+            .in("id", uniqueIds);
+          if (orgsData) {
+            for (const org of orgsData as { id: string; name: string; enrichment_stages: Record<string, unknown> | null; icp_score: number | null }[]) {
+              existingStagesCache.current.set(org.id, {
+                ...(org.enrichment_stages ?? {}),
+                _name: org.name,
+                _icp_score: org.icp_score,
+              });
+            }
+          }
+          // Mark fetched even if no data returned
+          for (const id of uniqueIds) {
+            if (!existingStagesCache.current.has(id)) {
+              existingStagesCache.current.set(id, {});
+            }
+          }
+        }
+
+        for (const j of data as unknown as JobLog[]) {
+          if (!j.target_id) continue;
+          const meta = (j.metadata ?? {}) as Record<string, unknown>;
+
+          let progress = byOrg.get(j.target_id);
+          if (!progress) {
+            // Initialize from existing enrichment data
+            const existing = existingStagesCache.current.get(j.target_id) ?? {};
+            const exApollo = existing.apollo as { status?: string } | undefined;
+            const exPerplexity = existing.perplexity as { status?: string } | undefined;
+            const exGemini = existing.gemini as { status?: string; icp_score?: number } | undefined;
+            const exPeopleFinder = existing.people_finder as { status?: string; found?: number } | undefined;
+
+            progress = {
+              target_id: j.target_id,
+              org_name: (meta.org_name as string) ?? (existing._name as string) ?? null,
+              overall_status: "processing",
+              icp_score: (existing._icp_score as number) ?? null,
+              created_at: j.created_at,
+              stages: {
+                apollo: exApollo?.status === "completed" ? { status: "completed" } : null,
+                perplexity: exPerplexity?.status === "completed" ? { status: "completed" } : null,
+                gemini: exGemini?.status === "completed" ? { status: "completed", icp_score: exGemini.icp_score } : null,
+                people_finder: exPeopleFinder?.status === "completed" ? { status: "completed", found: exPeopleFinder.found } : null,
+              },
+            };
+            byOrg.set(j.target_id, progress);
+          }
+
+          if (meta.org_name && !progress.org_name) {
+            progress.org_name = meta.org_name as string;
+          }
+
+          // Live data from this run overrides existing data
+          switch (j.job_type) {
+            case "enrichment_apollo":
+              progress.stages.apollo = { status: j.status as OrgStageStatus["status"] };
+              break;
+            case "enrichment_perplexity":
+              progress.stages.perplexity = { status: j.status as OrgStageStatus["status"] };
+              break;
+            case "enrichment_gemini":
+              progress.stages.gemini = {
+                status: j.status as OrgStageStatus["status"],
+                icp_score: (meta.icp_score as number) ?? null,
+              };
+              if (progress.stages.gemini.icp_score != null) {
+                progress.icp_score = progress.stages.gemini.icp_score;
+              }
+              break;
+            case "enrichment_people_finder":
+              progress.stages.people_finder = {
+                status: j.status as OrgStageStatus["status"],
+                found: (meta.found as number) ?? (meta.people_found as number) ?? 0,
+              };
+              break;
+            case "enrichment_full":
+              progress.overall_status = j.status;
+              if (j.status === "completed" && meta.icp_score != null) {
+                progress.icp_score = meta.icp_score as number;
+              }
+              if (new Date(j.created_at) < new Date(progress.created_at)) {
+                progress.created_at = j.created_at;
+              }
+              // When full pipeline is processing, mark active stages as pending if not yet started
+              if (j.status === "processing") {
+                for (const key of activeStageKeys) {
+                  const sk = key as keyof typeof progress.stages;
+                  if (!progress.stages[sk]) {
+                    progress.stages[sk] = { status: "pending" };
+                  }
+                }
+              }
+              break;
+          }
+        }
+
+        // Compute overall_status from active stages (not just enrichment_full)
+        for (const [, progress] of byOrg) {
+          if (progress.overall_status === "completed" || progress.overall_status === "failed") continue;
+          const relevantStatuses = activeStageKeys.map((key) => {
+            const stage = progress.stages[key as keyof typeof progress.stages];
+            return stage?.status ?? "pending";
+          });
+          if (relevantStatuses.length > 0 && relevantStatuses.every((s) => s === "completed")) {
+            progress.overall_status = "completed";
+          } else if (relevantStatuses.some((s) => s === "failed")) {
+            progress.overall_status = "failed";
+          }
+        }
+
         const entries = Array.from(byOrg.values()).sort(
           (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
-        setProgressEntries(entries);
+        setOrgProgressEntries(entries);
+
+        setProgressEntries(
+          entries.map((p) => ({
+            id: p.target_id,
+            target_id: p.target_id,
+            org_name: p.org_name,
+            status: p.overall_status,
+            icp_score: p.icp_score,
+            job_type: "enrichment_full",
+            created_at: p.created_at,
+            error: null,
+            stage: null,
+          }))
+        );
       }
     };
 
     pollRef.current = setInterval(poll, 2000);
-    poll(); // immediate first poll
+    poll();
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [isRunning, jobStartTime]);
+  }, [isRunning, jobStartTime, stages]);
 
   function toggleStage(stage: OrgStage) {
     if (stage === "people_finder") {
@@ -1461,6 +1913,11 @@ function OrganizationEnrichmentTab({
     if (stage === "full") {
       setStages((prev) => {
         const hasPf = prev.includes("people_finder");
+        // Toggle full off → clear pipeline stages (keep people_finder if active)
+        if (prev.includes("full")) {
+          return hasPf ? ["people_finder"] : [];
+        }
+        // Toggle full on → set full (keep people_finder if active)
         return hasPf ? ["full", "people_finder"] : ["full"];
       });
       return;
@@ -1468,12 +1925,8 @@ function OrganizationEnrichmentTab({
     setStages((prev) => {
       const withoutFull = prev.filter((s) => s !== "full");
       if (withoutFull.includes(stage)) {
-        const next = withoutFull.filter((s) => s !== stage);
-        const nonPf = next.filter((s) => s !== "people_finder");
-        if (nonPf.length === 0) {
-          return next.includes("people_finder") ? ["full", "people_finder"] : ["full"];
-        }
-        return next;
+        // Toggling off — just remove it, allow empty pipeline stages
+        return withoutFull.filter((s) => s !== stage);
       }
       return [...withoutFull, stage];
     });
@@ -1483,6 +1936,7 @@ function OrganizationEnrichmentTab({
     setIsRunning(true);
     setLastResult(null);
     setProgressEntries([]);
+    setOrgProgressEntries([]);
     setJobStartTime(new Date().toISOString());
 
     try {
@@ -1508,6 +1962,8 @@ function OrganizationEnrichmentTab({
         body.initiativeId = initiativeId;
       } else if (target === "icp_below") {
         body.icpBelow = icpThreshold;
+      } else if (target === "failed_incomplete") {
+        body.failedIncomplete = true;
       }
       // "unenriched" -- API handles it (default)
 
@@ -1545,9 +2001,9 @@ function OrganizationEnrichmentTab({
         )
       : null;
 
-  const completedCount = progressEntries.filter(
-    (e) => e.status === "completed" || e.status === "failed"
-  ).length;
+  const completedCount = orgProgressEntries.length > 0
+    ? orgProgressEntries.filter((e) => e.overall_status === "completed" || e.overall_status === "failed").length
+    : progressEntries.filter((e) => e.status === "completed" || e.status === "failed").length;
 
   return (
     <GlassCard>
@@ -1686,7 +2142,8 @@ function OrganizationEnrichmentTab({
           </label>
           <GlassSelect
             options={[
-              { value: "unenriched", label: "All unenriched (no ICP score)" },
+              { value: "unenriched", label: "Never enriched" },
+              { value: "failed_incomplete", label: "Failed / Incomplete" },
               { value: "icp_below", label: "ICP below threshold" },
               { value: "event", label: "From event" },
               { value: "initiative", label: "From initiative" },
@@ -1766,19 +2223,21 @@ function OrganizationEnrichmentTab({
 
       {/* Preview List */}
       {!isRunning && !lastResult && (
-        <PreviewOrgList orgs={previewOrgs} isLoading={previewLoading} totalCount={previewOrgCount} />
+        target === "failed_incomplete"
+          ? <PreviewOrgFailedList orgs={previewOrgs} isLoading={previewLoading} totalCount={previewOrgCount} />
+          : <PreviewOrgList orgs={previewOrgs} isLoading={previewLoading} totalCount={previewOrgCount} />
       )}
 
       {/* Run button */}
       <div className="mt-4">
         <button
           onClick={handleRun}
-          disabled={isRunning || (target === "pick" && pickedOrgIds.size === 0)}
+          disabled={isRunning || stages.length === 0 || (target === "pick" && pickedOrgIds.size === 0)}
           className={cn(
             "flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
             "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20",
             "hover:bg-[var(--accent-orange)]/25",
-            (isRunning || (target === "pick" && pickedOrgIds.size === 0)) && "opacity-50 cursor-not-allowed"
+            (isRunning || stages.length === 0 || (target === "pick" && pickedOrgIds.size === 0)) && "opacity-50 cursor-not-allowed"
           )}
         >
           {isRunning ? (
@@ -1820,13 +2279,26 @@ function OrganizationEnrichmentTab({
               }
             />
           </div>
-          <LiveStatusList entries={progressEntries} entityType="organization" />
+          <OrgLiveStatusList entries={orgProgressEntries} />
         </div>
       )}
 
       {/* Results */}
       {lastResult && !isRunning && (
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 space-y-4 animate-[fadeIn_0.3s_ease-in-out]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-400" />
+              <span className="text-xs font-medium text-green-400">Job Complete</span>
+            </div>
+            <button
+              onClick={() => { setLastResult(null); setProgressEntries([]); setOrgProgressEntries([]); }}
+              className="p-1 rounded-md text-[var(--text-muted)] hover:text-white hover:bg-white/[0.06] transition-colors"
+              title="Dismiss results"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
           {lastResult.error && !lastResult.results ? (
             <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/15">
               <p className="text-sm text-red-400">{lastResult.error}</p>
@@ -2234,6 +2706,321 @@ function PersonChildRow({ entry, isLast }: { entry: ChildJobEntry; isLast: boole
 }
 
 // ---------------------------------------------------------------------------
+// Processing Job Progress (inline progress for history rows)
+// ---------------------------------------------------------------------------
+
+function ProcessingJobProgress({
+  jobId,
+  createdAt,
+  isOrgJob,
+}: {
+  jobId: string;
+  createdAt: string;
+  isOrgJob: boolean;
+}) {
+  const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null);
+
+  useEffect(() => {
+    const supabase = useSupabase();
+    const startTime = new Date(new Date(createdAt).getTime() - 5000).toISOString();
+    const targetTable = isOrgJob ? "organizations" : "contacts";
+    const jobTypes = isOrgJob
+      ? ["enrichment_full", "enrichment_apollo", "enrichment_perplexity", "enrichment_gemini", "enrichment_people_finder"]
+      : ["enrichment", "enrichment_apollo"];
+
+    const poll = async () => {
+      // Fetch parent job metadata for the expected total
+      const { data: parentJob } = await supabase
+        .from("job_log")
+        .select("metadata")
+        .eq("id", jobId)
+        .single();
+
+      const parentMeta = (parentJob?.metadata ?? {}) as Record<string, unknown>;
+      const expectedTotal =
+        (parentMeta.org_count as number) ??
+        (parentMeta.contacts_count as number) ??
+        (parentMeta.person_count as number) ??
+        ((parentMeta.organization_ids as string[])?.length) ??
+        ((parentMeta.person_ids as string[])?.length) ??
+        null;
+
+      const { data } = await supabase
+        .from("job_log")
+        .select("target_id, status")
+        .eq("target_table", targetTable)
+        .in("job_type", jobTypes)
+        .gte("created_at", startTime)
+        .neq("id", jobId)
+        .limit(500);
+
+      if (data && data.length > 0) {
+        const byTarget = new Map<string, string>();
+        for (const entry of data as { target_id: string | null; status: string }[]) {
+          if (!entry.target_id) continue;
+          const existing = byTarget.get(entry.target_id);
+          if (!existing || (existing === "processing" && entry.status !== "processing")) {
+            byTarget.set(entry.target_id, entry.status);
+          }
+        }
+        const completed = Array.from(byTarget.values()).filter(
+          (s) => s === "completed" || s === "failed"
+        ).length;
+        setProgress({ completed, total: expectedTotal ?? byTarget.size });
+      } else if (expectedTotal) {
+        setProgress({ completed: 0, total: expectedTotal });
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, [jobId, createdAt, isOrgJob]);
+
+  if (!progress || progress.total === 0) return null;
+
+  const pct = Math.round((progress.completed / progress.total) * 100);
+
+  return (
+    <div className="flex items-center gap-2 shrink-0">
+      <span className="text-[10px] text-[var(--accent-orange)] tabular-nums font-medium">
+        {progress.completed}/{progress.total}
+      </span>
+      <div className="h-1 w-16 rounded-full bg-white/[0.06] overflow-hidden">
+        <div
+          className="h-full rounded-full bg-[var(--accent-orange)] transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Inline Live Progress for Processing Jobs in History
+// ---------------------------------------------------------------------------
+
+function ProcessingJobInlineProgress({
+  job,
+}: {
+  job: JobLog;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [entries, setEntries] = useState<OrgProgress[]>([]);
+  const isOrgJob = job.job_type.includes("organization");
+  const meta = (job.metadata ?? {}) as Record<string, unknown>;
+
+  const existingCache = useRef<Map<string, Record<string, unknown>>>(new Map());
+
+  useEffect(() => {
+    if (!expanded || !isOrgJob) return;
+    existingCache.current = new Map();
+
+    const supabase = useSupabase();
+    const startTime = new Date(new Date(job.created_at).getTime() - 5000).toISOString();
+
+    // Determine active stages from parent job metadata
+    const jobStages = (meta.stages as string[]) ?? ["full"];
+    const activeStageKeys: string[] = [];
+    if (jobStages.includes("full")) {
+      activeStageKeys.push("apollo", "perplexity", "gemini");
+    } else {
+      for (const s of ["apollo", "perplexity", "gemini"]) {
+        if (jobStages.includes(s)) activeStageKeys.push(s);
+      }
+    }
+    if (jobStages.includes("people_finder")) activeStageKeys.push("people_finder");
+
+    const poll = async () => {
+      const { data } = await supabase
+        .from("job_log")
+        .select("id, target_id, status, job_type, metadata, created_at, error")
+        .eq("target_table", "organizations")
+        .in("job_type", ["enrichment_full", "enrichment_apollo", "enrichment_perplexity", "enrichment_gemini", "enrichment_people_finder"])
+        .gte("created_at", startTime)
+        .neq("id", job.id)
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if (data) {
+        // Fetch existing enrichment_stages for new orgs
+        const newOrgIds: string[] = [];
+        for (const j of data as unknown as JobLog[]) {
+          if (j.target_id && !existingCache.current.has(j.target_id)) {
+            newOrgIds.push(j.target_id);
+          }
+        }
+        if (newOrgIds.length > 0) {
+          const uniqueIds = Array.from(new Set(newOrgIds));
+          const { data: orgsData } = await supabase
+            .from("organizations")
+            .select("id, name, enrichment_stages, icp_score")
+            .in("id", uniqueIds);
+          if (orgsData) {
+            for (const org of orgsData as { id: string; name: string; enrichment_stages: Record<string, unknown> | null; icp_score: number | null }[]) {
+              existingCache.current.set(org.id, { ...(org.enrichment_stages ?? {}), _name: org.name, _icp_score: org.icp_score });
+            }
+          }
+          for (const id of uniqueIds) {
+            if (!existingCache.current.has(id)) existingCache.current.set(id, {});
+          }
+        }
+
+        const byOrg = new Map<string, OrgProgress>();
+        for (const j of data as unknown as JobLog[]) {
+          if (!j.target_id) continue;
+          const jMeta = (j.metadata ?? {}) as Record<string, unknown>;
+          let progress = byOrg.get(j.target_id);
+          if (!progress) {
+            const existing = existingCache.current.get(j.target_id) ?? {};
+            const exA = existing.apollo as { status?: string } | undefined;
+            const exP = existing.perplexity as { status?: string } | undefined;
+            const exG = existing.gemini as { status?: string; icp_score?: number } | undefined;
+            const exPf = existing.people_finder as { status?: string; found?: number } | undefined;
+
+            progress = {
+              target_id: j.target_id,
+              org_name: (jMeta.org_name as string) ?? (existing._name as string) ?? null,
+              overall_status: "processing",
+              icp_score: (existing._icp_score as number) ?? null,
+              created_at: j.created_at,
+              stages: {
+                apollo: exA?.status === "completed" ? { status: "completed" } : null,
+                perplexity: exP?.status === "completed" ? { status: "completed" } : null,
+                gemini: exG?.status === "completed" ? { status: "completed", icp_score: exG.icp_score } : null,
+                people_finder: exPf?.status === "completed" ? { status: "completed", found: exPf.found } : null,
+              },
+            };
+            byOrg.set(j.target_id, progress);
+          }
+          if (jMeta.org_name && !progress.org_name) progress.org_name = jMeta.org_name as string;
+
+          switch (j.job_type) {
+            case "enrichment_apollo":
+              progress.stages.apollo = { status: j.status as OrgStageStatus["status"] };
+              break;
+            case "enrichment_perplexity":
+              progress.stages.perplexity = { status: j.status as OrgStageStatus["status"] };
+              break;
+            case "enrichment_gemini":
+              progress.stages.gemini = {
+                status: j.status as OrgStageStatus["status"],
+                icp_score: (jMeta.icp_score as number) ?? null,
+              };
+              if (progress.stages.gemini.icp_score != null) progress.icp_score = progress.stages.gemini.icp_score;
+              break;
+            case "enrichment_people_finder":
+              progress.stages.people_finder = {
+                status: j.status as OrgStageStatus["status"],
+                found: (jMeta.found as number) ?? (jMeta.people_found as number) ?? 0,
+              };
+              break;
+            case "enrichment_full":
+              progress.overall_status = j.status;
+              if (j.status === "completed" && jMeta.icp_score != null) progress.icp_score = jMeta.icp_score as number;
+              // When full pipeline is processing, mark active stages as pending if not yet started
+              if (j.status === "processing") {
+                for (const key of activeStageKeys) {
+                  const sk = key as keyof typeof progress.stages;
+                  if (!progress.stages[sk]) {
+                    progress.stages[sk] = { status: "pending" };
+                  }
+                }
+              }
+              break;
+          }
+        }
+
+        // Compute overall_status from active stages
+        for (const [, progress] of byOrg) {
+          if (progress.overall_status === "completed" || progress.overall_status === "failed") continue;
+          const relevantStatuses = activeStageKeys.map((key) => {
+            const stage = progress.stages[key as keyof typeof progress.stages];
+            return stage?.status ?? "pending";
+          });
+          if (relevantStatuses.length > 0 && relevantStatuses.every((s) => s === "completed")) {
+            progress.overall_status = "completed";
+          } else if (relevantStatuses.some((s) => s === "failed")) {
+            progress.overall_status = "failed";
+          }
+        }
+
+        setEntries(
+          Array.from(byOrg.values()).sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )
+        );
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, [expanded, isOrgJob, job.id, job.created_at, meta]);
+
+  const orgCount = (meta.org_count as number) ?? null;
+  const timestamp = new Date(job.created_at);
+  const timeStr = timestamp.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " + timestamp.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+  return (
+    <div className="rounded-xl glass overflow-hidden">
+      {/* Row header — clickable to expand */}
+      <div
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.04] transition-all duration-200 cursor-pointer group"
+      >
+        <span className="shrink-0">
+          {expanded ? (
+            <ChevronDown className="h-3.5 w-3.5 text-[var(--accent-orange)]" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+          )}
+        </span>
+
+        <Badge variant={isOrgJob ? "glass-indigo" : "glass-orange"} className="text-[10px] shrink-0 w-[90px] text-center">
+          {isOrgJob ? "Organization" : "Person"}
+        </Badge>
+
+        <div className="flex items-center gap-3 flex-1 min-w-0 text-xs">
+          {orgCount != null && (
+            <span className="text-white font-medium">{orgCount} org{orgCount !== 1 ? "s" : ""}</span>
+          )}
+        </div>
+
+        <span className="text-[10px] text-[var(--text-muted)] shrink-0 tabular-nums">{timeStr}</span>
+
+        <Badge variant="processing" className="text-[10px] shrink-0">processing</Badge>
+
+        <ProcessingJobProgress jobId={job.id} createdAt={job.created_at} isOrgJob={isOrgJob} />
+
+        <Link
+          href={`/admin/enrichment/${job.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="text-[var(--text-muted)] hover:text-white transition-colors shrink-0"
+          title="View full details"
+        >
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+
+      {/* Expanded live status */}
+      {expanded && isOrgJob && (
+        <div className="border-t border-white/[0.06] px-4 py-3 bg-white/[0.01]">
+          {entries.length > 0 ? (
+            <OrgLiveStatusList entries={entries} />
+          ) : (
+            <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs py-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Loading progress...
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Job History Table (shared) -- with expandable result rows
 // ---------------------------------------------------------------------------
 
@@ -2250,6 +3037,11 @@ function JobHistoryTable({ jobs }: { jobs: JobLog[] }) {
   return (
     <div className="space-y-2">
       {jobs.map((job) => {
+        // Processing jobs get expandable inline progress
+        if (job.status === "processing") {
+          return <ProcessingJobInlineProgress key={job.id} job={job} />;
+        }
+
         const meta = (job.metadata ?? {}) as Record<string, unknown>;
         const isOrgJob = job.job_type.includes("organization");
         const timestamp = new Date(job.created_at);
@@ -2337,9 +3129,15 @@ function JobHistoryTable({ jobs }: { jobs: JobLog[] }) {
 
 export default function EnrichmentPage() {
   const searchParams = useSearchParams();
-  const preSelectedPersons = searchParams.get("persons")?.split(",") ?? [];
-  const preSelectedOrgs =
-    searchParams.get("organizations")?.split(",") ?? [];
+  const preSelectedPersons = useMemo(
+    () => searchParams.get("persons")?.split(",") ?? [],
+    [searchParams]
+  );
+  const preSelectedOrgs = useMemo(
+    () => searchParams.get("organizations")?.split(",") ?? [],
+    [searchParams]
+  );
+  const retryJobId = searchParams.get("retry");
 
   const [events, setEvents] = useState<Pick<Event, "id" | "name">[]>([]);
   const [initiatives, setInitiatives] = useState<
@@ -2383,7 +3181,16 @@ export default function EnrichmentPage() {
     loadJobs();
   }, [loadJobs]);
 
-  const defaultTab = preSelectedOrgs.length > 0 ? "org" : "person";
+  // Auto-refresh job list when any job is still processing
+  useEffect(() => {
+    const hasProcessing = jobs.some((j) => j.status === "processing");
+    if (!hasProcessing) return;
+
+    const interval = setInterval(loadJobs, 5000);
+    return () => clearInterval(interval);
+  }, [jobs, loadJobs]);
+
+  const defaultTab = retryJobId ? "org" : preSelectedOrgs.length > 0 ? "org" : "person";
 
   return (
     <div className="space-y-6">
@@ -2397,6 +3204,18 @@ export default function EnrichmentPage() {
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+            max-height: 0;
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 48px;
           }
         }
       `}</style>
@@ -2428,6 +3247,7 @@ export default function EnrichmentPage() {
                 events={events}
                 initiatives={initiatives}
                 onJobComplete={loadJobs}
+                retryJobId={retryJobId}
               />
             ),
           },

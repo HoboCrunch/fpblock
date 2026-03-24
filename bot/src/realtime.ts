@@ -1,7 +1,7 @@
 // bot/src/realtime.ts — Supabase Realtime subscriptions + event routing
 
 import { RealtimeChannel } from "@supabase/supabase-js";
-import { getSupabase, getRealtimeSupabase } from "./supabase.js";
+import { getSupabase } from "./supabase.js";
 import { BatchTracker } from "./batch-tracker.js";
 import {
   sendMessage,
@@ -9,9 +9,9 @@ import {
   formatReplyNotification,
   formatBounceNotification,
   formatInteractionReplied,
-  formatBatchStart,
-  formatBatchProgress,
-  formatBatchComplete,
+  formatEnrichmentStart,
+  formatEnrichmentProgress,
+  formatEnrichmentComplete,
   RateLimiter,
 } from "./notifications.js";
 import { muteState } from "./menus/settings.js";
@@ -19,19 +19,24 @@ import type { InboundEmail, Interaction, JobLog } from "./types.js";
 
 const batchTracker = new BatchTracker();
 
+const BATCH_JOB_TYPES = ["enrichment_batch_organizations", "enrichment_batch_persons", "enrichment"];
+
 const rateLimiter = new RateLimiter(async (msg) => {
   await sendMessage(msg);
 });
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+let activeChannel: RealtimeChannel | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let reconnectAttempt = 0;
+const MAX_RECONNECT_DELAY = 60_000;
 
-export function startRealtimeSubscriptions(): RealtimeChannel {
-  const sb = getRealtimeSupabase();
+function createChannel(): RealtimeChannel {
+  const sb = getSupabase();
 
   console.log("[realtime] Setting up channel subscriptions...");
-  console.log("[realtime] Realtime URL:", (sb as any).realtimeUrl || "unknown");
 
-  const channel = sb
+  return sb
     .channel("crm-notifications")
     .on(
       "postgres_changes",
@@ -64,21 +69,61 @@ export function startRealtimeSubscriptions(): RealtimeChannel {
         console.log("[realtime] job_log UPDATE received:", (payload.new as any).status);
         handleJobLogUpdate(payload.new as JobLog);
       }
-    )
-    .subscribe((status, err) => {
-      console.log(`[realtime] Subscription status: ${status}`);
-      if (err) console.error("[realtime] Subscription error:", err);
-    });
+    );
+}
 
+function scheduleReconnect(): void {
+  if (reconnectTimer) return;
+  reconnectAttempt++;
+  const delay = Math.min(1000 * 2 ** reconnectAttempt, MAX_RECONNECT_DELAY);
+  console.log(`[realtime] Reconnecting in ${delay / 1000}s (attempt ${reconnectAttempt})...`);
+  reconnectTimer = setTimeout(async () => {
+    reconnectTimer = null;
+    await subscribeWithRetry();
+  }, delay);
+}
+
+async function subscribeWithRetry(): Promise<void> {
+  // Clean up previous channel — unsubscribe only, avoid removeChannel crash
+  if (activeChannel) {
+    try {
+      activeChannel.unsubscribe();
+    } catch (e) {
+      console.warn("[realtime] Cleanup error (ignored):", e);
+    }
+    activeChannel = null;
+  }
+
+  const channel = createChannel();
+  activeChannel = channel;
+
+  channel.subscribe((status, err) => {
+    console.log(`[realtime] Subscription status: ${status}`);
+    if (err) console.error("[realtime] Subscription error:", err);
+
+    if (status === "SUBSCRIBED") {
+      reconnectAttempt = 0;
+      console.log("[realtime] Connected successfully");
+    } else if (status === "TIMED_OUT" || status === "CHANNEL_ERROR" || status === "CLOSED") {
+      console.warn(`[realtime] Lost connection (${status}), will reconnect...`);
+      scheduleReconnect();
+    }
+  });
+}
+
+export function startRealtimeSubscriptions(): void {
+  subscribeWithRetry();
   pollTimer = setInterval(() => pollBatchProgress(), 5000);
-
-  return channel;
 }
 
 export function stopRealtime(): void {
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;
+  }
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
   }
   rateLimiter.stop();
 }
@@ -159,33 +204,38 @@ async function handleInteractionUpdate(interaction: Interaction): Promise<void> 
 }
 
 async function handleJobLogInsert(job: JobLog): Promise<void> {
+  // Only track parent batch jobs, not child enrichment jobs
+  if (!BATCH_JOB_TYPES.includes(job.job_type)) return;
   if (job.status !== "processing") return;
 
-  const meta = job.metadata || {};
-  const total = (meta.total as number) || 0;
+  const meta = (job.metadata ?? {}) as Record<string, unknown>;
+  const orgCount = (meta.org_count as number) ?? 0;
+  const stages = (meta.stages as string[]) ?? ["full"];
 
-  const msg = formatBatchStart(job.job_type, total);
-  const messageId = await sendMessage(msg);
+  const text = formatEnrichmentStart(job.job_type, orgCount, stages);
+  const messageId = await sendMessage(text);
 
   if (messageId) {
-    batchTracker.track(job.id, messageId);
+    batchTracker.track(job.id, messageId, {
+      total: orgCount,
+      jobType: job.job_type,
+      createdAt: job.created_at,
+      stages,
+    });
   }
 }
 
 async function handleJobLogUpdate(job: JobLog): Promise<void> {
   if (!batchTracker.isTracking(job.id)) return;
 
-  const messageId = batchTracker.getMessageId(job.id);
-  if (!messageId) return;
+  const trackedJob = batchTracker.getJob(job.id);
+  if (!trackedJob) return;
+
+  const messageId = trackedJob.messageId;
 
   if (job.status === "completed" || job.status === "failed") {
-    const meta = (job.metadata || {}) as Record<string, number>;
-    const msg = formatBatchComplete(
-      job.job_type,
-      meta.successes || 0,
-      meta.failures || 0,
-      job.status === "failed" ? (job.error || "Unknown error") : undefined
-    );
+    const meta = (job.metadata ?? {}) as Record<string, unknown>;
+    const msg = formatEnrichmentComplete(job.job_type, meta);
     await editMessage(messageId, msg);
     batchTracker.complete(job.id);
     return;
@@ -207,24 +257,59 @@ async function pollBatchProgress(): Promise<void> {
 
   const sb = getSupabase();
   for (const jobId of batchTracker.getActiveJobIds()) {
-    const { data: job } = await sb
+    const trackedJob = batchTracker.getJob(jobId);
+    if (!trackedJob) continue;
+
+    const isOrgJob = trackedJob.jobType.includes("organization");
+
+    // Query child jobs created around the same time as the parent batch
+    const startTime = new Date(
+      new Date(trackedJob.createdAt).getTime() - 5000
+    ).toISOString();
+
+    const { data: children } = await sb
       .from("job_log")
-      .select("*")
-      .eq("id", jobId)
-      .single();
+      .select("target_id, status, job_type, metadata")
+      .eq("target_table", isOrgJob ? "organizations" : "contacts")
+      .in("job_type", [
+        "enrichment_full",
+        "enrichment_apollo",
+        "enrichment_perplexity",
+        "enrichment_gemini",
+        "enrichment_people_finder",
+      ])
+      .gte("created_at", startTime)
+      .neq("id", jobId)
+      .limit(500);
 
-    if (!job) continue;
+    if (!children) continue;
 
-    const meta = (job.metadata || {}) as Record<string, number>;
-    const done = meta.completed || meta.successes || 0;
-    const total = meta.total || 0;
+    // Deduplicate by target_id — keep terminal status over "processing"
+    const byTarget = new Map<string, string>();
+    for (const child of children) {
+      if (!child.target_id) continue;
+      const existing = byTarget.get(child.target_id);
+      if (!existing || (existing === "processing" && child.status !== "processing")) {
+        byTarget.set(child.target_id, child.status);
+      }
+    }
+
+    const completed = Array.from(byTarget.values()).filter((s) => s === "completed").length;
+    const failed = Array.from(byTarget.values()).filter((s) => s === "failed").length;
+    const total = trackedJob.total;
+
     if (total === 0) continue;
 
-    const messageId = batchTracker.getMessageId(jobId);
-    if (!messageId) continue;
+    // Only edit if progress actually changed and throttle is satisfied
+    if (!batchTracker.shouldUpdate(jobId, completed + failed)) continue;
 
-    const msg = formatBatchProgress(job.job_type, done, total);
-    const edited = await editMessage(messageId, msg);
-    if (edited) batchTracker.touchLastEdit(jobId);
+    const msg = formatEnrichmentProgress(
+      total,
+      completed,
+      failed,
+      trackedJob.stages,
+      isOrgJob
+    );
+    await editMessage(trackedJob.messageId, msg);
   }
 }

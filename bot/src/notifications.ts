@@ -140,6 +140,8 @@ export function formatInteractionReplied(
   return `💬 <b>${contact.full_name}</b> (${orgName}) replied via ${channel || "unknown"}`;
 }
 
+// ─── Legacy batch formatters (kept for backward compatibility) ───
+
 export function formatBatchStart(jobType: string, total: number): string {
   return `⏳ <b>${jobType}</b> — processing ${total} items...`;
 }
@@ -160,4 +162,107 @@ export function formatBatchComplete(
     return `❌ <b>${jobType} Failed</b>\nError: ${error}\nSuccesses: ${successes} | Failures: ${failures}`;
   }
   return `✅ <b>${jobType} Complete</b>\nSuccesses: ${successes} | Failures: ${failures}`;
+}
+
+// ─── Enrichment-specific formatters ───
+
+function stageLabels(stages: string[]): string[] {
+  return stages.map((s) => {
+    switch (s) {
+      case "full": return "Full Pipeline";
+      case "apollo": return "Apollo";
+      case "perplexity": return "Perplexity";
+      case "gemini": return "Gemini";
+      case "people_finder": return "People Finder";
+      default: return s;
+    }
+  });
+}
+
+export function formatEnrichmentStart(jobType: string, total: number, stages: string[]): string {
+  const isOrg = jobType.includes("organization");
+  const entity = isOrg ? "organization" : "person";
+  const stagesStr = stageLabels(stages).join(", ");
+  return [
+    `⏳ <b>Enrichment started</b>`,
+    `${total} ${entity}${total !== 1 ? "s" : ""} queued`,
+    `Stages: ${stagesStr}`,
+  ].join("\n");
+}
+
+export function formatEnrichmentProgress(
+  total: number,
+  completed: number,
+  failed: number,
+  stages: string[],
+  isOrg: boolean
+): string {
+  const done = completed + failed;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const bar = "█".repeat(Math.floor(pct / 10)) + "░".repeat(10 - Math.floor(pct / 10));
+  const entity = isOrg ? "org" : "person";
+
+  const lines = [
+    `⏳ <b>Enrichment in progress</b>`,
+    `${bar} ${pct}%`,
+    `${completed} of ${total} ${entity}s enriched`,
+  ];
+  if (failed > 0) lines.push(`${failed} failed`);
+  return lines.join("\n");
+}
+
+export function formatEnrichmentComplete(
+  jobType: string,
+  meta: Record<string, unknown>
+): string {
+  const isOrg = jobType.includes("organization");
+  const durationMs = (meta.duration_ms as number) ?? 0;
+  const error = (meta.error as string) ?? null;
+
+  const duration = durationMs > 60000
+    ? `${Math.floor(durationMs / 60000)}m ${Math.round((durationMs % 60000) / 1000)}s`
+    : durationMs > 0
+      ? `${(durationMs / 1000).toFixed(0)}s`
+      : null;
+
+  const lines: string[] = [];
+
+  if (isOrg) {
+    const total = (meta.org_count as number) ?? 0;
+    const enriched = (meta.orgs_enriched as number) ?? 0;
+    const failed = (meta.orgs_failed as number) ?? 0;
+    const signals = (meta.signals_created as number) ?? 0;
+    const people = (meta.people_found as number) ?? 0;
+
+    if (error || failed > enriched) {
+      lines.push(`❌ <b>Enrichment failed</b>`);
+      if (error) lines.push(error);
+    } else {
+      lines.push(`✅ <b>Enrichment complete</b>`);
+    }
+
+    lines.push(`${enriched} of ${total} orgs enriched`);
+    if (failed > 0) lines.push(`${failed} failed`);
+    if (signals > 0) lines.push(`${signals} signals created`);
+    if (people > 0) lines.push(`${people} people found`);
+  } else {
+    const total = (meta.person_count as number) ?? 0;
+    const enriched = (meta.persons_enriched as number) ?? 0;
+    const failed = (meta.persons_failed as number) ?? 0;
+    const orgsCreated = (meta.orgs_created as number) ?? 0;
+
+    if (error || failed > enriched) {
+      lines.push(`❌ <b>Enrichment failed</b>`);
+      if (error) lines.push(error);
+    } else {
+      lines.push(`✅ <b>Enrichment complete</b>`);
+    }
+
+    lines.push(`${enriched} of ${total} persons enriched`);
+    if (failed > 0) lines.push(`${failed} failed`);
+    if (orgsCreated > 0) lines.push(`${orgsCreated} new orgs created`);
+  }
+
+  if (duration) lines.push(`${duration}`);
+  return lines.join("\n");
 }

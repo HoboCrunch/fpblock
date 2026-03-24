@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
     eventId?: string;
     initiativeId?: string;
     icpBelow?: number;
+    failedIncomplete?: boolean;
     peopleFinderConfig?: {
       perCompany?: number;
       seniorities?: string[];
@@ -44,6 +45,7 @@ export async function POST(request: NextRequest) {
     eventId,
     initiativeId,
     icpBelow,
+    failedIncomplete,
     peopleFinderConfig,
   } = body;
 
@@ -85,6 +87,15 @@ export async function POST(request: NextRequest) {
           .filter((id): id is string => id !== null)
       )
     );
+  } else if (failedIncomplete) {
+    // Orgs that failed or partially completed enrichment
+    const { data: failedOrgs } = await supabase
+      .from("organizations")
+      .select("id")
+      .in("enrichment_status", ["failed", "partial"])
+      .limit(200);
+
+    orgIds = (failedOrgs ?? []).map((o: { id: string }) => o.id);
   } else if (icpBelow != null) {
     // Orgs with icp_score below threshold (or null)
     const { data: lowScoreOrgs } = await supabase
@@ -128,6 +139,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         stages,
         org_count: orgIds.length,
+        organization_ids: orgIds.length <= 500 ? orgIds : null,
         event_id: eventId ?? null,
         initiative_id: initiativeId ?? null,
         icp_below: icpBelow ?? null,
@@ -153,7 +165,7 @@ export async function POST(request: NextRequest) {
   try {
     const result = await runBatchEnrichment(supabase, orgIds, {
       stages: validStages.length > 0 ? validStages : ["full"],
-      concurrency: 1, // Respect API rate limits
+      concurrency: 3, // Parallel org processing (Apollo rate-limited internally via fetch-with-retry backoff)
       peopleFinderConfig: peopleFinderConfig
         ? {
             perCompany: peopleFinderConfig.perCompany ?? 5,
@@ -183,6 +195,7 @@ export async function POST(request: NextRequest) {
           orgs_enriched: result.succeeded,
           orgs_failed: result.failed,
           signals_created: totalSignals,
+          duration_ms: result.durationMs,
           event_id: eventId ?? null,
           initiative_id: initiativeId ?? null,
           icp_below: icpBelow ?? null,

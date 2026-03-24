@@ -3,6 +3,11 @@
 interface TrackedJob {
   messageId: number;
   lastEdit: number;
+  total: number;          // total orgs/persons in batch
+  lastCompleted: number;  // last known completed count (to avoid redundant edits)
+  jobType: string;        // "enrichment_batch_organizations" or "enrichment"
+  createdAt: string;      // job created_at timestamp for child job queries
+  stages: string[];       // pipeline stages being run
 }
 
 const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
@@ -10,8 +15,17 @@ const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
 export class BatchTracker {
   private jobs = new Map<string, TrackedJob>();
 
-  track(jobId: string, messageId: number): void {
-    this.jobs.set(jobId, { messageId, lastEdit: Date.now() });
+  track(
+    jobId: string,
+    messageId: number,
+    opts: { total: number; jobType: string; createdAt: string; stages: string[] }
+  ): void {
+    this.jobs.set(jobId, {
+      messageId,
+      lastEdit: Date.now(),
+      lastCompleted: 0,
+      ...opts,
+    });
   }
 
   complete(jobId: string): void {
@@ -24,6 +38,10 @@ export class BatchTracker {
 
   getMessageId(jobId: string): number | null {
     return this.jobs.get(jobId)?.messageId ?? null;
+  }
+
+  getJob(jobId: string): TrackedJob | undefined {
+    return this.jobs.get(jobId);
   }
 
   hasActiveJobs(): boolean {
@@ -42,6 +60,16 @@ export class BatchTracker {
   setLastEdit(jobId: string, timestamp: number): void {
     const job = this.jobs.get(jobId);
     if (job) job.lastEdit = timestamp;
+  }
+
+  shouldUpdate(jobId: string, completed: number): boolean {
+    const job = this.jobs.get(jobId);
+    if (!job) return false;
+    if (completed === job.lastCompleted) return false;
+    if (Date.now() - job.lastEdit < 4000) return false; // throttle to 4s
+    job.lastCompleted = completed;
+    job.lastEdit = Date.now();
+    return true;
   }
 
   getStaleJobs(): string[] {

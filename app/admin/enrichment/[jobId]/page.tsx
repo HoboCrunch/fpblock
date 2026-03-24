@@ -15,10 +15,12 @@ import {
   Twitter,
   Clock,
   BarChart3,
+  RefreshCw,
 } from "lucide-react";
 import type { JobLog, Organization, OrganizationSignal } from "@/lib/types/database";
 import {
   JobResultsClient,
+  LiveJobBanner,
   type ChildJobEntry,
   type OrgDetail,
   type OrgSignalEntry,
@@ -273,6 +275,30 @@ export default async function EnrichmentJobPage({
   }
 
   // ---------------------------------------------------------------------------
+  // Compute unprocessed orgs (ones in the batch that have no child job entry)
+  // ---------------------------------------------------------------------------
+  const processedTargetIds = new Set(
+    childEntries.map((e) => e.target_id).filter(Boolean) as string[]
+  );
+
+  const allOrgIds = (meta.organization_ids as string[]) ?? (meta.org_ids as string[]) ?? null;
+  let unprocessedOrgs: { id: string; name: string; enrichment_status: string; enrichment_stages: Record<string, unknown> }[] = [];
+
+  if (allOrgIds && allOrgIds.length > processedTargetIds.size) {
+    const unprocessedIds = allOrgIds.filter((id) => !processedTargetIds.has(id));
+
+    if (unprocessedIds.length > 0) {
+      const { data: unprocessedData } = await supabase
+        .from("organizations")
+        .select("id, name, enrichment_status, enrichment_stages")
+        .in("id", unprocessedIds)
+        .order("name");
+
+      unprocessedOrgs = (unprocessedData ?? []) as typeof unprocessedOrgs;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Compute stats
   // ---------------------------------------------------------------------------
 
@@ -440,6 +466,15 @@ export default async function EnrichmentJobPage({
         </div>
       </div>
 
+      {/* Live progress banner for processing jobs */}
+      {typedJob.status === "processing" && (
+        <LiveJobBanner
+          jobId={jobId}
+          jobCreatedAt={typedJob.created_at}
+          isOrgJob={isOrgJob}
+        />
+      )}
+
       {/* Summary Stats */}
       {isOrgJob ? (
         <>
@@ -516,6 +551,30 @@ export default async function EnrichmentJobPage({
         </div>
       )}
 
+      {/* Retry CTA for failed/partial jobs */}
+      {(typedJob.status === "failed" || (isOrgJob && unprocessedOrgs.length > 0)) && (
+        <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--accent-orange)]/[0.04] border border-[var(--accent-orange)]/15">
+          <div>
+            <p className="text-sm text-white font-medium">
+              {typedJob.status === "failed"
+                ? `Job failed — ${unprocessedOrgs.length} organization${unprocessedOrgs.length !== 1 ? "s" : ""} not processed`
+                : `${unprocessedOrgs.length} organization${unprocessedOrgs.length !== 1 ? "s" : ""} remaining`
+              }
+            </p>
+            {typedJob.error && (
+              <p className="text-xs text-[var(--text-muted)] mt-1">{typedJob.error}</p>
+            )}
+          </div>
+          <Link
+            href={`/admin/enrichment?retry=${jobId}`}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25 transition-all shrink-0"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retry {unprocessedOrgs.length + childEntries.filter(e => e.status === "failed").length} Remaining
+          </Link>
+        </div>
+      )}
+
       {/* Results */}
       <div>
         <h2 className="text-lg font-semibold font-[family-name:var(--font-heading)] mb-4">
@@ -526,6 +585,10 @@ export default async function EnrichmentJobPage({
           childEntries={childEntries}
           orgMap={orgMap}
           signalsMap={signalsMap}
+          jobId={jobId}
+          jobStatus={typedJob.status}
+          jobCreatedAt={typedJob.created_at}
+          unprocessedOrgs={unprocessedOrgs}
         />
       </div>
     </div>

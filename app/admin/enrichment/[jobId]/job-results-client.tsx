@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createBrowserClient } from "@supabase/ssr";
 import {
   ChevronDown,
   ChevronRight,
@@ -26,6 +28,7 @@ import {
   User,
   MapPin,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -602,20 +605,284 @@ function PersonResultRow({ entry }: { entry: ChildJobEntry }) {
 }
 
 // ---------------------------------------------------------------------------
+// Supabase helper
+// ---------------------------------------------------------------------------
+
+function useBrowserSupabase() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Live Job Banner (shows progress for processing jobs)
+// ---------------------------------------------------------------------------
+
+export function LiveJobBanner({
+  jobId,
+  jobCreatedAt,
+  isOrgJob,
+}: {
+  jobId: string;
+  jobCreatedAt: string;
+  isOrgJob: boolean;
+}) {
+  const router = useRouter();
+  const [progress, setProgress] = useState<{
+    completed: number;
+    total: number;
+    latestName: string | null;
+    latestStage: string | null;
+  }>({ completed: 0, total: 0, latestName: null, latestStage: null });
+  const [isDone, setIsDone] = useState(false);
+
+  useEffect(() => {
+    if (isDone) return;
+
+    const supabase = useBrowserSupabase();
+    const startTime = new Date(
+      new Date(jobCreatedAt).getTime() - 5000
+    ).toISOString();
+    const targetTable = isOrgJob ? "organizations" : "contacts";
+    const jobTypes = isOrgJob
+      ? [
+          "enrichment_full",
+          "enrichment_apollo",
+          "enrichment_perplexity",
+          "enrichment_gemini",
+          "enrichment_people_finder",
+        ]
+      : ["enrichment", "enrichment_apollo"];
+
+    const poll = async () => {
+      // Check parent job status + metadata for expected total
+      const { data: parentJob } = await supabase
+        .from("job_log")
+        .select("status, metadata")
+        .eq("id", jobId)
+        .single();
+
+      if (
+        parentJob?.status === "completed" ||
+        parentJob?.status === "failed"
+      ) {
+        setIsDone(true);
+        router.refresh();
+        return;
+      }
+
+      const parentMeta = ((parentJob?.metadata ?? {}) as Record<string, unknown>);
+      const expectedTotal =
+        (parentMeta.org_count as number) ??
+        (parentMeta.contacts_count as number) ??
+        (parentMeta.person_count as number) ??
+        ((parentMeta.organization_ids as string[])?.length) ??
+        ((parentMeta.person_ids as string[])?.length) ??
+        null;
+
+      // Get child jobs
+      const { data } = await supabase
+        .from("job_log")
+        .select("target_id, status, job_type, metadata")
+        .eq("target_table", targetTable)
+        .in("job_type", jobTypes)
+        .gte("created_at", startTime)
+        .neq("id", jobId)
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if (data && data.length > 0) {
+        const byTarget = new Map<
+          string,
+          { status: string; stage: string | null }
+        >();
+        let latestName: string | null = null;
+        let latestStage: string | null = null;
+
+        for (const entry of data as {
+          target_id: string | null;
+          status: string;
+          job_type: string;
+          metadata: Record<string, unknown> | null;
+        }[]) {
+          if (!entry.target_id) continue;
+          const existing = byTarget.get(entry.target_id);
+          if (
+            !existing ||
+            (existing.status === "processing" &&
+              entry.status !== "processing") ||
+            !existing
+          ) {
+            const stage = entry.job_type.replace("enrichment_", "");
+            byTarget.set(entry.target_id, { status: entry.status, stage });
+          }
+          if (!latestStage && entry.status === "processing") {
+            const meta = (entry.metadata ?? {}) as Record<string, unknown>;
+            latestName =
+              (meta.org_name as string) ??
+              (meta.full_name as string) ??
+              (meta.contact_name as string) ??
+              null;
+            latestStage = (() => {
+              switch (entry.job_type) {
+                case "enrichment_apollo":
+                  return "Firmographics";
+                case "enrichment_perplexity":
+                  return "Deep Research";
+                case "enrichment_gemini":
+                  return "ICP Scoring";
+                case "enrichment_people_finder":
+                  return "Finding People";
+                case "enrichment_full":
+                  return "Full Pipeline";
+                default:
+                  return entry.job_type.replace("enrichment_", "");
+              }
+            })();
+          }
+        }
+
+        const completed = Array.from(byTarget.values()).filter(
+          (v) => v.status === "completed" || v.status === "failed"
+        ).length;
+        setProgress({
+          completed,
+          total: expectedTotal ?? byTarget.size,
+          latestName,
+          latestStage,
+        });
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 2500);
+    return () => clearInterval(interval);
+  }, [jobId, jobCreatedAt, isOrgJob, isDone, router]);
+
+  if (isDone) return null;
+
+  const pct =
+    progress.total > 0
+      ? Math.round((progress.completed / progress.total) * 100)
+      : 0;
+
+  return (
+    <div className="p-4 rounded-xl bg-[var(--accent-orange)]/[0.04] border border-[var(--accent-orange)]/15">
+      <div className="flex items-center gap-3 mb-3">
+        <span className="relative flex h-3 w-3 shrink-0">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-orange)] opacity-75" />
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--accent-orange)]" />
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-white font-medium">Job in progress</p>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">
+            {progress.latestName && progress.latestStage
+              ? `${progress.latestName}: ${progress.latestStage}`
+              : progress.latestStage
+                ? `Currently: ${progress.latestStage}`
+                : "Processing..."}
+            {progress.total > 0 &&
+              ` — ${progress.completed} of ${progress.total} completed`}
+          </p>
+        </div>
+        <span className="text-sm font-medium text-[var(--accent-orange)] tabular-nums shrink-0">
+          {pct}%
+        </span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-white/[0.06] overflow-hidden">
+        <div
+          className="h-full rounded-full bg-[var(--accent-orange)] transition-all duration-500 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Client Component
 // ---------------------------------------------------------------------------
 
 export function JobResultsClient({
   isOrgJob,
-  childEntries,
+  childEntries: initialEntries,
   orgMap,
   signalsMap,
+  jobId,
+  jobStatus,
+  jobCreatedAt,
+  unprocessedOrgs,
 }: {
   isOrgJob: boolean;
   childEntries: ChildJobEntry[];
   orgMap: Record<string, OrgDetail>;
   signalsMap: Record<string, OrgSignalEntry[]>;
+  jobId?: string;
+  jobStatus?: string;
+  jobCreatedAt?: string;
+  unprocessedOrgs?: { id: string; name: string; enrichment_status: string; enrichment_stages: Record<string, unknown> }[];
 }) {
+  const [liveEntries, setLiveEntries] = useState<ChildJobEntry[]>([]);
+  const isProcessing = jobStatus === "processing";
+
+  // Poll for new entries when job is processing
+  useEffect(() => {
+    if (!isProcessing || !jobId || !jobCreatedAt) return;
+
+    const supabase = useBrowserSupabase();
+    const startTime = new Date(
+      new Date(jobCreatedAt).getTime() - 5000
+    ).toISOString();
+    const targetTable = isOrgJob ? "organizations" : "contacts";
+    const jobTypes = isOrgJob
+      ? [
+          "enrichment_full",
+          "enrichment_apollo",
+          "enrichment_perplexity",
+          "enrichment_gemini",
+          "enrichment_people_finder",
+        ]
+      : ["enrichment", "enrichment_apollo"];
+
+    const poll = async () => {
+      const { data } = await supabase
+        .from("job_log")
+        .select(
+          "id, target_id, status, job_type, error, metadata, created_at"
+        )
+        .eq("target_table", targetTable)
+        .in("job_type", jobTypes)
+        .gte("created_at", startTime)
+        .neq("id", jobId)
+        .order("created_at", { ascending: true })
+        .limit(500);
+
+      if (data) {
+        const byTarget = new Map<string, ChildJobEntry>();
+        for (const entry of data as ChildJobEntry[]) {
+          if (!entry.target_id) continue;
+          const existing = byTarget.get(entry.target_id);
+          if (
+            !existing ||
+            (existing.status === "processing" &&
+              entry.status !== "processing") ||
+            new Date(entry.created_at) > new Date(existing.created_at)
+          ) {
+            byTarget.set(entry.target_id, entry);
+          }
+        }
+        setLiveEntries(Array.from(byTarget.values()));
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, [isProcessing, jobId, jobCreatedAt, isOrgJob]);
+
+  const childEntries = isProcessing && liveEntries.length > 0 ? liveEntries : initialEntries;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("icp");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -676,6 +943,7 @@ export function JobResultsClient({
   }, [childEntries, searchQuery, sortKey, sortDir, isOrgJob, orgMap]);
 
   return (
+    <>
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -726,6 +994,9 @@ export function JobResultsClient({
         {/* Count */}
         <span className="text-xs text-[var(--text-muted)] ml-auto">
           {filteredAndSorted.length} of {childEntries.length} results
+          {isOrgJob && unprocessedOrgs && unprocessedOrgs.length > 0 && (
+            <span className="text-[var(--text-muted)]/60"> · {unprocessedOrgs.length} not processed</span>
+          )}
         </span>
       </div>
 
@@ -758,5 +1029,88 @@ export function JobResultsClient({
         )}
       </GlassCard>
     </div>
+
+    {/* Unprocessed organizations */}
+    {isOrgJob && unprocessedOrgs && unprocessedOrgs.length > 0 && (
+      <div className="mt-6">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-medium text-[var(--text-muted)]">
+            Not Processed ({unprocessedOrgs.length})
+          </h3>
+          <div className="flex-1 h-px bg-white/[0.06]" />
+        </div>
+        <div className="rounded-xl border border-white/[0.04] bg-white/[0.01] overflow-hidden">
+          <div className="max-h-[300px] overflow-y-auto">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-[var(--glass-bg)] z-10">
+                <tr className="border-b border-white/[0.06] text-left">
+                  <th className="px-4 py-2 text-[var(--text-muted)] font-medium">Organization</th>
+                  <th className="px-4 py-2 text-[var(--text-muted)] font-medium">Previous Status</th>
+                  <th className="px-4 py-2 text-[var(--text-muted)] font-medium">Stages</th>
+                </tr>
+              </thead>
+              <tbody>
+                {unprocessedOrgs.map((org) => {
+                  const stages = (org.enrichment_stages ?? {}) as Record<string, { status?: string; error?: string }>;
+                  const stageEntries = Object.entries(stages).filter(([_, v]) => v && typeof v === 'object');
+
+                  return (
+                    <tr key={org.id} className="border-b border-white/[0.03] last:border-0">
+                      <td className="px-4 py-2.5">
+                        <Link
+                          href={`/admin/organizations/${org.id}`}
+                          className="text-[var(--text-muted)] hover:text-white transition-colors"
+                        >
+                          {org.name}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className={cn(
+                          "text-[10px] px-2 py-0.5 rounded-full border",
+                          org.enrichment_status === 'none'
+                            ? "bg-white/[0.04] text-[var(--text-muted)] border-white/[0.08]"
+                            : org.enrichment_status === 'failed'
+                              ? "bg-red-500/10 text-red-400 border-red-500/20"
+                              : org.enrichment_status === 'partial'
+                                ? "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                                : "bg-white/[0.04] text-[var(--text-muted)] border-white/[0.08]"
+                        )}>
+                          {org.enrichment_status === 'none' ? 'never attempted' : org.enrichment_status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {stageEntries.length > 0 ? (
+                          <div className="flex items-center gap-1.5">
+                            {stageEntries.map(([stageName, stageData]) => (
+                              <span
+                                key={stageName}
+                                title={stageData.error ? `${stageName}: ${stageData.error}` : stageName}
+                                className={cn(
+                                  "text-[9px] px-1.5 py-0.5 rounded border",
+                                  stageData.status === 'completed'
+                                    ? "bg-green-500/10 text-green-400 border-green-500/20"
+                                    : stageData.status === 'failed'
+                                      ? "bg-red-500/10 text-red-400 border-red-500/20"
+                                      : "bg-white/[0.04] text-[var(--text-muted)] border-white/[0.08]"
+                                )}
+                              >
+                                {stageName.replace('_', ' ')}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[var(--text-muted)]">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

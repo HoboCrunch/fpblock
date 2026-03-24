@@ -5,6 +5,8 @@
  * Auth uses X-Api-Key header (consistent with the rest of this codebase).
  */
 
+import { fetchWithRetry } from "./fetch-with-retry";
+
 export interface ApolloOrgResult {
   description: string | null;
   industry: string | null;
@@ -155,13 +157,21 @@ export async function enrichFromApollo(
 
   try {
     for (const params of strategies) {
-      const res = await fetch(`${APOLLO_ORG_ENRICH_URL}?${params.toString()}`, {
-        method: "GET",
-        headers: {
-          "X-Api-Key": apiKey,
-          "Content-Type": "application/json",
+      const res = await fetchWithRetry(
+        `${APOLLO_ORG_ENRICH_URL}?${params.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            "X-Api-Key": apiKey,
+            "Content-Type": "application/json",
+          },
         },
-      });
+        {
+          timeoutMs: 30_000,
+          maxRetries: 3,
+          context: `apollo:${orgName}`,
+        },
+      );
 
       if (!res.ok) {
         console.error(

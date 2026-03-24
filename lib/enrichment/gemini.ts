@@ -1,5 +1,6 @@
 import type { ApolloOrgResult } from "./apollo";
 import type { PerplexityOrgResult } from "./perplexity";
+import { fetchWithRetry } from "./fetch-with-retry";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -180,16 +181,24 @@ export async function synthesizeWithGemini(
 
   const prompt = buildPrompt(orgName, apollo, perplexity, existingOrg, companyContext);
 
-  const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-      },
-    }),
-  });
+  const res = await fetchWithRetry(
+    `${GEMINI_URL}?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+        },
+      }),
+    },
+    {
+      timeoutMs: 45000,
+      maxRetries: 2,
+      context: `gemini:${orgName}`,
+    }
+  );
 
   if (!res.ok) {
     const body = await res.text().catch(() => "(unreadable)");

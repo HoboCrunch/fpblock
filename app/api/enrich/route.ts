@@ -3,6 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 60;
 
+// NOTE: This route operates on the legacy `contacts` table, not `persons`.
+// Person enrichment_status updates for the `persons` table are handled by
+// the org enrichment pipeline (pipeline.ts) when people are found/created.
+// When a persons-specific enrichment route is added, it should update
+// persons.enrichment_status and persons.last_enriched_at accordingly.
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const body = await request.json();

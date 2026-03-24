@@ -6,6 +6,14 @@ import { startRealtimeSubscriptions, stopRealtime } from "./realtime.js";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// Prevent crash loops from uncaught errors in Realtime internals
+process.on("uncaughtException", (err) => {
+  console.error("[bot] Uncaught exception (not crashing):", err.message);
+});
+process.on("unhandledRejection", (err) => {
+  console.error("[bot] Unhandled rejection (not crashing):", err);
+});
+
 async function main() {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) throw new Error("Missing TELEGRAM_BOT_TOKEN");
@@ -24,9 +32,9 @@ async function main() {
     console.warn("[bot] Could not clear pending updates:", err);
   }
 
-  // Start Supabase Realtime subscriptions
-  const channel = startRealtimeSubscriptions();
-  console.log("[bot] Realtime subscriptions active");
+  // Start Supabase Realtime subscriptions (auto-reconnects on failure)
+  startRealtimeSubscriptions();
+  console.log("[bot] Realtime subscriptions starting...");
 
   // Graceful shutdown
   const shutdown = async () => {

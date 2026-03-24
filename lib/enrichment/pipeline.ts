@@ -17,6 +17,32 @@ export type { PeopleFinderConfig } from "./apollo-people";
 export { DEFAULT_PEOPLE_FINDER_CONFIG } from "./apollo-people";
 
 // ---------------------------------------------------------------------------
+// Timeout helper
+// ---------------------------------------------------------------------------
+
+async function withTimeout<T>(
+  fn: () => Promise<T>,
+  timeoutMs: number,
+  label: string
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`[pipeline] ${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    fn()
+      .then((result) => {
+        clearTimeout(timer);
+        resolve(result);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Helpers — company context
 // ---------------------------------------------------------------------------
 
@@ -59,6 +85,7 @@ export interface BatchEnrichmentResult {
   succeeded: number;
   failed: number;
   results: EnrichmentResult[];
+  durationMs: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -122,6 +149,36 @@ async function updateJob(
     .from("job_log")
     .update(updates)
     .eq("id", jobId);
+}
+
+/**
+ * Update enrichment status and per-stage tracking on an organization.
+ */
+async function updateEnrichmentStatus(
+  supabase: SupabaseClient,
+  orgId: string,
+  status: string,
+  stageUpdates?: Record<string, { status: string; at?: string; error?: string; [key: string]: unknown }>
+) {
+  const updates: Record<string, unknown> = { enrichment_status: status };
+
+  if (stageUpdates) {
+    // Merge stage updates with existing stages
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("enrichment_stages")
+      .eq("id", orgId)
+      .single();
+
+    const currentStages = (org?.enrichment_stages ?? {}) as Record<string, unknown>;
+    updates.enrichment_stages = { ...currentStages, ...stageUpdates };
+  }
+
+  if (status === 'complete' || status === 'partial') {
+    updates.last_enriched_at = new Date().toISOString();
+  }
+
+  await supabase.from("organizations").update(updates).eq("id", orgId);
 }
 
 /**
@@ -436,6 +493,10 @@ export async function runApolloEnrichment(
       });
     }
 
+    await updateEnrichmentStatus(supabase, orgId, 'in_progress', {
+      apollo: { status: 'completed', at: new Date().toISOString(), fields_updated: Object.keys(updates) }
+    });
+
     return { success: true, data: result };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -443,6 +504,9 @@ export async function runApolloEnrichment(
     if (jobId) {
       await updateJob(supabase, jobId, { status: "failed", error: message });
     }
+    await updateEnrichmentStatus(supabase, orgId, 'in_progress', {
+      apollo: { status: 'failed', at: new Date().toISOString(), error: message }
+    });
     return { success: false };
   }
 }
@@ -481,6 +545,10 @@ export async function runPerplexityEnrichment(
       });
     }
 
+    await updateEnrichmentStatus(supabase, orgId, 'in_progress', {
+      perplexity: { status: 'completed', at: new Date().toISOString() }
+    });
+
     return { success: true, data: result };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -488,6 +556,9 @@ export async function runPerplexityEnrichment(
     if (jobId) {
       await updateJob(supabase, jobId, { status: "failed", error: message });
     }
+    await updateEnrichmentStatus(supabase, orgId, 'in_progress', {
+      perplexity: { status: 'failed', at: new Date().toISOString(), error: message }
+    });
     return { success: false };
   }
 }
@@ -565,6 +636,10 @@ export async function runGeminiSynthesis(
       });
     }
 
+    await updateEnrichmentStatus(supabase, orgId, 'in_progress', {
+      gemini: { status: 'completed', at: new Date().toISOString(), fields_updated: Object.keys(updates), signals_created: signalsCreated }
+    });
+
     return { success: true, data: result };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -572,6 +647,9 @@ export async function runGeminiSynthesis(
     if (jobId) {
       await updateJob(supabase, jobId, { status: "failed", error: message });
     }
+    await updateEnrichmentStatus(supabase, orgId, 'in_progress', {
+      gemini: { status: 'failed', at: new Date().toISOString(), error: message }
+    });
     return { success: false };
   }
 }
@@ -615,6 +693,10 @@ export async function runPeopleFinderEnrichment(
       });
     }
 
+    await updateEnrichmentStatus(supabase, orgId, 'in_progress', {
+      people_finder: { status: 'completed', at: new Date().toISOString(), found, created: stats.created, merged: stats.merged }
+    });
+
     return {
       success: true,
       data: result,
@@ -626,6 +708,9 @@ export async function runPeopleFinderEnrichment(
     if (jobId) {
       await updateJob(supabase, jobId, { status: "failed", error: message });
     }
+    await updateEnrichmentStatus(supabase, orgId, 'in_progress', {
+      people_finder: { status: 'failed', at: new Date().toISOString(), error: message }
+    });
     return { success: false };
   }
 }
@@ -654,6 +739,29 @@ export async function runFullEnrichment(
     };
   }
 
+  // Track per-stage status for final computation
+  const existingStages = ((org as unknown as Record<string, unknown>).enrichment_stages ?? {}) as Record<string, { status?: string; [key: string]: unknown }>;
+  const stageResults: Record<string, { status: string; at?: string; error?: string; [key: string]: unknown }> = {};
+
+  // Check if ALL stages are already completed — skip entire pipeline
+  const requiredStages = peopleFinderConfig
+    ? ['apollo', 'perplexity', 'gemini', 'people_finder']
+    : ['apollo', 'perplexity', 'gemini'];
+  const allAlreadyComplete = requiredStages.every(s => existingStages[s]?.status === 'completed');
+  if (allAlreadyComplete) {
+    console.log(`[pipeline] ${org.name}: all stages already completed, skipping`);
+    return {
+      orgId,
+      orgName: org.name,
+      success: true,
+      signalsCreated: 0,
+      peopleFinder: null,
+    };
+  }
+
+  // Set enrichment_status to in_progress
+  await updateEnrichmentStatus(supabase, orgId, 'in_progress');
+
   const jobId = await logJob(supabase, {
     job_type: "enrichment_full",
     target_table: "organizations",
@@ -666,35 +774,106 @@ export async function runFullEnrichment(
     // Fetch company context once for this pipeline run
     const companyContext = await fetchCompanyContext(supabase);
 
-    // Step 1: Run Apollo + Perplexity — parallel if org has a website, sequential (discovery) if not
+    // Step 1: Run Apollo + Perplexity (with stage-skip support)
     console.log(`[pipeline] ${org.name}: using ${org.website ? 'parallel' : 'discovery'} path`);
 
     let apolloResult: ApolloOrgResult;
     let perplexityResult: PerplexityOrgResult;
 
-    if (org.website) {
-      // Fast path: org has a website, run Apollo + Perplexity in parallel
-      [apolloResult, perplexityResult] = await Promise.all([
-        enrichFromApollo(org.name, org.website),
-        enrichFromPerplexity(org.name, org.website, org.context),
-      ]);
-    } else {
-      // Discovery path: no website — run Perplexity first to discover domain
-      perplexityResult = await enrichFromPerplexity(org.name, null, org.context);
+    const apolloAlreadyDone = existingStages.apollo?.status === 'completed';
+    const perplexityAlreadyDone = existingStages.perplexity?.status === 'completed';
 
-      // Try to extract website from Perplexity research
-      const discoveredWebsite = perplexityResult.discovered_website;
-      if (discoveredWebsite) {
-        // Persist discovered website to the org immediately
-        await supabase
-          .from("organizations")
-          .update({ website: discoveredWebsite })
-          .eq("id", orgId);
-        console.log(`[pipeline] Discovered website for ${org.name}: ${discoveredWebsite}`);
+    if (apolloAlreadyDone && perplexityAlreadyDone) {
+      // Both done — load from cache
+      const cachedApollo = await getCachedJobData<ApolloOrgResult>(supabase, orgId, "enrichment_apollo");
+      const cachedPerplexity = await getCachedJobData<PerplexityOrgResult>(supabase, orgId, "enrichment_perplexity");
+
+      if (cachedApollo && cachedPerplexity) {
+        apolloResult = cachedApollo;
+        perplexityResult = cachedPerplexity;
+        console.log(`[pipeline] ${org.name}: skipping Apollo+Perplexity (already completed)`);
+        stageResults.apollo = { status: 'completed', at: (existingStages.apollo as Record<string, string>).at ?? new Date().toISOString() };
+        stageResults.perplexity = { status: 'completed', at: (existingStages.perplexity as Record<string, string>).at ?? new Date().toISOString() };
+      } else {
+        // Cache miss — re-run both
+        [apolloResult, perplexityResult] = await withTimeout(async () => {
+          return await Promise.all([
+            enrichFromApollo(org.name, org.website),
+            enrichFromPerplexity(org.name, org.website, org.context),
+          ]) as [ApolloOrgResult, PerplexityOrgResult];
+        }, 60000, org.name + ": Apollo+Perplexity");
+        stageResults.apollo = { status: 'completed', at: new Date().toISOString() };
+        stageResults.perplexity = { status: 'completed', at: new Date().toISOString() };
       }
+    } else {
+      // Run the stages that need running
+      [apolloResult, perplexityResult] = await withTimeout(async () => {
+        let apollo: ApolloOrgResult;
+        let perplexity: PerplexityOrgResult;
 
-      // Now run Apollo with the discovered website (or name-only fallback)
-      apolloResult = await enrichFromApollo(org.name, discoveredWebsite ?? org.website);
+        // Try loading cached results for already-completed stages
+        if (apolloAlreadyDone) {
+          const cached = await getCachedJobData<ApolloOrgResult>(supabase, orgId, "enrichment_apollo");
+          apollo = cached ?? await enrichFromApollo(org.name, org.website);
+          if (cached) console.log(`[pipeline] ${org.name}: skipping Apollo (already completed)`);
+        } else if (perplexityAlreadyDone) {
+          // Only Apollo needs running
+          apollo = await enrichFromApollo(org.name, org.website);
+        } else {
+          // Neither cached
+          apollo = undefined as unknown as ApolloOrgResult; // will be set below
+        }
+
+        if (perplexityAlreadyDone) {
+          const cached = await getCachedJobData<PerplexityOrgResult>(supabase, orgId, "enrichment_perplexity");
+          perplexity = cached ?? await enrichFromPerplexity(org.name, org.website, org.context);
+          if (cached) console.log(`[pipeline] ${org.name}: skipping Perplexity (already completed)`);
+        } else {
+          perplexity = undefined as unknown as PerplexityOrgResult; // will be set below
+        }
+
+        // Run remaining stages
+        if (!apolloAlreadyDone && !perplexityAlreadyDone) {
+          if (org.website) {
+            [apollo, perplexity] = await Promise.all([
+              enrichFromApollo(org.name, org.website),
+              enrichFromPerplexity(org.name, org.website, org.context),
+            ]);
+          } else {
+            perplexity = await enrichFromPerplexity(org.name, null, org.context);
+            const discoveredWebsite = perplexity.discovered_website;
+            if (discoveredWebsite) {
+              await supabase
+                .from("organizations")
+                .update({ website: discoveredWebsite })
+                .eq("id", orgId);
+              console.log(`[pipeline] Discovered website for ${org.name}: ${discoveredWebsite}`);
+            }
+            apollo = await enrichFromApollo(org.name, discoveredWebsite ?? org.website);
+          }
+        } else if (!apolloAlreadyDone) {
+          apollo = await enrichFromApollo(org.name, org.website);
+        } else if (!perplexityAlreadyDone) {
+          if (org.website) {
+            perplexity = await enrichFromPerplexity(org.name, org.website, org.context);
+          } else {
+            perplexity = await enrichFromPerplexity(org.name, null, org.context);
+            const discoveredWebsite = perplexity.discovered_website;
+            if (discoveredWebsite) {
+              await supabase
+                .from("organizations")
+                .update({ website: discoveredWebsite })
+                .eq("id", orgId);
+              console.log(`[pipeline] Discovered website for ${org.name}: ${discoveredWebsite}`);
+            }
+          }
+        }
+
+        return [apollo, perplexity] as [ApolloOrgResult, PerplexityOrgResult];
+      }, 60000, org.name + ": Apollo+Perplexity");
+
+      stageResults.apollo = { status: 'completed', at: new Date().toISOString() };
+      stageResults.perplexity = { status: 'completed', at: new Date().toISOString() };
     }
 
     // Log individual stage results
@@ -715,6 +894,9 @@ export async function runFullEnrichment(
       }),
     ]);
 
+    // Update enrichment stages after Apollo+Perplexity
+    await updateEnrichmentStatus(supabase, orgId, 'in_progress', stageResults);
+
     // Update org with Apollo basics (website, linkedin if missing)
     const apolloUpdates: Record<string, unknown> = {};
     if (apolloResult.website && !org.website)
@@ -733,19 +915,55 @@ export async function runFullEnrichment(
         .eq("id", orgId);
     }
 
-    // Step 2: Run Gemini synthesis with both results
-    const geminiResult = await synthesizeWithGemini(
-      org.name,
-      apolloResult,
-      perplexityResult,
-      {
-        description: org.description ?? apolloUpdates.description as string | undefined,
-        context: org.context,
-        usp: org.usp,
-        icp_score: org.icp_score,
-      },
-      companyContext
-    );
+    // Step 2: Run Gemini synthesis (with stage-skip support)
+    let geminiResult: GeminiSynthesisResult;
+    if (existingStages.gemini?.status === 'completed') {
+      const cached = await getCachedJobData<GeminiSynthesisResult>(supabase, orgId, "enrichment_gemini");
+      if (cached) {
+        geminiResult = cached;
+        console.log(`[pipeline] ${org.name}: skipping Gemini (already completed)`);
+        stageResults.gemini = { status: 'completed', at: (existingStages.gemini as Record<string, string>).at ?? new Date().toISOString() };
+      } else {
+        geminiResult = await withTimeout(
+          () => synthesizeWithGemini(
+            org.name,
+            apolloResult,
+            perplexityResult,
+            {
+              description: org.description ?? apolloUpdates.description as string | undefined,
+              context: org.context,
+              usp: org.usp,
+              icp_score: org.icp_score,
+            },
+            companyContext
+          ),
+          60000,
+          org.name + ": Gemini synthesis"
+        );
+        stageResults.gemini = { status: 'completed', at: new Date().toISOString() };
+      }
+    } else {
+      geminiResult = await withTimeout(
+        () => synthesizeWithGemini(
+          org.name,
+          apolloResult,
+          perplexityResult,
+          {
+            description: org.description ?? apolloUpdates.description as string | undefined,
+            context: org.context,
+            usp: org.usp,
+            icp_score: org.icp_score,
+          },
+          companyContext
+        ),
+        60000,
+        org.name + ": Gemini synthesis"
+      );
+      stageResults.gemini = { status: 'completed', at: new Date().toISOString() };
+    }
+
+    // Update enrichment stages after Gemini
+    await updateEnrichmentStatus(supabase, orgId, 'in_progress', stageResults);
 
     // Step 3: Update org fields from Gemini synthesis
     const geminiUpdates: Record<string, unknown> = {};
@@ -774,16 +992,50 @@ export async function runFullEnrichment(
       geminiResult.signals
     );
 
-    // Step 5: Run People Finder if config provided
+    // Log Gemini stage result (for live progress polling to pick up ICP score)
+    await logJob(supabase, {
+      job_type: "enrichment_gemini",
+      target_table: "organizations",
+      target_id: orgId,
+      status: "completed",
+      metadata: {
+        org_name: org.name,
+        icp_score: geminiResult.icp_score,
+        signals_created: signalsCreated,
+        fields_updated: Object.keys(geminiUpdates),
+      },
+    });
+
+    // Step 5: Run People Finder if config provided (with stage-skip support)
     let peopleFinderStats: EnrichmentResult["peopleFinder"] = null;
     if (peopleFinderConfig) {
-      const pfResult = await runPeopleFinderEnrichment(supabase, orgId, peopleFinderConfig);
-      if (pfResult.success && pfResult.stats) {
-        peopleFinderStats = pfResult.stats;
+      if (existingStages.people_finder?.status === 'completed') {
+        console.log(`[pipeline] ${org.name}: skipping People Finder (already completed)`);
+        stageResults.people_finder = { status: 'completed', at: (existingStages.people_finder as Record<string, string>).at ?? new Date().toISOString() };
+      } else {
+        const pfResult = await withTimeout(
+          () => runPeopleFinderEnrichment(supabase, orgId, peopleFinderConfig),
+          45000,
+          org.name + ": People Finder"
+        );
+        if (pfResult.success && pfResult.stats) {
+          peopleFinderStats = pfResult.stats;
+          stageResults.people_finder = { status: 'completed', at: new Date().toISOString() };
+        } else {
+          stageResults.people_finder = { status: 'failed', at: new Date().toISOString() };
+        }
       }
     }
 
-    // Step 6: Log completion
+    // Step 6: Compute final status intelligently
+    const stageStatuses = Object.values(stageResults).map(s => s.status);
+    const allComplete = stageStatuses.every(s => s === 'completed');
+    const anyFailed = stageStatuses.some(s => s === 'failed');
+    const finalStatus = allComplete ? 'complete' : anyFailed ? 'partial' : 'complete';
+
+    await updateEnrichmentStatus(supabase, orgId, finalStatus, stageResults);
+
+    // Step 7: Log completion
     if (jobId) {
       await updateJob(supabase, jobId, {
         status: "completed",
@@ -794,6 +1046,7 @@ export async function runFullEnrichment(
           signals_created: signalsCreated,
           icp_score: geminiResult.icp_score,
           people_finder: peopleFinderStats,
+          enrichment_status: finalStatus,
         },
       });
     }
@@ -811,6 +1064,12 @@ export async function runFullEnrichment(
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[pipeline] Full enrichment failed for ${org.name}:`, message);
+
+    // Determine if partial (some stages completed before failure)
+    const completedStages = Object.values(stageResults).filter(s => s.status === 'completed').length;
+    const failStatus = completedStages > 0 ? 'partial' : 'failed';
+    await updateEnrichmentStatus(supabase, orgId, failStatus, stageResults);
+
     if (jobId) {
       await updateJob(supabase, jobId, { status: "failed", error: message });
     }
@@ -822,6 +1081,35 @@ export async function runFullEnrichment(
       signalsCreated: 0,
       peopleFinder: null,
     };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stale job cleanup
+// ---------------------------------------------------------------------------
+
+/**
+ * Mark any "processing" jobs older than the given threshold as failed.
+ * This catches jobs orphaned by server crashes or timeouts.
+ */
+async function cleanupStaleJobs(supabase: SupabaseClient, staleCutoffMinutes: number = 15) {
+  const cutoff = new Date(Date.now() - staleCutoffMinutes * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from("job_log")
+    .update({
+      status: "failed",
+      error: "Marked as failed: job was still processing after " + staleCutoffMinutes + " minutes (likely server timeout)",
+    })
+    .eq("status", "processing")
+    .lt("created_at", cutoff)
+    .select("id, job_type, target_id");
+
+  if (data && data.length > 0) {
+    console.log(`[pipeline] Cleaned up ${data.length} stale processing jobs`);
+  }
+  if (error) {
+    console.error("[pipeline] Failed to cleanup stale jobs:", error.message);
   }
 }
 
@@ -847,6 +1135,10 @@ export async function runBatchEnrichment(
   const total = orgIds.length;
   const results: EnrichmentResult[] = [];
   let completed = 0;
+  const batchStartTime = Date.now();
+
+  // Clean up any orphaned processing jobs before starting
+  await cleanupStaleJobs(supabase);
 
   // Process in batches of `concurrency`
   for (let i = 0; i < orgIds.length; i += concurrency) {
@@ -854,89 +1146,116 @@ export async function runBatchEnrichment(
 
     const batchResults = await Promise.all(
       batch.map(async (orgId) => {
-        let result: EnrichmentResult;
+        try {
+          let result: EnrichmentResult;
 
-        if (stages.includes("full")) {
-          result = await runFullEnrichment(supabase, orgId, options?.peopleFinderConfig);
-        } else {
-          // Run individual stages sequentially
-          let apolloData: ApolloOrgResult | null = null;
-          let perplexityData: PerplexityOrgResult | null = null;
-          let geminiData: GeminiSynthesisResult | null = null;
-          let signalsCreated = 0;
-          let lastError: string | undefined;
-          let peopleFinderStats: EnrichmentResult["peopleFinder"] = null;
+          if (stages.includes("full")) {
+            result = await runFullEnrichment(supabase, orgId, options?.peopleFinderConfig);
+          } else {
+            // Run individual stages sequentially
+            let apolloData: ApolloOrgResult | null = null;
+            let perplexityData: PerplexityOrgResult | null = null;
+            let geminiData: GeminiSynthesisResult | null = null;
+            let signalsCreated = 0;
+            let lastError: string | undefined;
+            let peopleFinderStats: EnrichmentResult["peopleFinder"] = null;
 
-          const org = await fetchOrg(supabase, orgId);
-          const orgName = org?.name ?? "unknown";
+            const org = await fetchOrg(supabase, orgId);
+            const orgName = org?.name ?? "unknown";
 
-          if (stages.includes("apollo")) {
-            const res = await runApolloEnrichment(supabase, orgId);
-            if (res.success) apolloData = res.data ?? null;
-            else lastError = "Apollo enrichment failed";
-          }
-
-          if (stages.includes("perplexity")) {
-            const res = await runPerplexityEnrichment(supabase, orgId);
-            if (res.success) perplexityData = res.data ?? null;
-            else lastError = "Perplexity enrichment failed";
-          }
-
-          if (stages.includes("gemini")) {
-            const res = await runGeminiSynthesis(
-              supabase,
-              orgId,
-              apolloData,
-              perplexityData
-            );
-            if (res.success) {
-              geminiData = res.data ?? null;
-              signalsCreated = geminiData?.signals?.length ?? 0;
-            } else {
-              lastError = "Gemini synthesis failed";
+            if (stages.includes("apollo")) {
+              const res = await runApolloEnrichment(supabase, orgId);
+              if (res.success) apolloData = res.data ?? null;
+              else lastError = "Apollo enrichment failed";
             }
-          }
 
-          if (stages.includes("people_finder")) {
-            const res = await runPeopleFinderEnrichment(
-              supabase,
-              orgId,
-              options?.peopleFinderConfig ?? DEFAULT_PEOPLE_FINDER_CONFIG
-            );
-            if (res.success && res.stats) {
-              peopleFinderStats = res.stats;
-            } else {
-              lastError = "People finder enrichment failed";
+            if (stages.includes("perplexity")) {
+              const res = await runPerplexityEnrichment(supabase, orgId);
+              if (res.success) perplexityData = res.data ?? null;
+              else lastError = "Perplexity enrichment failed";
             }
+
+            if (stages.includes("gemini")) {
+              const res = await runGeminiSynthesis(
+                supabase,
+                orgId,
+                apolloData,
+                perplexityData
+              );
+              if (res.success) {
+                geminiData = res.data ?? null;
+                signalsCreated = geminiData?.signals?.length ?? 0;
+              } else {
+                lastError = "Gemini synthesis failed";
+              }
+            }
+
+            if (stages.includes("people_finder")) {
+              const res = await runPeopleFinderEnrichment(
+                supabase,
+                orgId,
+                options?.peopleFinderConfig ?? DEFAULT_PEOPLE_FINDER_CONFIG
+              );
+              if (res.success && res.stats) {
+                peopleFinderStats = res.stats;
+              } else {
+                lastError = "People finder enrichment failed";
+              }
+            }
+
+            result = {
+              orgId,
+              orgName,
+              success: !lastError,
+              error: lastError,
+              apollo: apolloData,
+              perplexity: perplexityData,
+              gemini: geminiData,
+              signalsCreated,
+              peopleFinder: peopleFinderStats,
+            };
           }
 
-          result = {
+          completed++;
+          options?.onProgress?.(completed, total, result.orgName);
+
+          return result;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error(`[pipeline] Unhandled error processing org ${orgId}:`, message);
+
+          // Try to get org name for the result
+          let orgName = "unknown";
+          try {
+            const org = await fetchOrg(supabase, orgId);
+            orgName = org?.name ?? "unknown";
+          } catch { /* ignore */ }
+
+          completed++;
+          const failResult: EnrichmentResult = {
             orgId,
             orgName,
-            success: !lastError,
-            error: lastError,
-            apollo: apolloData,
-            perplexity: perplexityData,
-            gemini: geminiData,
-            signalsCreated,
-            peopleFinder: peopleFinderStats,
+            success: false,
+            error: message,
+            signalsCreated: 0,
+            peopleFinder: null,
           };
+          options?.onProgress?.(completed, total, orgName);
+          return failResult;
         }
-
-        completed++;
-        options?.onProgress?.(completed, total, result.orgName);
-
-        return result;
       })
     );
 
     results.push(...batchResults);
   }
 
+  const durationMs = Date.now() - batchStartTime;
+
   return {
     total,
     succeeded: results.filter((r) => r.success).length,
     failed: results.filter((r) => !r.success).length,
     results,
+    durationMs,
   };
 }
