@@ -113,7 +113,7 @@ Rendered as compact chain with `→` separators, muted gray text, org name linke
 - Has Telegram — toggle
 
 *Enrichment:*
-- Status — multi-select: none, in_progress, complete, failed
+- Status — multi-select: none, in_progress, complete, failed (person values)
 - ICP Min — number input (GlassInput)
 - ICP Max — number input (GlassInput)
 
@@ -135,6 +135,13 @@ On row hover (desktop) or selection (mobile), shows a compact card:
 - All contact links (clickable: mailto, linkedin URL, twitter URL, tel, telegram)
 - Full correlation chain expanded with all event connections
 - Disappears on mouse-out / deselection
+
+Row Preview behavior:
+- **Data source**: all preview data is included in the initial table fetch (no lazy loading)
+- **Debounce**: 200ms delay before showing on hover to avoid flicker during mouse traversal
+- **Mouse-into-preview**: preview stays visible when cursor moves into the preview card (for clicking links); dismisses when cursor leaves both the row and the preview card
+- **Position**: anchored to right edge of hovered row, vertically centered, with viewport boundary detection to flip above/below if needed
+- **Empty state**: when no row is hovered, the preview area is not rendered (no placeholder)
 
 ---
 
@@ -180,7 +187,7 @@ On row hover (desktop) or selection (mobile), shows a compact card:
 - Founded Year — range inputs (min-max)
 
 *Enrichment:*
-- Status — multi-select: none, partial, complete, failed
+- Status — multi-select: none, in_progress, partial, complete, failed (org values — includes 'partial' for multi-stage enrichment)
 - ICP Min — number input
 - ICP Max — number input
 
@@ -198,6 +205,8 @@ On row hover (desktop) or selection (mobile), shows a compact card:
 
 **5. Row Preview**
 On hover: logo (48px), name, description snippet (120ch), website + linkedin links, ICP reason, USP summary (first 100ch), top 5 people by seniority (name + title).
+
+Same Row Preview behavior as persons table (200ms debounce, mouse-into-preview, data pre-fetched, no placeholder).
 
 ---
 
@@ -353,7 +362,20 @@ Query: collect all org IDs from person_organization, fetch signals for all, tag 
 
 Only shown if signals exist.
 
-**Section 5: Interactions History**
+**Section 5: Initiative Enrollments**
+
+`GlassCard` with table, only shown if enrollments exist:
+
+| Initiative | Type | Status | Priority | Event |
+|-----------|------|--------|----------|-------|
+
+- Initiative: linked to initiative detail
+- Type: badge (outreach, sponsorship, partnership, event, research)
+- Status: badge (draft, active, paused, completed, archived)
+- Priority: color-coded (high = orange, medium = yellow, low = default)
+- Event: linked to event if associated
+
+**Section 6: Interactions History**
 
 Existing `InteractionsTimeline` component with `showFilters={true}`.
 
@@ -422,10 +444,12 @@ Talking points:
 • {any shared track/topic connections}
 ```
 
-ICP reason and USP pulled from primary org. Talking points generated from:
-1. Event participation roles + talk topics
-2. Org sponsorship tiers (warm intro potential)
-3. Shared tracks between person's talks and FP Block's focus areas
+ICP reason and USP pulled from primary org. Talking points are **template-generated at render time** (no LLM call) using simple rules:
+1. If person has event participation with a talk_title → "Their {event} talk on {talk_title} — relate to FP Block's {track overlap}"
+2. If person's org has a sponsor tier → "{org}'s {tier} sponsorship at {event} = warm intro path via organizers"
+3. If person and FP Block share a track → "{track} alignment — natural conversation starter"
+
+Falls back to "No specific talking points — use ICP reason above" if no event/sponsorship data exists.
 
 **Section 5: Notes**
 
@@ -659,14 +683,14 @@ SELECT o.*,
    WHERE po.organization_id = o.id AND p.enrichment_status = 'complete') as enriched_person_count,
   -- Signal stats
   (SELECT COUNT(*) FROM organization_signals WHERE organization_id = o.id) as signal_count,
-  (SELECT MAX(signal_date) FROM organization_signals WHERE organization_id = o.id) as last_signal_date,
+  (SELECT MAX(date) FROM organization_signals WHERE organization_id = o.id) as last_signal_date,
   -- Event participations
   (SELECT json_agg(json_build_object('event_name', e.name, 'event_id', e.id, 'tier', ep.sponsor_tier, 'role', ep.role))
    FROM event_participations ep JOIN events e ON ep.event_id = e.id
    WHERE ep.organization_id = o.id) as events,
   -- Firmographic metadata from enrichment jobs
   (SELECT jl.metadata FROM job_log jl
-   WHERE jl.entity_type = 'organization' AND jl.entity_id = o.id::text
+   WHERE jl.target_table = 'organizations' AND jl.target_id = o.id
    AND jl.status = 'completed'
    ORDER BY jl.created_at DESC LIMIT 1) as enrichment_metadata
 FROM organizations o
@@ -677,9 +701,59 @@ Parallel fetches via `Promise.all`:
 1. Person record
 2. Person organizations with full org details (including org's icp_score, category, event_participations)
 3. Event participations with event details
-4. Interactions (with showFilters support)
-5. Signals aggregated from all related orgs
-6. Org event participations (for correlation: which of person's orgs sponsor which events)
+4. Initiative enrollments with initiative + event details
+5. Interactions (with showFilters support)
+6. Signals aggregated from all related orgs
+7. Org event participations (for correlation: which of person's orgs sponsor which events)
+
+### Events Table
+```sql
+SELECT e.*,
+  -- Participation counts
+  (SELECT COUNT(DISTINCT person_id) FROM event_participations
+   WHERE event_id = e.id AND person_id IS NOT NULL
+   AND role IN ('speaker','panelist','mc')) as speaker_count,
+  (SELECT COUNT(DISTINCT organization_id) FROM event_participations
+   WHERE event_id = e.id AND organization_id IS NOT NULL
+   AND role IN ('sponsor','partner','exhibitor')) as sponsor_count,
+  (SELECT COUNT(DISTINCT person_id) FROM event_participations
+   WHERE event_id = e.id AND person_id IS NOT NULL) as contact_count,
+  (SELECT COUNT(DISTINCT organization_id) FROM event_participations
+   WHERE event_id = e.id AND organization_id IS NOT NULL) as org_count,
+  -- Coverage: % of sponsor orgs with enriched contacts
+  -- (computed client-side from org + person_organization data)
+  -- Avg ICP of participating orgs
+  (SELECT AVG(o.icp_score) FROM event_participations ep
+   JOIN organizations o ON ep.organization_id = o.id
+   WHERE ep.event_id = e.id AND o.icp_score IS NOT NULL) as avg_icp,
+  -- Total signals across participating orgs
+  (SELECT COUNT(*) FROM organization_signals os
+   JOIN event_participations ep ON os.organization_id = ep.organization_id
+   WHERE ep.event_id = e.id) as total_signals
+FROM events e
+```
+
+Coverage "enriched contact %" requires a multi-hop join (event → sponsor orgs → person_organization → persons where enrichment_status = 'complete'). This is computed client-side after fetching the base data to avoid query complexity.
+
+### Lists Table
+```sql
+SELECT pl.*,
+  (SELECT COUNT(*) FROM person_list_items WHERE person_list_id = pl.id) as member_count,
+  -- Avg ICP via person → person_organization → organization
+  (SELECT AVG(o.icp_score)
+   FROM person_list_items pli
+   JOIN persons p ON pli.person_id = p.id
+   JOIN person_organization po ON po.person_id = p.id AND po.is_primary = true
+   JOIN organizations o ON po.organization_id = o.id
+   WHERE pli.person_list_id = pl.id AND o.icp_score IS NOT NULL) as avg_icp,
+  -- Email coverage
+  (SELECT COUNT(*) FROM person_list_items pli JOIN persons p ON pli.person_id = p.id
+   WHERE pli.person_list_id = pl.id AND p.email IS NOT NULL) as has_email_count,
+  -- Top orgs (fetched separately client-side for JSON aggregation)
+FROM person_lists pl
+```
+
+Top Orgs for lists is computed client-side: fetch person_list_items → persons → person_organization → organizations, group by org name, sort by count desc, take top 3.
 
 ### Organization Detail
 Parallel fetches via `Promise.all`:
@@ -687,8 +761,18 @@ Parallel fetches via `Promise.all`:
 2. Person organization links with full person details (including person's event_participations)
 3. Event participations with event details
 4. Signals
-5. Interactions aggregated from all linked persons
-6. Enrichment job metadata (firmographics)
+5. Interactions: union of `interactions WHERE organization_id = org.id` AND `interactions WHERE person_id IN (linked person IDs)` — deduplicated by interaction ID
+6. Enrichment job metadata (firmographics) via `job_log WHERE target_table = 'organizations' AND target_id = org.id`
+
+### Implementation Note: Batch Fetching
+
+The SQL sketches above are **illustrative** — showing what data is needed, not how to query it. Implementation should follow the existing codebase pattern:
+
+1. Fetch base entity list (with `.range()` for 1000-row batches)
+2. Fetch related data in separate parallel queries (interactions, event_participations, person_organizations, signals)
+3. Join client-side in the page component
+
+This avoids correlated subquery performance issues and aligns with existing Supabase query patterns.
 
 ---
 
@@ -704,7 +788,12 @@ Drawer behavior:
 - Toggle button: filter icon (SlidersHorizontal) fixed to right edge
 - Drawer slides in from right, overlays center content with backdrop
 - Close on backdrop click or × button
-- On detail pages, sidebar content moves to collapsible sections above center content instead of drawer
+- On detail pages at < 1024px, sidebar content moves to collapsible sections above center content (not a drawer):
+  - Sections render in order: Identity Card (default open), Quick Actions (default open), Data Completeness (default closed), Outreach Brief/ICP Analysis (default closed), Notes (default closed)
+  - Each section has a chevron toggle header
+  - Keeps critical info (identity, actions) visible without scrolling
+
+Breadcrumbs: The existing `breadcrumb.tsx` component continues to render in the admin layout. `TwoPanelLayout` does not include a breadcrumb slot — breadcrumbs sit above it in the page hierarchy.
 
 Table columns at < 1024px:
 - Hide lower-priority columns: Correlation, Enrichment, Last Activity
