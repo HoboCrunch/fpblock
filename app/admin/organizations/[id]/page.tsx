@@ -118,7 +118,7 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
               ICP {org.icp_score}
             </div>
           )}
-          {org.category && (
+          {org.category && typeof org.category === "string" && (
             <Badge variant="glass-indigo">{org.category}</Badge>
           )}
           <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">

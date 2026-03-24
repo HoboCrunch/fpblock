@@ -129,7 +129,7 @@ export function OrganizationTable({ organizations }: { organizations: Organizati
                   {org.name}
                 </Link>
               </td>
-              <td className="px-3 md:px-5 py-3 text-[var(--text-muted)]">{org.category || "\u2014"}</td>
+              <td className="px-3 md:px-5 py-3 text-[var(--text-muted)]">{typeof org.category === "string" ? org.category : "\u2014"}</td>
               <td className="px-3 md:px-5 py-3 text-[var(--text-secondary)]">{org.person_count ?? "\u2014"}</td>
               <td className="px-3 md:px-5 py-3 text-[var(--text-secondary)]">{org.signal_count ?? 0}</td>
               <td className="px-3 md:px-5 py-3 text-[var(--text-muted)]">
