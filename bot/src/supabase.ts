@@ -19,7 +19,11 @@ export function getRealtimeSupabase(): SupabaseClient {
   }
 
   console.log(`[supabase] Realtime client using key: ${anonKey.slice(0, 20)}...`);
-  realtimeClient = createClient(url, anonKey);
+  realtimeClient = createClient(url, anonKey, {
+    realtime: {
+      timeout: 30000,
+    },
+  });
   return realtimeClient;
 }
 

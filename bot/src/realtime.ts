@@ -29,6 +29,7 @@ export function startRealtimeSubscriptions(): RealtimeChannel {
   const sb = getRealtimeSupabase();
 
   console.log("[realtime] Setting up channel subscriptions...");
+  console.log("[realtime] Realtime URL:", (sb as any).realtimeUrl || "unknown");
 
   const channel = sb
     .channel("crm-notifications")

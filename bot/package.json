@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.2",
-    "grammy": "^1.35.0"
+    "grammy": "^1.35.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "tsx": "^4.19.0",
