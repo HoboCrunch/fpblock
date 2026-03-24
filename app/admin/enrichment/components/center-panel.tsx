@@ -87,10 +87,19 @@ export function CenterPanel({
         initiatives={initiatives}
         categories={categories}
         sources={sources}
-        totalCount={totalCount}
-        filteredCount={filteredCount}
-        selectedCount={selectedIds.size}
       />
+
+      {/* Count summary — between filter bar and table */}
+      <div className="flex items-center justify-between mb-2 text-[10px] text-[var(--text-muted)] font-[family-name:var(--font-body)]">
+        <span>
+          Showing {filteredCount} of {totalCount}
+        </span>
+        {state === "list" && selectedIds.size > 0 && (
+          <span className="text-[var(--accent-orange)]">
+            {selectedIds.size} selected
+          </span>
+        )}
+      </div>
 
       {/* Progress bar */}
       {state === "progress" &&

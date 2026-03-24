@@ -24,9 +24,6 @@ export interface FilterBarProps {
   initiatives: { id: string; name: string }[];
   categories: string[];
   sources: string[];
-  totalCount: number;
-  filteredCount: number;
-  selectedCount: number;
 }
 
 // ---------- Component ----------
@@ -54,9 +51,6 @@ export function FilterBar({
   initiatives,
   categories,
   sources,
-  totalCount,
-  filteredCount,
-  selectedCount,
 }: FilterBarProps) {
   const update = (patch: Partial<FilterState>) =>
     onFiltersChange({ ...filters, ...patch });
@@ -156,10 +150,6 @@ export function FilterBar({
         />
       </div>
 
-      {/* Count summary */}
-      <div className="ml-auto text-[10px] text-[var(--text-muted)] whitespace-nowrap font-[family-name:var(--font-body)]">
-        Showing {filteredCount} of {totalCount} · {selectedCount} selected
-      </div>
     </div>
   );
 }

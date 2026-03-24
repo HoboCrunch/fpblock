@@ -91,7 +91,7 @@ export default function EnrichmentPage() {
   const [filters, setFilters] = useState<FilterState>({ ...EMPTY_FILTERS });
 
   // ---- Org config ----
-  const [stages, setStages] = useState<OrgStage[]>(["full"]);
+  const [stages, setStages] = useState<OrgStage[]>(["apollo", "perplexity", "gemini"]);
 
   // ---- Person config ----
   const [personFields, setPersonFields] = useState<EnrichField[]>(["email", "linkedin"]);
@@ -136,6 +136,9 @@ export default function EnrichmentPage() {
   const [activeStages, setActiveStages] = useState<Map<string, string>>(new Map());
   const [progressCompleted, setProgressCompleted] = useState(0);
   const [progressTotal, setProgressTotal] = useState(0);
+
+  // ---- Queued items (captured at run time for immediate display) ----
+  const [queuedItems, setQueuedItems] = useState<(OrgRow | PersonRow)[]>([]);
 
   // ---- Results ----
   const [resultStats, setResultStats] = useState<SummaryStripProps["stats"] | undefined>();
@@ -572,6 +575,7 @@ export default function EnrichmentPage() {
     setViewingJobId(null);
     setResultStats(undefined);
     setResultOutcomes(new Map());
+    setQueuedItems([]);
   }
 
   // =========================================================================
@@ -605,11 +609,21 @@ export default function EnrichmentPage() {
     setProgressCompleted(0);
     setJobStartTime(new Date().toISOString());
 
+    // Capture selected items for immediate display as queued rows
+    const queued = allItems.filter((item) => selectedIds.has(item.id));
+    setQueuedItems(queued);
+
     try {
       const body: Record<string, unknown> = {};
 
       if (activeTab === "organizations") {
-        body.stages = stages;
+        // API expects "full" when all three core stages are selected
+        const CORE: OrgStage[] = ["apollo", "perplexity", "gemini"];
+        const hasAllCore = CORE.every((s) => stages.includes(s));
+        const apiStages = hasAllCore
+          ? ["full", ...stages.filter((s) => !CORE.includes(s))]
+          : stages;
+        body.stages = apiStages;
         body.organizationIds = ids;
         if (stages.includes("people_finder")) {
           body.peopleFinderConfig = {
@@ -682,6 +696,7 @@ export default function EnrichmentPage() {
       }
 
       setCenterState("results");
+      setQueuedItems([]);
       loadJobs();
       loadItems();
     } catch (err) {
@@ -696,6 +711,7 @@ export default function EnrichmentPage() {
       setActiveJobId(null);
       abortControllerRef.current = null;
       setJobStartTime(null);
+      setQueuedItems([]);
     }
   }
 
@@ -956,7 +972,7 @@ export default function EnrichmentPage() {
               onFiltersChange={setFilters}
               events={events}
               initiatives={initiatives}
-              items={sortedItems}
+              items={centerState === "progress" && queuedItems.length > 0 ? queuedItems : sortedItems}
               totalCount={totalCount}
               selectedIds={selectedIds}
               onSelectionChange={handleSelectionChange}

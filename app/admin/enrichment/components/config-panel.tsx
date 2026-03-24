@@ -150,13 +150,16 @@ export function ConfigPanel({
   onRun,
   onStop,
 }: ConfigPanelProps) {
-  const hasFull = stages.includes("full");
   const hasPeopleFinder = stages.includes("people_finder");
 
   // ---- stage toggle logic ----
+  // "full" is a virtual state: it means all three individual stages are selected.
+  // Selecting Full Pipeline adds apollo+perplexity+gemini. Deselecting one
+  // just removes that stage (no longer "full"). Toggling Full off removes all three.
+  const hasAllThree = INDIVIDUAL_STAGES.every((s) => stages.includes(s));
+
   function toggleStage(key: OrgStage) {
     if (key === "people_finder") {
-      // Independent toggle
       onStagesChange(
         stages.includes("people_finder")
           ? stages.filter((s) => s !== "people_finder")
@@ -166,28 +169,26 @@ export function ConfigPanel({
     }
 
     if (key === "full") {
-      if (hasFull) {
-        // Toggling full OFF — remove full, keep people_finder only
-        onStagesChange(stages.filter((s) => s === "people_finder"));
+      if (hasAllThree) {
+        // Toggling Full OFF — remove all three individual stages, keep people_finder
+        onStagesChange(stages.filter((s) => !INDIVIDUAL_STAGES.includes(s)));
       } else {
-        // Toggling full ON — set full + keep people_finder, clear individual
-        const next: OrgStage[] = ["full"];
-        if (hasPeopleFinder) next.push("people_finder");
-        onStagesChange(next);
+        // Toggling Full ON — add all three, keep people_finder and any existing
+        const next = new Set(stages);
+        INDIVIDUAL_STAGES.forEach((s) => next.add(s));
+        next.delete("full"); // "full" is virtual, never stored
+        onStagesChange(Array.from(next));
       }
       return;
     }
 
-    // Individual stage (apollo/perplexity/gemini)
-    const isActive = stages.includes(key);
-    let next: OrgStage[];
-    if (isActive) {
-      next = stages.filter((s) => s !== key);
+    // Individual stage (apollo/perplexity/gemini) — simple toggle
+    if (stages.includes(key)) {
+      onStagesChange(stages.filter((s) => s !== key && s !== "full"));
     } else {
-      // Remove full if present, add individual
-      next = [...stages.filter((s) => s !== "full"), key];
+      const next = [...stages.filter((s) => s !== "full"), key];
+      onStagesChange(next);
     }
-    onStagesChange(next);
   }
 
   // ---- field toggle logic ----
@@ -222,8 +223,8 @@ export function ConfigPanel({
   ];
 
   return (
-    <GlassCard className={cn("relative", isRunning && "pointer-events-none opacity-50")}>
-      {/* ---- Header ---- */}
+    <GlassCard className="relative">
+      {/* ---- Header (always interactive) ---- */}
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">
           Pipeline Configuration
@@ -232,7 +233,7 @@ export function ConfigPanel({
         {isRunning ? (
           <button
             onClick={onStop}
-            className="bg-red-500/15 text-red-400 border border-red-500/20 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 pointer-events-auto"
+            className="bg-red-500/15 text-red-400 border border-red-500/20 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 hover:bg-red-500/25 transition-colors"
           >
             <Square className="h-3.5 w-3.5" />
             Stop
@@ -252,6 +253,9 @@ export function ConfigPanel({
         )}
       </div>
 
+      {/* ---- Config body (dims when running) ---- */}
+      <div className={cn(isRunning && "pointer-events-none opacity-40")}>
+
       {/* ---- Stages / Fields ---- */}
       {tab === "organizations" ? (
         <>
@@ -260,22 +264,23 @@ export function ConfigPanel({
           </div>
           <div className="flex flex-col gap-1.5 mb-4">
             {STAGE_OPTIONS.map((opt) => {
-              const isActive = stages.includes(opt.key);
               const isIndividual = INDIVIDUAL_STAGES.includes(opt.key);
-              const disabledByFull = hasFull && isIndividual;
+              // "full" is active when all three individual stages are selected
+              const isActive = opt.key === "full"
+                ? hasAllThree
+                : stages.includes(opt.key);
               const Icon = opt.icon;
 
               return (
                 <button
                   key={opt.key}
-                  onClick={() => !disabledByFull && toggleStage(opt.key)}
+                  onClick={() => toggleStage(opt.key)}
                   className={cn(
                     "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-left text-sm transition-colors",
                     isIndividual && "ml-4",
-                    isActive && !disabledByFull
+                    isActive
                       ? "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border-[var(--accent-orange)]/20"
-                      : "bg-[var(--glass-bg)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-white",
-                    disabledByFull && "opacity-40 cursor-default hover:text-[var(--text-muted)]"
+                      : "bg-[var(--glass-bg)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-white"
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
@@ -452,6 +457,7 @@ export function ConfigPanel({
           </p>
         )}
       </div>
+      </div>{/* end config body dim wrapper */}
     </GlassCard>
   );
 }

@@ -301,14 +301,17 @@ export function EntityTable({
               const progress = progressData?.get(item.id);
               const activeStage = activeStages?.get(item.id);
               const outcome = resultOutcomes?.get(item.id);
+              const isQueued = mode === "progress" && !progress;
+              const isActive = mode === "progress" && !!progress && progress.status === "processing";
 
               return (
                 <tr
                   key={item.id}
                   className={cn(
-                    "h-9 border-b border-white/[0.04] hover:bg-white/[0.03] transition-colors text-xs text-white",
+                    "h-9 border-b border-white/[0.04] hover:bg-white/[0.03] transition-all duration-300 text-xs text-white",
                     isSelected && "bg-white/[0.05]",
-                    mode === "progress" && "animate-[slideIn_0.3s_ease-out]"
+                    isQueued && "opacity-40",
+                    isActive && "animate-[slideIn_0.3s_ease-out]"
                   )}
                 >
                   {showCheckboxes && (
@@ -339,11 +342,15 @@ export function EntityTable({
                         {item.icp_score ?? "—"}
                       </td>
                       <td className="px-3 py-1">
-                        <OrgStatusIcons
-                          stages={item.enrichment_stages}
-                          mode={mode === "progress" ? "live" : "static"}
-                          activeStage={activeStage}
-                        />
+                        {isQueued ? (
+                          <span className="text-[10px] text-[var(--text-muted)]">Queued</span>
+                        ) : (
+                          <OrgStatusIcons
+                            stages={item.enrichment_stages}
+                            mode={mode === "progress" ? "live" : "static"}
+                            activeStage={activeStage}
+                          />
+                        )}
                       </td>
                     </>
                   ) : !isOrg && !isOrgRow(item) ? (
@@ -364,15 +371,19 @@ export function EntityTable({
                         {item.icp_score ?? "—"}
                       </td>
                       <td className="px-3 py-1">
-                        <PersonStatusIcons
-                          email={item.email}
-                          linkedin_url={item.linkedin_url}
-                          twitter_handle={item.twitter_handle}
-                          phone={item.phone}
-                          enrichmentStatus={item.enrichment_status}
-                          mode={mode === "progress" ? "live" : "static"}
-                          activeField={activeStage}
-                        />
+                        {isQueued ? (
+                          <span className="text-[10px] text-[var(--text-muted)]">Queued</span>
+                        ) : (
+                          <PersonStatusIcons
+                            email={item.email}
+                            linkedin_url={item.linkedin_url}
+                            twitter_handle={item.twitter_handle}
+                            phone={item.phone}
+                            enrichmentStatus={item.enrichment_status}
+                            mode={mode === "progress" ? "live" : "static"}
+                            activeField={activeStage}
+                          />
+                        )}
                       </td>
                     </>
                   ) : null}

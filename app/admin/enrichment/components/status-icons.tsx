@@ -48,6 +48,40 @@ function stageColor(
   }
 }
 
+/**
+ * Determine whether a completed stage actually produced meaningful results.
+ * Stages store numeric fields (found, signals) when they complete.
+ * If those fields are present and zero, the stage ran but found nothing → gray.
+ * If no numeric field is present (legacy data), assume it has results → green.
+ */
+function stageHasResults(
+  key: string,
+  stage: { status?: string; [key: string]: unknown }
+): boolean {
+  if (stage.status !== "completed") return false;
+
+  // People Finder: check `found` count
+  if (key === "people_finder") {
+    if (typeof stage.found === "number") return stage.found > 0;
+    // Legacy data without found field — treat as has results
+    return true;
+  }
+
+  // Gemini: check `signals` count
+  if (key === "gemini") {
+    if (typeof stage.signals === "number") return stage.signals > 0;
+    return true;
+  }
+
+  // Apollo / Perplexity: check `found` (1 = got data, 0 = empty)
+  if (key === "apollo" || key === "perplexity") {
+    if (typeof stage.found === "number") return stage.found > 0;
+    return true;
+  }
+
+  return true;
+}
+
 export function OrgStatusIcons({
   stages,
   mode = "static",
@@ -62,13 +96,12 @@ export function OrgStatusIcons({
         if (!stage) return null;
 
         const isActive = mode === "live" && activeStage === key;
-        const hasData =
-          stage.status === "completed" &&
-          !stage.error;
-        const colorClass = stageColor(
-          hasData ? stage.status : "completed_empty",
-          isActive
-        );
+        const hasResults = stageHasResults(key, stage);
+        const effectiveStatus =
+          stage.status === "completed" && !hasResults
+            ? "completed_empty"
+            : stage.status;
+        const colorClass = stageColor(effectiveStatus, isActive);
 
         return (
           <Icon
