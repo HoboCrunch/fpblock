@@ -18,6 +18,7 @@ export function getRealtimeSupabase(): SupabaseClient {
     throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY");
   }
 
+  console.log(`[supabase] Realtime client using key: ${anonKey.slice(0, 20)}...`);
   realtimeClient = createClient(url, anonKey);
   return realtimeClient;
 }
