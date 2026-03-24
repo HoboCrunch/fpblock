@@ -14,12 +14,13 @@ Build a dedicated persons enrichment pipeline that:
 
 ## New Files
 
-- `app/api/enrich/persons/route.ts` — API route
+- `app/api/enrich/persons/route.ts` — API route (`maxDuration = 300`)
 - `lib/enrichment/person-pipeline.ts` — orchestration and batch runner
 
 ## Modified Files
 
-- `lib/enrichment/apollo-people.ts` — export the currently-private `enrichPerson` function
+- `lib/enrichment/apollo-people.ts` — export the currently-private `enrichPerson` function and `extractDomain` helper
+- `lib/types/database.ts` — add `'in_progress'` to `Person.enrichment_status` union type
 
 ## Unchanged
 
@@ -27,31 +28,59 @@ Build a dedicated persons enrichment pipeline that:
 - `insertPeopleFromOrg` — still tags `source: "org_enrichment"`
 - All other enrichment modules (apollo.ts, perplexity.ts, gemini.ts, fetch-with-retry.ts)
 
+## Type Mapping: DB Person ↔ ApolloPersonResult
+
+The DB `Person` type and `ApolloPersonResult` differ in field naming. `person-pipeline.ts` must handle this mapping:
+
+| DB Person field   | ApolloPersonResult field | Notes                              |
+|-------------------|--------------------------|------------------------------------|
+| `twitter_handle`  | `twitter_url`            | DB stores handle, Apollo returns URL. Map URL→handle on write, handle→URL on read. |
+| `linkedin_url`    | `linkedin_url`           | Same                               |
+| All other fields  | Same names               | Direct mapping                     |
+
+**DB Person → ApolloPersonResult** (before calling `enrichPerson`):
+- Convert `twitter_handle` to a twitter URL (prepend `https://twitter.com/` if it's a bare handle)
+- Map all other fields directly
+
+**ApolloPersonResult → DB Person** (after enrichment, COALESCE write):
+- Extract handle from `twitter_url` (strip `https://twitter.com/` or `https://x.com/` prefix)
+- Map all other fields directly
+
+## API Key
+
+`person-pipeline.ts` reads `APOLLO_API_KEY` from `process.env` once at batch start and passes it to `enrichPerson`. If not set, the batch fails immediately with a clear error.
+
 ## Per-Person Enrichment Flow
 
-### Step 1: Fetch Person
+### Step 1: Fetch Person + Org Context
 
 Load the full person row from `persons` table. If not found, return failure.
 
+Set `enrichment_status: 'in_progress'` on the person.
+
+Load the person's primary org (if any) via `person_organization` join:
+- Query `person_organization` WHERE `person_id = X` ORDER BY `is_primary DESC` LIMIT 1
+- If found, fetch the org's `name` and `website` to use as `orgName` and `domain`
+- If not found, `orgName` and `domain` are both null
+
 ### Step 2: Apollo People Match
 
-Call `/v1/people/match` with available identifiers:
-- `first_name`, `last_name` (split from `full_name` if needed)
-- `organization_name` (from primary person_organization link)
-- `domain` (extracted from org website)
-- `linkedin_url`
-- `id` (apollo_id if present)
+Call `enrichPerson(apiKey, apolloPersonInput, orgName, domain)` where `apolloPersonInput` is the DB person mapped to `ApolloPersonResult` format (see Type Mapping above).
 
-COALESCE update: only fill fields that are currently null on the person record. Fields: `email`, `linkedin_url`, `twitter_handle`, `phone`, `title`, `seniority`, `department`, `photo_url`, `apollo_id`.
+**Degraded match scenario:** When a person has no org association, the match call has less context (no org name or domain). Apollo can still match on name + linkedin_url + apollo_id. If the person has at least one of `linkedin_url` or `apollo_id`, proceed with the call. If the person has only a name (no linkedin, no apollo_id, no org), skip the Apollo call and mark as `'failed'` with reason "insufficient identifiers for match".
+
+COALESCE update: only fill fields that are currently null on the person record. Fields: `email`, `linkedin_url`, `twitter_handle` (mapped from `twitter_url`), `phone`, `title`, `seniority`, `department`, `photo_url`, `apollo_id`.
 
 ### Step 3: Reverse Org Linkage
 
-Only runs if the person has zero `person_organization` rows AND Apollo returns organization data.
+Only runs if the person has zero `person_organization` rows AND Apollo returns organization data in the match response.
 
-1. Extract `organization.name` and `organization.primary_domain` from Apollo response
-2. Search existing orgs by domain first (preferred), then by name (case-insensitive)
-3. If found: create `person_organization` link with `source: "direct_enrichment"`, `role` from person title, `role_type` mapped from seniority, `is_primary: true`
-4. If not found: create stub organization with `name`, `website` (from domain), `linkedin_url` (if available), `enrichment_status: 'none'`. Then link as above.
+1. Extract `organization.name` and `organization.primary_domain` from the raw Apollo match response (accessed via `data.person.organization`)
+2. Search existing orgs: by domain first (extract from website, case-insensitive), then by name (ilike)
+3. If found: create `person_organization` link with `source: "direct_enrichment"`, `role` from person title, `role_type` mapped from seniority (using same `mapSeniorityToRoleType` logic from pipeline.ts), `is_primary: true`
+4. If not found: create stub organization with `name`, `website` (from domain, formatted as `https://<domain>`), `enrichment_status: 'none'`. Then link as above.
+
+Note: No correlation detection runs here. Correlation detection is reserved for the org enrichment pipeline's `insertPeopleFromOrg` flow where new persons are created. Here we're enriching existing persons.
 
 ### Step 4: Update Person Status
 
@@ -65,9 +94,9 @@ Create a child job per person:
 - `job_type: "enrichment_person_match"`
 - `target_table: "persons"`
 - `target_id: person.id`
-- `metadata: { person_name, fields_updated, org_linked, org_created }`
+- `metadata: { person_name, fields_updated, org_linked, org_created, org_id }`
 
-On failure: set `enrichment_status: 'failed'`, log error.
+On failure: set `enrichment_status: 'failed'`, log error to job.
 
 ## Batch Runner
 
@@ -77,6 +106,7 @@ Function: `runBatchPersonEnrichment(supabase, personIds, options)`
 - Concurrency: 1 (Apollo rate limits; `enrichPerson` already has 500ms sleep)
 - Stale job cleanup before starting (15-min threshold)
 - Parent job type: `enrichment_batch_persons`, target_table: `persons`
+- Child jobs relate to parent by convention: same `target_table` + time range (matching org pipeline pattern — no `parent_job_id` field in schema)
 - Returns: `{ total, succeeded, failed, results[], durationMs }`
 
 Per-person result type:
@@ -99,6 +129,10 @@ interface PersonEnrichmentResult {
 POST /api/enrich/persons
 ```
 
+`export const maxDuration = 300;`
+
+Uses service role client (same as org route).
+
 ### Request Body
 
 ```typescript
@@ -112,13 +146,15 @@ POST /api/enrich/persons
 }
 ```
 
-### Filter Resolution (priority order)
+### Filter Resolution
+
+Filters are **mutually exclusive, first match wins** (same pattern as org route):
 
 1. `personIds` — use directly
 2. `eventId` — join `event_participations` on `person_id`
 3. `organizationId` — join `person_organization` on `person_id`
 4. `failedOnly` — `enrichment_status = 'failed'`
-5. `sourceFilter` — `source = <value>`, combined with default unenriched filter
+5. `sourceFilter` — `source = <value>` AND (`enrichment_status = 'none'` OR `apollo_id IS NULL`)
 6. Default — `enrichment_status = 'none'` OR `apollo_id IS NULL`
 
 Limit: 200 persons per batch (matches org route).
@@ -147,18 +183,12 @@ Limit: 200 persons per batch (matches org route).
 
 ## apollo-people.ts Changes
 
-The `enrichPerson` function is currently module-private. It needs to be exported so person-pipeline.ts can call it directly. The function signature stays the same:
+Export two currently-private functions:
 
-```typescript
-export async function enrichPerson(
-  apiKey: string,
-  person: ApolloPersonResult,
-  orgName: string,
-  domain: string | null
-): Promise<ApolloPersonResult>
-```
+1. `enrichPerson` — used by person-pipeline.ts for direct person enrichment
+2. `extractDomain` — used by person-pipeline.ts to extract domain from org website
 
-No other changes to this module.
+Function signatures stay the same. The only code change is adding `export` keyword.
 
 ## Rate Limiting
 
@@ -173,3 +203,4 @@ No other changes to this module.
 - Failed persons get `enrichment_status: 'failed'`
 - Stale jobs cleaned up before batch starts
 - Apollo 4xx errors skip retry (client fault, permanent)
+- Insufficient identifiers (no linkedin, no apollo_id, no org) → skip Apollo call, mark failed
