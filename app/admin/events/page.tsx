@@ -1,136 +1,177 @@
 import { createClient } from "@/lib/supabase/server";
-import { GlassCard } from "@/components/ui/glass-card";
-import Link from "next/link";
-import { Calendar, Users, Building2, Mic2 } from "lucide-react";
-import type { Event, EventParticipation } from "@/lib/types/database";
+import { fetchAll } from "@/lib/supabase/fetch-all";
+import { EventsTableClient } from "./events-table-client";
 
 export default async function EventsListPage() {
   const supabase = await createClient();
 
-  const { data: events } = await supabase
-    .from("events")
-    .select("*")
-    .order("date_start", { ascending: false, nullsFirst: false });
+  // ── Fetch all events ───────────────────────────────────────────────
+  const { data: events } = await fetchAll(supabase, "events", "*", {
+    order: { column: "date_start", ascending: false },
+  });
 
-  const eventIds = (events || []).map((e: Event) => e.id);
+  const eventIds = events.map((e: any) => e.id);
 
-  // Fetch all event_participations for these events
-  const { data: participations } = eventIds.length
-    ? await supabase
+  // ── Fetch event_participations in batches ──────────────────────────
+  let participations: any[] = [];
+  if (eventIds.length > 0) {
+    const CHUNK = 500;
+    for (let i = 0; i < eventIds.length; i += CHUNK) {
+      const chunk = eventIds.slice(i, i + CHUNK);
+      const { data } = await supabase
         .from("event_participations")
-        .select("event_id, role, person_id, organization_id")
-        .in("event_id", eventIds)
-    : { data: [] as EventParticipation[] };
-
-  // Compute counts per event
-  type RoleCounts = { speakers: number; sponsors: number; contacts: number };
-  const countsByEvent: Record<string, RoleCounts> = {};
-
-  for (const p of participations || []) {
-    const eid = p.event_id;
-    if (!countsByEvent[eid]) countsByEvent[eid] = { speakers: 0, sponsors: 0, contacts: 0 };
-    if (p.role === "speaker" || p.role === "panelist" || p.role === "mc") {
-      countsByEvent[eid].speakers++;
-    } else if (p.role === "sponsor" || p.role === "partner" || p.role === "exhibitor") {
-      countsByEvent[eid].sponsors++;
-    }
-    // All person-level participations count as related contacts
-    if (p.person_id) {
-      countsByEvent[eid].contacts++;
+        .select("event_id, role, person_id, organization_id, sponsor_tier")
+        .in("event_id", chunk);
+      if (data) participations = participations.concat(data);
     }
   }
 
-  function formatDate(dateStr: string | null) {
-    if (!dateStr) return null;
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+  // ── Fetch org ICP scores ───────────────────────────────────────────
+  const orgIds = [...new Set(participations.map((p: any) => p.organization_id).filter(Boolean))];
+  const orgIcpMap = new Map<string, number>();
+  const orgNameMap = new Map<string, string>();
+  if (orgIds.length > 0) {
+    const CHUNK = 500;
+    for (let i = 0; i < orgIds.length; i += CHUNK) {
+      const chunk = orgIds.slice(i, i + CHUNK);
+      const { data: orgs } = await supabase
+        .from("organizations")
+        .select("id, name, icp_score")
+        .in("id", chunk);
+      if (orgs) {
+        for (const org of orgs) {
+          if (org.icp_score != null) orgIcpMap.set(org.id, org.icp_score);
+          orgNameMap.set(org.id, org.name);
+        }
+      }
+    }
   }
 
-  const eventTypeBadgeColor: Record<string, string> = {
-    conference: "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)]",
-    hackathon: "bg-purple-500/15 text-purple-400",
-    summit: "bg-blue-500/15 text-blue-400",
-    meetup: "bg-green-500/15 text-green-400",
-    workshop: "bg-yellow-500/15 text-yellow-400",
-  };
+  // ── Fetch signal counts per org ────────────────────────────────────
+  const orgSignalCountMap = new Map<string, number>();
+  if (orgIds.length > 0) {
+    const CHUNK = 500;
+    for (let i = 0; i < orgIds.length; i += CHUNK) {
+      const chunk = orgIds.slice(i, i + CHUNK);
+      const { data: signals } = await supabase
+        .from("organization_signals")
+        .select("organization_id")
+        .in("organization_id", chunk);
+      if (signals) {
+        for (const s of signals) {
+          orgSignalCountMap.set(s.organization_id, (orgSignalCountMap.get(s.organization_id) ?? 0) + 1);
+        }
+      }
+    }
+  }
+
+  // ── Fetch person enrichment_status for enriched pct ────────────────
+  const personIds = [...new Set(participations.map((p: any) => p.person_id).filter(Boolean))];
+  const personEnrichedSet = new Set<string>();
+  if (personIds.length > 0) {
+    const CHUNK = 500;
+    for (let i = 0; i < personIds.length; i += CHUNK) {
+      const chunk = personIds.slice(i, i + CHUNK);
+      const { data: persons } = await supabase
+        .from("persons")
+        .select("id, enrichment_status")
+        .in("id", chunk);
+      if (persons) {
+        for (const p of persons) {
+          if (p.enrichment_status === "complete") personEnrichedSet.add(p.id);
+        }
+      }
+    }
+  }
+
+  // ── Compute per-event stats ────────────────────────────────────────
+  const eventRows = events.map((event: any) => {
+    const eps = participations.filter((p: any) => p.event_id === event.id);
+
+    let speakerCount = 0;
+    let sponsorCount = 0;
+    let contactCount = 0;
+    const orgSet = new Set<string>();
+    let icpSum = 0;
+    let icpCount = 0;
+    let totalSignals = 0;
+    let enrichedContactCount = 0;
+
+    for (const ep of eps) {
+      const role = ep.role;
+      if (role === "speaker" || role === "panelist" || role === "mc") speakerCount++;
+      if (role === "sponsor" || role === "partner" || role === "exhibitor") sponsorCount++;
+      if (ep.person_id) {
+        contactCount++;
+        if (personEnrichedSet.has(ep.person_id)) enrichedContactCount++;
+      }
+      if (ep.organization_id) {
+        orgSet.add(ep.organization_id);
+        const icp = orgIcpMap.get(ep.organization_id);
+        if (icp != null) {
+          icpSum += icp;
+          icpCount++;
+        }
+        totalSignals += orgSignalCountMap.get(ep.organization_id) ?? 0;
+      }
+    }
+
+    const enrichedContactPct = contactCount > 0
+      ? Math.round((enrichedContactCount / contactCount) * 100)
+      : 0;
+
+    // Top sponsors: orgs with sponsor_tier, sorted by ICP
+    const sponsorEps = eps.filter((ep: any) => ep.sponsor_tier && ep.organization_id);
+    const seenSponsorOrgs = new Set<string>();
+    const topSponsors: Array<{ name: string; tier: string | null; icp: number | null }> = [];
+    for (const ep of sponsorEps) {
+      if (seenSponsorOrgs.has(ep.organization_id)) continue;
+      seenSponsorOrgs.add(ep.organization_id);
+      topSponsors.push({
+        name: orgNameMap.get(ep.organization_id) ?? "Unknown",
+        tier: ep.sponsor_tier,
+        icp: orgIcpMap.get(ep.organization_id) ?? null,
+      });
+    }
+    topSponsors.sort((a, b) => (b.icp ?? 0) - (a.icp ?? 0));
+
+    return {
+      id: event.id,
+      name: event.name,
+      event_type: event.event_type ?? null,
+      date_start: event.date_start ?? null,
+      date_end: event.date_end ?? null,
+      location: event.location ?? null,
+      website: event.website ?? null,
+      speaker_count: speakerCount,
+      sponsor_count: sponsorCount,
+      contact_count: contactCount,
+      org_count: orgSet.size,
+      enriched_contact_pct: enrichedContactPct,
+      avg_icp: icpCount > 0 ? Math.round(icpSum / icpCount) : null,
+      total_signals: totalSignals,
+      top_sponsors: topSponsors.slice(0, 5),
+    };
+  });
+
+  // ── Distinct filter values ─────────────────────────────────────────
+  const eventTypes = [...new Set(
+    events
+      .map((e: any) => e.event_type)
+      .filter(Boolean)
+  )].sort() as string[];
+
+  const locations = [...new Set(
+    events
+      .map((e: any) => e.location)
+      .filter(Boolean)
+  )].sort() as string[];
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)]">
-        Events
-      </h1>
-
-      {(events || []).length === 0 ? (
-        <GlassCard>
-          <div className="text-center py-8">
-            <Calendar className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
-            <p className="text-[var(--text-muted)]">No events found.</p>
-          </div>
-        </GlassCard>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(events || []).map((event: Event) => {
-            const counts = countsByEvent[event.id] || { speakers: 0, sponsors: 0, contacts: 0 };
-            return (
-              <Link key={event.id} href={`/admin/events/${event.id}`}>
-                <GlassCard hover glow className="h-full flex flex-col">
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <h2 className="text-lg font-semibold font-[family-name:var(--font-heading)] text-white">
-                        {event.name}
-                      </h2>
-                      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                        {event.event_type && (
-                          <span
-                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                              eventTypeBadgeColor[event.event_type.toLowerCase()] ||
-                              "bg-white/10 text-[var(--text-secondary)]"
-                            }`}
-                          >
-                            {event.event_type}
-                          </span>
-                        )}
-                        <Calendar className="w-5 h-5 text-[var(--accent-orange)]" />
-                      </div>
-                    </div>
-
-                    {(event.date_start || event.date_end) && (
-                      <p className="text-sm text-[var(--text-secondary)] mb-1">
-                        {formatDate(event.date_start)}
-                        {event.date_end && ` \u2014 ${formatDate(event.date_end)}`}
-                      </p>
-                    )}
-
-                    {event.location && (
-                      <p className="text-sm text-[var(--text-muted)]">
-                        {event.location}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-4 mt-4 pt-3 border-t border-white/[0.06]">
-                    <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                      <Mic2 className="w-3.5 h-3.5" />
-                      <span>{counts.speakers} speakers</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                      <Building2 className="w-3.5 h-3.5" />
-                      <span>{counts.sponsors} sponsors</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                      <Users className="w-3.5 h-3.5" />
-                      <span>{counts.contacts} total</span>
-                    </div>
-                  </div>
-                </GlassCard>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    <EventsTableClient
+      events={eventRows}
+      eventTypes={eventTypes}
+      locations={locations}
+    />
   );
 }

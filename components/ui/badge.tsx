@@ -15,6 +15,20 @@ const variants: Record<string, string> = {
   processing: "bg-orange-500/10 text-orange-400 border-orange-500/20",
   superseded: "bg-gray-500/10 text-gray-500 border-gray-500/20",
   not_contacted: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+  // Sponsor tier variants
+  "presented_by": "bg-purple-500/10 text-purple-400 border-purple-500/20",
+  "platinum": "bg-gray-300/10 text-gray-300 border-gray-300/20",
+  "diamond": "bg-cyan-400/10 text-cyan-400 border-cyan-400/20",
+  "emerald": "bg-emerald-400/10 text-emerald-400 border-emerald-400/20",
+  "gold": "bg-amber-400/10 text-amber-400 border-amber-400/20",
+  "silver": "bg-gray-400/10 text-gray-400 border-gray-400/20",
+  "bronze": "bg-orange-700/10 text-orange-600 border-orange-700/20",
+  "copper": "bg-orange-400/10 text-orange-300 border-orange-400/20",
+  "community": "bg-blue-400/10 text-blue-400 border-blue-400/20",
+  // Seniority variants
+  "c-level": "bg-[var(--accent-orange)]/10 text-[var(--accent-orange)] border-[var(--accent-orange)]/20",
+  "vp": "bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] border-[var(--accent-indigo)]/20",
+  "director": "bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] border-[var(--accent-indigo)]/20",
   // Glass variants
   glass: "glass text-white",
   "glass-orange":

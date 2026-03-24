@@ -80,6 +80,25 @@ function useSupabase() {
   );
 }
 
+// ─── Glass Checkbox ──────────────────────────────────────────────────────────
+
+function GlassCheckbox({ checked, onChange, onClick }: { checked: boolean; onChange?: () => void; onClick?: (e: React.MouseEvent) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => { if (onClick) onClick(e); else if (onChange) onChange(); }}
+      className={cn(
+        "w-4 h-4 rounded border flex items-center justify-center transition-all duration-150 flex-shrink-0",
+        checked
+          ? "bg-[var(--accent-orange)]/20 border-[var(--accent-orange)]/60 text-[var(--accent-orange)]"
+          : "border-white/20 bg-white/[0.04] hover:border-white/40"
+      )}
+    >
+      {checked && <Check className="w-3 h-3" />}
+    </button>
+  );
+}
+
 // ─── ICP Badge ────────────────────────────────────────────────────────────────
 
 function icpVariant(score: number | null): string {
@@ -807,23 +826,18 @@ function ListDetail({
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-[var(--text-muted)] border-b border-[var(--glass-border)]">
-                  <th className="px-5 py-3 w-10">
-                    <input
-                      type="checkbox"
-                      checked={
-                        items.length > 0 &&
-                        selectedMemberIds.size === items.length
-                      }
+                  <th className="px-2 py-3 w-10">
+                    <GlassCheckbox
+                      checked={items.length > 0 && selectedMemberIds.size === items.length}
                       onChange={toggleAllMembers}
-                      className="accent-[var(--accent-orange)] cursor-pointer"
                     />
                   </th>
-                  <th className="px-5 py-3 font-medium">Name</th>
-                  <th className="px-5 py-3 font-medium">Email</th>
-                  <th className="px-5 py-3 font-medium">Title</th>
-                  <th className="px-5 py-3 font-medium">Source</th>
-                  <th className="px-5 py-3 font-medium">Added</th>
-                  <th className="px-5 py-3 w-10" />
+                  <th className="px-2 py-3 font-medium">Name</th>
+                  <th className="px-2 py-3 font-medium">Email</th>
+                  <th className="px-2 py-3 font-medium">Title</th>
+                  <th className="px-2 py-3 font-medium">Source</th>
+                  <th className="px-2 py-3 font-medium">Added</th>
+                  <th className="px-2 py-3 w-10" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
@@ -840,15 +854,13 @@ function ListDetail({
                           : "hover:bg-white/[0.03]"
                       )}
                     >
-                      <td className="px-5 py-3">
-                        <input
-                          type="checkbox"
+                      <td className="px-2 py-3">
+                        <GlassCheckbox
                           checked={isSelected}
                           onChange={() => toggleMember(item.person_id)}
-                          className="accent-[var(--accent-orange)] cursor-pointer"
                         />
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-2 py-3">
                         <Link
                           href={`/admin/persons/${item.person_id}`}
                           className="text-[var(--accent-indigo)] hover:underline font-medium"
@@ -856,26 +868,26 @@ function ListDetail({
                           {person?.full_name ?? "Unknown"}
                         </Link>
                       </td>
-                      <td className="px-5 py-3 text-[var(--text-muted)]">
+                      <td className="px-2 py-3 text-[var(--text-muted)]">
                         {person?.email ?? <span>&mdash;</span>}
                       </td>
-                      <td className="px-5 py-3 text-[var(--text-muted)]">
+                      <td className="px-2 py-3 text-[var(--text-muted)]">
                         {person?.title ?? <span>&mdash;</span>}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-2 py-3">
                         {person?.source ? (
                           <Badge variant="default">{person.source}</Badge>
                         ) : (
                           <span className="text-[var(--text-muted)]">&mdash;</span>
                         )}
                       </td>
-                      <td className="px-5 py-3 text-[var(--text-muted)] tabular-nums text-xs">
+                      <td className="px-2 py-3 text-[var(--text-muted)] tabular-nums text-xs">
                         {new Date(item.added_at).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
                         })}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-2 py-3">
                         <button
                           onClick={() => handleRemoveOne(item.person_id)}
                           className="opacity-0 group-hover:opacity-100 p-1 rounded text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-all"
