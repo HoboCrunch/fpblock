@@ -222,8 +222,8 @@ export function CorrelationReview({
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {reasons.map((reason, i) => (
-                  <Badge key={i} variant="glass">
+                {reasons.map((reason) => (
+                  <Badge key={String(reason)} variant="glass">
                     {String(reason)}
                   </Badge>
                 ))}

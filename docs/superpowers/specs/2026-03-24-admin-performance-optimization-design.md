@@ -1,7 +1,7 @@
 # Admin Application Performance Optimization
 
 **Date:** 2026-03-24
-**Status:** Approved
+**Status:** Implemented
 **Approach:** B — Infrastructure + Targeted Fixes
 
 ## Problem Statement
@@ -144,7 +144,7 @@ const queryClient = new QueryClient({
 
 `@tanstack/react-virtual`
 
-### Shared Primitive
+### Shared Primitive (original plan)
 
 ```
 components/ui/
@@ -157,22 +157,35 @@ A reusable wrapper around `useVirtualizer`:
 - Renders: sticky `<thead>` outside scroll container, virtualized `<tbody>` inside
 - Handles: overscan (5 rows), scroll restoration, total height spacer
 
+> **Implementation note:** `virtual-table.tsx` (131 LOC) was created as planned and uses HTML `<table>/<thead>/<tr>/<td>` elements. However, the organizations and persons tables **do not use this shared primitive**. Instead, they use **CSS Grid `<div>` elements with inline `useVirtualizer`**. This divergence was necessary because absolute-positioned `<tr>` elements inside a virtualized `<tbody>` cannot share column widths with a separate sticky `<thead>` rendered in a different `<table>` element. CSS Grid solves this by applying a shared `gridTemplateColumns` constant (e.g., `ORG_GRID_COLS`, `PERSON_GRID_COLS`) to both the header row and each virtualized body row, guaranteeing column alignment without `<table>` layout constraints.
+>
+> **Preferred pattern going forward:** For complex tables with many columns, hover interactions, and selection, use the **CSS Grid + inline `useVirtualizer`** pattern (as in `organizations-table-client.tsx` and `persons-table-client.tsx`). Reserve `virtual-table.tsx` for simpler tables where HTML table semantics are sufficient and the column layout is straightforward.
+
 ### Per-Table Application
 
-| Table | Rows | Action |
-|---|---|---|
-| Organizations | 200-500+ | Virtualize via `virtual-table.tsx` |
-| Persons | 500-1000+ | Virtualize via `virtual-table.tsx` |
-| Enrichment entities | 200-1000+ | Virtualize via `virtual-table.tsx` |
-| Pipeline | <100 | Skip — not worth complexity |
-| Initiatives | <50 | Skip |
-| Events | <50 | Skip |
+| Table | Rows | Planned | Actual |
+|---|---|---|---|
+| Organizations | 200-500+ | Virtualize via `virtual-table.tsx` | Virtualized via **inline `useVirtualizer` + CSS Grid** |
+| Persons | 500-1000+ | Virtualize via `virtual-table.tsx` | Virtualized via **inline `useVirtualizer` + CSS Grid** |
+| Enrichment entities | 200-1000+ | Virtualize via `virtual-table.tsx` | Not yet virtualized (uses existing entity-table component) |
+| Pipeline | <100 | Skip — not worth complexity | Skipped |
+| Initiatives | <50 | Skip | Skipped |
+| Events | <50 | Skip | Skipped |
 
-### Integration Pattern
+### Integration Pattern (as implemented)
 
-Existing `useMemo` filter/sort logic stays. The virtualizer windows into the sorted array:
+The actual pattern uses CSS Grid divs instead of HTML table elements. Each table defines a shared `gridTemplateColumns` constant exported from its row component:
 
 ```tsx
+// org-table-row.tsx
+export const ORG_GRID_COLS = "40px minmax(160px,2fr) 56px 72px minmax(120px,1.5fr) 64px minmax(80px,1fr) 80px minmax(80px,1fr) 80px";
+
+// Header (non-virtualized, sticky)
+<div className="grid ..." style={{ gridTemplateColumns: ORG_GRID_COLS }}>
+  {/* header cells as <div> elements */}
+</div>
+
+// Virtualized body
 const virtualizer = useVirtualizer({
   count: filteredRows.length,
   getScrollElement: () => scrollRef.current,
@@ -180,22 +193,40 @@ const virtualizer = useVirtualizer({
   overscan: 5,
 });
 
-// Render only visible rows
-{virtualizer.getVirtualItems().map((virtualItem) => (
-  <MemoizedRow
-    key={filteredRows[virtualItem.index].id}
-    row={filteredRows[virtualItem.index]}
-    style={{ transform: `translateY(${virtualItem.start}px)` }}
-  />
-))}
+<div style={{ position: "relative", height: `${virtualizer.getTotalSize()}px` }}>
+  {virtualizer.getVirtualItems().map((virtualItem) => {
+    const row = filteredRows[virtualItem.index];
+    return (
+      <OrgTableRow
+        key={row.id}
+        row={row}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          transform: `translateY(${virtualItem.start}px)`,
+          height: `${virtualItem.size}px`,
+        }}
+        // ... other props
+      />
+    );
+  })}
+</div>
+
+// Row component uses the same grid constant
+<div role="row" className="grid items-center ..."
+  style={{ ...style, gridTemplateColumns: ORG_GRID_COLS }}>
+  {/* cells as <div> elements */}
+</div>
 ```
 
 ### Preserved Behaviors
 
-- Shift+click range selection — indexes into `filteredRows` array, unaffected
-- Hover preview cards — triggered by mouseover on visible rows
-- Sticky header — rendered outside scroll container
-- Keyboard navigation — virtualizer handles scroll-to-index
+- Shift+click range selection -- indexes into `filteredRows` array, unaffected
+- Hover preview cards -- triggered by mouseover on visible rows
+- Sticky header -- rendered outside scroll container, shares `gridTemplateColumns` with rows
+- Custom `React.memo` comparators on row components for fine-grained re-render control
 
 ---
 
@@ -206,7 +237,7 @@ const virtualizer = useVirtualizer({
 ```
 app/admin/enrichment/
   ├── page.tsx                  — Server component (minimal, renders shell)
-  ├── enrichment-shell.tsx      — Client orchestrator (~200 LOC)
+  ├── enrichment-shell.tsx      — Client orchestrator (~200 LOC estimated, 918 LOC actual)
   │                               Holds: activeTab, selectedIds, sidebarOpen
   │                               Data from: useEnrichmentJobs, useEnrichmentItems, useEvents, etc.
   ├── components/
@@ -219,32 +250,39 @@ app/admin/enrichment/
   │   └── summary-strip.tsx     — Exists, unchanged
 ```
 
+> **Implementation note:** `enrichment-shell.tsx` is 918 LOC, significantly larger than the ~200 LOC estimate. The shell absorbed React Query data hooks (`useEnrichmentJobs`, `useEnrichmentItems`, `useEvents`, `useInitiatives`) and uses `queryClient.invalidateQueries` for cache management, but many `useState` calls for progress tracking, run orchestration, and result display remained in the shell rather than being eliminated or pushed down. The enrichment workflow's state machine (list -> progress -> results), polling during active runs, and historical job loading all require coordinated state that doesn't decompose cleanly.
+
 **State redistribution:** The current ~38 `useState` calls split as:
 - ~10 remain in `enrichment-shell.tsx` (shared state: activeTab, selectedIds, sidebarOpen, centerState, target, eventId, initiativeId, icpThreshold, savedListId, sortKey/sortDir)
-- ~18 eliminated by React Query (data states: allItems, totalCount, itemsLoading, events, initiatives, savedLists, jobs, isRunning, activeJobId, jobStartTime, progressData, activeStages, progressCompleted, progressTotal, resultStats, resultOutcomes, queuedItems, viewingJobId)
+- ~4 eliminated by React Query (data now from hooks: `useEnrichmentJobs`, `useEnrichmentItems`, `useEvents`, `useInitiatives`)
+- ~14 remain as local `useState` in the shell for run orchestration and progress (isRunning, activeJobId, jobStartTime, progressData, activeStages, progressCompleted, progressTotal, resultStats, resultOutcomes, queuedItems, viewingJobId, savedLists, stages, personFields, etc.)
 - ~10 pushed into sub-components that own them:
-  - Filter state → `filter-bar.tsx` (filters, categories, sources)
-  - Stage selection → `config-panel.tsx` (stages, personFields, pfPerCompany, pfSeniorities, pfDepartments)
+  - Filter state -> `filter-bar.tsx` (filters, categories, sources)
+  - Stage selection -> `config-panel.tsx` (stages, personFields, pfPerCompany, pfSeniorities, pfDepartments)
 
 **Also in scope:** `app/admin/enrichment/[jobId]/job-results-client.tsx` — contains `setInterval` polling (2.5-3s) and `key={i}` anti-patterns. Gets React Query migration and key fixes.
 
-### Organizations Table (837 LOC → ~3 files)
+### Organizations Table (837 LOC -> ~3 files)
 
 ```
 app/admin/organizations/
-  ├── organizations-table-client.tsx  — Orchestrator (~300 LOC)
-  ├── org-table-row.tsx               — React.memo'd row
+  ├── organizations-table-client.tsx  — Orchestrator (~300 LOC estimated, 647 LOC actual)
+  ├── org-table-row.tsx               — React.memo'd row (233 LOC)
   └── org-preview-card.tsx            — Already memoized, extracted to own file
 ```
 
-### Persons Table (1199 LOC → ~3 files)
+> **Implementation note:** `organizations-table-client.tsx` is 647 LOC, larger than the ~300 LOC estimate. The table includes extensive filter sidebar (14 filter fields across 4 filter groups), debounced hover preview, shift+click range selection, inline `useVirtualizer`, and sort logic. Uses CSS Grid with `ORG_GRID_COLS` constant shared between header and row components. `org-table-row.tsx` has a custom `React.memo` comparator checking `row.id`, `isSelected`, `isHovered`, `index`, and `row` reference equality. Uses `next/image` for logos.
+
+### Persons Table (1199 LOC -> ~3 files)
 
 ```
 app/admin/persons/
-  ├── persons-table-client.tsx  — Orchestrator (~300 LOC)
-  ├── person-table-row.tsx      — React.memo'd row
+  ├── persons-table-client.tsx  — Orchestrator (~300 LOC estimated, 852 LOC actual)
+  ├── person-table-row.tsx      — React.memo'd row (341 LOC)
   └── person-preview-panel.tsx  — Extracted preview/detail panel
 ```
+
+> **Implementation note:** `persons-table-client.tsx` is 852 LOC. It includes 16+ filter state variables, debounced search, multi-select filter chips, correlation computation, ref-based hover preview (avoids table re-renders), and inline `useVirtualizer` with CSS Grid. `person-table-row.tsx` has a custom `React.memo` comparator that also checks `style.transform` to avoid unnecessary re-renders during scroll. Uses `next/image` with `unoptimized` flag for person photos.
 
 ### Memo Boundary Pattern
 
@@ -486,6 +524,8 @@ interface VirtualTableProps<T> {
 
 The sequences spec should use this interface as-is. If the message queue needs row expansion (click-to-expand), that's handled in `renderRow` — the virtual table doesn't need to know about expansion.
 
+> **Implementation note:** `virtual-table.tsx` was implemented as specified (131 LOC, HTML table elements). However, the org and persons tables use CSS Grid + inline `useVirtualizer` instead (see Section 2 implementation notes). For complex tables with many columns and hover/selection interactions, the CSS Grid pattern is preferred. `virtual-table.tsx` remains available for simpler use cases.
+
 ### 4. React Query Hook Pattern
 
 All hooks across both specs follow the same pattern:
@@ -531,3 +571,49 @@ Either spec can land first. The critical path:
 - Database index optimization — no evidence of slow queries at DB level
 - Code splitting with `dynamic()` — route-based splitting from Next.js is sufficient
 - React 19 compiler (auto-memoization) — not yet enabled in this project. If enabled later, many manual `React.memo` boundaries become unnecessary, but the architectural changes (React Query, virtualization, component decomposition) remain valuable regardless
+
+---
+
+## Implementation Notes
+
+This section documents what was actually shipped versus the original plan, added post-implementation for accuracy.
+
+### What Was Implemented
+
+All six workstreams were implemented:
+
+1. **React Query data layer** -- Fully implemented. `query-provider.tsx` (20 LOC), `query-keys.ts` (41 LOC), and 8 hook files created under `lib/queries/`. The sequences spec also landed, adding 4 more hook files (`use-sequences.ts`, `use-sequence-detail.ts`, `use-sequence-messages.ts`, `use-sequence-stats.ts`) and extending `query-keys.ts` with the `sequences` domain. QueryClient configuration matches spec exactly.
+
+2. **TanStack Virtual table rendering** -- Implemented with a significant architectural divergence (see below).
+
+3. **Component decomposition** -- All three major decompositions completed (enrichment, organizations, persons). File counts match plan. LOC estimates were significantly under (see below).
+
+4. **Memoized navigation shell** -- Fully implemented as designed. `sidebar.tsx` (269 LOC, wrapped in `React.memo`), `nav-item.tsx` (87 LOC, `React.memo`), `nav-tooltip.tsx` (41 LOC, `React.memo`), `header.tsx` (157 LOC, `React.memo`). `pathname` passed as prop from `AdminShell`, eliminating unnecessary `usePathname()` re-renders.
+
+5. **Targeted fixes** -- Image optimization (`next/image`) applied in `org-table-row.tsx` and `person-table-row.tsx`. Supabase client import standardized to `createClient` from `lib/supabase/client.ts` in the enrichment shell. Index key fixes applied where decomposition touched files.
+
+6. **Best practices** -- Patterns documented in this spec; `PERFORMANCE.md` file creation deferred.
+
+### The CSS Grid Discovery
+
+The most significant divergence from the plan is in table virtualization. The original spec assumed HTML `<table>/<thead>/<tbody>/<tr>/<td>` elements, but this approach has a fundamental incompatibility with virtualization:
+
+**Problem:** TanStack Virtual renders rows with `position: absolute` and `transform: translateY(...)` to position them within a scroll container. When rows are `<tr>` elements inside a `<tbody>`, absolute positioning breaks the table layout algorithm. Furthermore, if the sticky header is a separate `<table>` element (to keep it outside the scroll container), its `<th>` columns have no relationship to the body `<td>` columns, causing misalignment.
+
+**Solution:** Replace `<table>` with `<div>` elements using `display: grid` (via Tailwind's `grid` class). A shared `gridTemplateColumns` constant (e.g., `ORG_GRID_COLS`) is exported from the row component and applied to both the header div and each row div. This guarantees column alignment regardless of positioning, because CSS Grid applies column widths from the template, not from content measurement.
+
+The `virtual-table.tsx` shared primitive (131 LOC) was still created with HTML table elements and works for simple use cases, but the organizations and persons tables use the CSS Grid + inline `useVirtualizer` pattern instead. **For future tables with complex column layouts, the CSS Grid pattern should be preferred.**
+
+### Actual File Sizes vs Estimates
+
+| File | Estimated LOC | Actual LOC | Reason for Difference |
+|---|---|---|---|
+| `enrichment-shell.tsx` | ~200 | 918 | Run orchestration, progress polling, historical job loading, mobile sidebar overlay, and result state machine all live in the shell. Many `useState` calls that were expected to be eliminated by React Query are still needed for progress/result tracking during active runs. |
+| `organizations-table-client.tsx` | ~300 | 647 | 14 filter fields across 4 filter groups, debounced hover preview, shift+click range selection, sort logic, inline virtualizer, active filter chip rendering, selection stats computation, and the sidebar JSX. |
+| `persons-table-client.tsx` | ~300 | 852 | 16+ filter state variables with multi-select chip UI, debounced search, correlation computation, ref-based hover preview pattern (zero table re-renders on hover), and extensive filter group JSX. |
+| `org-table-row.tsx` | (not estimated) | 233 | Self-contained with duplicated helpers to avoid circular deps. Custom memo comparator. |
+| `person-table-row.tsx` | (not estimated) | 341 | Includes exported types, helpers, correlation label computation, and custom memo comparator checking `style.transform`. |
+
+### Pre-existing Type Errors
+
+During implementation, TypeScript errors were observed in `app/admin/sequences/[id]/step-editor.tsx` and related sequence files. These are **pre-existing issues unrelated to the performance optimization work** and were not introduced or modified by this spec's implementation. They should be addressed separately.

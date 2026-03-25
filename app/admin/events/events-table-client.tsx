@@ -523,9 +523,9 @@ export function EventsTableClient({ events, eventTypes, locations }: Props) {
                   Top Sponsors
                 </p>
                 <div className="space-y-1">
-                  {hoveredEvent.top_sponsors.map((sp, i) => (
+                  {hoveredEvent.top_sponsors.map((sp) => (
                     <div
-                      key={i}
+                      key={sp.name}
                       className="flex items-center justify-between text-xs"
                     >
                       <span className="text-[var(--text-secondary)] truncate">

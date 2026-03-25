@@ -6,9 +6,10 @@ import { GlassInput } from "@/components/ui/glass-input";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { ChevronUp, ChevronDown, Plus, Save, Trash2 } from "lucide-react";
 import type { SequenceStep } from "@/lib/types/database";
 import { updateSequenceSteps } from "@/app/admin/sequences/actions";
+import { ComposableTemplateEditor } from "./composable-template-editor";
 
 const ACTION_TYPE_OPTIONS = [
   { value: "initial", label: "Initial" },
@@ -25,13 +26,15 @@ const actionVariant: Record<string, string> = {
 interface StepEditorProps {
   sequenceId: string;
   initialSteps: SequenceStep[];
-  channel: string;
+  channel?: string;
+  stepStats?: Record<number, { sent: number; opened: number; replied: number }>;
 }
 
 export function StepEditor({
   sequenceId,
   initialSteps,
   channel,
+  stepStats,
 }: StepEditorProps) {
   const [steps, setSteps] = useState<SequenceStep[]>(initialSteps);
   const [isPending, startTransition] = useTransition();
@@ -45,16 +48,14 @@ export function StepEditor({
   }
 
   function addStep() {
-    const nextNumber = steps.length + 1;
     setSteps((prev) => [
       ...prev,
       {
-        step_number: nextNumber,
-        delay_days: nextNumber === 1 ? 0 : 3,
-        action_type: nextNumber === 1 ? "initial" : "follow_up",
-        subject_template: channel === "email" ? "" : null,
-        body_template: "",
-        prompt_template_id: null,
+        step_number: prev.length + 1,
+        delay_days: prev.length === 0 ? 0 : 3,
+        action_type: prev.length === 0 ? "initial" : "follow_up",
+        subject_template: { blocks: [{ type: "text" as const, content: "" }] },
+        body_template: { blocks: [{ type: "text" as const, content: "" }] },
       },
     ]);
     setSaved(false);
@@ -66,6 +67,17 @@ export function StepEditor({
         .filter((_, i) => i !== index)
         .map((s, i) => ({ ...s, step_number: i + 1 }))
     );
+    setSaved(false);
+  }
+
+  function moveStep(index: number, direction: "up" | "down") {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= steps.length) return;
+    setSteps((prev) => {
+      const next = [...prev];
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      return next.map((s, i) => ({ ...s, step_number: i + 1 }));
+    });
     setSaved(false);
   }
 
@@ -109,101 +121,135 @@ export function StepEditor({
         )}
 
         <div className="space-y-4">
-          {steps.map((step, index) => (
-            <div key={index} className="relative">
-              {/* Step number circle */}
-              <div className="absolute left-3 top-5 w-7 h-7 rounded-full bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center justify-center z-10">
-                <span className="text-xs text-white font-medium">
-                  {step.step_number}
-                </span>
+          {steps.map((step, index) => {
+            const stats = stepStats?.[step.step_number];
+            const openedPct =
+              stats && stats.sent > 0
+                ? Math.round((stats.opened / stats.sent) * 100)
+                : 0;
+            const repliedPct =
+              stats && stats.sent > 0
+                ? Math.round((stats.replied / stats.sent) * 100)
+                : 0;
+
+            return (
+              <div key={`step-${step.step_number}`} className="relative">
+                {/* Step number circle */}
+                <div className="absolute left-3 top-5 w-7 h-7 rounded-full bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center justify-center z-10">
+                  <span className="text-xs text-white font-medium">
+                    {step.step_number}
+                  </span>
+                </div>
+
+                <GlassCard className="ml-14 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={actionVariant[step.action_type] ?? "default"}>
+                        {step.action_type.replace("_", " ")}
+                      </Badge>
+                      <span className="text-xs text-[var(--text-muted)]">
+                        {index === 0 ? "Day 0" : `+${step.delay_days} days`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {index > 0 && (
+                        <button
+                          onClick={() => moveStep(index, "up")}
+                          className="text-[var(--text-muted)] hover:text-white transition-colors p-1"
+                          title="Move up"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </button>
+                      )}
+                      {index < steps.length - 1 && (
+                        <button
+                          onClick={() => moveStep(index, "down")}
+                          className="text-[var(--text-muted)] hover:text-white transition-colors p-1"
+                          title="Move down"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => removeStep(index)}
+                        className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1"
+                        title="Delete step"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-[var(--text-muted)] mb-1 block">
+                        Delay (days)
+                      </label>
+                      <GlassInput
+                        type="number"
+                        min={0}
+                        value={step.delay_days}
+                        onChange={(e) =>
+                          updateStep(index, {
+                            delay_days: parseInt(e.target.value) || 0,
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[var(--text-muted)] mb-1 block">
+                        Action Type
+                      </label>
+                      <GlassSelect
+                        options={ACTION_TYPE_OPTIONS}
+                        value={step.action_type}
+                        onChange={(e) =>
+                          updateStep(index, {
+                            action_type: e.target.value as SequenceStep["action_type"],
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {channel === "email" && (
+                    <div>
+                      <label className="text-xs text-[var(--text-muted)] mb-1 block">
+                        Subject Template
+                      </label>
+                      <ComposableTemplateEditor
+                        value={step.subject_template}
+                        onChange={(template) =>
+                          updateStep(index, { ...step, subject_template: template })
+                        }
+                        placeholder="Email subject..."
+                        singleLine={true}
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="text-xs text-[var(--text-muted)] mb-1 block">
+                      Body Template
+                    </label>
+                    <ComposableTemplateEditor
+                      value={step.body_template}
+                      onChange={(template) =>
+                        updateStep(index, { ...step, body_template: template })
+                      }
+                      placeholder="Message body..."
+                    />
+                  </div>
+
+                  {stats && (
+                    <div className="text-xs text-[var(--text-muted)] mt-2">
+                      {stats.sent} sent · {stats.opened} opened ({openedPct}%) · {stats.replied} replied ({repliedPct}%)
+                    </div>
+                  )}
+                </GlassCard>
               </div>
-
-              <GlassCard className="ml-14 space-y-3">
-                <div className="flex items-center justify-between">
-                  <Badge variant={actionVariant[step.action_type] ?? "default"}>
-                    {step.action_type.replace("_", " ")}
-                  </Badge>
-                  <button
-                    onClick={() => removeStep(index)}
-                    className="text-[var(--text-muted)] hover:text-red-400 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-[var(--text-muted)] mb-1 block">
-                      Delay (days)
-                    </label>
-                    <GlassInput
-                      type="number"
-                      min={0}
-                      value={step.delay_days}
-                      onChange={(e) =>
-                        updateStep(index, {
-                          delay_days: parseInt(e.target.value) || 0,
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-[var(--text-muted)] mb-1 block">
-                      Action Type
-                    </label>
-                    <GlassSelect
-                      options={ACTION_TYPE_OPTIONS}
-                      value={step.action_type}
-                      onChange={(e) =>
-                        updateStep(index, {
-                          action_type: e.target.value as SequenceStep["action_type"],
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                {channel === "email" && (
-                  <div>
-                    <label className="text-xs text-[var(--text-muted)] mb-1 block">
-                      Subject Template
-                    </label>
-                    <GlassInput
-                      value={step.subject_template ?? ""}
-                      onChange={(e) =>
-                        updateStep(index, {
-                          subject_template: e.target.value,
-                        })
-                      }
-                      placeholder="Hey {first_name}"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="text-xs text-[var(--text-muted)] mb-1 block">
-                    Body Template
-                  </label>
-                  <textarea
-                    value={step.body_template}
-                    onChange={(e) =>
-                      updateStep(index, { body_template: e.target.value })
-                    }
-                    rows={3}
-                    placeholder="Hi {first_name}, ..."
-                    className={cn(
-                      "w-full rounded-lg font-[family-name:var(--font-body)]",
-                      "bg-[var(--glass-bg)] border border-[var(--glass-border)]",
-                      "backdrop-blur-xl text-white placeholder:text-[var(--text-muted)]",
-                      "px-3 py-2 text-sm transition-all duration-200 resize-y",
-                      "focus:outline-none focus:ring-2 focus:ring-[var(--accent-orange)]/40 focus:border-[var(--accent-orange)]/50",
-                      "hover:bg-[var(--glass-bg-hover)] hover:border-[var(--glass-border-hover)]"
-                    )}
-                  />
-                </div>
-              </GlassCard>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

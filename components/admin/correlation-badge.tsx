@@ -25,7 +25,7 @@ export function CorrelationBadge({ segments, className }: CorrelationBadgeProps)
   return (
     <span className={cn("inline-flex items-center flex-wrap gap-0.5", className)}>
       {segments.map((segment, i) => (
-        <span key={i} className="inline-flex items-center">
+        <span key={`${segment.text}-${i}`} className="inline-flex items-center">
           {i > 0 && (
             <span className="mx-1 text-xs text-[var(--text-muted)]">&rarr;</span>
           )}

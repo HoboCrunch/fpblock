@@ -151,8 +151,8 @@ export function OrganizationTable({ organizations }: { organizations: Organizati
               </td>
               <td className="px-3 md:px-5 py-3">
                 <div className="flex flex-wrap gap-1">
-                  {(org.events || []).map((ev, i) => (
-                    <Badge key={i} variant={ev.tier ? "glass-orange" : "glass-indigo"}>
+                  {(org.events || []).map((ev) => (
+                    <Badge key={ev.id} variant={ev.tier ? "glass-orange" : "glass-indigo"}>
                       {ev.name}{ev.tier ? ` (${ev.tier})` : ""}
                     </Badge>
                   ))}

@@ -1,11 +1,11 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Breadcrumb } from "./breadcrumb";
 import { LogOut, Menu, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useRef, useEffect } from "react";
+import { memo, useState, useRef, useEffect } from "react";
 
 function UserAvatar({ email }: { email: string }) {
   const initials = email
@@ -24,16 +24,17 @@ function UserAvatar({ email }: { email: string }) {
   );
 }
 
-export function Header({
+export const Header = memo(function Header({
   userEmail,
   onMenuToggle,
+  pathname,
 }: {
   userEmail: string;
   onMenuToggle?: () => void;
+  pathname: string;
 }) {
   const supabase = createClient();
   const router = useRouter();
-  const pathname = usePathname();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -153,4 +154,4 @@ export function Header({
       </div>
     </header>
   );
-}
+});

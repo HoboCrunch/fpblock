@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/client";
 import {
   ChevronDown,
   ChevronRight,
@@ -343,7 +344,7 @@ function OrgExpandedCard({
               </div>
               <ul className="space-y-1">
                 {strengths.map((s, i) => (
-                  <li key={i} className="text-xs text-green-400/80 flex items-start gap-1.5">
+                  <li key={`strength-${i}-${s.slice(0, 20)}`} className="text-xs text-green-400/80 flex items-start gap-1.5">
                     <span className="text-green-400/50 mt-0.5 shrink-0">+</span>
                     {s}
                   </li>
@@ -358,7 +359,7 @@ function OrgExpandedCard({
               </div>
               <ul className="space-y-1">
                 {weaknesses.map((w, i) => (
-                  <li key={i} className="text-xs text-red-400/80 flex items-start gap-1.5">
+                  <li key={`weakness-${i}-${w.slice(0, 20)}`} className="text-xs text-red-400/80 flex items-start gap-1.5">
                     <span className="text-red-400/50 mt-0.5 shrink-0">-</span>
                     {w}
                   </li>
@@ -606,19 +607,16 @@ function PersonResultRow({ entry }: { entry: ChildJobEntry }) {
 }
 
 // ---------------------------------------------------------------------------
-// Supabase helper
-// ---------------------------------------------------------------------------
-
-function useBrowserSupabase() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Live Job Banner (shows progress for processing jobs)
 // ---------------------------------------------------------------------------
+
+interface BannerProgress {
+  completed: number;
+  total: number;
+  latestName: string | null;
+  latestStage: string | null;
+  isDone: boolean;
+}
 
 export function LiveJobBanner({
   jobId,
@@ -630,33 +628,31 @@ export function LiveJobBanner({
   isOrgJob: boolean;
 }) {
   const router = useRouter();
-  const [progress, setProgress] = useState<{
-    completed: number;
-    total: number;
-    latestName: string | null;
-    latestStage: string | null;
-  }>({ completed: 0, total: 0, latestName: null, latestStage: null });
-  const [isDone, setIsDone] = useState(false);
 
-  useEffect(() => {
-    if (isDone) return;
+  const startTime = useMemo(
+    () => new Date(new Date(jobCreatedAt).getTime() - 5000).toISOString(),
+    [jobCreatedAt]
+  );
+  const targetTable = isOrgJob ? "organizations" : "contacts";
+  const jobTypes = useMemo(
+    () =>
+      isOrgJob
+        ? [
+            "enrichment_full",
+            "enrichment_apollo",
+            "enrichment_perplexity",
+            "enrichment_gemini",
+            "enrichment_people_finder",
+          ]
+        : ["enrichment", "enrichment_apollo"],
+    [isOrgJob]
+  );
 
-    const supabase = useBrowserSupabase();
-    const startTime = new Date(
-      new Date(jobCreatedAt).getTime() - 5000
-    ).toISOString();
-    const targetTable = isOrgJob ? "organizations" : "contacts";
-    const jobTypes = isOrgJob
-      ? [
-          "enrichment_full",
-          "enrichment_apollo",
-          "enrichment_perplexity",
-          "enrichment_gemini",
-          "enrichment_people_finder",
-        ]
-      : ["enrichment", "enrichment_apollo"];
+  const { data: progress } = useQuery<BannerProgress>({
+    queryKey: ["enrichment", "banner-progress", jobId],
+    queryFn: async () => {
+      const supabase = createClient();
 
-    const poll = async () => {
       // Check parent job status + metadata for expected total
       const { data: parentJob } = await supabase
         .from("job_log")
@@ -668,9 +664,8 @@ export function LiveJobBanner({
         parentJob?.status === "completed" ||
         parentJob?.status === "failed"
       ) {
-        setIsDone(true);
         router.refresh();
-        return;
+        return { completed: 0, total: 0, latestName: null, latestStage: null, isDone: true };
       }
 
       const parentMeta = ((parentJob?.metadata ?? {}) as Record<string, unknown>);
@@ -747,25 +742,31 @@ export function LiveJobBanner({
         const completed = Array.from(byTarget.values()).filter(
           (v) => v.status === "completed" || v.status === "failed"
         ).length;
-        setProgress({
+        return {
           completed,
           total: expectedTotal ?? byTarget.size,
           latestName,
           latestStage,
-        });
+          isDone: false,
+        };
       }
-    };
 
-    poll();
-    const interval = setInterval(poll, 2500);
-    return () => clearInterval(interval);
-  }, [jobId, jobCreatedAt, isOrgJob, isDone, router]);
+      return { completed: 0, total: 0, latestName: null, latestStage: null, isDone: false };
+    },
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (data?.isDone) return false;
+      return 2500;
+    },
+  });
+
+  const isDone = progress?.isDone ?? false;
 
   if (isDone) return null;
 
   const pct =
-    progress.total > 0
-      ? Math.round((progress.completed / progress.total) * 100)
+    (progress?.total ?? 0) > 0
+      ? Math.round(((progress?.completed ?? 0) / (progress?.total ?? 1)) * 100)
       : 0;
 
   return (
@@ -778,13 +779,13 @@ export function LiveJobBanner({
         <div className="flex-1 min-w-0">
           <p className="text-sm text-white font-medium">Job in progress</p>
           <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">
-            {progress.latestName && progress.latestStage
+            {progress?.latestName && progress?.latestStage
               ? `${progress.latestName}: ${progress.latestStage}`
-              : progress.latestStage
+              : progress?.latestStage
                 ? `Currently: ${progress.latestStage}`
                 : "Processing..."}
-            {progress.total > 0 &&
-              ` — ${progress.completed} of ${progress.total} completed`}
+            {(progress?.total ?? 0) > 0 &&
+              ` — ${progress?.completed ?? 0} of ${progress?.total ?? 0} completed`}
           </p>
         </div>
         <span className="text-sm font-medium text-[var(--accent-orange)] tabular-nums shrink-0">
@@ -824,38 +825,40 @@ export function JobResultsClient({
   jobCreatedAt?: string;
   unprocessedOrgs?: { id: string; name: string; enrichment_status: string; enrichment_stages: Record<string, unknown> }[];
 }) {
-  const [liveEntries, setLiveEntries] = useState<ChildJobEntry[]>([]);
   const isProcessing = jobStatus === "processing";
 
-  // Poll for new entries when job is processing
-  useEffect(() => {
-    if (!isProcessing || !jobId || !jobCreatedAt) return;
+  const startTime = useMemo(
+    () => jobCreatedAt ? new Date(new Date(jobCreatedAt).getTime() - 5000).toISOString() : null,
+    [jobCreatedAt]
+  );
+  const targetTable = isOrgJob ? "organizations" : "contacts";
+  const liveJobTypes = useMemo(
+    () =>
+      isOrgJob
+        ? [
+            "enrichment_full",
+            "enrichment_apollo",
+            "enrichment_perplexity",
+            "enrichment_gemini",
+            "enrichment_people_finder",
+          ]
+        : ["enrichment", "enrichment_apollo"],
+    [isOrgJob]
+  );
 
-    const supabase = useBrowserSupabase();
-    const startTime = new Date(
-      new Date(jobCreatedAt).getTime() - 5000
-    ).toISOString();
-    const targetTable = isOrgJob ? "organizations" : "contacts";
-    const jobTypes = isOrgJob
-      ? [
-          "enrichment_full",
-          "enrichment_apollo",
-          "enrichment_perplexity",
-          "enrichment_gemini",
-          "enrichment_people_finder",
-        ]
-      : ["enrichment", "enrichment_apollo"];
-
-    const poll = async () => {
+  const { data: liveEntries = [] } = useQuery<ChildJobEntry[]>({
+    queryKey: ["enrichment", "live-entries", jobId],
+    queryFn: async () => {
+      const supabase = createClient();
       const { data } = await supabase
         .from("job_log")
         .select(
           "id, target_id, status, job_type, error, metadata, created_at"
         )
         .eq("target_table", targetTable)
-        .in("job_type", jobTypes)
-        .gte("created_at", startTime)
-        .neq("id", jobId)
+        .in("job_type", liveJobTypes)
+        .gte("created_at", startTime!)
+        .neq("id", jobId!)
         .order("created_at", { ascending: true })
         .limit(500);
 
@@ -873,14 +876,13 @@ export function JobResultsClient({
             byTarget.set(entry.target_id, entry);
           }
         }
-        setLiveEntries(Array.from(byTarget.values()));
+        return Array.from(byTarget.values());
       }
-    };
-
-    poll();
-    const interval = setInterval(poll, 3000);
-    return () => clearInterval(interval);
-  }, [isProcessing, jobId, jobCreatedAt, isOrgJob]);
+      return [];
+    },
+    enabled: isProcessing && !!jobId && !!startTime,
+    refetchInterval: isProcessing ? 3000 : false,
+  });
 
   const childEntries = isProcessing && liveEntries.length > 0 ? liveEntries : initialEntries;
 

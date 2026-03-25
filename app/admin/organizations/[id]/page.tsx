@@ -533,8 +533,8 @@ export default async function OrganizationDetailPage({
                           </td>
                           <td className="px-5 py-3">
                             <div className="flex flex-wrap gap-1">
-                              {personEvts.slice(0, 2).map((name, i) => (
-                                <Badge key={i} variant="default" className="text-[10px]">
+                              {personEvts.slice(0, 2).map((name) => (
+                                <Badge key={name} variant="default" className="text-[10px]">
                                   {name}
                                 </Badge>
                               ))}

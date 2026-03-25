@@ -172,19 +172,19 @@ export function PersonCorrelationSummary({
       <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
         {primary.parts.map((part, i) =>
           part.badge ? (
-            <Badge key={i} variant={part.badge} className="mx-0.5">
+            <Badge key={`primary-${part.text}-${i}`} variant={part.badge} className="mx-0.5">
               {part.text}
             </Badge>
           ) : part.href ? (
             <Link
-              key={i}
+              key={`primary-${part.text}-${i}`}
               href={part.href}
               className="text-[var(--accent-indigo)] hover:underline"
             >
               {part.text}
             </Link>
           ) : (
-            <span key={i}>{part.text}</span>
+            <span key={`primary-${part.text}-${i}`}>{part.text}</span>
           )
         )}
       </p>
@@ -194,23 +194,23 @@ export function PersonCorrelationSummary({
         <p className="text-sm text-[var(--text-muted)] mt-1 leading-relaxed">
           <span className="text-[var(--text-muted)]">Also: </span>
           {secondary.map((chain, ci) => (
-            <span key={ci}>
+            <span key={`chain-${ci}`}>
               {ci > 0 && <span> · </span>}
               {chain.parts.map((part, pi) =>
                 part.badge ? (
-                  <Badge key={pi} variant={part.badge} className="mx-0.5">
+                  <Badge key={`sec-${ci}-${part.text}-${pi}`} variant={part.badge} className="mx-0.5">
                     {part.text}
                   </Badge>
                 ) : part.href ? (
                   <Link
-                    key={pi}
+                    key={`sec-${ci}-${part.text}-${pi}`}
                     href={part.href}
                     className="text-[var(--accent-indigo)] hover:underline"
                   >
                     {part.text}
                   </Link>
                 ) : (
-                  <span key={pi}>{part.text}</span>
+                  <span key={`sec-${ci}-${part.text}-${pi}`}>{part.text}</span>
                 )
               )}
             </span>

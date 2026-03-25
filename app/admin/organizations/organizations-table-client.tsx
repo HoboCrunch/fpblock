@@ -1,16 +1,15 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef, memo } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassInput } from "@/components/ui/glass-input";
 import { GlassSelect } from "@/components/ui/glass-select";
-import { Badge } from "@/components/ui/badge";
 import { TwoPanelLayout } from "@/components/admin/two-panel-layout";
 import { FilterGroup } from "@/components/admin/filter-group";
 import { ActiveFilters } from "@/components/admin/active-filters";
 import { SelectionSummary } from "@/components/admin/selection-summary";
-import { OrgStatusIcons } from "@/app/admin/enrichment/components/status-icons";
 import Link from "next/link";
 import {
   Building2,
@@ -19,10 +18,10 @@ import {
   ChevronDown,
   ChevronsUpDown,
   Search,
-  Globe,
-  Linkedin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { OrgTableRow, ORG_GRID_COLS } from "./org-table-row";
+import { OrgPreviewCard } from "./org-preview-card";
 
 // ------------------------------------------------------------------
 // Types
@@ -109,37 +108,6 @@ const EMPLOYEE_BUCKETS = [
 // Helpers
 // ------------------------------------------------------------------
 
-function icpBadgeVariant(score: number | null) {
-  if (score === null) return "default";
-  if (score >= 90) return "replied";
-  if (score >= 75) return "scheduled";
-  return "default";
-}
-
-function employeeBucket(count: number | string | null): string {
-  if (count === null || count === undefined) return "\u2014";
-  const n = typeof count === "string" ? parseInt(count, 10) : count;
-  if (isNaN(n)) return typeof count === "string" ? count : "\u2014";
-  for (const b of EMPLOYEE_BUCKETS) {
-    if (n >= b.min && n <= b.max) return b.label;
-  }
-  return `${n}`;
-}
-
-function relativeDate(dateStr: string | null): string {
-  if (!dateStr) return "\u2014";
-  const now = Date.now();
-  const d = new Date(dateStr).getTime();
-  const diff = now - d;
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  if (days < 1) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-  return `${Math.floor(days / 365)}y ago`;
-}
-
 function matchesEmployeeBucket(count: number | string | null, bucket: string): boolean {
   if (count === null || count === undefined) return false;
   const n = typeof count === "string" ? parseInt(count, 10) : count;
@@ -171,88 +139,6 @@ function GlassCheckbox({ checked, onChange, onClick }: { checked: boolean; onCha
 }
 
 // ------------------------------------------------------------------
-// Memoized Preview Card
-// ------------------------------------------------------------------
-
-const PreviewCard = memo(function PreviewCard({
-  row,
-  people,
-  onMouseEnter,
-  onMouseLeave,
-}: {
-  row: OrgRow;
-  people: Array<{ full_name: string; title: string | null; seniority: string | null }>;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
-}) {
-  return (
-    <div onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
-      <GlassCard className="animate-in fade-in slide-in-from-right-2 duration-200">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            {row.logo_url ? (
-              <img src={row.logo_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
-            ) : (
-              <div className="w-12 h-12 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center justify-center text-lg font-bold text-[var(--text-muted)]">
-                {row.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div className="min-w-0">
-              <p className="text-white font-medium truncate">{row.name}</p>
-              {row.category && <Badge variant="default" className="mt-0.5">{row.category}</Badge>}
-            </div>
-          </div>
-          {row.description && (
-            <p className="text-xs text-[var(--text-muted)] line-clamp-3">
-              {row.description.slice(0, 120)}{row.description.length > 120 ? "..." : ""}
-            </p>
-          )}
-          <div className="flex items-center gap-3">
-            {row.website && (
-              <a href={row.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[var(--accent-indigo)] hover:underline">
-                <Globe className="w-3 h-3" /> Website
-              </a>
-            )}
-            {row.linkedin_url && (
-              <a href={row.linkedin_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[var(--accent-indigo)] hover:underline">
-                <Linkedin className="w-3 h-3" /> LinkedIn
-              </a>
-            )}
-          </div>
-          {row.icp_reason && (
-            <div>
-              <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)] mb-0.5">ICP Reason</p>
-              <p className="text-xs text-[var(--text-secondary)] line-clamp-2">{row.icp_reason}</p>
-            </div>
-          )}
-          {row.usp && (
-            <div>
-              <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)] mb-0.5">USP</p>
-              <p className="text-xs text-[var(--text-secondary)] line-clamp-2">
-                {row.usp.slice(0, 100)}{row.usp.length > 100 ? "..." : ""}
-              </p>
-            </div>
-          )}
-          {people.length > 0 && (
-            <div>
-              <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)] mb-1">Top People</p>
-              <div className="space-y-1">
-                {people.map((p, i) => (
-                  <div key={i} className="text-xs">
-                    <span className="text-white">{p.full_name}</span>
-                    {p.title && <span className="text-[var(--text-muted)]"> - {p.title}</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </GlassCard>
-    </div>
-  );
-});
-
-// ------------------------------------------------------------------
 // Component
 // ------------------------------------------------------------------
 
@@ -272,6 +158,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const lastSelectedIndexRef = useRef<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Debounced hover
   const handleRowMouseEnter = useCallback((id: string) => {
@@ -285,7 +172,6 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
   const handleRowMouseLeave = useCallback(() => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     setHoveredId(null);
-    // Don't immediately clear preview — let mouse-into-preview work
     hoverTimeoutRef.current = setTimeout(() => {
       setPreviewId(null);
     }, 150);
@@ -299,6 +185,11 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
     setPreviewId(null);
     setHoveredId(null);
   }, []);
+
+  // Row click navigation
+  const handleRowClick = useCallback((rowId: string) => {
+    router.push(`/admin/organizations/${rowId}`);
+  }, [router]);
 
   // Filter + sort rows
   const filteredRows = useMemo(() => {
@@ -369,11 +260,6 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
       result = result.filter((r) => r.signal_count === 0);
     }
 
-    if (filters.signalType) {
-      // Signal type filtering not available at row level in current data shape
-      // Would need signal_types on row — skipping for now
-    }
-
     // Sort
     result = [...result].sort((a, b) => {
       let aVal: any = (a as any)[sortField];
@@ -389,6 +275,14 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
 
     return result;
   }, [rows, filters, sortField, sortDir]);
+
+  // Virtualizer
+  const virtualizer = useVirtualizer({
+    count: filteredRows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 36,
+    overscan: 5,
+  });
 
   // Update filter helper
   const setFilter = useCallback((key: keyof Filters, value: string) => {
@@ -458,7 +352,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
     const withIcp = selected.filter((r) => r.icp_score !== null);
     const avgIcp = withIcp.length > 0 ? Math.round(withIcp.reduce((s, r) => s + (r.icp_score ?? 0), 0) / withIcp.length) : 0;
     const totalContacts = selected.reduce((s, r) => s + r.person_count, 0);
-    return `Avg ICP ${avgIcp} · ${totalContacts} total contacts`;
+    return `Avg ICP ${avgIcp} \u00b7 ${totalContacts} total contacts`;
   }, [selectedIds, rows]);
 
   // Sort handler
@@ -631,7 +525,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
 
       {/* Row Preview */}
       {previewRow && (
-        <PreviewCard
+        <OrgPreviewCard
           row={previewRow}
           people={previewPeople}
           onMouseEnter={handlePreviewMouseEnter}
@@ -648,7 +542,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
   function SortHeader({ label, field }: { label: string; field: SortField }) {
     const isActive = sortField === field;
     return (
-      <th className="px-2 py-3 font-medium">
+      <div className="px-2 py-3 font-medium">
         <button
           onClick={() => handleSort(field)}
           className="inline-flex items-center gap-1 hover:text-white transition-colors"
@@ -664,7 +558,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
             <ChevronsUpDown className="w-3 h-3 opacity-40" />
           )}
         </button>
-      </th>
+      </div>
     );
   }
 
@@ -678,151 +572,67 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
     <TwoPanelLayout sidebar={sidebar}>
       <GlassCard padding={false}>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-[var(--text-muted)] border-b border-[var(--glass-border)]">
-                <th className="px-2 py-3 w-10">
-                  <GlassCheckbox checked={allVisibleSelected} onChange={toggleSelectAll} />
-                </th>
-                <SortHeader label="Name" field="name" />
-                <SortHeader label="ICP" field="icp_score" />
-                <SortHeader label="People" field="person_count" />
-                <th className="px-2 py-3 font-medium">Events</th>
-                <SortHeader label="Signals" field="signal_count" />
-                <SortHeader label="Industry" field="industry" />
-                <SortHeader label="Employees" field="employee_count" />
-                <th className="px-2 py-3 font-medium hidden xl:table-cell">Enrichment</th>
-                <SortHeader label="Last Signal" field="last_signal" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.04]">
-              {filteredRows.length === 0 && (
-                <tr>
-                  <td colSpan={10} className="px-5 py-12 text-center">
-                    <Building2 className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
-                    <p className="text-[var(--text-muted)]">No organizations found.</p>
-                  </td>
-                </tr>
+          {/* Single table with colgroup for consistent column widths */}
+          <div className="w-full min-w-[900px]">
+            {/* Sticky header */}
+            <div className="grid text-sm text-left text-[var(--text-muted)] border-b border-[var(--glass-border)]"
+              style={{ gridTemplateColumns: ORG_GRID_COLS }}
+            >
+              <div className="px-2 py-3 flex items-center">
+                <GlassCheckbox checked={allVisibleSelected} onChange={toggleSelectAll} />
+              </div>
+              <SortHeader label="Name" field="name" />
+              <SortHeader label="ICP" field="icp_score" />
+              <SortHeader label="People" field="person_count" />
+              <div className="px-2 py-3 font-medium">Events</div>
+              <SortHeader label="Signals" field="signal_count" />
+              <SortHeader label="Industry" field="industry" />
+              <SortHeader label="Employees" field="employee_count" />
+              <div className="px-2 py-3 font-medium hidden xl:block">Enrichment</div>
+              <SortHeader label="Last Signal" field="last_signal" />
+            </div>
+
+            {/* Virtualized scroll container */}
+            <div
+              ref={scrollRef}
+              className="overflow-y-auto"
+              style={{ height: "calc(100vh - 280px)" }}
+            >
+              {filteredRows.length === 0 ? (
+                <div className="px-5 py-12 text-center">
+                  <Building2 className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
+                  <p className="text-[var(--text-muted)]">No organizations found.</p>
+                </div>
+              ) : (
+                <div style={{ position: "relative", height: `${virtualizer.getTotalSize()}px` }}>
+                  {virtualizer.getVirtualItems().map((virtualItem) => {
+                    const row = filteredRows[virtualItem.index];
+                    return (
+                      <OrgTableRow
+                        key={row.id}
+                        row={row}
+                        index={virtualItem.index}
+                        isSelected={selectedIds.has(row.id)}
+                        isHovered={hoveredId === row.id}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          transform: `translateY(${virtualItem.start}px)`,
+                          height: `${virtualItem.size}px`,
+                        }}
+                        onRowClick={handleRowClick}
+                        onMouseEnter={handleRowMouseEnter}
+                        onMouseLeave={handleRowMouseLeave}
+                        onToggleSelect={toggleSelect}
+                      />
+                    );
+                  })}
+                </div>
               )}
-              {filteredRows.map((row, index) => (
-                <tr
-                  key={row.id}
-                  className={`transition-all duration-150 cursor-pointer ${
-                    hoveredId === row.id ? "bg-white/[0.05]" : "hover:bg-white/[0.03]"
-                  } ${selectedIds.has(row.id) ? "bg-[var(--accent-orange)]/[0.04]" : ""}`}
-                  onClick={(e) => {
-                    // Don't navigate if clicking checkbox
-                    const tag = (e.target as HTMLElement).tagName;
-                    if (tag === "INPUT" || tag === "BUTTON" || (e.target as HTMLElement).closest("button")) return;
-                    router.push(`/admin/organizations/${row.id}`);
-                  }}
-                  onMouseEnter={() => handleRowMouseEnter(row.id)}
-                  onMouseLeave={handleRowMouseLeave}
-                >
-                  {/* Checkbox */}
-                  <td className="px-2 py-3 w-10">
-                    <GlassCheckbox
-                      checked={selectedIds.has(row.id)}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleSelect(row.id, index, e.shiftKey);
-                      }}
-                    />
-                  </td>
-
-                  {/* Logo + Name + Category */}
-                  <td className="px-2 py-3">
-                    <div className="flex items-start gap-2 min-w-[140px]">
-                      {row.logo_url ? (
-                        <img
-                          src={row.logo_url}
-                          alt=""
-                          className="w-6 h-6 rounded object-cover flex-shrink-0 mt-0.5"
-                        />
-                      ) : (
-                        <div className="w-6 h-6 rounded bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[10px] font-bold text-[var(--text-muted)] flex-shrink-0 mt-0.5">
-                          {row.name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <span className="text-xs font-medium text-white truncate block max-w-[160px]">
-                          {row.name}
-                        </span>
-                        {row.category && (
-                          <Badge variant="default" className="text-[10px] mt-0.5">{row.category}</Badge>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* ICP */}
-                  <td className="px-2 py-3">
-                    {row.icp_score !== null ? (
-                      <Badge variant={icpBadgeVariant(row.icp_score)}>
-                        {row.icp_score}
-                      </Badge>
-                    ) : (
-                      <span className="text-[var(--text-muted)]">&mdash;</span>
-                    )}
-                  </td>
-
-                  {/* People */}
-                  <td className="px-2 py-3 text-[var(--text-secondary)]">
-                    {row.person_count}
-                    {row.enriched_person_count > 0 && (
-                      <span className="text-[var(--accent-orange)] ml-1">
-                        ({row.enriched_person_count}&uarr;)
-                      </span>
-                    )}
-                  </td>
-
-                  {/* Events */}
-                  <td className="px-2 py-3">
-                    <div className="flex flex-wrap gap-1 max-w-[180px]">
-                      {row.events.slice(0, 3).map((ev, i) => (
-                        <Badge
-                          key={i}
-                          variant={ev.tier ? (ev.tier as string) : "glass-indigo"}
-                          className="text-[10px]"
-                        >
-                          {ev.name}{ev.tier ? `: ${ev.tier}` : ""}
-                        </Badge>
-                      ))}
-                      {row.events.length > 3 && (
-                        <span className="text-[10px] text-[var(--text-muted)]">+{row.events.length - 3}</span>
-                      )}
-                      {row.events.length === 0 && <span className="text-[var(--text-muted)]">&mdash;</span>}
-                    </div>
-                  </td>
-
-                  {/* Signals */}
-                  <td className="px-2 py-3 text-[var(--text-secondary)]">
-                    {row.signal_count}
-                  </td>
-
-                  {/* Industry */}
-                  <td className="px-2 py-3 text-[var(--text-muted)] truncate max-w-[120px]">
-                    {row.industry || "\u2014"}
-                  </td>
-
-                  {/* Employees */}
-                  <td className="px-2 py-3 text-[var(--text-muted)]">
-                    {employeeBucket(row.employee_count)}
-                  </td>
-
-                  {/* Enrichment Stages */}
-                  <td className="px-2 py-3 hidden xl:table-cell">
-                    <OrgStatusIcons stages={row.enrichment_stages} />
-                  </td>
-
-                  {/* Last Signal */}
-                  <td className="px-2 py-3 text-[var(--text-muted)]">
-                    {relativeDate(row.last_signal)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
 
         <div className="px-5 py-3 border-t border-[var(--glass-border)]">

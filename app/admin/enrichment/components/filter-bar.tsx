@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { GlassInput } from "@/components/ui/glass-input";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { Search } from "lucide-react";
@@ -43,7 +44,7 @@ const PERSON_STATUS_OPTIONS = [
   { value: "failed", label: "Failed" },
 ];
 
-export function FilterBar({
+export const FilterBar = React.memo(function FilterBar({
   filters,
   onFiltersChange,
   tab,
@@ -152,4 +153,6 @@ export function FilterBar({
 
     </div>
   );
-}
+});
+
+FilterBar.displayName = "FilterBar";

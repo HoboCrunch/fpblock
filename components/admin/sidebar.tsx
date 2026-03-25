@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useState, useRef, useEffect } from "react";
+import { memo, useState, useEffect, useCallback } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -23,10 +22,12 @@ import {
   List as ListIcon,
   X,
 } from "lucide-react";
+import { NavItem } from "./nav-item";
+import type { NavItemData } from "./nav-item";
 
 /* ── nav data ────────────────────────────────────────────── */
 
-const mainNavItems = [
+const mainNavItems: NavItemData[] = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Persons", href: "/admin/persons", icon: Users },
   { label: "Lists", href: "/admin/lists", icon: ListIcon },
@@ -41,146 +42,35 @@ const mainNavItems = [
   { label: "Uploads", href: "/admin/uploads", icon: Upload },
 ];
 
-const bottomNavItems = [
+const bottomNavItems: NavItemData[] = [
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
-/* ── tooltip (pure‑css‑style, rendered in React) ─────────── */
-
-function NavTooltip({
-  label,
-  show,
-  anchorRef,
-}: {
-  label: string;
-  show: boolean;
-  anchorRef: React.RefObject<HTMLElement | null>;
-}) {
-  const [pos, setPos] = useState({ top: 0 });
-
-  useEffect(() => {
-    if (show && anchorRef.current) {
-      const rect = anchorRef.current.getBoundingClientRect();
-      setPos({ top: rect.top + rect.height / 2 });
-    }
-  }, [show, anchorRef]);
-
-  if (!show) return null;
-
-  return (
-    <div
-      className="fixed z-[100] left-[72px] -translate-y-1/2 pointer-events-none"
-      style={{ top: pos.top }}
-    >
-      <div className="relative flex items-center">
-        {/* arrow */}
-        <div className="w-1.5 h-1.5 rotate-45 bg-[#232326] border-l border-b border-[var(--glass-border-hover)] -mr-[3px]" />
-        <div className="px-2.5 py-1.5 rounded-md bg-[#232326] border border-[var(--glass-border-hover)] shadow-lg shadow-black/40">
-          <span className="text-xs font-medium text-white whitespace-nowrap">
-            {label}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── single nav item ─────────────────────────────────────── */
-
-function NavItem({
-  item,
-  active,
-  collapsed,
-  isTablet,
-  onClick,
-  children,
-}: {
-  item: (typeof mainNavItems)[number];
-  active: boolean;
-  collapsed: boolean;
-  isTablet: boolean;
-  onClick: () => void;
-  children?: React.ReactNode;
-}) {
-  const Icon = item.icon;
-  const ref = useRef<HTMLAnchorElement>(null);
-  const [hovered, setHovered] = useState(false);
-  const showTooltip = (collapsed || isTablet) && hovered;
-
-  return (
-    <div>
-      <Link
-        ref={ref}
-        href={item.href}
-        onClick={onClick}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        className={cn(
-          "group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
-          active
-            ? "text-[var(--accent-orange)] bg-[var(--accent-orange)]/[0.08]"
-            : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/[0.04]"
-        )}
-      >
-        {/* active indicator bar */}
-        <span
-          className={cn(
-            "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-[var(--accent-orange)] transition-all duration-300",
-            active ? "h-5 opacity-100" : "h-0 opacity-0"
-          )}
-        />
-
-        {/* icon wrapper with subtle glow on active */}
-        <span
-          className={cn(
-            "flex items-center justify-center w-5 h-5 shrink-0 transition-all duration-200",
-            active && "drop-shadow-[0_0_6px_rgba(245,131,39,0.3)]"
-          )}
-        >
-          <Icon className="h-[18px] w-[18px]" />
-        </span>
-
-        {/* label */}
-        <span
-          className={cn(
-            "truncate transition-all duration-200",
-            (collapsed || isTablet) && "lg:opacity-0 lg:w-0 lg:overflow-hidden max-lg:opacity-0 max-lg:w-0 max-lg:overflow-hidden",
-            // on mobile overlay always show
-            "max-md:!opacity-100 max-md:!w-auto"
-          )}
-        >
-          {item.label}
-        </span>
-
-        {children}
-      </Link>
-
-      <NavTooltip label={item.label} show={showTooltip} anchorRef={ref} />
-    </div>
-  );
-}
-
 /* ── main sidebar export ─────────────────────────────────── */
 
-export function Sidebar({
+export const Sidebar = memo(function Sidebar({
   events,
   mobileOpen,
   onClose,
+  pathname,
 }: {
   events: { id: string; name: string }[];
   mobileOpen: boolean;
   onClose: () => void;
+  pathname: string;
 }) {
-  const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(true);
 
-  const isActive = (href: string) => {
-    if (href === "/admin") return pathname === "/admin";
-    return pathname.startsWith(href);
-  };
+  const isActive = useCallback(
+    (href: string) => {
+      if (href === "/admin") return pathname === "/admin";
+      return pathname.startsWith(href);
+    },
+    [pathname]
+  );
 
-  const handleNavClick = () => onClose();
+  const handleNavClick = useCallback(() => onClose(), [onClose]);
 
   // Detect tablet for tooltip display
   const [isTablet, setIsTablet] = useState(false);
@@ -376,4 +266,4 @@ export function Sidebar({
       </aside>
     </>
   );
-}
+});

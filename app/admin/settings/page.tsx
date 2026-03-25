@@ -31,7 +31,7 @@ import {
   getCompanyContext,
   updateCompanyContext,
 } from "./actions";
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/client";
 
 // ---- Company Profile Tab ----
 
@@ -742,10 +742,7 @@ function EventConfigTab() {
       setConfigs(data as (EventConfig & { events?: { name: string } })[]);
     });
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = createClient();
     supabase.from("sender_profiles").select("id, name").then(({ data }) => {
       setSenders((data ?? []).map((s: { id: string; name: string }) => ({ value: s.id, label: s.name })));
     });

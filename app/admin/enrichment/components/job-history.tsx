@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
@@ -104,7 +105,7 @@ function getResultBadge(
 
 // ---------- component ----------
 
-export function JobHistory({ jobs, activeJobId, viewingJobId, onSelectJob }: JobHistoryProps) {
+export const JobHistory = React.memo(function JobHistory({ jobs, activeJobId, viewingJobId, onSelectJob }: JobHistoryProps) {
   // Pin active job at top
   const sortedJobs = [...jobs].sort((a, b) => {
     if (a.id === activeJobId) return -1;
@@ -174,4 +175,6 @@ export function JobHistory({ jobs, activeJobId, viewingJobId, onSelectJob }: Job
       </div>
     </div>
   );
-}
+});
+
+JobHistory.displayName = "JobHistory";

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AdminShell } from "./admin-shell";
+import { QueryProvider } from "@/lib/queries/query-provider";
 
 export default async function AdminLayout({
   children,
@@ -23,8 +24,10 @@ export default async function AdminLayout({
     .order("date_start", { ascending: true });
 
   return (
-    <AdminShell events={events || []} userEmail={user.email || ""}>
-      {children}
-    </AdminShell>
+    <QueryProvider>
+      <AdminShell events={events || []} userEmail={user.email || ""}>
+        {children}
+      </AdminShell>
+    </QueryProvider>
   );
 }

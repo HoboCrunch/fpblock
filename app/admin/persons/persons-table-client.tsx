@@ -2,18 +2,9 @@
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
-  Mail,
-  Linkedin,
-  Twitter,
-  Send,
-  Phone,
   Search,
-  Check,
-  AlertCircle,
-  Loader2,
-  Minus,
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
@@ -24,56 +15,19 @@ import { TwoPanelLayout } from "@/components/admin/two-panel-layout";
 import { FilterGroup } from "@/components/admin/filter-group";
 import { ActiveFilters } from "@/components/admin/active-filters";
 import { SelectionSummary } from "@/components/admin/selection-summary";
-import { CorrelationBadge } from "@/components/admin/correlation-badge";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassInput } from "@/components/ui/glass-input";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
+import { PersonTableRow, GlassCheckbox, PERSON_GRID_COLS } from "./person-table-row";
+import { PersonPreviewPanel } from "./person-preview-panel";
+import type { PersonRow, PersonEvent, OrgEvent, CorrelationResult } from "./person-table-row";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-interface PersonEvent {
-  event_id: string;
-  event_name: string;
-  role: string;
-  talk_title: string | null;
-  track: string | null;
-}
-
-interface OrgEvent {
-  event_id: string;
-  event_name: string;
-  tier: string | null;
-  role: string;
-  org_name: string;
-  org_id: string;
-}
-
-interface PersonRow {
-  id: string;
-  full_name: string;
-  title: string | null;
-  primary_org_name: string | null;
-  seniority: string | null;
-  department: string | null;
-  icp_score: number | null;
-  email: string | null;
-  linkedin_url: string | null;
-  twitter_handle: string | null;
-  telegram_handle: string | null;
-  phone: string | null;
-  photo_url: string | null;
-  bio: string | null;
-  source: string | null;
-  enrichment_status: string;
-  interaction_count: number;
-  last_interaction_at: string | null;
-  personEvents: PersonEvent[];
-  orgEvents: OrgEvent[];
-}
 
 interface PersonsTableClientProps {
   rows: PersonRow[];
@@ -96,79 +50,7 @@ type SortField =
   | "enrichment_status"
   | "last_interaction_at";
 
-function icpBadgeVariant(score: number | null) {
-  if (score === null) return "default";
-  if (score >= 90) return "replied";
-  if (score >= 75) return "scheduled";
-  return "default";
-}
-
-function seniorityBadgeVariant(s: string | null) {
-  if (!s) return "default";
-  const lower = s.toLowerCase();
-  if (lower.includes("c-level") || lower.includes("founder") || lower.includes("ceo") || lower.includes("cto") || lower.includes("cfo")) return "c-level";
-  if (lower.includes("vp") || lower.includes("vice president")) return "vp";
-  if (lower.includes("director")) return "director";
-  return "default";
-}
-
-function enrichmentIcon(status: string) {
-  switch (status) {
-    case "complete":
-      return <Check className="w-4 h-4 text-emerald-400" />;
-    case "in_progress":
-      return <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />;
-    case "failed":
-      return <AlertCircle className="w-4 h-4 text-red-400" />;
-    default:
-      return <Minus className="w-4 h-4 text-[var(--text-muted)]" />;
-  }
-}
-
-function relativeDate(dateStr: string | null) {
-  if (!dateStr) return "\u2014";
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
-  return `${Math.floor(diffDays / 365)}y ago`;
-}
-
-function getInitials(name: string) {
-  const parts = name.split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0][0].toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-function GlassCheckbox({ checked, onChange, onClick }: { checked: boolean; onChange?: () => void; onClick?: (e: React.MouseEvent) => void }) {
-  return (
-    <button
-      type="button"
-      onClick={(e) => { if (onClick) onClick(e); else if (onChange) onChange(); }}
-      className={cn(
-        "w-4 h-4 rounded border flex items-center justify-center transition-all duration-150 flex-shrink-0",
-        checked
-          ? "bg-[var(--accent-orange)]/20 border-[var(--accent-orange)]/60 text-[var(--accent-orange)]"
-          : "border-white/20 bg-white/[0.04] hover:border-white/40"
-      )}
-    >
-      {checked && <Check className="w-3 h-3" />}
-    </button>
-  );
-}
-
 const SPEAKER_ROLES = ["speaker", "panelist", "mc"];
-
-interface CorrelationResult {
-  type: string;
-  segments: { text: string; href?: string; badge?: string }[];
-}
 
 function computeCorrelation(
   personEvents: PersonEvent[],
@@ -178,7 +60,6 @@ function computeCorrelation(
     SPEAKER_ROLES.includes(e.role)
   );
 
-  // Rule 1: Person is speaker AND their org sponsors same event
   for (const pe of personSpeakerEvents) {
     const orgMatch = orgEvents.find((oe) => oe.event_id === pe.event_id);
     if (orgMatch && orgMatch.tier) {
@@ -193,7 +74,6 @@ function computeCorrelation(
     }
   }
 
-  // Rule 2: Person's org sponsors an event they attend (not as speaker)
   for (const pe of personEvents) {
     const orgMatch = orgEvents.find((oe) => oe.event_id === pe.event_id);
     if (orgMatch && orgMatch.tier) {
@@ -208,7 +88,6 @@ function computeCorrelation(
     }
   }
 
-  // Rule 3: Person is speaker but org doesn't sponsor
   if (personSpeakerEvents.length > 0) {
     const pe = personSpeakerEvents[0];
     return {
@@ -220,7 +99,6 @@ function computeCorrelation(
     };
   }
 
-  // Rule 4: Person's org sponsors an event (person not participating)
   if (orgEvents.length > 0) {
     const oe = orgEvents.find((o) => o.tier) || orgEvents[0];
     if (oe.tier) {
@@ -234,121 +112,7 @@ function computeCorrelation(
     }
   }
 
-  // Rule 5: No relationship
   return { type: "none", segments: [] };
-}
-
-function compactCorrelationLabel(c: CorrelationResult): { label: string; colorClass: string } {
-  if (c.type === "speaker_sponsor") {
-    const tierSeg = c.segments.find((s) => s.badge);
-    const tier = tierSeg ? tierSeg.text : "Sponsor";
-    return { label: `🎤 Speaker · ${tier}`, colorClass: "text-orange-400" };
-  }
-  if (c.type === "sponsor_contact") {
-    const orgSeg = c.segments.find((s) => s.href);
-    const tierSeg = c.segments.find((s) => s.badge);
-    const org = orgSeg ? orgSeg.text : "";
-    const tier = tierSeg ? tierSeg.text : "Sponsor";
-    return { label: `🏢 ${org} · ${tier}`, colorClass: "text-indigo-400" };
-  }
-  if (c.type === "speaker_only") {
-    return { label: "🎤 Speaker", colorClass: "text-[var(--text-secondary)]" };
-  }
-  if (c.type === "org_sponsor") {
-    const orgSeg = c.segments.find((s) => s.href);
-    const tierSeg = c.segments.find((s) => s.badge);
-    const org = orgSeg ? orgSeg.text : "";
-    const tier = tierSeg ? tierSeg.text : "Sponsor";
-    return { label: `🏢 ${org} · ${tier}`, colorClass: "text-[var(--text-secondary)]" };
-  }
-  return { label: "\u2014", colorClass: "text-[var(--text-muted)]" };
-}
-
-// ---------------------------------------------------------------------------
-// Isolated preview card — owns its own state so table never re-renders on hover
-// ---------------------------------------------------------------------------
-
-function RowPreviewCard({
-  setterRef,
-  correlations,
-  onMouseEnter,
-  onMouseLeave,
-}: {
-  setterRef: React.MutableRefObject<(row: PersonRow | null) => void>;
-  correlations: Record<string, CorrelationResult>;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
-}) {
-  const [row, setRow] = useState<PersonRow | null>(null);
-
-  // Register the setter so parent can push updates via ref (no parent re-render)
-  useEffect(() => {
-    setterRef.current = setRow;
-  }, [setterRef]);
-
-  if (!row) return null;
-
-  return (
-    <div onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
-      <GlassCard className="!p-4">
-        <div className="flex items-start gap-3 mb-3">
-          {row.photo_url ? (
-            <img src={row.photo_url} alt={row.full_name} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
-          ) : (
-            <div className="w-12 h-12 rounded-full bg-white/[0.06] flex items-center justify-center text-sm font-medium text-[var(--text-muted)] flex-shrink-0">
-              {getInitials(row.full_name)}
-            </div>
-          )}
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-white truncate">{row.full_name}</p>
-            <p className="text-xs text-[var(--text-secondary)] truncate">
-              {row.title || ""}{row.title && row.primary_org_name ? " @ " : ""}{row.primary_org_name || ""}
-            </p>
-          </div>
-        </div>
-
-        {row.bio && (
-          <p className="text-xs text-[var(--text-muted)] mb-3 line-clamp-2">
-            {row.bio.slice(0, 100)}{row.bio.length > 100 ? "..." : ""}
-          </p>
-        )}
-
-        <div className="flex flex-wrap gap-2 mb-3">
-          {row.email && (
-            <a href={`mailto:${row.email}`} className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-white">
-              <Mail className="w-3 h-3" /> {row.email}
-            </a>
-          )}
-          {row.linkedin_url && (
-            <a href={row.linkedin_url} target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-white">
-              <Linkedin className="w-3 h-3" /> LinkedIn
-            </a>
-          )}
-          {row.twitter_handle && (
-            <a href={`https://twitter.com/${row.twitter_handle}`} target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-white">
-              <Twitter className="w-3 h-3" /> @{row.twitter_handle}
-            </a>
-          )}
-          {row.telegram_handle && (
-            <a href={`https://t.me/${row.telegram_handle}`} target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-white">
-              <Send className="w-3 h-3" /> {row.telegram_handle}
-            </a>
-          )}
-          {row.phone && (
-            <a href={`tel:${row.phone}`} className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-white">
-              <Phone className="w-3 h-3" /> {row.phone}
-            </a>
-          )}
-        </div>
-
-        {correlations[row.id]?.segments.length > 0 && (
-          <div className="pt-2 border-t border-[var(--glass-border)]">
-            <CorrelationBadge segments={correlations[row.id].segments} />
-          </div>
-        )}
-      </GlassCard>
-    </div>
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -396,6 +160,9 @@ export function PersonsTableClient({
   const hoveredIdRef = useRef<string | null>(null);
   const previewSetterRef = useRef<(row: PersonRow | null) => void>(() => {});
 
+  // --- Virtualizer ref ---
+  const parentRef = useRef<HTMLDivElement>(null);
+
   // Debounce search
   useEffect(() => {
     const t = setTimeout(() => setSearchDebounced(search), 300);
@@ -422,7 +189,6 @@ export function PersonsTableClient({
   const filteredRows = useMemo(() => {
     let result = rows;
 
-    // Search
     if (searchDebounced) {
       const q = searchDebounced.toLowerCase();
       result = result.filter(
@@ -433,21 +199,18 @@ export function PersonsTableClient({
       );
     }
 
-    // Event filter
     if (filterEvents.length > 0) {
       result = result.filter((r) =>
         r.personEvents.some((pe) => filterEvents.includes(pe.event_id))
       );
     }
 
-    // Has Org
     if (filterHasOrg === "yes") {
       result = result.filter((r) => r.primary_org_name);
     } else if (filterHasOrg === "no") {
       result = result.filter((r) => !r.primary_org_name);
     }
 
-    // Correlation type
     if (filterCorrelationType.length > 0) {
       result = result.filter((r) => {
         const c = correlations[r.id];
@@ -455,42 +218,36 @@ export function PersonsTableClient({
       });
     }
 
-    // Seniority
     if (filterSeniority.length > 0) {
       result = result.filter(
         (r) => r.seniority && filterSeniority.includes(r.seniority)
       );
     }
 
-    // Department
     if (filterDepartment.length > 0) {
       result = result.filter(
         (r) => r.department && filterDepartment.includes(r.department)
       );
     }
 
-    // Source
     if (filterSource.length > 0) {
       result = result.filter(
         (r) => r.source && filterSource.includes(r.source)
       );
     }
 
-    // Contact toggles
     if (filterHasEmail) result = result.filter((r) => r.email);
     if (filterHasLinkedin) result = result.filter((r) => r.linkedin_url);
     if (filterHasPhone) result = result.filter((r) => r.phone);
     if (filterHasTwitter) result = result.filter((r) => r.twitter_handle);
     if (filterHasTelegram) result = result.filter((r) => r.telegram_handle);
 
-    // Enrichment status
     if (filterEnrichmentStatus.length > 0) {
       result = result.filter((r) =>
         filterEnrichmentStatus.includes(r.enrichment_status || "none")
       );
     }
 
-    // ICP range
     if (filterIcpMin) {
       const min = parseInt(filterIcpMin);
       result = result.filter((r) => r.icp_score !== null && r.icp_score >= min);
@@ -500,7 +257,6 @@ export function PersonsTableClient({
       result = result.filter((r) => r.icp_score !== null && r.icp_score <= max);
     }
 
-    // Sort
     result = [...result].sort((a, b) => {
       let aVal: any = (a as any)[sortField];
       let bVal: any = (b as any)[sortField];
@@ -536,20 +292,28 @@ export function PersonsTableClient({
     correlations,
   ]);
 
+  // --- Virtualizer ---
+  const virtualizer = useVirtualizer({
+    count: filteredRows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 36,
+    overscan: 5,
+  });
+
   // --- Selection helpers ---
   const allVisibleSelected =
     filteredRows.length > 0 &&
     filteredRows.every((r) => selectedIds.has(r.id));
 
-  const toggleSelectAll = () => {
+  const toggleSelectAll = useCallback(() => {
     if (allVisibleSelected) {
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(filteredRows.map((r) => r.id)));
     }
-  };
+  }, [allVisibleSelected, filteredRows]);
 
-  const handleCheckboxClick = (id: string, idx: number, shiftKey: boolean) => {
+  const handleCheckboxClick = useCallback((id: string, idx: number, shiftKey: boolean) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (shiftKey && lastClickedIdx !== null) {
@@ -565,7 +329,7 @@ export function PersonsTableClient({
       return next;
     });
     setLastClickedIdx(idx);
-  };
+  }, [lastClickedIdx, filteredRows]);
 
   // --- Selection stats ---
   const selectionStats = useMemo(() => {
@@ -612,15 +376,20 @@ export function PersonsTableClient({
     hoveredIdRef.current = null;
   }, []);
 
+  // --- Row click ---
+  const handleRowClick = useCallback((id: string) => {
+    router.push(`/admin/persons/${id}`);
+  }, [router]);
+
   // --- Sort handler ---
-  const handleSort = (field: SortField) => {
+  const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
       setSortDir((d) => (d === "desc" ? "asc" : "desc"));
     } else {
       setSortField(field);
       setSortDir("desc");
     }
-  };
+  }, [sortField]);
 
   // --- Active filters ---
   const activeFilters = useMemo(() => {
@@ -645,7 +414,7 @@ export function PersonsTableClient({
     return filters;
   }, [filterEvents, filterHasOrg, filterCorrelationType, filterSeniority, filterDepartment, filterSource, filterHasEmail, filterHasLinkedin, filterHasPhone, filterHasTwitter, filterHasTelegram, filterEnrichmentStatus, filterIcpMin, filterIcpMax, eventOptions]);
 
-  const handleRemoveFilter = (key: string) => {
+  const handleRemoveFilter = useCallback((key: string) => {
     switch (key) {
       case "events": setFilterEvents([]); break;
       case "hasOrg": setFilterHasOrg(""); break;
@@ -662,9 +431,9 @@ export function PersonsTableClient({
       case "icpMin": setFilterIcpMin(""); break;
       case "icpMax": setFilterIcpMax(""); break;
     }
-  };
+  }, []);
 
-  const handleClearAll = () => {
+  const handleClearAll = useCallback(() => {
     setFilterEvents([]);
     setFilterHasOrg("");
     setFilterCorrelationType([]);
@@ -680,10 +449,10 @@ export function PersonsTableClient({
     setFilterIcpMin("");
     setFilterIcpMax("");
     setSearch("");
-  };
+  }, []);
 
   // --- Multi-select helper ---
-  const toggleMultiSelect = (
+  const toggleMultiSelect = useCallback((
     value: string,
     current: string[],
     setter: (v: string[]) => void
@@ -693,7 +462,7 @@ export function PersonsTableClient({
     } else {
       setter([...current, value]);
     }
-  };
+  }, []);
 
   // --- Sort header component ---
   function SortHeader({
@@ -707,7 +476,7 @@ export function PersonsTableClient({
   }) {
     const isActive = sortField === field;
     return (
-      <th className={cn("px-2 py-2 font-medium", extraClass)}>
+      <div className={cn("px-2 py-2 font-medium", extraClass)}>
         <button
           onClick={() => handleSort(field)}
           className="inline-flex items-center gap-1 hover:text-white transition-colors"
@@ -723,7 +492,7 @@ export function PersonsTableClient({
             <ChevronsUpDown className="w-3 h-3 opacity-40" />
           )}
         </button>
-      </th>
+      </div>
     );
   }
 
@@ -757,8 +526,6 @@ export function PersonsTableClient({
       </label>
     );
   }
-
-  // Preview card is rendered by a separate component to isolate re-renders
 
   // --- Sidebar ---
   const sidebar = (
@@ -990,7 +757,7 @@ export function PersonsTableClient({
       />
 
       {/* Row Preview */}
-      <RowPreviewCard
+      <PersonPreviewPanel
         setterRef={previewSetterRef}
         correlations={correlations}
         onMouseEnter={handlePreviewMouseEnter}
@@ -1004,183 +771,69 @@ export function PersonsTableClient({
     <TwoPanelLayout sidebar={sidebar}>
       <GlassCard padding={false}>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-[var(--text-muted)] border-b border-[var(--glass-border)] text-xs">
-                <th className="px-2 py-2 w-8">
-                  <GlassCheckbox
-                    checked={allVisibleSelected && filteredRows.length > 0}
-                    onChange={toggleSelectAll}
-                  />
-                </th>
-                <SortHeader label="Name" field="full_name" className="min-w-[120px] max-w-[180px]" />
-                <SortHeader label="Organization" field="primary_org_name" className="min-w-[100px] max-w-[160px]" />
-                <SortHeader label="ICP" field="icp_score" className="w-[44px]" />
-                <th className="px-1.5 py-2 font-medium">
-                  Channels
-                </th>
-                <th className="px-1.5 py-2 font-medium">
-                  Events
-                </th>
-                <th className="px-1.5 py-2 font-medium hidden lg:table-cell" style={{ maxWidth: "140px" }}>
-                  Correlation
-                </th>
-                <th className="px-1 py-2 font-medium hidden lg:table-cell">
-                  Enr.
-                </th>
-                <SortHeader label="Activity" field="last_interaction_at" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.04]">
-              {filteredRows.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-5 py-12 text-center">
-                    <Users className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
-                    <p className="text-[var(--text-muted)]">No persons found.</p>
-                  </td>
-                </tr>
-              )}
-              {filteredRows.map((row, idx) => {
-                const correlation = correlations[row.id];
-                const isSelected = selectedIds.has(row.id);
-                return (
-                  <tr
-                    key={row.id}
-                    className={`hover:bg-white/[0.03] cursor-pointer ${
-                      isSelected ? "bg-[var(--accent-orange)]/[0.04]" : ""
-                    }`}
-                    style={{ height: "36px" }}
-                    onMouseEnter={() => handleRowMouseEnter(row.id)}
-                    onMouseLeave={handleRowMouseLeave}
-                    onClick={(e) => {
-                      // Don't navigate on checkbox click
-                      if ((e.target as HTMLElement).closest("button[type=button]")) return;
-                      router.push(`/admin/persons/${row.id}`);
-                    }}
-                  >
-                    {/* Checkbox */}
-                    <td className="px-2 py-1.5">
-                      <GlassCheckbox
-                        checked={isSelected}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCheckboxClick(row.id, idx, e.shiftKey);
+          <div className="w-full min-w-[800px]">
+            {/* Sticky header */}
+            <div
+              className="grid text-xs text-left text-[var(--text-muted)] border-b border-[var(--glass-border)] items-center"
+              style={{ gridTemplateColumns: PERSON_GRID_COLS }}
+            >
+              <div className="px-2 py-2 flex items-center">
+                <GlassCheckbox
+                  checked={allVisibleSelected && filteredRows.length > 0}
+                  onChange={toggleSelectAll}
+                />
+              </div>
+              <SortHeader label="Name" field="full_name" />
+              <SortHeader label="Organization" field="primary_org_name" />
+              <SortHeader label="ICP" field="icp_score" />
+              <div className="px-1.5 py-2 font-medium">Channels</div>
+              <div className="px-1.5 py-2 font-medium">Events</div>
+              <div className="px-1.5 py-2 font-medium hidden lg:block">Correlation</div>
+              <div className="px-1 py-2 font-medium hidden lg:block">Enr.</div>
+              <SortHeader label="Activity" field="last_interaction_at" />
+            </div>
+
+            {/* Virtualized scroll container */}
+            <div
+              ref={parentRef}
+              className="overflow-y-auto"
+              style={{ maxHeight: "calc(100vh - 220px)" }}
+            >
+              {filteredRows.length === 0 ? (
+                <div className="px-5 py-12 text-center">
+                  <Users className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
+                  <p className="text-[var(--text-muted)]">No persons found.</p>
+                </div>
+              ) : (
+                <div style={{ position: "relative", height: `${virtualizer.getTotalSize()}px` }}>
+                  {virtualizer.getVirtualItems().map((virtualItem) => {
+                    const row = filteredRows[virtualItem.index];
+                    return (
+                      <PersonTableRow
+                        key={row.id}
+                        row={row}
+                        isSelected={selectedIds.has(row.id)}
+                        correlation={correlations[row.id]}
+                        idx={virtualItem.index}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: `${virtualItem.size}px`,
+                          transform: `translateY(${virtualItem.start}px)`,
                         }}
+                        onMouseEnter={handleRowMouseEnter}
+                        onMouseLeave={handleRowMouseLeave}
+                        onCheckboxClick={handleCheckboxClick}
+                        onRowClick={handleRowClick}
                       />
-                    </td>
-
-                    {/* Name + Title (combined) */}
-                    <td className="px-2 py-1 max-w-[180px]" title={`${row.full_name}${row.title ? ` — ${row.title}` : ""}`}>
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        {row.photo_url ? (
-                          <img
-                            src={row.photo_url}
-                            alt=""
-                            className="w-5 h-5 rounded-full object-cover flex-shrink-0"
-                          />
-                        ) : (
-                          <div className="w-5 h-5 rounded-full bg-white/[0.06] flex items-center justify-center text-[9px] font-medium text-[var(--text-muted)] flex-shrink-0">
-                            {getInitials(row.full_name)}
-                          </div>
-                        )}
-                        <div className="min-w-0 leading-tight">
-                          <div className="text-xs font-medium text-white truncate">{row.full_name}</div>
-                          {row.title && (
-                            <div className="text-[10px] text-[var(--text-muted)] truncate">{row.title}</div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Organization + Seniority (combined) */}
-                    <td className="px-1.5 py-1 text-xs max-w-[160px]" title={`${row.primary_org_name || ""}${row.seniority ? ` · ${row.seniority}` : ""}`}>
-                      {row.primary_org_name ? (
-                        <div className="min-w-0 leading-tight">
-                          <div className="text-[var(--text-secondary)] truncate text-xs">{row.primary_org_name}</div>
-                          {row.seniority && (
-                            <Badge variant={seniorityBadgeVariant(row.seniority)} className="text-[9px] px-1 py-0 mt-0.5">
-                              {row.seniority}
-                            </Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-[var(--text-muted)]">&mdash;</span>
-                      )}
-                    </td>
-
-                    {/* ICP */}
-                    <td className="px-1 py-1">
-                      {row.icp_score !== null ? (
-                        <Badge variant={icpBadgeVariant(row.icp_score)} className="text-[10px] px-1.5 py-0">
-                          {row.icp_score}
-                        </Badge>
-                      ) : (
-                        <span className="text-[var(--text-muted)] text-xs">&mdash;</span>
-                      )}
-                    </td>
-
-                    {/* Channels */}
-                    <td className="px-1.5 py-1">
-                      <div className="flex items-center gap-0.5">
-                        <Mail className={`w-3 h-3 ${row.email ? "text-[var(--text-secondary)]" : "text-white/[0.1]"}`} />
-                        <Linkedin className={`w-3 h-3 ${row.linkedin_url ? "text-[var(--text-secondary)]" : "text-white/[0.1]"}`} />
-                        <Twitter className={`w-3 h-3 ${row.twitter_handle ? "text-[var(--text-secondary)]" : "text-white/[0.1]"}`} />
-                        <Send className={`w-3 h-3 ${row.telegram_handle ? "text-[var(--text-secondary)]" : "text-white/[0.1]"}`} />
-                        <Phone className={`w-3 h-3 ${row.phone ? "text-[var(--text-secondary)]" : "text-white/[0.1]"}`} />
-                      </div>
-                    </td>
-
-                    {/* Events */}
-                    <td className="px-1.5 py-1">
-                      <div className="flex flex-wrap gap-1">
-                        {row.personEvents.slice(0, 2).map((pe, i) => (
-                          <Badge key={i} variant="default" className="text-[10px] px-1.5 py-0 truncate max-w-[70px]">
-                            {pe.event_name.length > 12
-                              ? pe.event_name.slice(0, 12) + "..."
-                              : pe.event_name}
-                            {pe.role && SPEAKER_ROLES.includes(pe.role) ? `: ${pe.role}` : ""}
-                          </Badge>
-                        ))}
-                        {row.personEvents.length > 2 && (
-                          <span className="text-[10px] text-[var(--text-muted)]">
-                            +{row.personEvents.length - 2}
-                          </span>
-                        )}
-                        {row.personEvents.length === 0 && (
-                          <span className="text-[var(--text-muted)] text-xs">&mdash;</span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Correlation */}
-                    <td className="px-1.5 py-1 hidden lg:table-cell" style={{ maxWidth: "140px" }}>
-                      {(() => {
-                        const { label, colorClass } = compactCorrelationLabel(correlation);
-                        return (
-                          <span
-                            className={`text-[10px] truncate block ${colorClass}`}
-                            title={label}
-                          >
-                            {label}
-                          </span>
-                        );
-                      })()}
-                    </td>
-
-                    {/* Enrichment */}
-                    <td className="px-1 py-1 hidden lg:table-cell">
-                      {enrichmentIcon(row.enrichment_status)}
-                    </td>
-
-                    {/* Last Activity */}
-                    <td className="px-1.5 py-1 text-[var(--text-muted)] text-[10px]">
-                      {relativeDate(row.last_interaction_at)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="px-2 py-2 border-t border-[var(--glass-border)] flex items-center justify-between">

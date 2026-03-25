@@ -10,7 +10,7 @@ import { ColumnMapper, type FieldMapping } from "@/components/admin/column-mappe
 import { importCsvData } from "./actions";
 import { cn } from "@/lib/utils";
 import { Upload as UploadIcon, CheckCircle, AlertCircle } from "lucide-react";
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/client";
 import type { Upload, Event } from "@/lib/types/database";
 
 export default function UploadsPage() {
@@ -41,10 +41,7 @@ export default function UploadsPage() {
 
   // Load events and upload history
   useEffect(() => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = createClient();
 
     supabase
       .from("events")
@@ -113,10 +110,7 @@ export default function UploadsPage() {
       });
 
       // Refresh upload history
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+      const supabase = createClient();
       const { data } = await supabase
         .from("uploads")
         .select("*")

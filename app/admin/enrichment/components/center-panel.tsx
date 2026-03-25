@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { ArrowLeft } from "lucide-react";
 import {
   FilterBar,
@@ -51,7 +52,7 @@ export interface CenterPanelProps {
 
 // ---------- Component ----------
 
-export function CenterPanel({
+export const CenterPanel = React.memo(function CenterPanel({
   state,
   tab,
   filters,
@@ -164,4 +165,6 @@ export function CenterPanel({
       />
     </div>
   );
-}
+});
+
+CenterPanel.displayName = "CenterPanel";

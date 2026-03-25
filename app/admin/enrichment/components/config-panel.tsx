@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { GlassInput } from "@/components/ui/glass-input";
@@ -119,7 +120,7 @@ const INDIVIDUAL_STAGES: OrgStage[] = ["apollo", "perplexity", "gemini"];
 
 // ---------- component ----------
 
-export function ConfigPanel({
+export const ConfigPanel = React.memo(function ConfigPanel({
   tab,
   stages,
   onStagesChange,
@@ -459,4 +460,6 @@ export function ConfigPanel({
       </div>{/* end config body dim wrapper */}
     </GlassCard>
   );
-}
+});
+
+ConfigPanel.displayName = "ConfigPanel";
