@@ -1,7 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { SequenceStep } from "@/lib/types/database";
+import { revalidatePath } from "next/cache";
+import type { SequenceStep, SequenceSchedule } from "@/lib/types/database";
 
 export async function updateSequenceSteps(
   sequenceId: string,
@@ -25,6 +26,7 @@ export async function createSequence(data: {
   name: string;
   channel: string;
   event_id: string | null;
+  send_mode?: 'auto' | 'approval';
 }) {
   const supabase = await createClient();
   const { data: seq, error } = await supabase
@@ -89,4 +91,48 @@ export async function searchPersons(query: string) {
     .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
     .limit(20);
   return data || [];
+}
+
+export async function updateSequenceName(id: string, name: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("sequences")
+    .update({ name, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath(`/admin/sequences/${id}`);
+  return { success: true };
+}
+
+export async function updateSequenceSendMode(id: string, sendMode: 'auto' | 'approval') {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("sequences")
+    .update({ send_mode: sendMode, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath(`/admin/sequences/${id}`);
+  return { success: true };
+}
+
+export async function updateSequenceSender(id: string, senderId: string | null) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("sequences")
+    .update({ sender_id: senderId, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath(`/admin/sequences/${id}`);
+  return { success: true };
+}
+
+export async function updateSequenceSchedule(id: string, scheduleConfig: SequenceSchedule) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("sequences")
+    .update({ schedule_config: scheduleConfig, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath(`/admin/sequences/${id}`);
+  return { success: true };
 }

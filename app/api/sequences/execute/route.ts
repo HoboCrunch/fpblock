@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import type { SequenceStep, InteractionType } from "@/lib/types/database";
+import type { SequenceStep, InteractionType, ComposableTemplate } from "@/lib/types/database";
 
 export const maxDuration = 60;
 
@@ -37,11 +37,21 @@ const CHANNEL_TO_INTERACTION_TYPE: Record<string, InteractionType> = {
   twitter: "cold_twitter",
 };
 
+function templateToString(template: ComposableTemplate | string | null): string {
+  if (!template) return "";
+  if (typeof template === "string") return template;
+  return template.blocks
+    .filter((b) => b.type === "text")
+    .map((b) => (b as { type: "text"; content: string }).content)
+    .join("");
+}
+
 function substituteTemplate(
-  template: string,
+  template: ComposableTemplate | string | null,
   vars: Record<string, string>
 ): string {
-  return template.replace(
+  const text = templateToString(template);
+  return text.replace(
     /\{(\w+)\}/g,
     (_, key) => vars[key] ?? `{${key}}`
   );
@@ -133,39 +143,9 @@ export async function POST() {
       ? substituteTemplate(step.subject_template, vars)
       : null;
 
-    // If prompt_template_id is set, try to generate via edge function
-    if (step.prompt_template_id) {
-      try {
-        const { data: promptTemplate } = await supabase
-          .from("prompt_templates")
-          .select("system_prompt, user_prompt_template")
-          .eq("id", step.prompt_template_id)
-          .single();
-
-        if (promptTemplate) {
-          const userPrompt = substituteTemplate(
-            promptTemplate.user_prompt_template,
-            vars
-          );
-          // Call Supabase edge function for AI generation
-          const { data: generated, error: genError } =
-            await supabase.functions.invoke("generate-messages", {
-              body: {
-                system_prompt: promptTemplate.system_prompt,
-                user_prompt: userPrompt,
-                channel: enrollment.sequences.channel,
-              },
-            });
-
-          if (!genError && generated?.body) {
-            body = generated.body;
-            if (generated.subject) subject = generated.subject;
-          }
-        }
-      } catch {
-        // Fall back to template-based body
-      }
-    }
+    // Legacy: prompt_template_id was removed in favor of AI blocks in ComposableTemplate.
+    // AI block generation is handled by the new /api/sequences/generate route.
+    // This execute route now only handles basic template substitution.
 
     // Determine interaction_type from channel
     const interactionType: InteractionType =

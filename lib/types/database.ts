@@ -7,7 +7,7 @@
 export type InteractionType = "cold_email" | "cold_linkedin" | "cold_twitter" | "warm_intro" | "meeting" | "call" | "event_encounter" | "note" | "research";
 export type InteractionChannel = "email" | "linkedin" | "twitter" | "telegram" | "in_person" | "phone";
 export type InteractionDirection = "outbound" | "inbound" | "internal";
-export type InteractionStatus = "draft" | "scheduled" | "sending" | "sent" | "delivered" | "opened" | "replied" | "bounced" | "failed";
+export type InteractionStatus = "draft" | "scheduled" | "sending" | "sent" | "delivered" | "opened" | "clicked" | "replied" | "bounced" | "failed";
 export type ParticipationRole = "speaker" | "attendee" | "organizer" | "panelist" | "mc" | "sponsor" | "partner" | "exhibitor" | "media";
 export type SponsorTier = "presented_by" | "platinum" | "diamond" | "emerald" | "gold" | "silver" | "bronze" | "copper" | "community";
 
@@ -253,13 +253,32 @@ export interface JobLog {
   created_at: string;
 }
 
+export interface ComposableTemplate {
+  blocks: TemplateBlock[];
+}
+
+export type TemplateBlock =
+  | { type: 'text'; content: string }
+  | { type: 'ai'; prompt: string; max_tokens?: number; tone?: string };
+
+export interface SequenceSchedule {
+  timing_mode: 'relative' | 'window' | 'anchor';
+  send_window?: {
+    days: ('mon'|'tue'|'wed'|'thu'|'fri'|'sat'|'sun')[];
+    start_hour: number;
+    end_hour: number;
+    timezone: string;
+  };
+  anchor_date?: string;
+  anchor_direction?: 'before' | 'after';
+}
+
 export interface SequenceStep {
   step_number: number;
   delay_days: number;
   action_type: "initial" | "follow_up" | "break_up";
-  subject_template: string | null;
-  body_template: string;
-  prompt_template_id: string | null;
+  subject_template: ComposableTemplate | null;
+  body_template: ComposableTemplate;
 }
 
 export interface Sequence {
@@ -272,6 +291,9 @@ export interface Sequence {
   status: "draft" | "active" | "paused" | "completed";
   created_at: string;
   updated_at: string;
+  send_mode: 'auto' | 'approval';
+  sender_id: string | null;
+  schedule_config: SequenceSchedule;
 }
 
 export interface SequenceEnrollment {
