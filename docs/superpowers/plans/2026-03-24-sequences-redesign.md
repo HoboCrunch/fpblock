@@ -1018,17 +1018,6 @@ import { VariablePicker } from "./variable-picker";
 import { AiBlockEditor } from "./ai-block-editor";
 import type { ComposableTemplate, TemplateBlock } from "@/lib/types/database";
 
-// Add a stable id to each block for React keys (never use index keys)
-interface IdentifiedBlock {
-  id: string;
-  block: TemplateBlock;
-}
-
-function ensureBlockIds(template: ComposableTemplate | null): IdentifiedBlock[] {
-  if (!template?.blocks.length) return [{ id: crypto.randomUUID(), block: { type: "text", content: "" } }];
-  return template.blocks.map((block, i) => ({ id: (block as any)._id || crypto.randomUUID(), block }));
-}
-
 interface ComposableTemplateEditorProps {
   value: ComposableTemplate | null;
   onChange: (template: ComposableTemplate) => void;
@@ -1045,6 +1034,13 @@ export function ComposableTemplateEditor({
   const blocks = value?.blocks ?? [];
   const [showVariablePicker, setShowVariablePicker] = useState<number | null>(null);
   const textareaRefs = useRef<Map<number, HTMLTextAreaElement>>(new Map());
+
+  // Stable keys for blocks — avoid index keys per perf spec.
+  // useRef persists IDs across renders; new blocks get new IDs.
+  const blockIdsRef = useRef<string[]>([]);
+  if (blockIdsRef.current.length !== blocks.length) {
+    blockIdsRef.current = blocks.map((_, i) => blockIdsRef.current[i] || crypto.randomUUID());
+  }
 
   const updateBlock = useCallback(
     (index: number, block: TemplateBlock) => {
@@ -1108,7 +1104,7 @@ export function ComposableTemplateEditor({
     <div className="space-y-2 relative">
       {/* Use stable IDs as keys — never index keys per perf spec */}
       {blocks.map((block, i) => (
-        <div key={`block-${i}`} className="relative">
+        <div key={blockIdsRef.current[i]} className="relative">
           {block.type === "text" ? (
             <div className="relative">
               {singleLine ? (
