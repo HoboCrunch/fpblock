@@ -14,6 +14,7 @@ Email-only for now. Multi-channel (LinkedIn, Twitter, Telegram) deferred to futu
 ## Part 1: Sequences List View
 
 **Route:** `/admin/sequences`
+**Data:** Client-side via `useSequences()` React Query hook
 
 ### Layout
 
@@ -85,6 +86,7 @@ Preview behavior: 200ms hover debounce, stays visible when cursor enters preview
 ## Part 2: Sequence Detail View
 
 **Route:** `/admin/sequences/[id]`
+**Data:** Client-side via `useSequenceDetail(id)` React Query hook
 
 ### Layout
 
@@ -225,6 +227,7 @@ Most recent first, scrollable, limit 20 entries.
 ## Part 3: Message Queue
 
 **Route:** `/admin/sequences/[id]/messages`
+**Data:** Client-side via `useSequenceMessages(id, filters)` + `useSequenceStats(id)` React Query hooks
 
 ### Layout
 
@@ -538,20 +541,107 @@ Note: `subject_template` is `ComposableTemplate | null` — null means no subjec
 
 ---
 
-## Part 8: File Decomposition
+## Part 8: Data Fetching & Performance
+
+All client-side data fetching uses React Query hooks (per the admin performance optimization spec). No `useState` + `useEffect` for data, no `setInterval` for polling.
+
+### React Query Hooks
+
+```
+lib/queries/
+  use-sequences.ts          — Sequence list with filter params
+  use-sequence-detail.ts    — Single sequence + enrollments + stats
+  use-sequence-messages.ts  — Messages for a sequence with status/step filters
+  use-sequence-stats.ts     — Delivery funnel stats (sent/opened/clicked/replied)
+```
+
+### Query Key Extensions
+
+Added to the centralized `query-keys.ts` factory:
+
+```ts
+sequences: {
+  all: ["sequences"] as const,
+  list: (filters: SequenceFilters) => ["sequences", "list", filters] as const,
+  detail: (id: string) => ["sequences", "detail", id] as const,
+  messages: (id: string, filters: MessageFilters) => ["sequences", "messages", id, filters] as const,
+  stats: (id: string) => ["sequences", "stats", id] as const,
+},
+```
+
+### Polling
+
+The message queue polls for status updates when there are `sending` or `scheduled` messages due within the next 5 minutes:
+
+```ts
+useQuery({
+  queryKey: queryKeys.sequences.messages(id, filters),
+  queryFn: () => fetchSequenceMessages(supabase, id, filters),
+  refetchInterval: (query) => {
+    const msgs = query.state.data ?? [];
+    const hasPending = msgs.some(m => m.status === 'sending' || m.status === 'scheduled');
+    return hasPending ? 10_000 : false;
+  },
+});
+```
+
+### Mutations
+
+Sequence actions (activate, pause, approve messages, generate, etc.) use `useMutation` with cache invalidation:
+
+```ts
+// Example: approve message
+useMutation({
+  mutationFn: (msgId) => approveMessage(supabase, sequenceId, msgId),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.sequences.messages(sequenceId) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.sequences.stats(sequenceId) });
+  },
+});
+```
+
+### Table Virtualization
+
+The message queue table uses `virtual-table.tsx` (from performance spec) since message counts can reach 500+ for large sequences. The sequences list table skips virtualization (unlikely to exceed 100 sequences).
+
+### Component Memo Boundaries
+
+```
+SequenceListClient (filter + selection state)
+  └── TwoPanelLayout
+       ├── VirtualTable (if needed) or standard table
+       │    └── MemoizedSequenceRow (React.memo)
+       └── Sidebar
+            ├── MemoizedFilterSection (React.memo)
+            └── MemoizedSequencePreview (React.memo)
+
+MessageQueueClient (filter + selection state)
+  └── TwoPanelLayout
+       ├── VirtualTable
+       │    └── MemoizedMessageRow (React.memo)
+       └── Sidebar
+            ├── MemoizedStatsSection (React.memo)
+            └── MemoizedGenerationControls (React.memo)
+```
+
+All table rows are `React.memo`'d components with stable `key={item.id}` — never index keys. Client components target <300 LOC each. Images (logos, avatars) use `next/image` with explicit dimensions.
+
+---
+
+## Part 9: File Decomposition
 
 ### Pages
 
 ```
 app/admin/sequences/
-  page.tsx                          — Server: fetch sequences + enrollment/delivery stats
-  sequence-list-client.tsx          — Rewrite: two-panel list view
+  page.tsx                          — Server: minimal shell, renders client
+  sequence-list-client.tsx          — Client orchestrator: two-panel list view (<300 LOC)
   [id]/
-    page.tsx                        — Server: fetch sequence + enrollments + stats
-    sequence-detail-client.tsx      — Two-panel detail view
+    page.tsx                        — Server: minimal shell, renders client
+    sequence-detail-client.tsx      — Client orchestrator: two-panel detail view (<300 LOC)
     messages/
-      page.tsx                      — Server: fetch messages for sequence
-      message-queue-client.tsx      — Two-panel message queue
+      page.tsx                      — Server: minimal shell, renders client
+      message-queue-client.tsx      — Client orchestrator: two-panel message queue (<300 LOC)
 ```
 
 ### Components
@@ -562,9 +652,21 @@ components/admin/
   variable-picker.tsx               — Dropdown grouped by entity for inserting {tokens}
   ai-block-editor.tsx               — Config card for AI generation blocks
   message-preview-modal.tsx         — Renders a template for a sample person
-  sequence-preview.tsx              — Compact sidebar preview card
+  sequence-preview.tsx              — Compact sidebar preview card (React.memo)
+  sequence-row.tsx                  — Memoized table row for sequences list (React.memo)
+  message-row.tsx                   — Memoized table row for message queue (React.memo)
   step-editor.tsx                   — Extend existing: composable templates, stats, reorder
   enrollment-panel.tsx              — Extend existing: schedule info, status breakdown
+```
+
+### React Query Hooks
+
+```
+lib/queries/
+  use-sequences.ts                  — Sequence list with filters
+  use-sequence-detail.ts            — Single sequence + enrollments + delivery stats
+  use-sequence-messages.ts          — Messages with polling for active sends
+  use-sequence-stats.ts             — Aggregated delivery funnel metrics
 ```
 
 ### API Routes
@@ -593,17 +695,19 @@ lib/template-renderer.ts            — Resolves ComposableTemplate → rendered
 - `components/admin/step-editor.tsx` — Replace textarea with ComposableTemplateEditor
 - `app/admin/sequences/[id]/enrollment-panel.tsx` — Add schedule/status info
 - `lib/types/database.ts` — Extend `Sequence` interface with `send_mode: 'auto' | 'approval'`, `sender_id: string | null`, `schedule_config: SequenceSchedule`; add `'clicked'` to `InteractionStatus`; add SequenceSchedule, ComposableTemplate, TemplateBlock types; update SequenceStep
+- `lib/queries/query-keys.ts` — Add `sequences` key factory
 - `app/admin/sequences/actions.ts` — Extend with new server actions
 
 ### Components Reused
 
 - `TwoPanelLayout`, `GlassCard`, `GlassInput`, `GlassSelect`, `Badge`, `Tabs`
+- `virtual-table.tsx` — For message queue table virtualization
 - `InteractionsTimeline` (on detail page)
 - Lucide icons: Mail, Clock, Play, Pause, Square, Send, Eye, Reply, AlertCircle, ChevronDown, Plus, Trash2, GripVertical, Sparkles (AI blocks), Link, Calendar, SlidersHorizontal
 
 ---
 
-## Part 9: Responsive Behavior
+## Part 10: Responsive Behavior
 
 | Breakpoint | Layout |
 |-----------|--------|
@@ -620,7 +724,7 @@ Follows the same responsive pattern as the admin UX overhaul spec:
 
 ---
 
-## Part 10: Interaction Summary
+## Part 11: Interaction Summary
 
 1. **User opens `/admin/sequences`** → List view with all sequences, sidebar filters + preview
 2. **User clicks "+ New Sequence"** → Create modal (name, channel, event, send mode) → navigates to detail
