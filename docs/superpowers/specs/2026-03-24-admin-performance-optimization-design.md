@@ -429,6 +429,100 @@ A `PERFORMANCE.md` at project root codifying patterns for future development.
 
 ---
 
+## Parallel Development: Shared Primitives Contract
+
+This spec creates infrastructure that the **Sequences Redesign spec** (and future features) will consume. Both specs can be built in parallel if the following contracts are respected:
+
+### 1. Dependency Installation (Perf Spec Owns)
+
+The perf spec is responsible for installing and configuring:
+- `@tanstack/react-query@^5`
+- `@tanstack/react-virtual`
+- `QueryClientProvider` in `app/admin/layout.tsx`
+
+If the sequences work starts first, it should install these deps and set up the provider. Whichever lands first, the other rebases onto it.
+
+### 2. Query Key Factory (Additive, No Conflicts)
+
+`lib/queries/query-keys.ts` is a single file both specs write to. The convention:
+
+- **Perf spec** creates the file with: `organizations`, `persons`, `enrichment`, `events`, `initiatives`, `savedLists`, `dashboard`
+- **Sequences spec** adds: `sequences` (with nested `.all`, `.list`, `.detail`, `.messages`, `.stats`)
+- Each domain owns its own top-level key — no cross-domain key collisions possible
+- Both must follow the nested `.all` / `.detail` / `.list` pattern for invalidation:
+
+```ts
+// Pattern every domain MUST follow:
+domainName: {
+  all: ["domainName"] as const,                           // invalidates everything in this domain
+  list: (filters) => ["domainName", "list", filters],     // specific filtered list
+  detail: (id) => ["domainName", "detail", id],           // single entity
+  // Add sub-resources as needed:
+  subResource: {
+    all: ["domainName", "subResource"] as const,
+    list: (parentId, filters) => ["domainName", "subResource", parentId, filters],
+  },
+}
+```
+
+**Merge strategy:** Git merge will not conflict because each spec adds different top-level keys. If both branches modify the file, the merge is additive.
+
+### 3. `virtual-table.tsx` Interface Contract
+
+`components/ui/virtual-table.tsx` is created by the perf spec. The sequences spec consumes it for the message queue table. The agreed interface:
+
+```tsx
+interface VirtualTableProps<T> {
+  rows: T[];
+  columns: ColumnDef[];            // { key, header, width, className }
+  renderRow: (row: T, index: number, style: React.CSSProperties) => React.ReactNode;
+  estimateSize?: number;           // default 36
+  overscan?: number;               // default 5
+  scrollContainerHeight?: string;  // default "calc(100vh - 280px)"
+  onRowClick?: (row: T) => void;
+  emptyMessage?: string;
+}
+```
+
+The sequences spec should use this interface as-is. If the message queue needs row expansion (click-to-expand), that's handled in `renderRow` — the virtual table doesn't need to know about expansion.
+
+### 4. React Query Hook Pattern
+
+All hooks across both specs follow the same pattern:
+
+```ts
+// lib/queries/use-{domain}.ts
+export function use{Domain}(params) {
+  const supabase = createClient();  // from lib/supabase/client.ts
+  return useQuery({
+    queryKey: queryKeys.{domain}.list(params),
+    queryFn: async () => { /* supabase call */ },
+    // optional: refetchInterval, select, enabled
+  });
+}
+```
+
+### 5. Files with No Overlap
+
+| File | Perf Spec | Sequences Spec |
+|---|---|---|
+| `lib/queries/query-keys.ts` | Creates + populates | Extends (additive) |
+| `lib/queries/query-provider.tsx` | Creates | Consumes (no changes) |
+| `components/ui/virtual-table.tsx` | Creates | Consumes (no changes) |
+| `app/admin/layout.tsx` | Wraps in QueryClientProvider | No changes |
+| `lib/queries/use-organizations.ts` | Creates | No overlap |
+| `lib/queries/use-sequences.ts` | No overlap | Creates |
+| `PERFORMANCE.md` | Creates | References as standards |
+
+### 6. Build Order Flexibility
+
+Either spec can land first. The critical path:
+- **If perf lands first:** Sequences branch rebases, gets React Query + virtual-table for free, just adds its hooks and keys
+- **If sequences lands first:** Must install React Query, create `query-provider.tsx` and `query-keys.ts` with the sequences keys. Perf branch rebases and adds remaining keys + virtual-table + refactors
+- **If simultaneous:** Merge is clean — different files except `query-keys.ts` which is additive
+
+---
+
 ## Out of Scope
 
 - Zustand / global state management — not needed at current scale

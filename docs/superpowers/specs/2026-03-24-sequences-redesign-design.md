@@ -545,6 +545,8 @@ Note: `subject_template` is `ComposableTemplate | null` — null means no subjec
 
 All client-side data fetching uses React Query hooks (per the admin performance optimization spec). No `useState` + `useEffect` for data, no `setInterval` for polling.
 
+**Shared infrastructure dependency:** This spec consumes `@tanstack/react-query@^5`, `@tanstack/react-virtual`, `QueryClientProvider`, `query-keys.ts`, and `virtual-table.tsx` from the performance optimization spec. See the "Parallel Development: Shared Primitives Contract" section in that spec for interface contracts and merge strategy. If this spec lands first, it must install the deps and create the provider/key factory; the perf spec rebases and extends.
+
 ### React Query Hooks
 
 ```
@@ -560,11 +562,15 @@ lib/queries/
 Added to the centralized `query-keys.ts` factory:
 
 ```ts
+// Follows the nested .all pattern from the perf optimization spec
 sequences: {
   all: ["sequences"] as const,
   list: (filters: SequenceFilters) => ["sequences", "list", filters] as const,
   detail: (id: string) => ["sequences", "detail", id] as const,
-  messages: (id: string, filters: MessageFilters) => ["sequences", "messages", id, filters] as const,
+  messages: {
+    all: (id: string) => ["sequences", "messages", id] as const,
+    list: (id: string, filters: MessageFilters) => ["sequences", "messages", id, filters] as const,
+  },
   stats: (id: string) => ["sequences", "stats", id] as const,
 },
 ```
@@ -575,7 +581,7 @@ The message queue polls for status updates when there are `sending` or `schedule
 
 ```ts
 useQuery({
-  queryKey: queryKeys.sequences.messages(id, filters),
+  queryKey: queryKeys.sequences.messages.list(id, filters),
   queryFn: () => fetchSequenceMessages(supabase, id, filters),
   refetchInterval: (query) => {
     const msgs = query.state.data ?? [];
@@ -590,11 +596,11 @@ useQuery({
 Sequence actions (activate, pause, approve messages, generate, etc.) use `useMutation` with cache invalidation:
 
 ```ts
-// Example: approve message
+// Example: approve message — uses .all key to invalidate all message queries for this sequence
 useMutation({
   mutationFn: (msgId) => approveMessage(supabase, sequenceId, msgId),
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.sequences.messages(sequenceId) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.sequences.messages.all(sequenceId) });
     queryClient.invalidateQueries({ queryKey: queryKeys.sequences.stats(sequenceId) });
   },
 });
