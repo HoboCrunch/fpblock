@@ -1014,10 +1014,7 @@ export default function EnrichmentPage() {
 
       {/* ---- Page Header ---- */}
       <div className="flex items-center justify-between mb-4 shrink-0">
-        <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)] text-white">
-          Enrichment
-        </h1>
-
+        <div />
         <div className="flex items-center gap-2">
           {/* Responsive sidebar toggle (below 1100px) */}
           <button

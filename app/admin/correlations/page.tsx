@@ -66,10 +66,7 @@ export default async function CorrelationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)] text-white">
-          Correlation Review
-        </h1>
+      <div className="flex items-center justify-end">
         <span className="text-sm text-[var(--text-muted)]">
           {enriched.length} pending candidate{enriched.length !== 1 ? "s" : ""}
         </span>

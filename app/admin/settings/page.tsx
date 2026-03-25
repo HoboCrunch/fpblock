@@ -897,10 +897,6 @@ function EventConfigTab() {
 export default function SettingsPage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)] text-white">
-        Settings
-      </h1>
-
       <Tabs
         tabs={[
           {

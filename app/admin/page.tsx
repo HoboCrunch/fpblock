@@ -121,10 +121,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-[family-name:var(--font-heading)] text-2xl font-semibold text-white">
-        Dashboard
-      </h1>
-
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard

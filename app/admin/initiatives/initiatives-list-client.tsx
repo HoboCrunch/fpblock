@@ -54,10 +54,6 @@ export function InitiativesListClient({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)] text-white">
-        Initiatives
-      </h1>
-
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <GlassSelect options={statusOptions} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} />

@@ -68,10 +68,7 @@ export function PipelineView({
   return (
     <div className="space-y-6">
       {/* Header row */}
-      <div className="flex items-center justify-between">
-        <h1 className="font-[family-name:var(--font-heading)] text-2xl font-semibold text-white">
-          Pipeline
-        </h1>
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] rounded-lg p-1">
           <button
             onClick={() => setView("kanban")}

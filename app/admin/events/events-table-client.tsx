@@ -571,7 +571,7 @@ export function EventsTableClient({ events, eventTypes, locations }: Props) {
 
   // ─── Render ────────────────────────────────────────────────────────
   return (
-    <TwoPanelLayout title="Events" sidebar={sidebar}>
+    <TwoPanelLayout sidebar={sidebar}>
       <GlassCard padding={false}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

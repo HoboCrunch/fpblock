@@ -5,7 +5,7 @@ import { SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TwoPanelLayoutProps {
-  title: string;
+  title?: string;
   actions?: React.ReactNode;
   sidebar: React.ReactNode;
   children: React.ReactNode;
@@ -16,12 +16,28 @@ export function TwoPanelLayout({ title, actions, sidebar, children }: TwoPanelLa
 
   return (
     <div>
-      {/* Page header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">{title}</h1>
-        <div className="flex items-center gap-3">
-          {actions}
-          {/* Mobile drawer toggle */}
+      {/* Page header — only rendered when there are actions, a title, or mobile drawer toggle */}
+      {(title || actions) && (
+        <div className="flex items-center justify-between mb-6">
+          {title ? (
+            <h1 className="text-2xl font-bold text-white">{title}</h1>
+          ) : (
+            <div />
+          )}
+          <div className="flex items-center gap-3">
+            {actions}
+            {/* Mobile drawer toggle */}
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="lg:hidden p-2 rounded-lg glass hover:bg-white/[0.05]"
+            >
+              <SlidersHorizontal className="w-5 h-5 text-[var(--text-muted)]" />
+            </button>
+          </div>
+        </div>
+      )}
+      {!title && !actions && (
+        <div className="flex justify-end mb-4">
           <button
             onClick={() => setDrawerOpen(true)}
             className="lg:hidden p-2 rounded-lg glass hover:bg-white/[0.05]"
@@ -29,7 +45,7 @@ export function TwoPanelLayout({ title, actions, sidebar, children }: TwoPanelLa
             <SlidersHorizontal className="w-5 h-5 text-[var(--text-muted)]" />
           </button>
         </div>
-      </div>
+      )}
 
       {/* Two-panel layout */}
       <div className="flex gap-6">

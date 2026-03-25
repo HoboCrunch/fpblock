@@ -675,7 +675,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
   const allVisibleSelected = filteredRows.length > 0 && filteredRows.every((r) => selectedIds.has(r.id));
 
   return (
-    <TwoPanelLayout title="Organizations" sidebar={sidebar}>
+    <TwoPanelLayout sidebar={sidebar}>
       <GlassCard padding={false}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

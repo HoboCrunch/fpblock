@@ -103,9 +103,7 @@ export function SequenceListClient({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)] text-white">
-          Sequences
-        </h1>
+        <div />
         <button
           onClick={() => setShowCreateModal(true)}
           className={cn(

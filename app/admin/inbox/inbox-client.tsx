@@ -204,9 +204,7 @@ export function InboxClient({
     <div className="space-y-6">
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)]">
-          Inbox
-        </h1>
+        <div />
         <button
           onClick={handleSyncAll}
           disabled={syncing}

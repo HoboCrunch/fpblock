@@ -1001,7 +1001,7 @@ export function PersonsTableClient({
 
   // --- Render ---
   return (
-    <TwoPanelLayout title="Persons" sidebar={sidebar}>
+    <TwoPanelLayout sidebar={sidebar}>
       <GlassCard padding={false}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

@@ -129,10 +129,6 @@ export default function UploadsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold font-[family-name:var(--font-heading)] text-white">
-        Uploads
-      </h1>
-
       {/* Dropzone */}
       {!file && <FileDropzone onFile={handleFile} />}
 
