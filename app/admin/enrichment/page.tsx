@@ -1060,13 +1060,6 @@ export default function EnrichmentPage() {
       <div className="flex gap-6 flex-1 min-h-0 relative">
         {/* ---- Center Panel (65%) ---- */}
         <div className="flex-1 min-w-0 flex flex-col">
-          {itemsLoading && allItems.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-sm text-[var(--text-muted)] animate-pulse">
-                Loading {activeTab}...
-              </div>
-            </div>
-          ) : (
             <CenterPanel
               state={centerState}
               tab={activeTab}
@@ -1075,6 +1068,7 @@ export default function EnrichmentPage() {
               events={events}
               initiatives={initiatives}
               items={displayItems}
+              loading={itemsLoading}
               totalCount={totalCount}
               selectedIds={selectedIds}
               onSelectionChange={handleSelectionChange}
@@ -1092,7 +1086,6 @@ export default function EnrichmentPage() {
               sortDir={sortDir}
               onSort={handleSort}
             />
-          )}
         </div>
 
         {/* ---- Right Sidebar ---- */}

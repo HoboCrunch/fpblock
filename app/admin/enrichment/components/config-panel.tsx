@@ -277,7 +277,6 @@ export function ConfigPanel({
                   onClick={() => toggleStage(opt.key)}
                   className={cn(
                     "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-left text-sm transition-colors",
-                    isIndividual && "ml-4",
                     isActive
                       ? "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border-[var(--accent-orange)]/20"
                       : "bg-[var(--glass-bg)] text-[var(--text-muted)] border-[var(--glass-border)] hover:text-white"

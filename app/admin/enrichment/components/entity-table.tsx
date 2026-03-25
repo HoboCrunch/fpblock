@@ -49,6 +49,7 @@ export interface EntityTableProps {
   mode: TableMode;
   tab: "persons" | "organizations";
   items: (OrgRow | PersonRow)[];
+  loading?: boolean;
   // Selection (list mode)
   selectedIds?: Set<string>;
   onSelectionChange?: (ids: Set<string>) => void;
@@ -132,6 +133,7 @@ export function EntityTable({
   mode,
   tab,
   items,
+  loading,
   selectedIds,
   onSelectionChange,
   progressData,
@@ -198,10 +200,10 @@ export function EntityTable({
   const isOrg = tab === "organizations";
 
   return (
-    <div className="rounded-lg bg-white/[0.02] border border-white/[0.06] overflow-hidden">
+    <div className="rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] overflow-hidden">
       <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
         <table className="w-full">
-          <thead className="sticky top-0 bg-[#0f0f13]/95 backdrop-blur-sm z-10">
+          <thead className="sticky top-0 bg-[var(--glass-bg)] backdrop-blur-sm z-10 border-b border-[var(--glass-border)]">
             <tr>
               {showCheckboxes && (
                 <th className="px-3 py-2 w-8">
@@ -296,7 +298,7 @@ export function EntityTable({
               )}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-white/[0.04]">
             {items.map((item, index) => {
               const isSelected = selectedIds?.has(item.id) ?? false;
               const progress = progressData?.get(item.id);
@@ -309,7 +311,7 @@ export function EntityTable({
                 <tr
                   key={item.id}
                   className={cn(
-                    "h-9 border-b border-white/[0.04] hover:bg-white/[0.03] transition-all duration-300 text-xs text-white",
+                    "h-9 hover:bg-white/[0.03] transition-all duration-300 text-xs text-white",
                     isSelected && "bg-white/[0.05]",
                     isQueued && "opacity-40",
                     isActive && "animate-[slideIn_0.3s_ease-out]"
@@ -405,9 +407,17 @@ export function EntityTable({
               <tr>
                 <td
                   colSpan={99}
-                  className="px-3 py-8 text-center text-sm text-[var(--text-muted)]"
+                  className="px-3 py-12 text-center text-sm text-[var(--text-muted)]"
                 >
-                  No items found
+                  {loading ? (
+                    <div className="flex items-center justify-center gap-2 animate-pulse">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[var(--accent-orange)] animate-bounce [animation-delay:0ms]" />
+                      <div className="h-1.5 w-1.5 rounded-full bg-[var(--accent-orange)] animate-bounce [animation-delay:150ms]" />
+                      <div className="h-1.5 w-1.5 rounded-full bg-[var(--accent-orange)] animate-bounce [animation-delay:300ms]" />
+                    </div>
+                  ) : (
+                    "No items found"
+                  )}
                 </td>
               </tr>
             )}

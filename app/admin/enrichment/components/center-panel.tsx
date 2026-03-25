@@ -27,6 +27,7 @@ export interface CenterPanelProps {
   initiatives: { id: string; name: string }[];
   // List state
   items: (OrgRow | PersonRow)[];
+  loading?: boolean;
   totalCount: number;
   selectedIds: Set<string>;
   onSelectionChange: (ids: Set<string>) => void;
@@ -58,6 +59,7 @@ export function CenterPanel({
   events,
   initiatives,
   items,
+  loading,
   totalCount,
   selectedIds,
   onSelectionChange,
@@ -150,6 +152,7 @@ export function CenterPanel({
         mode={state}
         tab={tab}
         items={items}
+        loading={loading}
         selectedIds={state === "list" ? selectedIds : undefined}
         onSelectionChange={state === "list" ? onSelectionChange : undefined}
         progressData={progressData}
