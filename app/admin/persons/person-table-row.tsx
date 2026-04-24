@@ -175,6 +175,7 @@ interface PersonTableRowProps {
   row: PersonRow;
   isSelected: boolean;
   correlation: CorrelationResult;
+  eventRelation?: { direct: boolean; viaOrgIds: string[] };
   idx: number;
   style?: React.CSSProperties;
   onMouseEnter: (id: string) => void;
@@ -187,6 +188,7 @@ export const PersonTableRow = React.memo(function PersonTableRow({
   row,
   isSelected,
   correlation,
+  eventRelation,
   idx,
   style,
   onMouseEnter,
@@ -239,7 +241,19 @@ export const PersonTableRow = React.memo(function PersonTableRow({
             </div>
           )}
           <div className="min-w-0 leading-tight">
-            <div className="text-xs font-medium text-white truncate">{row.full_name}</div>
+            <div className="flex items-center gap-1 min-w-0">
+              <div className="text-xs font-medium text-white truncate">{row.full_name}</div>
+              {eventRelation && (eventRelation.direct || eventRelation.viaOrgIds.length > 0) && (
+                <span className="flex gap-1 flex-shrink-0">
+                  {eventRelation.direct && (
+                    <span className="px-1.5 py-0.5 text-[10px] rounded bg-sky-500/20 text-sky-300">SPK</span>
+                  )}
+                  {eventRelation.viaOrgIds.length > 0 && (
+                    <span className="px-1.5 py-0.5 text-[10px] rounded bg-amber-500/20 text-amber-300">ORG</span>
+                  )}
+                </span>
+              )}
+            </div>
             {row.title && (
               <div className="text-[10px] text-[var(--text-muted)] truncate">{row.title}</div>
             )}
@@ -336,6 +350,7 @@ export const PersonTableRow = React.memo(function PersonTableRow({
     prev.idx === next.idx &&
     prev.row === next.row &&
     prev.correlation === next.correlation &&
+    prev.eventRelation === next.eventRelation &&
     prev.style?.transform === next.style?.transform
   );
 });

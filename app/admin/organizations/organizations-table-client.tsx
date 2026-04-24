@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { OrgTableRow, ORG_GRID_COLS } from "./org-table-row";
 import { OrgPreviewCard } from "./org-preview-card";
+import { useOrgEventPropagation } from "@/lib/queries/use-org-event-propagation";
 
 // ------------------------------------------------------------------
 // Types
@@ -75,7 +76,7 @@ interface Filters {
   signalType: string;
 }
 
-type SortField = "name" | "category" | "icp_score" | "person_count" | "signal_count" | "last_signal" | "industry" | "employee_count";
+type SortField = "name" | "category" | "icp_score" | "person_count" | "signal_count" | "last_signal" | "industry" | "employee_count" | "events_propagated";
 
 const EMPTY_FILTERS: Filters = {
   search: "",
@@ -159,6 +160,10 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
   const [previewId, setPreviewId] = useState<string | null>(null);
   const lastSelectedIndexRef = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Propagation counts: org_id -> distinct event count (via person_event_affiliations)
+  const { data: eventsPropagatedByOrg } = useOrgEventPropagation();
+  const propagationMap = eventsPropagatedByOrg ?? {};
 
   // Debounced hover
   const handleRowMouseEnter = useCallback((id: string) => {
@@ -262,8 +267,15 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
 
     // Sort
     result = [...result].sort((a, b) => {
-      let aVal: any = (a as any)[sortField];
-      let bVal: any = (b as any)[sortField];
+      let aVal: any;
+      let bVal: any;
+      if (sortField === "events_propagated") {
+        aVal = propagationMap[a.id] ?? 0;
+        bVal = propagationMap[b.id] ?? 0;
+      } else {
+        aVal = (a as any)[sortField];
+        bVal = (b as any)[sortField];
+      }
       if (aVal == null && bVal == null) return 0;
       if (aVal == null) return 1;
       if (bVal == null) return -1;
@@ -274,7 +286,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
     });
 
     return result;
-  }, [rows, filters, sortField, sortDir]);
+  }, [rows, filters, sortField, sortDir, propagationMap]);
 
   // Virtualizer
   const virtualizer = useVirtualizer({
@@ -589,6 +601,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
               <SortHeader label="Industry" field="industry" />
               <SortHeader label="Emp." field="employee_count" />
               <div className="px-1.5 py-2.5 font-medium">Enrichment</div>
+              <SortHeader label="Events Prop." field="events_propagated" />
               <SortHeader label="Last Sig." field="last_signal" />
             </div>
 
@@ -614,6 +627,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
                         index={virtualItem.index}
                         isSelected={selectedIds.has(row.id)}
                         isHovered={hoveredId === row.id}
+                        eventsPropagated={propagationMap[row.id] ?? 0}
                         style={{
                           position: "absolute",
                           top: 0,

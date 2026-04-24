@@ -14,6 +14,7 @@ import {
   UserPlus,
   Trash2,
   Loader2,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 import type { SequenceEnrollment, Person } from "@/lib/types/database";
@@ -21,7 +22,10 @@ import {
   enrollPersons,
   unenrollPerson,
   searchPersons,
+  enrollFromEvent,
 } from "../actions";
+import { EventRelationToggle, toggleToRelation } from "@/components/admin/event-relation-toggle";
+import { useEvents } from "@/lib/queries/use-events";
 
 interface EnrollmentWithPerson extends SequenceEnrollment {
   persons: Pick<Person, "id" | "full_name" | "email"> | null;
@@ -57,6 +61,13 @@ export function EnrollmentPanel({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSearching, setIsSearching] = useState(false);
   const [isEnrolling, setIsEnrolling] = useState(false);
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState("");
+  const [speakerOn, setSpeakerOn] = useState(true);
+  const [orgAffiliatedOn, setOrgAffiliatedOn] = useState(true);
+  const [isEnrollingFromEvent, setIsEnrollingFromEvent] = useState(false);
+  const { data: events } = useEvents();
+  const eventRelation = toggleToRelation(speakerOn, orgAffiliatedOn);
 
   const enrolledPersonIds = new Set(
     enrollments.map((e) => e.person_id)
@@ -100,6 +111,18 @@ export function EnrollmentPanel({
     setIsEnrolling(false);
   }
 
+  async function handleEnrollFromEvent() {
+    if (!selectedEventId || !eventRelation) return;
+    setIsEnrollingFromEvent(true);
+    const result = await enrollFromEvent(sequenceId, selectedEventId, eventRelation);
+    setIsEnrollingFromEvent(false);
+    if (result.success) {
+      setShowEventModal(false);
+      setSelectedEventId("");
+      startTransition(() => router.refresh());
+    }
+  }
+
   async function handleRemove(enrollmentId: string) {
     const result = await unenrollPerson(enrollmentId);
     if (result.success) {
@@ -117,17 +140,30 @@ export function EnrollmentPanel({
               ({enrollments.length})
             </span>
           </h2>
-          <button
-            onClick={() => setShowSearchModal(true)}
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
-              "bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] border border-[var(--accent-indigo)]/20",
-              "hover:bg-[var(--accent-indigo)]/20"
-            )}
-          >
-            <UserPlus className="h-3.5 w-3.5" />
-            Add Persons
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowEventModal(true)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
+                "bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] border border-[var(--accent-indigo)]/20",
+                "hover:bg-[var(--accent-indigo)]/20"
+              )}
+            >
+              <Calendar className="h-3.5 w-3.5" />
+              Enroll from Event
+            </button>
+            <button
+              onClick={() => setShowSearchModal(true)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
+                "bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] border border-[var(--accent-indigo)]/20",
+                "hover:bg-[var(--accent-indigo)]/20"
+              )}
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Add Persons
+            </button>
+          </div>
         </div>
 
         {enrollments.length === 0 ? (
@@ -307,6 +343,86 @@ export function EnrollmentPanel({
                   <Plus className="h-4 w-4" />
                 )}
                 Enroll Selected
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Enroll from Event Modal */}
+      {showEventModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowEventModal(false)}
+          />
+          <div className="relative glass rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold font-[family-name:var(--font-heading)] text-white">
+                Enroll from Event
+              </h2>
+              <button
+                onClick={() => setShowEventModal(false)}
+                className="text-[var(--text-muted)] hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 mb-5">
+              <div>
+                <label className="block text-xs text-[var(--text-muted)] mb-1.5">Event</label>
+                <select
+                  value={selectedEventId}
+                  onChange={(e) => setSelectedEventId(e.target.value)}
+                  className="w-full bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-lg px-3 py-2 text-sm text-white"
+                >
+                  <option value="">Choose an event…</option>
+                  {(events ?? []).map((ev) => (
+                    <option key={ev.id} value={ev.id}>{ev.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs text-[var(--text-muted)] mb-1.5">Relation</label>
+                <EventRelationToggle
+                  speaker={speakerOn}
+                  orgAffiliated={orgAffiliatedOn}
+                  onChange={({ speaker, orgAffiliated }) => {
+                    setSpeakerOn(speaker);
+                    setOrgAffiliatedOn(orgAffiliated);
+                  }}
+                />
+                <p className="text-[11px] text-[var(--text-muted)] mt-1">
+                  Enrolls persons who are direct participants, affiliated via a participating org, or both.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-[var(--glass-border)]">
+              <button
+                onClick={() => setShowEventModal(false)}
+                className="px-4 py-2 rounded-lg text-sm text-[var(--text-muted)] hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEnrollFromEvent}
+                disabled={!selectedEventId || !eventRelation || isEnrollingFromEvent}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
+                  "bg-[var(--accent-orange)] text-white hover:bg-[var(--accent-orange)]/90",
+                  "shadow-lg shadow-[var(--accent-orange)]/20",
+                  "disabled:opacity-50 disabled:cursor-not-allowed"
+                )}
+              >
+                {isEnrollingFromEvent ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                Enroll All Matching
               </button>
             </div>
           </div>

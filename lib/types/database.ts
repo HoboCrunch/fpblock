@@ -111,6 +111,15 @@ export interface EventParticipation {
   notes: string | null;
 }
 
+export interface PersonEventAffiliation {
+  id: string;
+  event_id: string;
+  person_id: string;
+  via_organization_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // ============================================
 // INITIATIVES & INTERACTIONS
 // ============================================

@@ -21,6 +21,9 @@ import { GlassInput } from "@/components/ui/glass-input";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { Badge } from "@/components/ui/badge";
 import { AddToListDropdown } from "@/components/admin/add-to-list-dropdown";
+import { EventRelationToggle, toggleToRelation } from "@/components/admin/event-relation-toggle";
+import { useEventPersonIds, useEventRelationMap } from "@/lib/queries/use-event-affiliations";
+import { useEvents } from "@/lib/queries/use-events";
 import { cn } from "@/lib/utils";
 
 import { PersonTableRow, GlassCheckbox, PERSON_GRID_COLS } from "./person-table-row";
@@ -148,6 +151,16 @@ export function PersonsTableClient({
   const [filterIcpMin, setFilterIcpMin] = useState("");
   const [filterIcpMax, setFilterIcpMax] = useState("");
 
+  // --- Event relation filter state ---
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [speakerOn, setSpeakerOn] = useState(true);
+  const [orgAffiliatedOn, setOrgAffiliatedOn] = useState(true);
+
+  const eventRelation = toggleToRelation(speakerOn, orgAffiliatedOn);
+  const { data: events } = useEvents();
+  const { data: eventPersonIds } = useEventPersonIds(selectedEventId, eventRelation);
+  const { data: eventRelationMap } = useEventRelationMap(selectedEventId);
+
   // --- Sort state ---
   const [sortField, setSortField] = useState<SortField>("icp_score");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -259,6 +272,14 @@ export function PersonsTableClient({
       result = result.filter((r) => r.icp_score !== null && r.icp_score <= max);
     }
 
+    // Event-relation scoping. When an event is selected but both toggles are
+    // off, eventRelation is null → useEventPersonIds returns []; the list
+    // becomes empty (spec: "both off" is the empty set).
+    if (selectedEventId) {
+      const eventScopedIds = new Set(eventPersonIds ?? []);
+      result = result.filter((r) => eventScopedIds.has(r.id));
+    }
+
     result = [...result].sort((a, b) => {
       let aVal: any = (a as any)[sortField];
       let bVal: any = (b as any)[sortField];
@@ -289,6 +310,8 @@ export function PersonsTableClient({
     filterEnrichmentStatus,
     filterIcpMin,
     filterIcpMax,
+    selectedEventId,
+    eventPersonIds,
     sortField,
     sortDir,
     correlations,
@@ -544,6 +567,23 @@ export function PersonsTableClient({
       <GlassCard className="!p-3">
         <FilterGroup title="Relationships" defaultOpen={true}>
           <div className="space-y-2">
+            <GlassSelect
+              placeholder="Scope by event..."
+              options={(events ?? []).map((ev) => ({ value: ev.id, label: ev.name }))}
+              value={selectedEventId ?? ""}
+              onChange={(e) => setSelectedEventId(e.target.value || null)}
+            />
+            {selectedEventId && (
+              <EventRelationToggle
+                speaker={speakerOn}
+                orgAffiliated={orgAffiliatedOn}
+                onChange={({ speaker, orgAffiliated }) => {
+                  setSpeakerOn(speaker);
+                  setOrgAffiliatedOn(orgAffiliated);
+                }}
+              />
+            )}
+
             <GlassSelect
               placeholder="Filter by event..."
               options={eventOptions.map((e) => ({ value: e.id, label: e.name }))}
@@ -817,6 +857,9 @@ export function PersonsTableClient({
                         row={row}
                         isSelected={selectedIds.has(row.id)}
                         correlation={correlations[row.id]}
+                        eventRelation={
+                          selectedEventId ? eventRelationMap?.get(row.id) : undefined
+                        }
                         idx={virtualItem.index}
                         style={{
                           position: "absolute",

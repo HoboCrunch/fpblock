@@ -15,9 +15,14 @@ import { useEnrichmentJobs } from "@/lib/queries/use-enrichment-jobs";
 import { useEnrichmentItems } from "@/lib/queries/use-enrichment-items";
 import { useEvents } from "@/lib/queries/use-events";
 import { useInitiatives } from "@/lib/queries/use-initiatives";
+import { useEventPersonIds } from "@/lib/queries/use-event-affiliations";
 import { GlassCard } from "@/components/ui/glass-card";
 import { cn } from "@/lib/utils";
 import { Settings2 } from "lucide-react";
+import {
+  EventRelationToggle,
+  toggleToRelation,
+} from "@/components/admin/event-relation-toggle";
 
 import {
   CenterPanel,
@@ -105,6 +110,11 @@ export function EnrichmentShell() {
   const [icpThreshold, setIcpThreshold] = useState(75);
   const [savedListId, setSavedListId] = useState("");
 
+  // ---- Event relation toggles (only applies when target === "event") ----
+  const [speakerOn, setSpeakerOn] = useState(true);
+  const [orgAffiliatedOn, setOrgAffiliatedOn] = useState(true);
+  const eventRelation = toggleToRelation(speakerOn, orgAffiliatedOn);
+
   // ---- Running ----
   const [isRunning, setIsRunning] = useState(false);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -140,6 +150,13 @@ export function EnrichmentShell() {
   const { data: itemsData, isLoading: itemsLoading } = useEnrichmentItems({ tab: activeTab });
   const { data: eventsRaw = [] } = useEvents();
   const { data: initiativesRaw = [] } = useInitiatives();
+
+  // Authoritative person id set for the chosen (eventId, relation). Unconditional
+  // hook call: args are null when not applicable so it stays disabled.
+  const { data: affiliatedPersonIds } = useEventPersonIds(
+    activeTab === "persons" && target === "event" && eventId ? eventId : null,
+    activeTab === "persons" && target === "event" ? eventRelation : null,
+  );
 
   const allItems = itemsData?.items ?? [];
   const totalCount = itemsData?.totalCount ?? 0;
@@ -336,9 +353,15 @@ export function EnrichmentShell() {
           break;
         case "event":
           if (eventId) {
-            const ids = (item as OrgRow & { event_ids?: string[] }).event_ids ??
-              (item as PersonRow & { event_ids?: string[] }).event_ids;
-            matches = ids?.includes(eventId) ?? false;
+            if (activeTab === "persons") {
+              // Use authoritative set from affiliation + direct union (server-computed).
+              // When eventRelation is null (both toggles off), affiliatedPersonIds is [] → empty selection.
+              matches = (affiliatedPersonIds ?? []).includes(item.id);
+            } else {
+              // Orgs: existing behavior (event_ids membership)
+              const ids = (item as OrgRow & { event_ids?: string[] }).event_ids;
+              matches = ids?.includes(eventId) ?? false;
+            }
           }
           break;
         case "initiative":
@@ -352,7 +375,7 @@ export function EnrichmentShell() {
       if (prev.size === matching.size && [...matching].every((id) => prev.has(id))) return prev;
       return matching;
     });
-  }, [target, allItems, icpThreshold, eventId]);
+  }, [target, allItems, icpThreshold, eventId, activeTab, affiliatedPersonIds]);
 
   function handleSelectionChange(ids: Set<string>) {
     setSelectedIds(ids);
@@ -396,8 +419,12 @@ export function EnrichmentShell() {
     if (selectedIds.size === 0) return false;
     if (activeTab === "organizations" && stages.length === 0) return false;
     if (activeTab === "persons" && personFields.length === 0) return false;
+    // When scoping by event on the persons tab, require at least one relation toggle
+    if (activeTab === "persons" && target === "event" && eventId && eventRelation === null) {
+      return false;
+    }
     return true;
-  }, [selectedIds.size, activeTab, stages.length, personFields.length]);
+  }, [selectedIds.size, activeTab, stages.length, personFields.length, target, eventId, eventRelation]);
 
   // =========================================================================
   // Run Pipeline
@@ -478,6 +505,10 @@ export function EnrichmentShell() {
         body.fields = personFields;
         body.source = "apollo";
         body.personIds = ids;
+        if (target === "event" && eventId && eventRelation) {
+          body.eventId = eventId;
+          body.relation = eventRelation;
+        }
 
         const res = await fetch("/api/enrich/persons", {
           method: "POST",
@@ -841,6 +872,22 @@ export function EnrichmentShell() {
             onStop={handleStop}
           />
 
+          {activeTab === "persons" && target === "event" && eventId && (
+            <GlassCard className="p-3">
+              <div className="text-xs text-[var(--text-muted)] mb-2">
+                Event scope
+              </div>
+              <EventRelationToggle
+                speaker={speakerOn}
+                orgAffiliated={orgAffiliatedOn}
+                onChange={({ speaker, orgAffiliated }) => {
+                  setSpeakerOn(speaker);
+                  setOrgAffiliatedOn(orgAffiliated);
+                }}
+              />
+            </GlassCard>
+          )}
+
           <GlassCard className="flex-1 min-h-0 flex flex-col overflow-hidden">
             <JobHistory
               jobs={jobs}
@@ -900,6 +947,22 @@ export function EnrichmentShell() {
                 onRun={handleRun}
                 onStop={handleStop}
               />
+
+              {activeTab === "persons" && target === "event" && eventId && (
+                <GlassCard className="p-3">
+                  <div className="text-xs text-[var(--text-muted)] mb-2">
+                    Event scope
+                  </div>
+                  <EventRelationToggle
+                    speaker={speakerOn}
+                    orgAffiliated={orgAffiliatedOn}
+                    onChange={({ speaker, orgAffiliated }) => {
+                      setSpeakerOn(speaker);
+                      setOrgAffiliatedOn(orgAffiliated);
+                    }}
+                  />
+                </GlassCard>
+              )}
 
               <GlassCard className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <JobHistory

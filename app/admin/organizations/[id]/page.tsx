@@ -89,6 +89,33 @@ export default async function OrganizationDetailPage({
       .maybeSingle(),
   ]);
 
+  // ── Person-event affiliations (propagation via enrichment) ─────────
+  const { data: affRows } = await supabase
+    .from("person_event_affiliations")
+    .select("event_id, person_id")
+    .eq("via_organization_id", id);
+
+  const affEventIds = Array.from(
+    new Set((affRows ?? []).map((r: any) => r.event_id))
+  );
+  const affPersonIds = Array.from(
+    new Set((affRows ?? []).map((r: any) => r.person_id))
+  );
+
+  const affEvents =
+    affEventIds.length > 0
+      ? (await supabase
+          .from("events")
+          .select("id, name")
+          .in("id", affEventIds)).data ?? []
+      : [];
+
+  const affPersonsPerEvent: Record<string, number> = {};
+  for (const r of (affRows ?? []) as any[]) {
+    affPersonsPerEvent[r.event_id] =
+      (affPersonsPerEvent[r.event_id] ?? 0) + 1;
+  }
+
   // ── Person-level event participations (for people roster Events col)
   const personIds = (personLinks || [])
     .map((pl: any) => pl.person?.id)
@@ -455,6 +482,33 @@ export default async function OrganizationDetailPage({
             )}
           </GlassCard>
         </div>
+
+        {/* Event Propagation (via enrichment) */}
+        <GlassCard className="p-4">
+          <h3 className="text-sm font-semibold mb-2">
+            Event propagation — {affPersonIds.length} persons across{" "}
+            {affEventIds.length} events
+          </h3>
+          {affEvents.length === 0 ? (
+            <p className="text-xs opacity-60">None yet.</p>
+          ) : (
+            <ul className="text-sm space-y-1">
+              {affEvents.map((ev: any) => (
+                <li key={ev.id} className="flex justify-between">
+                  <Link
+                    href={`/admin/events/${ev.id}`}
+                    className="hover:underline"
+                  >
+                    {ev.name}
+                  </Link>
+                  <span className="opacity-70">
+                    {affPersonsPerEvent[ev.id] ?? 0} persons
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </GlassCard>
 
         {/* People Roster */}
         <div>

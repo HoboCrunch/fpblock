@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import type { OrgRow } from "./organizations-table-client";
 
 export const ORG_GRID_COLS =
-  "32px minmax(150px,2.5fr) 48px 56px minmax(90px,1.2fr) 48px minmax(70px,1fr) 64px 80px 64px";
+  "32px minmax(150px,2.5fr) 48px 56px minmax(90px,1.2fr) 48px minmax(70px,1fr) 64px 80px 72px 64px";
 
 // ------------------------------------------------------------------
 // Helpers
@@ -86,6 +86,7 @@ export interface OrgTableRowProps {
   index: number;
   isSelected: boolean;
   isHovered: boolean;
+  eventsPropagated?: number;
   style?: React.CSSProperties;
   onRowClick: (rowId: string) => void;
   onMouseEnter: (id: string) => void;
@@ -99,6 +100,7 @@ export const OrgTableRow = memo(
     index,
     isSelected,
     isHovered,
+    eventsPropagated = 0,
     style,
     onRowClick,
     onMouseEnter,
@@ -231,6 +233,15 @@ export const OrgTableRow = memo(
           />
         </div>
 
+        {/* Events Propagated */}
+        <div className="px-1.5 py-1 text-xs">
+          {eventsPropagated > 0 ? (
+            <span className="text-[var(--text-secondary)]">{eventsPropagated}</span>
+          ) : (
+            <span className="text-[var(--text-muted)]">&mdash;</span>
+          )}
+        </div>
+
         {/* Last Signal */}
         <div className="px-1.5 py-1 text-[10px] text-[var(--text-muted)]">
           {relativeDate(row.last_signal)}
@@ -243,5 +254,6 @@ export const OrgTableRow = memo(
     prev.isSelected === next.isSelected &&
     prev.isHovered === next.isHovered &&
     prev.index === next.index &&
+    prev.eventsPropagated === next.eventsPropagated &&
     prev.row === next.row
 );

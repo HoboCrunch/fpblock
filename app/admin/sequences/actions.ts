@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { SequenceStep, SequenceSchedule } from "@/lib/types/database";
+import { getPersonIdsForEvent, type EventPersonRelation } from "@/lib/queries/event-persons";
 
 export async function updateSequenceSteps(
   sequenceId: string,
@@ -71,6 +72,29 @@ export async function enrollPersons(
     .upsert(rows, { onConflict: "sequence_id,person_id" });
   if (error) return { success: false, error: error.message };
   return { success: true };
+}
+
+export async function enrollFromEvent(
+  sequenceId: string,
+  eventId: string,
+  relation: EventPersonRelation
+) {
+  const supabase = await createClient();
+  const personIds = await getPersonIdsForEvent(supabase, eventId, relation);
+  if (personIds.length === 0) {
+    return { success: true, enrolled: 0 };
+  }
+  const rows = personIds.map((pid) => ({
+    sequence_id: sequenceId,
+    person_id: pid,
+    current_step: 0,
+    status: "active" as const,
+  }));
+  const { error } = await supabase
+    .from("sequence_enrollments")
+    .upsert(rows, { onConflict: "sequence_id,person_id" });
+  if (error) return { success: false as const, error: error.message };
+  return { success: true as const, enrolled: personIds.length };
 }
 
 export async function unenrollPerson(enrollmentId: string) {

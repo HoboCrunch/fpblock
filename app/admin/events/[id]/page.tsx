@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Tabs } from "@/components/ui/tabs";
 import Link from "next/link";
-import { Calendar, ExternalLink, CheckCircle2 } from "lucide-react";
+import { Calendar, ExternalLink } from "lucide-react";
 import type {
   Event,
   EventParticipation,
@@ -177,23 +177,33 @@ export default async function EventPage({
       (tierOrder[b.sponsor_tier || "community"] ?? 99)
   );
 
-  // Related contacts: persons from sponsoring orgs who are NOT directly in event_participations
-  const sponsorOrgIds = new Set(
-    sponsorParticipations.map((p: any) => p.organization_id).filter(Boolean)
-  );
+  // Org-affiliated contacts (via participating-org)
+  const { data: affiliationRows } = await supabase
+    .from("person_event_affiliations")
+    .select("person_id, via_organization_id")
+    .eq("event_id", id);
+
+  // Dedup rule: if a person is already a direct participant, don't list them here
   const directPersonIds = new Set(
-    (participations || []).map((p: any) => p.person_id).filter(Boolean)
+    (participations || [])
+      .map((p: any) => p.person_id)
+      .filter((pid: any): pid is string => Boolean(pid))
   );
 
-  // person_organization entries for sponsor orgs
-  const sponsorPersonOrgs = (personOrgs || []).filter(
-    (po: PersonOrganization) => sponsorOrgIds.has(po.organization_id) && !directPersonIds.has(po.person_id)
+  const affRows = (affiliationRows ?? []).filter(
+    (r) => !directPersonIds.has(r.person_id)
   );
 
-  // We need person details — collect unique person_ids
-  const relatedPersonIds = [...new Set(sponsorPersonOrgs.map((po) => po.person_id))];
+  // Group by person to aggregate via-orgs
+  const byPerson = new Map<string, string[]>();
+  for (const r of affRows) {
+    const arr = byPerson.get(r.person_id) ?? [];
+    arr.push(r.via_organization_id);
+    byPerson.set(r.person_id, arr);
+  }
 
-  // Fetch related persons if any
+  const relatedPersonIds = Array.from(byPerson.keys());
+
   let relatedPersonsMap: Record<string, Person> = {};
   if (relatedPersonIds.length > 0) {
     const { data: relatedPersons } = await supabase
@@ -205,26 +215,28 @@ export default async function EventPage({
     }
   }
 
-  // Build the org name lookup from participations
-  const orgNameMap: Record<string, string> = {};
-  for (const p of participations || []) {
-    if ((p as any).organization) {
-      orgNameMap[(p as any).organization_id] = (p as any).organization.name;
-    }
-  }
+  // Resolve via-org names
+  const viaOrgIds = Array.from(new Set(affRows.map((r) => r.via_organization_id)));
+  const viaOrgs = viaOrgIds.length > 0
+    ? (await supabase.from("organizations").select("id, name").in("id", viaOrgIds)).data ?? []
+    : [];
+  const orgNameById: Record<string, string> = Object.fromEntries(
+    viaOrgs.map((o) => [o.id, o.name])
+  );
 
   type RelatedContactRow = {
     person: Person;
-    orgName: string | null;
-    orgId: string;
+    viaOrgs: { id: string; name: string | null }[];
   };
 
-  const relatedContacts: RelatedContactRow[] = sponsorPersonOrgs
-    .filter((po) => relatedPersonsMap[po.person_id])
-    .map((po) => ({
-      person: relatedPersonsMap[po.person_id],
-      orgName: orgNameMap[po.organization_id] || null,
-      orgId: po.organization_id,
+  const relatedContactRows: RelatedContactRow[] = relatedPersonIds
+    .filter((pid) => relatedPersonsMap[pid])
+    .map((pid) => ({
+      person: relatedPersonsMap[pid]!,
+      viaOrgs: (byPerson.get(pid) ?? []).map((orgId) => ({
+        id: orgId,
+        name: orgNameById[orgId] ?? null,
+      })),
     }));
 
   // Schedule: group speakers by track (fallback to time_slot)
@@ -416,72 +428,44 @@ export default async function EventPage({
               ),
             },
 
-            // ==================== RELATED CONTACTS ====================
+            // ==================== ORG-AFFILIATED CONTACTS ====================
             {
               id: "related",
-              label: `Related (${relatedContacts.length})`,
+              label: `Org-affiliated (${relatedContactRows.length})`,
               content: (
                 <div className="p-3">
-                  {relatedContacts.length === 0 ? (
+                  {relatedContactRows.length === 0 ? (
                     <p className="text-[var(--text-muted)] text-sm py-4 text-center">
-                      No related contacts found. Persons from sponsoring organizations who
-                      are not directly participating will appear here.
+                      No org-affiliated contacts found. Persons linked to a participating
+                      organization (but not directly participating themselves) will appear
+                      here.
                     </p>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="text-left text-[var(--text-muted)] border-b border-white/[0.06]">
-                            <th className="pb-2 pr-4 font-medium">Name</th>
-                            <th className="pb-2 pr-4 font-medium">Organization</th>
-                            <th className="pb-2 pr-4 font-medium">Title</th>
-                            <th className="pb-2 font-medium">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {relatedContacts.map((rc) => (
-                            <tr
-                              key={rc.person.id}
-                              className="border-b border-white/[0.04] hover:bg-white/[0.02]"
-                            >
-                              <td className="py-2.5 pr-4">
-                                <Link
-                                  href={`/admin/persons/${rc.person.id}`}
-                                  className="text-white hover:text-[var(--accent-orange)] transition-colors"
-                                >
-                                  {rc.person.full_name}
-                                </Link>
-                              </td>
-                              <td className="py-2.5 pr-4">
-                                {rc.orgName ? (
-                                  <Link
-                                    href={`/admin/organizations/${rc.orgId}`}
-                                    className="text-[var(--text-secondary)] hover:text-white transition-colors"
-                                  >
-                                    {rc.orgName}
-                                  </Link>
-                                ) : (
-                                  <span className="text-[var(--text-muted)]">
-                                    {"\u2014"}
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-2.5 pr-4 text-[var(--text-muted)]">
-                                {rc.person.title || "\u2014"}
-                              </td>
-                              <td className="py-2.5">
-                                <button
-                                  className="inline-flex items-center gap-1.5 text-xs text-[var(--accent-orange)] hover:text-[var(--accent-orange)]/80 transition-colors"
-                                  title="Mark as confirmed participant"
-                                >
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  Mark as confirmed
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="divide-y divide-white/[0.04]">
+                      {relatedContactRows.map((row) => (
+                        <div
+                          key={row.person.id}
+                          className="flex items-center justify-between py-2"
+                        >
+                          <Link
+                            href={`/admin/persons/${row.person.id}`}
+                            className="text-white hover:text-[var(--accent-orange)] transition-colors hover:underline"
+                          >
+                            {row.person.full_name}
+                          </Link>
+                          <div className="flex gap-1 flex-wrap justify-end">
+                            {row.viaOrgs.map((o) => (
+                              <Link
+                                key={o.id}
+                                href={`/admin/organizations/${o.id}`}
+                                className="px-2 py-0.5 text-xs rounded bg-white/10 hover:bg-white/20"
+                              >
+                                via {o.name ?? "\u2014"}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

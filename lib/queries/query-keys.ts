@@ -38,4 +38,10 @@ export const queryKeys = {
     },
     stats: (id: string) => ["sequences", "stats", id] as const,
   },
+  eventAffiliations: {
+    all: ["event-affiliations"] as const,
+    byEvent: (eventId: string) => ["event-affiliations", "event", eventId] as const,
+    personIdsForEvent: (eventId: string, relation: string) =>
+      ["event-affiliations", "event", eventId, "ids", relation] as const,
+  },
 } as const;

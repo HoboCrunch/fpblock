@@ -65,6 +65,35 @@ export default async function PersonDetailPage({
     supabase.from("lists").select("id, name").order("name"),
   ]);
 
+  // ── Event affiliations (via org) ───────────────────────────────────
+  const { data: affRows } = await supabase
+    .from("person_event_affiliations")
+    .select("event_id, via_organization_id")
+    .eq("person_id", id);
+
+  const affEventIds = Array.from(
+    new Set((affRows ?? []).map((r) => r.event_id))
+  );
+  const affOrgIds = Array.from(
+    new Set((affRows ?? []).map((r) => r.via_organization_id))
+  );
+
+  const [affEventsRes, affOrgsRes] = await Promise.all([
+    affEventIds.length > 0
+      ? supabase.from("events").select("id, name").in("id", affEventIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    affOrgIds.length > 0
+      ? supabase.from("organizations").select("id, name").in("id", affOrgIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+  ]);
+
+  const eventNameById: Record<string, string> = Object.fromEntries(
+    (affEventsRes.data ?? []).map((e) => [e.id, e.name])
+  );
+  const viaOrgNameById: Record<string, string> = Object.fromEntries(
+    (affOrgsRes.data ?? []).map((o) => [o.id, o.name])
+  );
+
   // ── Org-level event participations for correlation summary ─────────
   const orgIds = (affiliations || []).map((a: any) => a.organization?.id).filter(Boolean);
   let orgEventParticipations: any[] = [];
@@ -362,6 +391,38 @@ export default async function PersonDetailPage({
             )}
           </GlassCard>
         </div>
+
+        {/* Event affiliations (via org) */}
+        {(affRows?.length ?? 0) > 0 && (
+          <div>
+            <h2 className="text-lg font-medium font-[family-name:var(--font-heading)] mb-2">
+              Event affiliations (via org) ({affRows!.length})
+            </h2>
+            <GlassCard>
+              <ul className="space-y-1 text-sm">
+                {affRows!.map((r, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center justify-between"
+                  >
+                    <Link
+                      href={`/admin/events/${r.event_id}`}
+                      className="text-[var(--accent-indigo)] hover:underline"
+                    >
+                      {eventNameById[r.event_id] ?? "—"}
+                    </Link>
+                    <Link
+                      href={`/admin/organizations/${r.via_organization_id}`}
+                      className="px-2 py-0.5 text-xs rounded bg-white/10 hover:bg-white/20"
+                    >
+                      via {viaOrgNameById[r.via_organization_id] ?? "—"}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </GlassCard>
+          </div>
+        )}
 
         {/* Organizations */}
         <div>

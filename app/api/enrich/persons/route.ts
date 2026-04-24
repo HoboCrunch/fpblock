@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { runBatchPersonEnrichment } from "@/lib/enrichment/person-pipeline";
+import { getPersonIdsForEvent } from "@/lib/queries/event-persons";
 
 export const maxDuration = 300;
 
@@ -19,6 +20,7 @@ export async function POST(request: NextRequest) {
   let body: {
     personIds?: string[];
     eventId?: string;
+    relation?: "direct" | "org_affiliated" | "either" | "both";
     organizationId?: string;
     failedOnly?: boolean;
     sourceFilter?: string;
@@ -36,6 +38,7 @@ export async function POST(request: NextRequest) {
   const {
     personIds: inputPersonIds,
     eventId,
+    relation,
     organizationId,
     failedOnly,
     sourceFilter,
@@ -50,20 +53,13 @@ export async function POST(request: NextRequest) {
     // Explicit IDs provided
     personIds = inputPersonIds;
   } else if (eventId) {
-    // All persons participating in an event
-    const { data: participations } = await supabase
-      .from("event_participations")
-      .select("person_id")
-      .eq("event_id", eventId)
-      .not("person_id", "is", null);
-
-    personIds = Array.from(
-      new Set(
-        (participations ?? [])
-          .map((p: { person_id: string | null }) => p.person_id)
-          .filter((id): id is string => id !== null)
-      )
-    );
+    // All persons participating in an event, scoped by relation
+    const eventRelation = (relation ?? "either") as
+      | "direct"
+      | "org_affiliated"
+      | "either"
+      | "both";
+    personIds = await getPersonIdsForEvent(supabase, eventId, eventRelation);
   } else if (organizationId) {
     // All persons belonging to an organization
     const { data: memberships } = await supabase
