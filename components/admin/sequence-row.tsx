@@ -3,8 +3,33 @@
 import React from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { formatDistanceToNow } from "date-fns";
 import type { SequenceWithStats } from "@/lib/queries/use-sequences";
+
+function formatDistanceToNow(date: Date): string {
+  const seconds = Math.round((Date.now() - date.getTime()) / 1000);
+  const absSeconds = Math.abs(seconds);
+  const suffix = seconds >= 0 ? "ago" : "from now";
+
+  const units: Array<[number, string]> = [
+    [60, "second"],
+    [60, "minute"],
+    [24, "hour"],
+    [30, "day"],
+    [12, "month"],
+    [Number.POSITIVE_INFINITY, "year"],
+  ];
+
+  let value = absSeconds;
+  let label = "second";
+  for (const [divisor, unit] of units) {
+    label = unit;
+    if (value < divisor) break;
+    value = Math.floor(value / divisor);
+  }
+
+  const rounded = Math.max(1, Math.round(value));
+  return `${rounded} ${label}${rounded === 1 ? "" : "s"} ${suffix}`;
+}
 
 const channelVariant: Record<string, string> = {
   email: "glass-indigo",
@@ -49,7 +74,7 @@ export const SequenceRow = React.memo(function SequenceRow({
       : 0;
 
   const updatedAt = sequence.updated_at
-    ? formatDistanceToNow(new Date(sequence.updated_at), { addSuffix: true })
+    ? formatDistanceToNow(new Date(sequence.updated_at))
     : "—";
 
   return (
