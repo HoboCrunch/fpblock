@@ -147,6 +147,28 @@ How persons and organizations relate to events. Uses exclusive-or constraint: ex
 
 **Indexes:** event_id, person_id, organization_id
 
+#### person_event_affiliations
+Indirect person↔event link: a person is affiliated with an event because they belong to an organization that participates in that event. Maintained automatically by triggers (see below); never written by application code.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| event_id | uuid FK events | CASCADE delete, NOT NULL |
+| person_id | uuid FK persons | CASCADE delete, NOT NULL |
+| via_organization_id | uuid FK organizations | CASCADE delete, NOT NULL |
+| created_at | timestamptz NOT NULL | Default now() |
+| updated_at | timestamptz NOT NULL | Default now() |
+
+**Constraints:** UNIQUE on (event_id, person_id, via_organization_id) — a person can have multiple rows for the same event when affiliated through multiple participating orgs.
+
+**Indexes:** event_id, person_id, via_organization_id, (event_id, person_id)
+
+**Triggers (migration 025):**
+- `trg_pea_sync_from_person_org` on `person_organization` (INSERT/UPDATE/DELETE) — INSERT with `is_current=true` inserts affiliations for every `event_participations` row on the same org. UPDATE of `is_current` `false→true` inserts; `true→false` is a no-op (rule B: person stays affiliated for the event they were at). UPDATE of `person_id` or `organization_id` is treated as DELETE+INSERT. DELETE removes affiliations for that `(person, via_organization_id)` pair.
+- `trg_pea_sync_from_event_participation` on `event_participations` (INSERT/DELETE) — INSERT with `organization_id IS NOT NULL` inserts affiliations for every `is_current=true` person_organization on that org. DELETE removes affiliations for that `(event_id, via_organization_id)` pair. UPDATE is a no-op (role/sponsor_tier changes don't affect affiliation).
+
+**Access pattern:** Always query through `lib/queries/event-persons.ts` → `getPersonIdsForEvent(supabase, eventId, relation)` where `relation` is `"direct" | "org_affiliated" | "either" | "both"`. Never hand-join `event_participations ↔ person_organization`.
+
 ### Initiatives
 
 #### initiatives

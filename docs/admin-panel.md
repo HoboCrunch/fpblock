@@ -64,6 +64,7 @@ Searchable, filterable list of all persons with computed fields:
 
 - **Search** — by name (trigram fuzzy search via pg_trgm)
 - **Filters** — ICP score range, Has Email, Last Interaction Status, Event, Organization
+- **Event scope** — dedicated dropdown with a two-checkbox relation toggle (`Speaker` / `Org-affiliated`). Picks from direct participants, persons affiliated through a participating org (via `person_event_affiliations`), or both. Both off = empty set. Rows show `SPK` / `ORG` badges per scope.
 - **Table columns:**
   - Name (link to detail)
   - Organization (primary org from person_organization where is_primary = true)
@@ -85,6 +86,7 @@ Full profile in glass cards:
 - **Notes** — freeform notes, bio
 - **Affiliations** — all organization memberships (current and historical) with role, role_type, is_current indicator, primary flag
 - **Events** — event participations across all events with role (speaker, attendee, etc.), talk_title, track, time_slot
+- **Event affiliations (via org)** — events this person is linked to indirectly because an org they belong to participates in the event. Each row shows event name + a `via <OrgName>` chip. Driven by `person_event_affiliations`.
 - **Interactions Timeline** — unified chronological feed of all interactions (see Interactions Timeline section below)
 - **Initiative Enrollments** — initiatives this person is enrolled in with status, priority, and scoped interaction progress
 
@@ -95,7 +97,7 @@ Full profile in glass cards:
 Searchable, filterable list of all organizations:
 
 - **Filters** — ICP range, Category, Has Signals
-- **Table columns:** ICP Score (badge), Name (link to detail), Category, People count (+N enriched indicator), Signal Count, Last Signal date, Events (with sponsor tier badges)
+- **Table columns:** ICP Score (badge), Name (link to detail), Category, People count (+N enriched indicator), Signal Count, Last Signal date, Events (with sponsor tier badges), Events Prop. (count of events this org has propagated persons into via `person_event_affiliations`, sortable)
 - Sortable by all columns
 - **Pagination** — 25 per page
 
@@ -111,6 +113,7 @@ Full profile with:
 - **Signals Timeline** — organization_signals in reverse chronological order
 - **Events** — event participations with role and sponsor tier
 - **People Roster** — persons affiliated via person_organization with role, email, LinkedIn, phone, source badge ("Enriched" for org_enrichment source), current/former status
+- **Event propagation** — stat block + list: "N persons across M events" derived from `person_event_affiliations` where `via_organization_id = this org`. Each event row shows the name + person count.
 - **Interactions Timeline** — aggregated interaction timeline across all persons in the org
 
 ## Events
@@ -131,8 +134,8 @@ Confirmed speakers from event_participations (role = "speaker"). Table columns: 
 #### Sponsors
 Sponsoring organizations from event_participations (role = "sponsor"). Table columns: Organization Name, Sponsor Tier (badge), Person Count (from affiliated persons). Links to organization detail.
 
-#### Related Contacts
-People from sponsoring/partner organizations joined via person_organization, who are not themselves confirmed event participants. Labeled "not confirmed" with an option to mark as confirmed (creates an event_participation with confirmed = true). Table columns: Name, Organization, Role, Title, ICP.
+#### Org-affiliated
+Persons linked to the event indirectly because an org they belong to participates in this event. Driven by `person_event_affiliations` (scoped to `event_id`), deduplicated against direct participants (`event_participations`) — a person only appears once, as a direct participant when applicable. Each row: person name (link to detail) + one `via <OrgName>` chip per participating org they're affiliated through. Replaces the old "Related Contacts" tab, which derived this set ad-hoc via a three-table join.
 
 #### Schedule
 Lightweight day/track/slot grid view assembled from event_participation metadata (time_slot, track, room, talk_title). Grouped by day, sorted by time within track.
@@ -217,6 +220,7 @@ Table: Name, Channel, Steps count, Persons Enrolled, Completion Rate, Initiative
 - **Step timeline** — vertical list of glass cards, each showing: step number, delay (days), action type (initial/follow_up/break_up), subject template (email only), body template preview
 - **Step editor** — add/remove/edit steps, save via server action
 - **Enrolled persons** — right sidebar showing persons with their current step and status
+- **Enroll from Event** — modal launched from the enrollment panel. Event picker + the same `Speaker` / `Org-affiliated` toggle. Bulk-enrolls every person matching `getPersonIdsForEvent(event, relation)` via the `enrollFromEvent` server action, which upserts into `sequence_enrollments` with `onConflict: sequence_id,person_id` (safe to re-run).
 
 ## Inbox
 
@@ -261,7 +265,7 @@ Tabbed interface with two tabs: Person Enrichment and Organization Enrichment.
 
 **Targets** (mutually exclusive, first-match-wins):
 - Explicit person IDs (from bulk selection on Persons page)
-- All persons from event (via event_participations)
+- All persons from event — accepts optional `relation` (`direct` / `org_affiliated` / `either` / `both`, default `either`); resolved server-side via `getPersonIdsForEvent`. The enrichment UI surfaces the same two-checkbox toggle when event scope is selected; Run button disables when both are off.
 - All persons from organization (via person_organization)
 - Failed only (enrichment_status = 'failed')
 - By source (e.g., 'org_enrichment', 'csv_import') — combined with unenriched filter
