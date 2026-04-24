@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "JB @ EthCC Cannes \u00b7 FP Block",
+  title: "JB @ Consensus Miami \u00b7 FP Block",
   icons: {
     icon: [
       {
@@ -757,7 +757,7 @@ footer {
           <div className="main-grid">
             {/* Mobile-only hero header */}
             <div className="mobile-hero">
-              <div className="pill pill-orange">EthCC &middot; Cannes 2026</div>
+              <div className="pill pill-orange">Consensus &middot; Miami 2026</div>
               <div className="hero-identity">
                 <img
                   src="/landing/jb.png"
@@ -791,7 +791,7 @@ footer {
               {/* Hero */}
               <section className="hero">
                 <div className="pill pill-orange">
-                  EthCC &middot; Cannes 2026
+                  Consensus &middot; Miami 2026
                 </div>
                 <div className="hero-identity">
                   <img
@@ -852,8 +852,8 @@ footer {
                     permanent consequences, we should talk.
                   </p>
                   <p>
-                    Coffee at Caff&egrave; Agnelli. Two minutes from the venue.
-                    No deck.
+                    Catch me at one of the FP Block events below &mdash; or
+                    drop me a line.
                   </p>
                 </div>
               </section>
@@ -889,84 +889,7 @@ footer {
             {/* Right sidebar */}
             <aside className="sidebar">
               <div className="cta-card">
-                <h3>Let&apos;s meet in Cannes</h3>
-
-                <div className="cta-location">
-                  <div className="cta-location-text">
-                    <span className="cta-location-name">
-                      Caff&egrave; Agnelli
-                    </span>
-                    <span className="cta-location-addr">
-                      5 Pl. du G&eacute;n&eacute;ral de Gaulle
-                      <br />
-                      06400 Cannes, France
-                    </span>
-                    <span className="cta-proximity">
-                      <svg
-                        width="8"
-                        height="8"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                      </svg>
-                      2 min walk from main venue
-                    </span>
-                  </div>
-                  <img
-                    src="/landing/cafe-logo.png"
-                    alt="Caff&egrave; Agnelli"
-                    className="cta-cafe-logo"
-                  />
-                </div>
-
-                <div className="cta-divider"></div>
-
-                <a
-                  href="https://calendly.com/jbcarthy-fpcomplete/ethcc-1-1"
-                  target="_blank"
-                  rel="noopener"
-                  className="btn btn-primary"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-                    <line x1="16" x2="16" y1="2" y2="6" />
-                    <line x1="8" x2="8" y1="2" y2="6" />
-                    <line x1="3" x2="21" y1="10" y2="10" />
-                  </svg>
-                  Schedule a Coffee
-                </a>
-
-                <a
-                  href="https://luma.com/6ommq5ao"
-                  target="_blank"
-                  rel="noopener"
-                  className="btn btn-ghost"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14" />
-                    <rect width="13" height="10" x="2" y="7" rx="2" ry="2" />
-                  </svg>
-                  RSVP for the Event
-                </a>
+                <h3>FP Block in Miami</h3>
 
                 <div className="cta-divider"></div>
 
@@ -975,52 +898,93 @@ footer {
                     className="event-details-heading"
                     style={{ fontSize: "15px", marginTop: 0 }}
                   >
-                    C&ocirc;te d&apos;Azur Villa with FP Block
+                    Penthouse Networking with FP Block
                   </h4>
-
-                  <h4 className="event-details-heading">
-                    Agenda &middot; 1:00 &ndash; 5:00 PM
-                  </h4>
-                  <ul className="event-agenda">
-                    <li>
-                      <span className="agenda-time">1:00 &ndash; 1:45</span>{" "}
-                      Check-in, Drinks &amp; Networking
-                    </li>
-                    <li>
-                      <span className="agenda-time">1:45 &ndash; 2:00</span>{" "}
-                      Keynote
-                    </li>
-                    <li>
-                      <span className="agenda-time">2:00 &ndash; 2:30</span>{" "}
-                      Panel Discussion
-                    </li>
-                    <li>
-                      <span className="agenda-time">2:30 &ndash; 5:00</span>{" "}
-                      Networking &amp; Interviews
-                    </li>
-                  </ul>
-
-                  <h4 className="event-details-heading">What to expect</h4>
-                  <ul className="event-expect">
-                    <li>Daytime welcome with food and drinks</li>
-                    <li>Keynote by the FP Block CEO</li>
-                    <li>One panel discussion and one fireside chat</li>
-                    <li>Intentional networking with industry leaders</li>
-                  </ul>
-
-                  <p className="event-details-tagline">
-                    A high-signal environment for strategic dialogue,
-                    relationship-building, and thoughtful exchange.
+                  <p className="event-details-intro">
+                    <strong>Daytime, 1:00 &ndash; 5:00 PM.</strong> Miami
+                    Beach penthouse with views over the city.
                   </p>
+                  <ul className="event-expect">
+                    <li>Check-in, drinks &amp; networking</li>
+                    <li>
+                      Panel discussion featuring Wesley Crook, CEO, FP Block
+                    </li>
+                    <li>Optional on-camera interviews to close out</li>
+                  </ul>
+
+                  <a
+                    href="https://luma.com/00kpa20f"
+                    target="_blank"
+                    rel="noopener"
+                    className="btn btn-primary"
+                    style={{ marginTop: "4px" }}
+                  >
+                    RSVP on Luma
+                  </a>
+
+                  <div
+                    className="cta-divider"
+                    style={{ margin: "10px 0" }}
+                  ></div>
+
+                  <h4
+                    className="event-details-heading"
+                    style={{ fontSize: "15px" }}
+                  >
+                    FP Block Private Dinner
+                  </h4>
+                  <p className="event-details-intro">
+                    <strong>
+                      Wednesday, May 6, 2026 &middot; Evening.
+                    </strong>{" "}
+                    Miami Beach (venue shared upon confirmation).
+                  </p>
+                  <ul className="event-expect">
+                    <li>
+                      Hosted by Aaron Contorer, Founder &amp; Chair, FP Block
+                    </li>
+                    <li>
+                      Curated, invite-only &mdash; founders, funds, and
+                      institutional builders
+                    </li>
+                    <li>
+                      Applications reviewed by the FP Block team directly
+                    </li>
+                  </ul>
+
+                  <a
+                    href="https://luma.com/k0y45b3p"
+                    target="_blank"
+                    rel="noopener"
+                    className="btn btn-primary"
+                    style={{ marginTop: "4px" }}
+                  >
+                    Apply for a seat
+                  </a>
                 </div>
 
-                <div className="cta-contact-row">
+                <div className="cta-divider"></div>
+
+                <h3
+                  style={{
+                    fontSize: "17px",
+                    fontWeight: 600,
+                    letterSpacing: "-0.2px",
+                    color: "var(--text)",
+                    margin: 0,
+                  }}
+                >
+                  Get in touch
+                </h3>
+
+                <div className="cta-contact-row" style={{ gap: "8px" }}>
                   <a
                     href="https://x.com/settingthetempo"
                     target="_blank"
                     rel="noopener"
                     className="icon-link"
                     aria-label="X"
+                    style={{ flex: 1, height: "44px" }}
                   >
                     <svg
                       width="16"
@@ -1037,6 +1001,7 @@ footer {
                     rel="noopener"
                     className="icon-link"
                     aria-label="LinkedIn"
+                    style={{ flex: 1, height: "44px" }}
                   >
                     <svg
                       width="16"
@@ -1048,9 +1013,27 @@ footer {
                     </svg>
                   </a>
                   <a
+                    href="https://t.me/settingthetempo"
+                    target="_blank"
+                    rel="noopener"
+                    className="icon-link"
+                    aria-label="Telegram"
+                    style={{ flex: 1, height: "44px" }}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M12 0C5.374 0 0 5.373 0 12s5.374 12 12 12 12-5.373 12-12S18.626 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394a.755.755 0 0 1-.6.295l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.643.135-.953l11.566-4.458c.538-.196 1.006.128.832.941z" />
+                    </svg>
+                  </a>
+                  <a
                     href="mailto:jbcarthy@fpcomplete.com"
                     className="icon-link"
                     aria-label="Email"
+                    style={{ flex: 1, height: "44px" }}
                   >
                     <svg
                       width="16"
@@ -1131,7 +1114,7 @@ footer {
                 FP <span>Block</span>
               </span>
               <span className="footer-copy">
-                EthCC Cannes 2026 &middot;{" "}
+                Consensus Miami 2026 &middot;{" "}
                 <a
                   href="https://fpblock.com"
                   target="_blank"

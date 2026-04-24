@@ -280,7 +280,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
   const virtualizer = useVirtualizer({
     count: filteredRows.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 36,
+    estimateSize: () => 40,
     overscan: 5,
   });
 
@@ -514,8 +514,8 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
         actions={
           <>
             <Link
-              href="/admin/enrichment"
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25"
+              href={`/admin/enrichment?organizations=${Array.from(selectedIds).join(",")}`}
+              className="px-2.5 py-1 text-xs font-medium rounded-lg bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25 whitespace-nowrap"
             >
               Enrich
             </Link>
@@ -542,20 +542,20 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
   function SortHeader({ label, field }: { label: string; field: SortField }) {
     const isActive = sortField === field;
     return (
-      <div className="px-2 py-3 font-medium">
+      <div className="px-1.5 py-2.5 font-medium">
         <button
           onClick={() => handleSort(field)}
-          className="inline-flex items-center gap-1 hover:text-white transition-colors"
+          className="inline-flex items-center gap-0.5 hover:text-white transition-colors"
         >
           {label}
           {isActive ? (
             sortDir === "desc" ? (
-              <ChevronDown className="w-3.5 h-3.5 text-[var(--accent-orange)]" />
+              <ChevronDown className="w-3 h-3 text-[var(--accent-orange)]" />
             ) : (
-              <ChevronUp className="w-3.5 h-3.5 text-[var(--accent-orange)]" />
+              <ChevronUp className="w-3 h-3 text-[var(--accent-orange)]" />
             )
           ) : (
-            <ChevronsUpDown className="w-3 h-3 opacity-40" />
+            <ChevronsUpDown className="w-2.5 h-2.5 opacity-40" />
           )}
         </button>
       </div>
@@ -575,21 +575,21 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
           {/* Single table with colgroup for consistent column widths */}
           <div className="w-full min-w-[900px]">
             {/* Sticky header */}
-            <div className="grid text-sm text-left text-[var(--text-muted)] border-b border-[var(--glass-border)]"
+            <div className="grid text-xs text-left text-[var(--text-muted)] border-b border-[var(--glass-border)]"
               style={{ gridTemplateColumns: ORG_GRID_COLS }}
             >
-              <div className="px-2 py-3 flex items-center">
+              <div className="px-2 py-2.5 flex items-center">
                 <GlassCheckbox checked={allVisibleSelected} onChange={toggleSelectAll} />
               </div>
               <SortHeader label="Name" field="name" />
               <SortHeader label="ICP" field="icp_score" />
               <SortHeader label="People" field="person_count" />
-              <div className="px-2 py-3 font-medium">Events</div>
+              <div className="px-1.5 py-2.5 font-medium">Events</div>
               <SortHeader label="Signals" field="signal_count" />
               <SortHeader label="Industry" field="industry" />
-              <SortHeader label="Employees" field="employee_count" />
-              <div className="px-2 py-3 font-medium hidden xl:block">Enrichment</div>
-              <SortHeader label="Last Signal" field="last_signal" />
+              <SortHeader label="Emp." field="employee_count" />
+              <div className="px-1.5 py-2.5 font-medium">Enrichment</div>
+              <SortHeader label="Last Sig." field="last_signal" />
             </div>
 
             {/* Virtualized scroll container */}

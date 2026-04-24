@@ -51,6 +51,13 @@ export interface Organization {
   icp_reason: string | null;
   context: string | null;
   usp: string | null;
+  industry: string | null;
+  employee_count: number | null;
+  annual_revenue: string | null;
+  founded_year: number | null;
+  hq_location: string | null;
+  funding_total: string | null;
+  latest_funding_stage: string | null;
   enrichment_status: 'none' | 'in_progress' | 'partial' | 'complete' | 'failed';
   enrichment_stages: Record<string, { status: string; at?: string; error?: string; [key: string]: unknown }>;
   last_enriched_at: string | null;

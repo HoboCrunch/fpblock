@@ -471,13 +471,27 @@ export async function runApolloEnrichment(
   try {
     const result = await enrichFromApollo(org.name, org.website);
 
-    // Update org fields that are currently missing
+    // Update org fields — fill in anything currently missing
     const updates: Record<string, unknown> = {};
     if (result.description && !org.description)
       updates.description = result.description;
     if (result.website && !org.website) updates.website = result.website;
     if (result.linkedin_url && !org.linkedin_url)
       updates.linkedin_url = result.linkedin_url;
+    if (result.industry && !org.industry)
+      updates.industry = result.industry;
+    if (result.employee_count != null && !org.employee_count)
+      updates.employee_count = result.employee_count;
+    if (result.annual_revenue && !org.annual_revenue)
+      updates.annual_revenue = result.annual_revenue;
+    if (result.founded_year != null && !org.founded_year)
+      updates.founded_year = result.founded_year;
+    if (result.hq_location && !org.hq_location)
+      updates.hq_location = result.hq_location;
+    if (result.funding_total && !org.funding_total)
+      updates.funding_total = result.funding_total;
+    if (result.latest_funding_stage && !org.latest_funding_stage)
+      updates.latest_funding_stage = result.latest_funding_stage;
 
     if (Object.keys(updates).length > 0) {
       await supabase
@@ -897,7 +911,7 @@ export async function runFullEnrichment(
     // Update enrichment stages after Apollo+Perplexity
     await updateEnrichmentStatus(supabase, orgId, 'in_progress', stageResults);
 
-    // Update org with Apollo basics (website, linkedin if missing)
+    // Update org with all Apollo/Perplexity fields that are currently missing
     const apolloUpdates: Record<string, unknown> = {};
     if (apolloResult.website && !org.website)
       apolloUpdates.website = apolloResult.website;
@@ -907,6 +921,20 @@ export async function runFullEnrichment(
       apolloUpdates.linkedin_url = apolloResult.linkedin_url;
     if (apolloResult.description && !org.description)
       apolloUpdates.description = apolloResult.description;
+    if (apolloResult.industry && !org.industry)
+      apolloUpdates.industry = apolloResult.industry;
+    if (apolloResult.employee_count != null && !org.employee_count)
+      apolloUpdates.employee_count = apolloResult.employee_count;
+    if (apolloResult.annual_revenue && !org.annual_revenue)
+      apolloUpdates.annual_revenue = apolloResult.annual_revenue;
+    if (apolloResult.founded_year != null && !org.founded_year)
+      apolloUpdates.founded_year = apolloResult.founded_year;
+    if (apolloResult.hq_location && !org.hq_location)
+      apolloUpdates.hq_location = apolloResult.hq_location;
+    if (apolloResult.funding_total && !org.funding_total)
+      apolloUpdates.funding_total = apolloResult.funding_total;
+    if (apolloResult.latest_funding_stage && !org.latest_funding_stage)
+      apolloUpdates.latest_funding_stage = apolloResult.latest_funding_stage;
 
     if (Object.keys(apolloUpdates).length > 0) {
       await supabase

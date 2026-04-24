@@ -1,10 +1,27 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useMemo, useRef, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { OrgStatusIcons, PersonStatusIcons } from "./status-icons";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, Check } from "lucide-react";
+
+function GlassCheckbox({ checked, onClick }: { checked: boolean; onClick?: (e: React.MouseEvent) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "w-4 h-4 rounded border flex items-center justify-center transition-all duration-150 flex-shrink-0",
+        checked
+          ? "bg-[var(--accent-orange)]/20 border-[var(--accent-orange)]/60 text-[var(--accent-orange)]"
+          : "border-white/20 bg-white/[0.04] hover:border-white/40"
+      )}
+    >
+      {checked && <Check className="w-3 h-3" />}
+    </button>
+  );
+}
 
 // ---------- Types ----------
 
@@ -145,25 +162,27 @@ export function EntityTable({
 }: EntityTableProps) {
   const lastClickedIndex = useRef<number | null>(null);
   const showCheckboxes = mode === "list";
+  const [isPending, startTransition] = useTransition();
 
-  const allIds = items.map((item) => item.id);
-  const allSelected =
-    showCheckboxes &&
-    selectedIds &&
-    allIds.length > 0 &&
-    allIds.every((id) => selectedIds.has(id));
+  const allIds = useMemo(() => items.map((item) => item.id), [items]);
+  const allSelected = useMemo(() => {
+    if (!showCheckboxes || !selectedIds || allIds.length === 0) return false;
+    if (selectedIds.size < allIds.length) return false;
+    return allIds.every((id) => selectedIds.has(id));
+  }, [allIds, selectedIds, showCheckboxes]);
 
   const toggleSelectAll = useCallback(() => {
     if (!onSelectionChange || !selectedIds) return;
-    if (allSelected) {
+    const shouldDeselect = allSelected;
+    startTransition(() => {
       const next = new Set(selectedIds);
-      allIds.forEach((id) => next.delete(id));
+      if (shouldDeselect) {
+        for (const id of allIds) next.delete(id);
+      } else {
+        for (const id of allIds) next.add(id);
+      }
       onSelectionChange(next);
-    } else {
-      const next = new Set(selectedIds);
-      allIds.forEach((id) => next.add(id));
-      onSelectionChange(next);
-    }
+    });
   }, [allSelected, allIds, selectedIds, onSelectionChange]);
 
   const handleRowCheck = useCallback(
@@ -207,12 +226,7 @@ export function EntityTable({
             <tr>
               {showCheckboxes && (
                 <th className="px-3 py-2 w-8">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={toggleSelectAll}
-                    className="accent-[var(--accent-orange)] h-3.5 w-3.5"
-                  />
+                  <GlassCheckbox checked={isPending ? !allSelected : !!allSelected} onClick={toggleSelectAll} />
                 </th>
               )}
               {isOrg ? (
@@ -319,14 +333,12 @@ export function EntityTable({
                 >
                   {showCheckboxes && (
                     <td className="px-3 py-1 w-8">
-                      <input
-                        type="checkbox"
+                      <GlassCheckbox
                         checked={isSelected}
-                        onChange={(e) => {
+                        onClick={(e) => {
                           e.stopPropagation();
-                          handleRowCheck(index, e.nativeEvent instanceof MouseEvent ? (e.nativeEvent as MouseEvent).shiftKey : false);
+                          handleRowCheck(index, e.shiftKey);
                         }}
-                        className="accent-[var(--accent-orange)] h-3.5 w-3.5"
                       />
                     </td>
                   )}

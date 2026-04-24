@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   Search,
@@ -19,6 +20,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { GlassInput } from "@/components/ui/glass-input";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { Badge } from "@/components/ui/badge";
+import { AddToListDropdown } from "@/components/admin/add-to-list-dropdown";
 import { cn } from "@/lib/utils";
 
 import { PersonTableRow, GlassCheckbox, PERSON_GRID_COLS } from "./person-table-row";
@@ -746,12 +748,13 @@ export function PersonsTableClient({
         stats={selectionStats}
         actions={
           <div className="flex items-center gap-2">
-            <Badge variant="glass-orange" className="cursor-pointer hover:opacity-80">
-              Add to List
-            </Badge>
-            <Badge variant="glass-orange" className="cursor-pointer hover:opacity-80">
+            <AddToListDropdown personIds={Array.from(selectedIds)} />
+            <Link
+              href={`/admin/enrichment?persons=${Array.from(selectedIds).join(",")}`}
+              className="px-2.5 py-1 text-xs font-medium rounded-lg bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25 whitespace-nowrap"
+            >
               Enrich
-            </Badge>
+            </Link>
           </div>
         }
       />

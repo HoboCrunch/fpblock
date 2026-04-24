@@ -491,10 +491,13 @@ function ListsIndex({
             {lists.map((list) => {
               const count = list.person_list_items?.[0]?.count ?? 0;
               return (
-                <button
+                <div
                   key={list.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onSelect(list.id)}
-                  className="w-full flex items-center gap-4 px-5 py-4 hover:bg-white/[0.04] transition-all duration-200 text-left group"
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onSelect(list.id); }}
+                  className="w-full flex items-center gap-4 px-5 py-4 hover:bg-white/[0.04] transition-all duration-200 text-left group cursor-pointer"
                 >
                   <div className="h-9 w-9 rounded-lg bg-[var(--accent-orange)]/10 flex items-center justify-center shrink-0">
                     <Users className="h-4 w-4 text-[var(--accent-orange)]" />
@@ -533,7 +536,7 @@ function ListsIndex({
                   </button>
 
                   <ChevronRight className="h-4 w-4 text-[var(--text-muted)] shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" />
-                </button>
+                </div>
               );
             })}
           </div>

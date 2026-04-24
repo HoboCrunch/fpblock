@@ -69,8 +69,9 @@ export const NavItem = memo(function NavItem({
         {/* label */}
         <span
           className={cn(
-            "truncate transition-all duration-200",
-            (collapsed || isTablet) && "lg:opacity-0 lg:w-0 lg:overflow-hidden max-lg:opacity-0 max-lg:w-0 max-lg:overflow-hidden",
+            "truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            (collapsed || isTablet) && "lg:opacity-0 lg:w-0 lg:overflow-hidden lg:ml-0 max-lg:opacity-0 max-lg:w-0 max-lg:overflow-hidden max-lg:ml-0",
+            !(collapsed || isTablet) && "lg:opacity-100 lg:w-auto lg:ml-0",
             // on mobile overlay always show
             "max-md:!opacity-100 max-md:!w-auto"
           )}

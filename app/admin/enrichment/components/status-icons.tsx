@@ -22,8 +22,12 @@ export interface OrgStatusIconsProps {
   > | null;
   mode?: "static" | "live";
   activeStage?: string;
-  /** Org-level data used to infer results for legacy stages without counts */
-  orgData?: { icp_score?: number | null; description?: string | null } | null;
+  /** Org-level data — the actual source of truth for whether stages produced results */
+  orgData?: {
+    icp_score?: number | null;
+    description?: string | null;
+    enriched_person_count?: number;
+  } | null;
 }
 
 const ORG_STAGE_ICONS: { key: string; icon: LucideIcon; label: string }[] = [
@@ -59,33 +63,25 @@ function stageColor(
 function stageHasResults(
   key: string,
   stage: { status?: string; [key: string]: unknown },
-  orgData?: { icp_score?: number | null; description?: string | null } | null
+  orgData?: { icp_score?: number | null; description?: string | null; enriched_person_count?: number } | null
 ): boolean {
   if (stage.status !== "completed") return false;
 
-  // People Finder: check `found` count
+  // Derive from actual data on the org, not JSONB counts.
+
   if (key === "people_finder") {
-    if (typeof stage.found === "number") return stage.found > 0;
-    if (typeof stage.people_found === "number") return (stage.people_found as number) > 0;
-    // Legacy data without found field — default to gray (many had 0 results)
-    return false;
+    // Truth: person_organization links with source="org_enrichment"
+    return (orgData?.enriched_person_count ?? 0) > 0;
   }
 
-  // Gemini: check `signals` count, fall back to icp_score presence
   if (key === "gemini") {
-    if (typeof stage.signals === "number") return stage.signals > 0;
-    if (typeof stage.icp_score === "number") return true;
-    // Legacy: if org has an ICP score, gemini likely produced results
-    if (orgData?.icp_score != null && orgData.icp_score > 0) return true;
-    return false;
+    // Truth: org has an ICP score
+    return orgData?.icp_score != null && orgData.icp_score > 0;
   }
 
-  // Apollo / Perplexity: check `found`, fall back to org description
   if (key === "apollo" || key === "perplexity") {
-    if (typeof stage.found === "number") return stage.found > 0;
-    // Legacy: if org has a description, these stages likely produced data
-    if (orgData?.description) return true;
-    return false;
+    // Truth: org has a description (either stage could have provided it)
+    return !!orgData?.description;
   }
 
   return true;

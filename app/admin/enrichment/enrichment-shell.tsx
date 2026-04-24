@@ -348,7 +348,10 @@ export function EnrichmentShell() {
       }
       if (matches) matching.add(item.id);
     }
-    setSelectedIds(matching);
+    setSelectedIds((prev) => {
+      if (prev.size === matching.size && [...matching].every((id) => prev.has(id))) return prev;
+      return matching;
+    });
   }, [target, allItems, icpThreshold, eventId]);
 
   function handleSelectionChange(ids: Set<string>) {
@@ -365,7 +368,7 @@ export function EnrichmentShell() {
     setCenterState("list");
     setSelectedIds(new Set());
     setFilters({ ...EMPTY_FILTERS });
-    setTarget("unenriched");
+    setTarget("selected");
     setViewingJobId(null);
     setResultStats(undefined);
     setResultOutcomes(new Map());
@@ -532,7 +535,7 @@ export function EnrichmentShell() {
         body: JSON.stringify({ jobId: activeJobId }),
       });
     }
-    abortControllerRef.current?.abort();
+    abortControllerRef.current?.abort("User cancelled enrichment");
   }
 
   // =========================================================================

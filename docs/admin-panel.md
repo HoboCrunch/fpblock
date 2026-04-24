@@ -310,6 +310,8 @@ All stages are independently toggleable — Full Pipeline can be deselected to r
 
 **Retry flow:** Job detail pages link to `/admin/enrichment?retry={jobId}`, which auto-selects the org tab and pre-picks the incomplete orgs from that job. The pipeline skips already-completed stages on re-runs.
 
+**Selection behavior:** Switching between the Persons and Organizations tabs clears the current selection and resets the target to "Selected items" — tab switching never auto-populates the selection. Presets ("Never enriched", "Failed / Incomplete", "ICP below threshold", "from event", etc.) explicitly populate selection when chosen. Row selection uses the shared `GlassCheckbox` (grey fill, orange accent on toggle) matching the Organizations and Persons pages.
+
 **Preview list:** Shows matching organizations before running (includes enrichment status column)
 
 **Real-time progress:** Per-stage icon columns showing real-time status for each org:

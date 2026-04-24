@@ -8,10 +8,11 @@ import { OrgStatusIcons } from "@/app/admin/enrichment/components/status-icons";
 import { cn } from "@/lib/utils";
 import type { OrgRow } from "./organizations-table-client";
 
-export const ORG_GRID_COLS = "40px minmax(160px,2fr) 56px 72px minmax(120px,1.5fr) 64px minmax(80px,1fr) 80px minmax(80px,1fr) 80px";
+export const ORG_GRID_COLS =
+  "32px minmax(150px,2.5fr) 48px 56px minmax(90px,1.2fr) 48px minmax(70px,1fr) 64px 80px 64px";
 
 // ------------------------------------------------------------------
-// Helpers (duplicated to keep this module self-contained)
+// Helpers
 // ------------------------------------------------------------------
 
 function icpBadgeVariant(score: number | null) {
@@ -21,23 +22,16 @@ function icpBadgeVariant(score: number | null) {
   return "default";
 }
 
-const EMPLOYEE_BUCKETS = [
-  { value: "1-10", label: "1-10", min: 1, max: 10 },
-  { value: "11-50", label: "11-50", min: 11, max: 50 },
-  { value: "51-200", label: "51-200", min: 51, max: 200 },
-  { value: "201-500", label: "201-500", min: 201, max: 500 },
-  { value: "501-1000", label: "501-1000", min: 501, max: 1000 },
-  { value: "1000+", label: "1000+", min: 1001, max: Infinity },
-];
-
 function employeeBucket(count: number | string | null): string {
   if (count === null || count === undefined) return "\u2014";
   const n = typeof count === "string" ? parseInt(count, 10) : count;
   if (isNaN(n)) return typeof count === "string" ? count : "\u2014";
-  for (const b of EMPLOYEE_BUCKETS) {
-    if (n >= b.min && n <= b.max) return b.label;
-  }
-  return `${n}`;
+  if (n <= 10) return "1-10";
+  if (n <= 50) return "11-50";
+  if (n <= 200) return "51-200";
+  if (n <= 500) return "201-500";
+  if (n <= 1000) return "501-1k";
+  return "1k+";
 }
 
 function relativeDate(dateStr: string | null): string {
@@ -54,8 +48,16 @@ function relativeDate(dateStr: string | null): string {
   return `${Math.floor(days / 365)}y ago`;
 }
 
+function truncateCategory(cat: string): string {
+  if (cat.length <= 18) return cat;
+  // Shorten at " / " boundary if present
+  const slash = cat.indexOf(" / ");
+  if (slash > 0 && slash <= 18) return cat.slice(0, slash);
+  return cat.slice(0, 16) + "…";
+}
+
 // ------------------------------------------------------------------
-// GlassCheckbox (inlined to avoid circular dep)
+// GlassCheckbox
 // ------------------------------------------------------------------
 
 function GlassCheckbox({ checked, onClick }: { checked: boolean; onClick?: (e: React.MouseEvent) => void }) {
@@ -106,7 +108,7 @@ export const OrgTableRow = memo(
     return (
       <div
         role="row"
-        className={`grid items-center text-sm border-b border-white/[0.04] transition-all duration-150 cursor-pointer ${
+        className={`grid items-center text-sm border-b border-white/[0.04] cursor-pointer ${
           isHovered ? "bg-white/[0.05]" : "hover:bg-white/[0.03]"
         } ${isSelected ? "bg-[var(--accent-orange)]/[0.04]" : ""}`}
         style={{ ...style, gridTemplateColumns: ORG_GRID_COLS }}
@@ -119,7 +121,7 @@ export const OrgTableRow = memo(
         onMouseLeave={onMouseLeave}
       >
         {/* Checkbox */}
-        <div className="px-2 py-2 flex items-center">
+        <div className="px-2 py-1.5 flex items-center">
           <GlassCheckbox
             checked={isSelected}
             onClick={(e) => {
@@ -130,100 +132,112 @@ export const OrgTableRow = memo(
         </div>
 
         {/* Logo + Name + Category */}
-        <div className="px-2 py-2 min-w-0">
-          <div className="flex items-start gap-2">
+        <div className="px-2 py-1 min-w-0" title={`${row.name}${row.category ? ` — ${row.category}` : ""}`}>
+          <div className="flex items-center gap-1.5 min-w-0">
             {row.logo_url ? (
               <Image
                 src={row.logo_url}
-                alt={row.name}
-                width={24}
-                height={24}
-                className="w-6 h-6 rounded object-cover flex-shrink-0 mt-0.5"
+                alt=""
+                width={20}
+                height={20}
+                className="w-5 h-5 rounded object-cover flex-shrink-0"
+                unoptimized
               />
             ) : (
-              <div className="w-6 h-6 rounded bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[10px] font-bold text-[var(--text-muted)] flex-shrink-0 mt-0.5">
+              <div className="w-5 h-5 rounded bg-white/[0.06] flex items-center justify-center text-[9px] font-medium text-[var(--text-muted)] flex-shrink-0">
                 {row.name.charAt(0).toUpperCase()}
               </div>
             )}
-            <div className="min-w-0">
-              <span className="text-xs font-medium text-white truncate block">
-                {row.name}
-              </span>
+            <div className="min-w-0 leading-tight">
+              <div className="text-xs font-medium text-white truncate">{row.name}</div>
               {row.category && (
-                <Badge variant="default" className="text-[10px] mt-0.5">{row.category}</Badge>
+                <div className="text-[10px] text-[var(--text-muted)] truncate">{truncateCategory(row.category)}</div>
               )}
             </div>
           </div>
         </div>
 
         {/* ICP */}
-        <div className="px-2 py-2">
+        <div className="px-1 py-1">
           {row.icp_score !== null ? (
-            <Badge variant={icpBadgeVariant(row.icp_score)}>
+            <Badge variant={icpBadgeVariant(row.icp_score)} className="text-[10px] px-1.5 py-0">
               {row.icp_score}
             </Badge>
+          ) : (
+            <span className="text-[var(--text-muted)] text-xs">&mdash;</span>
+          )}
+        </div>
+
+        {/* People */}
+        <div className="px-1.5 py-1 text-xs">
+          {row.person_count > 0 ? (
+            <span className={row.enriched_person_count > 0 ? "text-[var(--accent-orange)]" : "text-[var(--text-secondary)]"}>
+              {row.person_count}
+            </span>
           ) : (
             <span className="text-[var(--text-muted)]">&mdash;</span>
           )}
         </div>
 
-        {/* People */}
-        <div className="px-2 py-2 text-[var(--text-secondary)]">
-          {row.person_count}
-          {row.enriched_person_count > 0 && (
-            <span className="text-[var(--accent-orange)] ml-1">
-              ({row.enriched_person_count}&uarr;)
-            </span>
-          )}
-        </div>
-
         {/* Events */}
-        <div className="px-2 py-2 min-w-0">
+        <div className="px-1.5 py-1 min-w-0">
           <div className="flex flex-wrap gap-1">
-            {row.events.slice(0, 3).map((ev) => (
+            {row.events.slice(0, 2).map((ev) => (
               <Badge
                 key={ev.id || `${ev.name}-${ev.role}`}
-                variant={ev.tier ? (ev.tier as string) : "glass-indigo"}
-                className="text-[10px]"
+                variant={ev.tier ? (ev.tier as string) : "default"}
+                className="text-[10px] px-1.5 py-0 truncate max-w-[70px]"
               >
-                {ev.name}{ev.tier ? `: ${ev.tier}` : ""}
+                {ev.name.length > 10 ? ev.name.slice(0, 10) + "…" : ev.name}
               </Badge>
             ))}
-            {row.events.length > 3 && (
-              <span className="text-[10px] text-[var(--text-muted)]">+{row.events.length - 3}</span>
+            {row.events.length > 2 && (
+              <span className="text-[10px] text-[var(--text-muted)]">+{row.events.length - 2}</span>
             )}
-            {row.events.length === 0 && <span className="text-[var(--text-muted)]">&mdash;</span>}
+            {row.events.length === 0 && <span className="text-[var(--text-muted)] text-xs">&mdash;</span>}
           </div>
         </div>
 
         {/* Signals */}
-        <div className="px-2 py-2 text-[var(--text-secondary)]">
-          {row.signal_count}
+        <div className="px-1.5 py-1 text-xs">
+          {row.signal_count > 0 ? (
+            <span className="text-[var(--text-secondary)]">{row.signal_count}</span>
+          ) : (
+            <span className="text-[var(--text-muted)]">&mdash;</span>
+          )}
         </div>
 
         {/* Industry */}
-        <div className="px-2 py-2 text-[var(--text-muted)] truncate">
-          {row.industry || "\u2014"}
+        <div className="px-1.5 py-1 min-w-0">
+          <span className="text-[10px] text-[var(--text-muted)] truncate block">
+            {row.industry || "\u2014"}
+          </span>
         </div>
 
         {/* Employees */}
-        <div className="px-2 py-2 text-[var(--text-muted)]">
+        <div className="px-1.5 py-1 text-[10px] text-[var(--text-muted)]">
           {employeeBucket(row.employee_count)}
         </div>
 
         {/* Enrichment Stages */}
-        <div className="px-2 py-2 hidden xl:block">
-          <OrgStatusIcons stages={row.enrichment_stages} />
+        <div className="px-1.5 py-1">
+          <OrgStatusIcons
+            stages={row.enrichment_stages}
+            orgData={{
+              icp_score: row.icp_score,
+              description: row.description,
+              enriched_person_count: row.enriched_person_count,
+            }}
+          />
         </div>
 
         {/* Last Signal */}
-        <div className="px-2 py-2 text-[var(--text-muted)]">
+        <div className="px-1.5 py-1 text-[10px] text-[var(--text-muted)]">
           {relativeDate(row.last_signal)}
         </div>
       </div>
     );
   },
-  // Custom comparison: only re-render when meaningful props change
   (prev, next) =>
     prev.row.id === next.row.id &&
     prev.isSelected === next.isSelected &&

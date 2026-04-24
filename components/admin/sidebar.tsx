@@ -85,16 +85,18 @@ export const Sidebar = memo(function Sidebar({
   return (
     <>
       {/* mobile backdrop */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300"
-          onClick={onClose}
-        />
-      )}
+      <div
+        className={cn(
+          "fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden sidebar-backdrop",
+          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+        onClick={onClose}
+      />
 
       <aside
         className={cn(
-          "h-screen flex flex-col shrink-0 transition-all duration-300 ease-in-out",
+          "h-screen flex flex-col shrink-0 sidebar-panel",
+          "transition-[width] duration-300 cubic-bezier(0.32,0.72,0,1)",
           "bg-[var(--glass-bg)]/95 backdrop-blur-xl border-r border-[var(--glass-border)]",
           collapsed ? "w-16" : "w-[248px]",
           "max-lg:w-16",
@@ -194,33 +196,32 @@ export const Sidebar = memo(function Sidebar({
                   </div>
                 </div>
 
-                {/* event sub-items */}
-                {item.hasSubItems && eventsOpen && !effectiveCollapsed && (
-                  <div
-                    className={cn(
-                      "ml-5 pl-3 border-l border-[var(--glass-border)]/60 mt-0.5 mb-1.5 flex flex-col gap-0.5 max-lg:hidden",
-                      "animate-[fadeSlideDown_0.2s_ease-out]"
-                    )}
-                  >
-                    {events.map((event) => {
-                      const eventHref = `/admin/events/${event.id}`;
-                      const eventActive = pathname === eventHref;
-                      return (
-                        <Link
-                          key={event.id}
-                          href={eventHref}
-                          onClick={handleNavClick}
-                          className={cn(
-                            "text-xs px-2.5 py-1.5 rounded-md transition-all duration-200 truncate",
-                            eventActive
-                              ? "text-[var(--accent-orange)] bg-[var(--accent-orange)]/[0.08] font-medium"
-                              : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/[0.03]"
-                          )}
-                        >
-                          {event.name}
-                        </Link>
-                      );
-                    })}
+                {/* event sub-items — always rendered, animated via grid rows */}
+                {item.hasSubItems && !effectiveCollapsed && (
+                  <div className={cn("subnav-grid max-lg:hidden", eventsOpen && "open")}>
+                    <div className="subnav-inner">
+                      <div className="ml-5 pl-3 border-l border-[var(--glass-border)]/60 mt-0.5 mb-1.5 flex flex-col gap-0.5">
+                        {events.map((event) => {
+                          const eventHref = `/admin/events/${event.id}`;
+                          const eventActive = pathname === eventHref;
+                          return (
+                            <Link
+                              key={event.id}
+                              href={eventHref}
+                              onClick={handleNavClick}
+                              className={cn(
+                                "text-xs px-2.5 py-1.5 rounded-md transition-all duration-200 truncate",
+                                eventActive
+                                  ? "text-[var(--accent-orange)] bg-[var(--accent-orange)]/[0.08] font-medium"
+                                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/[0.03]"
+                              )}
+                            >
+                              {event.name}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

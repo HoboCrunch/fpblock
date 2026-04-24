@@ -1,0 +1,441 @@
+record_type,name,title,company,title_secondary,company_secondary,sponsor_tier,sponsor_tier_label,is_virtual_speaker,twitter,website,linkedin,profile_url
+Sponsor,Anchorage Digital,,,,,5 Block,Platinum (5 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-anchorage-digital
+Sponsor,GoMining,,,,,5 Block,Platinum (5 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-gomining
+Sponsor,Grayscale,,,,,5 Block,Platinum (5 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-grayscale
+Sponsor,OKX,,,,,5 Block,Platinum (5 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-okx-chain
+Sponsor,Solana,,,,,5 Block,Platinum (5 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-solana
+Sponsor,Acronym Foundation,,,,,4 Block,Gold (4 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-acronym-foundation
+Sponsor,Bullish,,,,,4 Block,Gold (4 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-bullish
+Sponsor,Alvarez & Marsal | Crypto,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-alvarez-marsal-crypto
+Sponsor,AULT Blockchain,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-ault-blockchain
+Sponsor,"Bridge, a Stripe Company",,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-bridge-a-stripe-company
+Sponsor,Canton,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-canton
+Sponsor,ChangeNOW,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-changenow
+Sponsor,Coinbase,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-coinbase
+Sponsor,CoinDesk Data,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-coindesk-data
+Sponsor,CoinDesk Indices,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-coindesk-indices
+Sponsor,EasyA,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-easya
+Sponsor,Galaxy,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-galaxy
+Sponsor,Google Cloud,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-google-cloud
+Sponsor,JPEG Trading,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-jpeg-trading
+Sponsor,Midnight,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-midnight
+Sponsor,Paradigm,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-paradigm
+Sponsor,Paxos,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-paxos
+Sponsor,PwC,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-pwc
+Sponsor,Ripple,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-ripple
+Sponsor,Stand with Crypto,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-stand-with-crypto
+Sponsor,Virgo.co,,,,,3 Block,Silver (3 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-virgo
+Sponsor,American Bitcoin,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-american-bitcoin-2
+Sponsor,Arculus,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-arculus
+Sponsor,Babylon,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-babylon
+Sponsor,BitGo,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-bitgo-2
+Sponsor,BitMart US,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-bitmart-us
+Sponsor,Broadridge,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-broadridge
+Sponsor,Cahill,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-cahill
+Sponsor,Canaccord Genuity,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-canaccord-genuity
+Sponsor,Celo,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-celo
+Sponsor,Circle,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-circle
+Sponsor,EDX Markets,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-edx-markets
+Sponsor,Fidelity Digital Assets,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-fidelity-digital-assets
+Sponsor,GIWA by Upbit,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-giwa-by-upbit
+Sponsor,Hedera,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-hedera
+Sponsor,Hypernative,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-hypernative
+Sponsor,Kinexys by J.P. Morgan,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-jp-morgan
+Sponsor,Komainu,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-komainu
+Sponsor,KPMG,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-kpmg
+Sponsor,Ledn,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-ledn
+Sponsor,LIMITED,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-limited
+Sponsor,Mesta,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-mesta
+Sponsor,MoonPay,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-moonpay-2
+Sponsor,Morgan Stanley,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-morgan-stanley-2
+Sponsor,OpenFX,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-openfx
+Sponsor,Optimism,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-optimism
+Sponsor,Orca,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-orca
+Sponsor,Polkadot,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-polkadot
+Sponsor,Polymarket,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-polymarket
+Sponsor,Robinhood,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-robinhood
+Sponsor,Sui,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-sui
+Sponsor,Tether,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-tether
+Sponsor,Uniswap Labs,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-uniswap-labs
+Sponsor,Wintermute,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-wintermute
+Sponsor,Xsolla,,,,,2 Block,Bronze (2 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-xsolla
+Sponsor,10102,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-10102
+Sponsor,Alchemy Pay,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-alchemy-pay
+Sponsor,AlloyX Group,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-alloyx-group
+Sponsor,AML RightSource,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-aml-rightsource
+Sponsor,Arista,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-arista
+Sponsor,ATB Cormark Capital Markets,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-atb
+Sponsor,Avahi,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-avahi
+Sponsor,AVAX One,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-avax-one-technology-ltd
+Sponsor,Avelacom,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-avelacom
+Sponsor,Bakkt,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-bakkt
+Sponsor,Bequant,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-bequant
+Sponsor,Bitwave,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-bitwave
+Sponsor,Blockaid,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-blockaid
+Sponsor,Blockdaemon,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-blockdaemon
+Sponsor,Bloq,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-bloq
+Sponsor,BNY,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-bny
+Sponsor,Boerse Stuttgart Digital,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-boerse-stuttgart-digital
+Sponsor,Brave,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-brave
+Sponsor,Calamos Investments,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-calamos-investments
+Sponsor,Canary Capital,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-canary-capital
+Sponsor,Celsius Network,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-celsius-network
+Sponsor,Chainalysis,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-chainalysis
+Sponsor,Chainlink,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-chainlink
+Sponsor,Chiliz,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-chiliz
+Sponsor,Clearpool,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-clearpool
+Sponsor,Cloudflare,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-cloudflare
+Sponsor,Coincover,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-coincover
+Sponsor,Copper,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-copper
+Sponsor,Credora,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-credora
+Sponsor,CrossMint,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-crossmint
+Sponsor,Crypto.com,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-cryptocom
+Sponsor,CryptoQuant,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-cryptoquant
+Sponsor,Custodia Bank,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-custodia-bank
+Sponsor,dYdX,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-dydx
+Sponsor,Elliptic,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-elliptic
+Sponsor,eToro,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-etoro
+Sponsor,Ethena,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-ethena
+Sponsor,Euler,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-euler
+Sponsor,Exodus,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-exodus
+Sponsor,Figure,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-figure
+Sponsor,Fireblocks,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-fireblocks
+Sponsor,FIS,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-fis
+Sponsor,Flare,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-flare
+Sponsor,Flashbots,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-flashbots
+Sponsor,Fold,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-fold
+Sponsor,Fordefi,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-fordefi
+Sponsor,Gemini,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-gemini
+Sponsor,Glassnode,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-glassnode
+Sponsor,Goldfinch,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-goldfinch
+Sponsor,Hashkey,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-hashkey
+Sponsor,Hex Trust,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-hex-trust
+Sponsor,Hogan Lovells,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-hogan-lovells
+Sponsor,Immunefi,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-immunefi
+Sponsor,Injective,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-injective
+Sponsor,Interchain Foundation,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-interchain-foundation
+Sponsor,Iofinnet,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-iofinnet
+Sponsor,Kraken,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-kraken
+Sponsor,Ledger,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-ledger
+Sponsor,Lido,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-lido
+Sponsor,Liqtech,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-liqtech
+Sponsor,Liquid Collective,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-liquid-collective
+Sponsor,Lumia,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-lumia
+Sponsor,Maple Finance,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-maple-finance
+Sponsor,Matrixport,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-matrixport
+Sponsor,Mercuryo,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-mercuryo
+Sponsor,Mesh,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-mesh
+Sponsor,Messari,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-messari
+Sponsor,MetaMask,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-metamask
+Sponsor,Moody's,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-moodys
+Sponsor,Morpho,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-morpho
+Sponsor,Near Protocol,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-near-protocol
+Sponsor,Nexo,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-nexo
+Sponsor,Nuvei,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-nuvei
+Sponsor,Oppenheimer & Co. Inc.,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-oppenheimer-co-inc
+Sponsor,OVHcloud US,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-ovhcloud-us
+Sponsor,OwlPay,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-owlpay
+Sponsor,PAX Markets,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-pax-markets
+Sponsor,Paydao,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-paydao
+Sponsor,PayPal,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-paypal-2
+Sponsor,Persona,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-persona
+Sponsor,POSX,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-posx
+Sponsor,PrimeDelta,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-prime-delta
+Sponsor,Quicknode,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-quicknode
+Sponsor,Reliant,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-reliant
+Sponsor,RGCIS,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-rgcis
+Sponsor,Rise,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-rise-works-inc
+Sponsor,Roam,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-roam
+Sponsor,Ropes & Gray LLP,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-ropes-gray-llp
+Sponsor,S&P Global,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-sp-global-market-intelligence
+Sponsor,Shift Markets,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-shift-markets
+Sponsor,Solana Company (NASDAQ: HSDT),,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-solana-company-nasdaq-hsdt
+Sponsor,Solana Mobile,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-solana-mobile
+Sponsor,SonarX,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-sonarx
+Sponsor,Sovos Compliance,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-sovos-compliance
+Sponsor,Sphere State Group,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-sphere-state-group
+Sponsor,Stables,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-stables
+Sponsor,Steptoe LLP,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-steptoe-llp
+Sponsor,Tatum,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-tatum
+Sponsor,The Best Event,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-the-best-event
+Sponsor,The Graph,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-the-graph
+Sponsor,The Sia Foundation,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-the-sia-foundation
+Sponsor,Tokenable,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-tokenable
+Sponsor,TradeStars,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-tradestars
+Sponsor,Travls.io,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-travlsio
+Sponsor,TRM Labs,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-trm-labs
+Sponsor,tx,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-tx
+Sponsor,UTGL,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-utgl
+Sponsor,Utila,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-utila
+Sponsor,Voltage,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-voltage
+Sponsor,Walkers,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-walkers
+Sponsor,Willkie Farr & Gallagher LLP,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-wilkie-farr-gallagher-llp-2
+Sponsor,Withers,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-withers
+Sponsor,Withum,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-withum
+Sponsor,World Gold Council,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-world-gold-council
+Sponsor,Yellow,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-yellow
+Sponsor,Yieldz,,,,,1 Block,Supporter (1 Block),,,,,https://consensus.coindesk.com/agenda/sponsor/-yieldz
+Community & Marketing Partner,10x Research,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-10x-research
+Community & Marketing Partner,Akindo,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-akindo
+Community & Marketing Partner,AllConfsBot,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-allconfsbot
+Community & Marketing Partner,AllSpark Research,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-allspark-research-2
+Community & Marketing Partner,ALTA,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-alta
+Community & Marketing Partner,Amphi,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-amphi
+Community & Marketing Partner,BackersStage,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-backersstage
+Community & Marketing Partner,Bankless,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-bankless
+Community & Marketing Partner,BeInCrypto,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-beincrypto
+Community & Marketing Partner,Bitcoin Magazine,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-bitcoin-magazine
+Community & Marketing Partner,Block & Order,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-block-order
+Community & Marketing Partner,Blockchain Association,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-blockchain-association
+Community & Marketing Partner,Blockchain Research Institute,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-blockchain-research-institute
+Community & Marketing Partner,Blockworks,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-blockworks
+Community & Marketing Partner,BTC Inc.,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-btc-inc
+Community & Marketing Partner,Cointelegraph,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-cointelegraph
+Community & Marketing Partner,Decrypt,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-decrypt
+Community & Marketing Partner,DeFi Education Fund,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-defi-education-fund
+Community & Marketing Partner,DeFi Prime,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-defi-prime
+Community & Marketing Partner,DeFiLlama,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-defillama
+Community & Marketing Partner,Delphi Digital,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-delphi-digital
+Community & Marketing Partner,Deribit Insights,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-deribit-insights
+Community & Marketing Partner,Distributed,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-distributed
+Community & Marketing Partner,DL News,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-dl-news
+Community & Marketing Partner,Dragonfly,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-dragonfly
+Community & Marketing Partner,Empire,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-empire
+Community & Marketing Partner,Epicenter,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-epicenter
+Community & Marketing Partner,Fintech Nexus,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-fintech-nexus
+Community & Marketing Partner,Forbes Digital Assets,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-forbes-digital-assets
+Community & Marketing Partner,Fortune Crypto,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-fortune-crypto
+Community & Marketing Partner,Galaxy Brains,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-galaxy-brains
+Community & Marketing Partner,Global Digital Finance,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-global-digital-finance
+Community & Marketing Partner,H.E.R. DAO,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-her-dao
+Community & Marketing Partner,House of Block,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-house-of-block
+Community & Marketing Partner,ICODA,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-icoda-2
+Community & Marketing Partner,ICOHOLDER,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-icoholder
+Community & Marketing Partner,Introduction.com,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-introductioncom
+Community & Marketing Partner,Kitco,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-kitco
+Community & Marketing Partner,LC Agency,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-lc-agency
+Community & Marketing Partner,ME Group,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-me-group
+Community & Marketing Partner,Miami Fintech Club,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-miami-fintech-club-2
+Community & Marketing Partner,Miami Tech Works,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-miami-tech-works
+Community & Marketing Partner,Moledao,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-moledao
+Community & Marketing Partner,NFT VIP,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-nft-vip-2
+Community & Marketing Partner,Nordic Blockchain Association,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-nordic-blockchain-association
+Community & Marketing Partner,OffChain,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-offchain
+Community & Marketing Partner,Orbit Ventures,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-orbit-ventures
+Community & Marketing Partner,OSTIM Technical University,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-ostim-technical-university
+Community & Marketing Partner,PIVOT,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-pivot-2
+Community & Marketing Partner,Purple Horizons,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-purple-horizons
+Community & Marketing Partner,Ray Fuentes LLC,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-ray-fuentes-llc
+Community & Marketing Partner,Refresh Miami,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-refresh-miami
+Community & Marketing Partner,SheFi,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-shefi-2
+Community & Marketing Partner,Stablecoin Standard,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-stablecoin-standard
+Community & Marketing Partner,Symphony,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-symphony
+Community & Marketing Partner,The Coin Republic,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-the-coin-republic
+Community & Marketing Partner,The Digital Chamber,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-the-digital-chamber-2
+Community & Marketing Partner,The Market Periodical,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-the-market-periodical
+Community & Marketing Partner,The Princeton Blockchain Club,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-the-princeton-blockchain-club
+Community & Marketing Partner,The U.S.-Mexico Chamber of Commerce,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-the-us-mexico-chamber-of-commerce
+Community & Marketing Partner,The University of Miami Herbert Business School,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-the-university-of-miami-herbert-business-school
+Community & Marketing Partner,The Venture Capital Community,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-the-venture-capital-community
+Community & Marketing Partner,Thrilld Labs,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-thrilld-labs
+Community & Marketing Partner,WOLF Financial,,,,,,,,,,,https://consensus.coindesk.com/agenda/sponsor/-wolf-financial
+Speaker,Changpeng  (CZ) Zhao,Founder of Binance,,,,,,Yes,,,,https://consensus.coindesk.com/agenda/speaker/-cz
+Speaker,Brad Garlinghouse,CEO,Ripple,,,,,No,bgarlinghouse,,,https://consensus.coindesk.com/agenda/speaker/-brad-garlinghouse
+Speaker,Michael Saylor,Founder & Executive Chairman,Strategy,,,,,No,saylor,michael.com,,https://consensus.coindesk.com/agenda/speaker/-michael-saylor
+Speaker,Anatoly Yakovenko,Co-Founder of Solana,CEO of Solana Labs,,,,,No,toly,,,https://consensus.coindesk.com/agenda/speaker/-anatoly-yakovenko
+Speaker,Raoul Pal,"Co-Founder & CEO (RV) , CEO/CIO (EXPAAM)",Real Vision/ EXPAAM,,,,,No,RaoulGMI,https://raoulpal.com/,https://www.linkedin.com/in/raoul-pal-real-vision/,https://consensus.coindesk.com/agenda/speaker/-raoul-pal
+Speaker,Eric Trump,Co-Founder & Chief Strategy Officer,American Bitcoin,,,,,No,@erictrump,www.abtc.com,,https://consensus.coindesk.com/agenda/speaker/-eric-trump
+Speaker,Stephanie Cohen,Chief Strategy Officer,Cloudflare,,,,,No,,,https://www.linkedin.com/in/stephanieecohen/,https://consensus.coindesk.com/agenda/speaker/-stephanie-cohen
+Speaker,Bo Hines,CEO,Tether USA₮,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-bo-hines
+Speaker,Kevin O'Leary,Chairman,O'Leary Ventures,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-kevin-oleary
+Speaker,Alex Rodriguez,CEO of A-Rod Corp and Co-Chairman of Minnesota Timberwolves & Lynx,A-Rod Corp / Minnesota Timberwolves & Lynx,,,,,No,@arod,arodcorp.com,https://www.linkedin.com/in/alex-rodriguez-b4161815a,https://consensus.coindesk.com/agenda/speaker/-alex-rodriguez
+Speaker,Donald Trump Jr,Co-Founder,World Liberty Financial,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-donald-trump-jr
+Speaker,Charles Hoskinson,CEO and Founder,Input Output,,,,,No,IOHK_Charles,https://iohk.io/,linkedin.com/company/input-output-global/?trk=public_profile_experience-item_profile-section-card_subtitle-click&originalSubdomain=ua,https://consensus.coindesk.com/agenda/speaker/-charles-hoskinson
+Speaker,Amy Oldenburg,Head of Digital Asset Strategy,Morgan Stanley,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-amy-oldenburg
+Speaker,Michael Selig,Chairman,U.S. Commodity Futures Trading Commission,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-michael-selig
+Speaker,Arthur Hayes,Chief Investment Officer,Maelstrom,,,,,No,cryptohayes,https://www.maelstrom.fund,https://www.linkedin.com/in/arthur-hayes-b493b42/,https://consensus.coindesk.com/agenda/speaker/-arthur-hayes-2
+Speaker,Patrick Witt,"Executive Director, President’s Council of Advisors for Digital Assets",The White House,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-patrick-witt
+Speaker,Adam  Back,Co-Founder & CEO,Blockstream,,,,,No,adam3us,blockstream.com,https://www.linkedin.com/in/adam-back-043342,https://consensus.coindesk.com/agenda/speaker/-adam-back
+Speaker,Ashley Moody,Senator,U.S. Senate,,,,,No,senashleymoody,https://www.moody.senate.gov/about/,,https://consensus.coindesk.com/agenda/speaker/-senator-ashley-senator-ashley-moody
+Speaker,Dan Romero,GTM,Tempo,,,,,No,dwr,tempo.xyz,,https://consensus.coindesk.com/agenda/speaker/-dan-romero
+Speaker,Senator Kristen Gillibrand,,,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-senator-kristen-gillibrand
+Speaker,Arjun Sethi,Co-CEO,Kraken,,,,,No,@arjunsethi,www.kraken.com,,https://consensus.coindesk.com/agenda/speaker/-arjun-sethi
+Speaker,Zach Witkoff,Co-Founder & CEO,World Liberty Financial,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-zach-witkoff
+Speaker,Jesse Pollak,Founder,Base,,,,,No,jessepollak,,,https://consensus.coindesk.com/agenda/speaker/-jesse-pollak
+Speaker,Erik Reppel,Founder of x402 & Head of Engineering,Coinbase Developer Platform,,,,,No,programmer,coinbase.com,,https://consensus.coindesk.com/agenda/speaker/-erik-reppel
+Speaker,Stani Kulechov,Founder & CEO,Aave Labs,,,,,No,https://x.com/StaniKulechov,aave.com,https://www.linkedin.com/in/stani-kulechov/,https://consensus.coindesk.com/agenda/speaker/-stani-kulechov
+Speaker,Lindsey Einhaus,Strategy and Operations,Bridge,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-lindsey-einhaus
+Speaker,Jed Finn,Head of Wealth Management,Morgan Stanley,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-jed-finn
+Speaker,Joseph Lubin,Founder & CEO,Consensys,,,,,No,ethereumJoseph,https://consensys.io/,https://www.linkedin.com/in/joseph-lubin-48406489/,https://consensus.coindesk.com/agenda/speaker/-joseph-lubin
+Speaker,Anthony Soohoo,Chairman & CEO,MoneyGram,,,,,No,https://x.com/anthonysoohoo?lang=en,https://www.moneygram.com,https://www.linkedin.com/in/anthonysoohoo/,https://consensus.coindesk.com/agenda/speaker/-anthony-soohoo
+Speaker,Randy Little,Partner,50T,,,,,No,randytlittle,https://50tfunds.com/,https://www.linkedin.com/in/randalllittle/,https://consensus.coindesk.com/agenda/speaker/-dan-tapiero
+Speaker,Raja Rajamannar,"Senior Fellow, Former Chief Marketing and Communications Officer",Mastercard,,,,,No,,https://www.linkedin.com/newsletters/marketing-sense-6702201790399602688/,https://www.linkedin.com/in/mvrajamannar/,https://consensus.coindesk.com/agenda/speaker/-raja-rajamannar
+Speaker,Mike Belshe,CEO and Co-Founder,BitGo,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-mike-belshe
+Speaker,May Zabaneh,VP and GM of Crypto,PayPal,,,,,No,,,https://www.linkedin.com/in/mayzabaneh/,https://consensus.coindesk.com/agenda/speaker/-may-zabaneh
+Speaker,Mike Cagney,Co-Founder & Executive Chairman,Figure,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-mike-cagney
+Speaker,Reid Hoffman,Partner,Greylock,,,,,No,https://x.com/reidhoffman,https://www.reidhoffman.org/,https://www.linkedin.com/in/reidhoffman/,https://consensus.coindesk.com/agenda/speaker/-reid-hoffman
+Speaker,Kyle Samani,Chairman,Forward Industries,,,,,No,kylesamani,,,https://consensus.coindesk.com/agenda/speaker/-kyle-samani
+Speaker,Scott Melker,Host,The Wolf of All Streets,,,,,No,@scottmelker,,,https://consensus.coindesk.com/agenda/speaker/-scott-melker
+Speaker,Anthony  Pompliano,Chairman & CEO,ProCap Financial,,,,,No,APompliano,www.procapfinancial.com,linkedin.com/in/anthonypompliano,https://consensus.coindesk.com/agenda/speaker/-anthony-pompliano
+Speaker,Tom Farley,CEO,Bullish,,,,,No,ThomasFarley,,https://www.linkedin.com/in/thomas-farley-b9a806128/,https://consensus.coindesk.com/agenda/speaker/-tom-farley
+Speaker,Mayur Gupta,Chief Growth & Marketing Officer,Kraken,,,,,No,,,https://www.linkedin.com/in/mayurgupta77/,https://consensus.coindesk.com/agenda/speaker/-mayur-gupta
+Speaker,Tom Lee,Fundstrat Capital: Chief Investment Officer and Portfolio Manager (NYSE: GRNY)  Fundstrat: Co-founder & Head of Research  Bitmine Immersion (NYSE: BMNR): Chairman of the Board,Fundstrat,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-tom-lee
+Speaker,Johann Kerbrat,"Senior Vice President and General Manager, Crypto and International",Robinhood,,,,,No,JohannKerbrat,,https://www.linkedin.com/in/johann-kerbrat-a19389b/,https://consensus.coindesk.com/agenda/speaker/-johann-kerbrat
+Speaker,Nathan McCauley,CEO & Co-Founder,Anchorage Digital,,,,,No,nathanmccauley,anchorage.com,,https://consensus.coindesk.com/agenda/speaker/-nathan-mccauley
+Speaker,Carlos Domingo,Founder & CEO,Securitize,,,,,No,carlosdomingo,https://www.securitize.io,https://www.linkedin.com/in/carlosdomingo/,https://consensus.coindesk.com/agenda/speaker/-carlos-domingo
+Speaker,Blue Macellari,Head of Digital Assets,T.Rowe Price,,,,,No,,https://www.troweprice.com/en/us,https://www.linkedin.com/in/bluemacellari/,https://consensus.coindesk.com/agenda/speaker/-blue-macellari
+Speaker,Joseph Chalom,CEO,SharpLink,,,,,No,joechalom,sharplink.com,josephchalom,https://consensus.coindesk.com/agenda/speaker/-joseph-chalom
+Speaker,Asher Genoot,Executive Chairman,American Bitcoin,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-asher-genoot
+Speaker,Tal Cohen,President,NASDAQ,,,,,No,,,https://www.linkedin.com/in/tal-cohen-85a2911/,https://consensus.coindesk.com/agenda/speaker/-tal-cohen
+Speaker,Haider Rafique,Global Managing Partner,OKX,,,,,No,https://x.com/Haider,www.okx.com,,https://consensus.coindesk.com/agenda/speaker/-haider-rafique
+Speaker,Kash  Razzaghi,Chief Commercial Officer,Circle,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-kash-razzaghi
+Speaker,Ryan  Rugg,"Global Head of Digital Assets, Treasury and Trade Solutions",Citi,,,,,No,,https://www.linkedin.com/in/ryanrugg,,https://consensus.coindesk.com/agenda/speaker/-ryan-rugg
+Speaker,Grant  Cardone,Founder & CEO,Grant Cardone Enterprises,,,,,No,grantcardone,grantcardone.com,https://www.linkedin.com/in/grantcardone/,https://consensus.coindesk.com/agenda/speaker/-grant-cardone
+Speaker,Paul Grewal,Chief Legal Officer,Coinbase,,,,,No,iampaulgrewal,,https://www.linkedin.com/in/paul-grewal-288978b4,https://consensus.coindesk.com/agenda/speaker/-paul-grewal
+Speaker,Miles Jennings,Head of Policy & General Counsel,a16z crypto,,,,,No,milesjennings,,,https://consensus.coindesk.com/agenda/speaker/-miles-jennings
+Speaker,Nadine Chakar,"Managing Director, Global Head of Digital Assets",DTCC,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-nadine-chakar
+Speaker,Nick Ducoff,Head of Institutional Growth,Solana Foundation,,,,,No,nickducoff,nick.vc,https://www.linkedin.com/in/nickducoff/,https://consensus.coindesk.com/agenda/speaker/-nick-ducoff
+Speaker,Frank La Salla,"President, CEO & Director",The Depository Trust & Clearing Corporation (DTCC),,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-frank-la-salla
+Speaker,Mert Mumtaz,CEO,Helius,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-mert-mumtaz
+Speaker,Kristin Smith,President,Solana Policy Institute,,,,,No,https://x.com/KristinSmith,solanapolicyinstitute.org,https://www.linkedin.com/in/smithk1/,https://consensus.coindesk.com/agenda/speaker/-kristin-smith
+Speaker,Michaël van de Poppe,Founder & CIO,MN Fund & MN Capital,,,,,No,cryptomichnl,www.michaelvandepoppe.com,https://www.linkedin.com/in/michaelvandepoppe/,https://consensus.coindesk.com/agenda/speaker/-michal-van-de-poppe
+Speaker,Deborah Querub,"Head of Digital Assets, Citi Wealth",Citigroup,,,,,No,,,https://www.linkedin.com/in/deborahquerub/,https://consensus.coindesk.com/agenda/speaker/-deborah-querub
+Speaker,Ian  De Bode,President,Ondo,,,,,No,https://x.com/OndoFinance,https://ondo.finance/,https://www.linkedin.com/company/ondo-finance/,https://consensus.coindesk.com/agenda/speaker/-ian-de-bode
+Speaker,Sandy Kaul,Head of Innovation,Franklin Templeton,,,,,No,FTDA_US,franklintempleton.com,https://www.linkedin.com/in/sandy-kaul,https://consensus.coindesk.com/agenda/speaker/-sandy-kaul
+Speaker,Austin Federa,Co-Founder,DoubleZero,,,,,No,,https://doublezero.xyz/,,https://consensus.coindesk.com/agenda/speaker/-austin-federa
+Speaker,Rebecca  Rettig,COO / CLO,Jito Labs,,,,,No,https://x.com/RebeccaRettig1,https://www.jito.wtf/,https://www.linkedin.com/in/rebecca-rettig-8b90a284/,https://consensus.coindesk.com/agenda/speaker/-rebecca-rettig
+Speaker,Larry Wade,Global Head of Crypto Compliance and Regulatory Relations,PayPal,,,,,No,,,https://www.linkedin.com/in/larryswadejr/,https://consensus.coindesk.com/agenda/speaker/-larry-wade
+Speaker,Chris Land,Staff Director,U.S. Senate Banking Subcommittee on Digital Assets,,,,,No,@senlummis,lummis.senate.gov,,https://consensus.coindesk.com/agenda/speaker/-chris-land
+Speaker,Lucas  Bruder,Co-Founder & CEO,Jito Labs,,,,,No,,https://www.jito.wtf/,https://www.linkedin.com/in/lucasbruder/,https://consensus.coindesk.com/agenda/speaker/-lucas-bruder
+Speaker,Stefano Bury,Head of the US,Virtuals Protocol,,,,,No,0xbury,virtuals.io,https://www.linkedin.com/in/stefanobury/,https://consensus.coindesk.com/agenda/speaker/-stefano-bury
+Speaker,Steven Meiner,Mayor,City of Miami Beach,,,,,No,https://x.com/StevenMeiner,https://www.miamibeachfl.gov/staff/mayor-steven-meiner/,https://www.linkedin.com/in/stevenmeiner/,https://consensus.coindesk.com/agenda/speaker/-mayor-steven-meiner
+Speaker,Michael Lau,Chairman,Consensus,,,,,No,mikelaujr,,https://www.linkedin.com/in/michaeltlau,https://consensus.coindesk.com/agenda/speaker/-michael-lau
+Speaker,Rodrigo  Coelho,CEO,Edge & Node,,,,,No,rodventures,,https://www.linkedin.com/in/rodrigoco/,https://consensus.coindesk.com/agenda/speaker/-rodrigo-coelho
+Speaker,Serafin  Lion Engel,Founder & CEO,Yield.xyz,,,,,No,,https://yield.xyz/,,https://consensus.coindesk.com/agenda/speaker/-serafin-lion-e
+Speaker,Gregory  Lisa,Senior Counsel,Hogan Lovells,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-gregory-lisa
+Speaker,Thomas  Perfumo,Chief Economist,Kraken,,,,,No,ThomasPerfumo,,,https://consensus.coindesk.com/agenda/speaker/-thomas-perfumo
+Speaker,"Maximillian ""M""  Schwartz",CEO,Anvil Research Labs,,,,,No,,anvil.xyz,,https://consensus.coindesk.com/agenda/speaker/-max
+Speaker,Adeniyi Abiodun,Co-Founder & CPO,Mysten Labs,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-adeniyi-abiodun
+Speaker,Bhushit Agarwal,Senior Staff Software Engineer,Circle,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-bhushit-agarwal
+Speaker,Janis Aguilar,Head of Acceleration Investments,CV VC,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-janis-aguilar
+Speaker,Hussein Ahmed,Founder and CEO,LIMITED,,,,,No,https://x.com/husseinthoughts,https://limitedapp.com/,https://www.linkedin.com/in/husseinahmed/,https://consensus.coindesk.com/agenda/speaker/-hussein-ahmed
+Speaker,James Aitchison,Founder & CIO,Caerus Global Management,,,,,No,,caerusgm.com,https://www.linkedin.com/in/aitchisonj/,https://consensus.coindesk.com/agenda/speaker/-james-aitchison
+Speaker,Boris Alergant,Head of GTM,Babylon Labs,,,,,No,https://x.com/Borissimo,,https://www.linkedin.com/in/borisalergant/,https://consensus.coindesk.com/agenda/speaker/-boris-alergant
+Speaker,Stephen Alpher,"Managing Editor, Markets",CoinDesk,,,,,No,SteveAlpher,Coindesk.com,https://www.linkedin.com/in/stephen-alpher-820a1327,https://consensus.coindesk.com/agenda/speaker/-stephen-alpher
+Speaker,Mitchell Amador,CEO,Immunefi,,,,,No,@MitchellAmador,https://mitchellamador.com,,https://consensus.coindesk.com/agenda/speaker/-mitchell-amado
+Speaker,Louis Amira,CEO,Circuit & Chisel,,,,,No,louisamira,,https://www.linkedin.com/in/louisamira/,https://consensus.coindesk.com/agenda/speaker/-louis-amira
+Speaker,Henri Arslanian,Co-Founder,Nine Blocks Capital Management,,,,,No,HenriArslanian,https://www.henriarslanian.com,https://ae.linkedin.com/in/henriarslanian,https://consensus.coindesk.com/agenda/speaker/-henri-arslanian
+Speaker,Aoyon Ashraf,Global Head of News,CoinDesk,,,,,No,Aoyon_A,coindesk.com,Aoyon Ashraf,https://consensus.coindesk.com/agenda/speaker/-aoyon-ashraf
+Speaker,Yoni Assia,Co-Founder & CEO,eToro,,,,,No,yoniassia,https://etoro.com/en-us,https://www.linkedin.com/in/yoniassia/,https://consensus.coindesk.com/agenda/speaker/-yoni-assia
+Speaker,Jason Atkins,Chief Commercial Officer,Auros,,,,,No,0xjatkins,https://www.auros.global/,https://www.linkedin.com/in/jason-atkins-12350376/,https://consensus.coindesk.com/agenda/speaker/-jason-atkins
+Speaker,Evan Auyang,Group President,Animoca Brands,,,,,No,,,https://www.linkedin.com/in/evanauyang,https://consensus.coindesk.com/agenda/speaker/-evan-auyang
+Speaker,Lauren Baca,"Global VP Marketing, Xsolla Advertising & Rewards",Xsolla,,,,,No,,,https://www.linkedin.com/in/laurenfrisciabaca/,https://consensus.coindesk.com/agenda/speaker/-xsolla-speaker-3
+Speaker,Dr. Leemon Baird,Co-Founder,Hedera,,,,,No,leemonbaird,hedera.com,https://www.linkedin.com/in/leemon-baird/,https://consensus.coindesk.com/agenda/speaker/-leemon-baird
+Speaker,Rajeev Bamra,"Global Head of Strategy, Digital Economy",Moody's Ratings,,,,,No,,,https://www.linkedin.com/in/rajeevbamra,https://consensus.coindesk.com/agenda/speaker/-rajeev-bamra
+Speaker,Daniela Barbosa,General Manager of Decentralized Technologies,Linux Foundation,,,,,No,danielabarbosa,https://www.lfdecentralizedtrust.org/,https://www.linkedin.com/in/danielabarbosa/,https://consensus.coindesk.com/agenda/speaker/-daniela-barbosa
+Speaker,Tobi Bauer,General Partner,TBV,,,,,No,tobiasTBV,tbv.xyz,https://www.linkedin.com/in/tobias-man-bauer/,https://consensus.coindesk.com/agenda/speaker/-tobi-bauer
+Speaker,Billy Beach,Co-Founder,Trusted Smart Chain,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-billy-beach
+Speaker,Simone Berry,Founder & CEO,Playnet,,,,,No,playnetofficial,www..playnet.xyz,https://www.linkedin.com/in/berrysimone/,https://consensus.coindesk.com/agenda/speaker/-simone-berry
+Speaker,Anna Bertha,Director | Investments,DCG,,,,,No,,https://dcg.co/,https://www.linkedin.com/in/annabertha/,https://consensus.coindesk.com/agenda/speaker/-anna-bertha
+Speaker,Daniel Blackmore,Chief Commercial Officer,Glassnode,,,,,No,,,https://www.linkedin.com/in/danielthomasblackmore/,https://consensus.coindesk.com/agenda/speaker/-daniel-blackmore
+Speaker,Michael Blaugrund,Strategic Initiatives,ICE,,,,,No,,,https://www.linkedin.com/in/michael-blaugrund/,https://consensus.coindesk.com/agenda/speaker/-michael-blaugrund
+Speaker,Alexander Blume,Founder & CEO,Two Prime,,,,,No,Two_Prime,twoprime.com,https://www.linkedin.com/company/twoprime/,https://consensus.coindesk.com/agenda/speaker/-alex-blume
+Speaker,Samantha Bohbot,Partner & Chief Growth Officer,RockawayX,,,,,No,samantha_bohbot,https://rockawayx.com,www.linkedin.com/in/samantha-bohbot,https://consensus.coindesk.com/agenda/speaker/-samantha-bohbot
+Speaker,Nom BONK,Core Contributor,BONK,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-nom-bonk
+Speaker,Samuel Breckenridge,PhD Student,Cornell Tech,,,,,No,sjbreck,https://www.cs.cornell.edu/~sjb373/,https://www.linkedin.com/in/samuel-breckenridge-4729b719a/,https://consensus.coindesk.com/agenda/speaker/-samuel-breckenridge
+Speaker,Paul Brody,Founder / CEO,Nightfall Networks,,,,,No,pbrody,,https://www.linkedin.com/in/pbrody,https://consensus.coindesk.com/agenda/speaker/-paul-brody
+Speaker,Sam Broner,Founder,The Better Money Company,,,,,No,SamBroner,https://bettermoney.com/,https://www.linkedin.com/in/sambroner/,https://consensus.coindesk.com/agenda/speaker/-sam-broner
+Speaker,Jake Brukhman,Founder & CEO,CoinFund,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-jake-brukhman
+Speaker,Michael Bucella,Co-Founder & Managing Partner,Neoclassic Capital,,,,,No,mikebucella,www.neoclassic.capital,michaelbucella,https://consensus.coindesk.com/agenda/speaker/-michael-bucella
+Speaker,Mike Bursell,Executive Director,Confidential Computing Consortium,,,,,No,,https://confidentialcomputing.io,https://www.linkedin.com/in/mikebursell/,https://consensus.coindesk.com/agenda/speaker/-mike-bursell
+Speaker,William Byrnes,Professor & Financial Journalist,Texas A&M Law School,,,,,No,williambyrnes,https://www.thinkadvisor.com/author/profile/william-h.-byrnes/,www.linkedin.com/in/williambyrnes,https://consensus.coindesk.com/agenda/speaker/-william-byrnes
+Speaker,Maya Caddle,Head of Payments - Business Development & Partnerships,Solana,,,,,No,CaddleMaya,,https://www.linkedin.com/in/maya-caddle/,https://consensus.coindesk.com/agenda/speaker/-maya-caddle
+Speaker,Leah Callon Butler,Director,Emfarsis,,,,,No,leah_cb,,https://www.linkedin.com/in/leahcallonbutler/,https://consensus.coindesk.com/agenda/speaker/-leah-callon-butler
+Speaker,Austin Campbell,Founder & Managing Partner,Zero Knowledge Group,,,,,No,austincampbell,https://www.zero-knowledge.com/,https://www.linkedin.com/in/jesseaustincampbell/,https://consensus.coindesk.com/agenda/speaker/-austin-campbell
+Speaker,Cody Carbone,CEO,The Digital Chamber,,,,,No,https://x.com/CodyCarboneDC,https://digitalchamber.org/,https://www.linkedin.com/in/codycarbone/,https://consensus.coindesk.com/agenda/speaker/-cody-carbone
+Speaker,Nathan Catania,Partner,XReg Consulting,,,,,No,,xreg.consulting,https://www.linkedin.com/in/nathan-catania/,https://consensus.coindesk.com/agenda/speaker/-nathan-catania
+Speaker,Raja Chakravorti,Chief Business Officer,Stellar Development Foundation,,,,,No,,,linkedin.com/rajachakravorti,https://consensus.coindesk.com/agenda/speaker/-raja-chakravorti
+Speaker,Stephanie Chan,Senior Business Project Management Analyst,Wyoming Stable Token Commission,,,,,No,heystephchan,www.stabletoken.wyo.gov,heystephchan,https://consensus.coindesk.com/agenda/speaker/-stephanie-chan
+Speaker,Frank Chaparro,Head of Content and Special Projects,GSR,,,,,No,@fintechfrank,gsr.io,,https://consensus.coindesk.com/agenda/speaker/-frank-chaparro
+Speaker,Sahil Chaturvedi,Founding Designer,Ark Labs,,,,,No,sahilc0,sahilc.com,sahilc0,https://consensus.coindesk.com/agenda/speaker/-sahil-chaturvedi
+Speaker,Gracy Chen,CEO,Bitget,,,,,No,GracyBitget,https://www.bitget.com/,https://www.linkedin.com/in/gracychen/,https://consensus.coindesk.com/agenda/speaker/-gracy-chen
+Speaker,Rashan Colbert,"Director, US Policy",Crypto Council for Innovation,,,,,No,Rashan,,https://www.linkedin.com/in/rashan-a-colbert-b2a00b35/,https://consensus.coindesk.com/agenda/speaker/-rashan-colbert
+Speaker,Matt Cole,Chairman & CEO,Strive,,,,,No,ColeMacro,https://strive.com/,https://www.linkedin.com/in/mattcole-cfa/,https://consensus.coindesk.com/agenda/speaker/-matt-cole
+Speaker,Reeve Collins,Co-founder,"Tether, STBL, and WeFi",,,,,No,https://x.com/Reeve_Collins,https://reevecollins.com/,https://www.linkedin.com/in/reevecollins/,https://consensus.coindesk.com/agenda/speaker/-reeve-collins
+Speaker,Mike Coner,Founder,Blockticity,,,,,No,Blockticity,https://blockticity.io/,https://www.linkedin.com/company/blockticity,https://consensus.coindesk.com/agenda/speaker/-mike-coner
+Speaker,Rachel Conlan,Global Chief Marketing Officer,Binance,,,,,No,https://x.com/rachelconlan?s=21,,http://linkedin.com/in/rachelconlan,https://consensus.coindesk.com/agenda/speaker/-rachel-conlan
+Speaker,Corey Cooper,"Senior Manager, Developer Relations and Ecosystem Marketing",Circle,,,,,No,,,https://www.linkedin.com/in/ccooper82/,https://consensus.coindesk.com/agenda/speaker/-corey-cooper
+Speaker,Taylor Davidson,Associate Attorney,Lewis Brisbois Bisgaard & Smith LLP,,,,,No,,https://lewisbrisbois.com/attorneys/davidson-taylor-a,https://www.linkedin.com/in/taylor-davidson-esq-9782231a8,https://consensus.coindesk.com/agenda/speaker/-taylor-davidson
+Speaker,Nikhilesh De,Editor,CoinDesk,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-nikhilesh-de
+Speaker,David Dewhurst,Program Manager,DARPA,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-david-dewhurst
+Speaker,Katherine Dowling,President,Bitcoin Standard Treasury Company,,,,,No,,,https://www.linkedin.com/in/katherine-dowling/,https://consensus.coindesk.com/agenda/speaker/-katherine-dowling
+Speaker,Tyler Ehler,Founder and CEO,Tranquil Healthcare,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-tyler-ehler
+Speaker,Mazen ElJundi,Global Business Head of Investments,Revolut,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-maz-eljundi
+Speaker,Sam Ewen,"Head of Media Innovation, Multimedia & Social",CoinDesk,,,,,No,SamEwen,,,https://consensus.coindesk.com/agenda/speaker/-sam-ewen
+Speaker,Amanda Fabiano,COO,Nakamoto Inc,,,,,No,@_amanda_fab,nakamoto.com,,https://consensus.coindesk.com/agenda/speaker/-amanda-fabiano
+Speaker,Felix Fan,CEO,Trust Wallet,,,,,No,felix_fan,https://trustwallet.com/,https://www.linkedin.com/in/fanchiyinfelix/,https://consensus.coindesk.com/agenda/speaker/-felix-fan
+Speaker,Chengdiao Fan,Founder,Pi Network,,,,,No,,minepi.com,,https://consensus.coindesk.com/agenda/speaker/-pi-network-speaker
+Speaker,Yaya J. Fanusie,Global Head of Policy,Aleo Network Foundation,,,,,No,SignCurve,,https://www.linkedin.com/in/yaya-jata-fanusie-87901738/,https://consensus.coindesk.com/agenda/speaker/-yaya-fanusie
+Speaker,Betsy Farber,"Senior Editor, Content Operations & Strategy",CoinDesk,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-betsy-farber
+Speaker,Ben  Fielding,Co-Founder,Gensyn,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-ben-fielding
+Speaker,Travis Flaherty,Co-Founder,Trusted Smart Chain,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-travis-flaherty
+Speaker,Angus Fletcher,Global Head of Digital Asset Solutions,State Street,,,,,No,,,https://www.linkedin.com/in/fletcherangus/,https://consensus.coindesk.com/agenda/speaker/-angus-fletcher
+Speaker,Alasdair Foster,CEO,Bullish Capital,,,,,No,,www.bullish.com,,https://consensus.coindesk.com/agenda/speaker/-alasdair-foster
+Speaker,Lisa Francoeur,Secretary of Education | Inventor,New York State Assembly Ways & Means Cryptocurrency & Digital Finance Advisory Committee | DeFi All Odds,,,,,No,,https://www.defiallodds.com,https://www.linkedin.com/in/lisafrancoeur/,https://consensus.coindesk.com/agenda/speaker/-lisa-francoeur
+Speaker,Brant Frank,Co-Founder,Trusted Smart Chain,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-brant-frank
+Speaker,Lindsay Fraser,Chief Policy Officer,The Blockchain Association,,,,,No,lindsayfraser0,,https://www.linkedin.com/in/lindsay-fraser2/,https://consensus.coindesk.com/agenda/speaker/-lindsay-fraser
+Speaker,Brent Fulfer,Co-Founder & General Partner,TBV,,,,,No,brent_fulfer,https://tbv.xyz,https://www.linkedin.com/in/brent-fulfer/,https://consensus.coindesk.com/agenda/speaker/-brent-fulfer
+Speaker,Lorien Gabel,Co-Founder & CEO,Figment,,,,,No,lorientree,https://figment.io/,https://www.linkedin.com/in/loriengabel/,https://consensus.coindesk.com/agenda/speaker/-lorien-gabel
+Speaker,Gabriele Galli,"SVP of Sales, BD and Partnerships",Mesh,,,,,No,ggallixyz,meshpay.com,https://www.linkedin.com/in/gabrielegalliprofile/,https://consensus.coindesk.com/agenda/speaker/-gabriele-galli
+Speaker,Jamie Gill,Senior Vice President,Luxor Technology,,,,,No,,luxor.tech,www.linkedin.com/in/jgill42/,https://consensus.coindesk.com/agenda/speaker/-jamie-gill
+Speaker,Tim Grant,CEO,Deus X Capital,,,,,No,,www.deusx.capital,https://www.linkedin.com/in/tim-j-grant/,https://consensus.coindesk.com/agenda/speaker/-tim-grant
+Speaker,Catherine Gu,"Head of Product, Digital Assets",Solana Foundation,,,,,No,,,https://www.linkedin.com/in/wcgu/,https://consensus.coindesk.com/agenda/speaker/-catherine-gu
+Speaker,Tamara Haasen,President,Input | Output (IO),,,,,No,InputOutputHK,https://iohk.io/,https://www.linkedin.com/in/tamarahaasen/,https://consensus.coindesk.com/agenda/speaker/-tamara-haasen
+Speaker,Steven Haft,Head of Global Partnerships,Consensys,,,,,No,OGShaft1,,https://www.linkedin.com/in/stevenhaft,https://consensus.coindesk.com/agenda/speaker/-steven-haft
+Speaker,Jesse Hamilton,"Deputy Managing Editor, Global Policy & Regulation",CoinDesk,,,,,No,Jesseahamilton,,Jesseahamilton,https://consensus.coindesk.com/agenda/speaker/-jesse-hamilton
+Speaker,Ron Hammond,Head of Policy and Advocacy,Wintermute,,,,,No,ronwhammond,,https://www.linkedin.com/in/ron-hammond-38ab8a3a/,https://consensus.coindesk.com/agenda/speaker/-ron-hammond
+Speaker,Peter Hans,Partner,Hack VC,,,,,No,peterhansVC,https://www.hack.vc/,https://www.linkedin.com/in/peter-hans-5126724/,https://consensus.coindesk.com/agenda/speaker/-peter-han
+Speaker,Myles Harrison,Chief Product Officer,AMINA Bank,,,,,No,mylesharrison89,www.aminagroup.com,,https://consensus.coindesk.com/agenda/speaker/-myles-harrison
+Speaker,Richard  Harrison,"VP, Banking and Payment Partnerships",MoonPay,,,,,No,,https://www.moonpay.com/en-gb,linkedin.com/in/richardharrison1,https://consensus.coindesk.com/agenda/speaker/-richard-harrison
+Speaker,Mike Harvey,Head of Franchise Trading,Galaxy,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-jason-urban
+Speaker,Ray Hernandez,"Sr VP, Business Development",Consensys,,,,,No,,https://consensys.io/,https://www.linkedin.com/in/ray-hernandez/,https://consensus.coindesk.com/agenda/speaker/-ray-hernandez
+Speaker,Chris Hewish,President,Xsolla,,,,,No,,,https://www.linkedin.com/in/chrishewish/,https://consensus.coindesk.com/agenda/speaker/-chris-hewish
+Speaker,Jim Hiltner,"Co-Founder, Head of Business Development",Superstate,,,,,No,@HiltnerJim,,,https://consensus.coindesk.com/agenda/speaker/-jim-hiltner
+Speaker,Rep. Steven Horsford,Congressman,US House of Representatives,,,,,No,RepHorsford,https://horsford.house.gov/,,https://consensus.coindesk.com/agenda/speaker/-rep-steven-horsford
+Speaker,Hunter Horsley,Co-Founder & CEO,"Bitwise Asset Management, Inc.",,,,,No,HHorsley,https://bitwiseinvestments.com/,https://www.linkedin.com/in/hunter-horsley-11512721/,https://consensus.coindesk.com/agenda/speaker/-hunter-horsley
+Speaker,Mike Horton,Project Creator,GEODNET,,,,,No,mikeahorton,https://geodnet.com/,mikeahorton,https://consensus.coindesk.com/agenda/speaker/-mike-horton
+Speaker,Carole House,CEO (Former White House Special Advisor),Penumbra Strategies,,,,,No,,,https://www.linkedin.com/in/carole-house-47471a40,https://consensus.coindesk.com/agenda/speaker/-carole-house
+Speaker,Paul Hsu,Founder & CEO,Decasonic,,,,,No,paulhsu,,paulhsu,https://consensus.coindesk.com/agenda/speaker/-paul-hsu
+Speaker,Andrew Hughes,VP of Global Standards,"FaceTec, Inc",,,,,No,,www.facetec.com,,https://consensus.coindesk.com/agenda/speaker/-andrew-hughes
+Speaker,"Simeon Hyman, CFA",Global Investment Strategist,ProShares,,,,,No,ProShares,www.proshares.com,ProShares,https://consensus.coindesk.com/agenda/speaker/-simeon-hyman
+Speaker,Augie Ilag,"Partner, Head of Asia",CMT Digital,,,,,No,AugieIlag,cmt.digital,https://www.linkedin.com/in/aug78b4a431/,https://consensus.coindesk.com/agenda/speaker/-augie-illag
+Speaker,Muneeb Imtiaz,Consumer Cash & Payments Lead,Coinbase,,,,,No,https://x.com/immuneeb,,https://www.linkedin.com/in/muneeb-imtiaz-1911024b/,https://consensus.coindesk.com/agenda/speaker/-muneeb-imtiaz
+Speaker,Guy Itzhaki,CEO,Fhenix,,,,,No,guyitz,fhenix.io,linkedin.com/in/guy-itzhaki,https://consensus.coindesk.com/agenda/speaker/-guy-itzhaki
+Speaker,Xiao-Xiao J. Zhu,President,Jupiter,,,,,No,xxjzhu,jup.ag,https://www.linkedin.com/in/xiao-xiao-j-zhu-12078730/,https://consensus.coindesk.com/agenda/speaker/-xiao-xiao-j-zhu
+Speaker,Dr. Sachin Jaitly,General Partner,Morgan Creek Digital,,,,,No,sjaitly,https://www.morgancreekcap.com/morgan-creek-digital/,https://www.linkedin.com/in/sjaitly?utm_source=share_via&utm_content=profile&utm_medium=member_ios,https://consensus.coindesk.com/agenda/speaker/-dr-sachin-jaitly
+Speaker,Rytis Joseph Jan,Head of Web3,Xsolla,,,,,No,,,https://www.linkedin.com/in/rytis-joseph-jan/,https://consensus.coindesk.com/agenda/speaker/-rytis-joseph-jan
+Speaker,Ubair Javaid,Founder and CEO,Nomyx,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-ubair-javaid
+Speaker,Linda Jeng,Chief Legal & Policy Officer,Aave Labs,,,,,No,Lindajeng1,,https://www.linkedin.com/in/linda-jeng-4682b3/,https://consensus.coindesk.com/agenda/speaker/-linda-jeng
+Speaker,Maurice Johnson,Partner,Lewis Brisbois Bisgaard & Smith LLP,,,,,No,,https://lewisbrisbois.com/attorneys/johnson-maurice,https://www.linkedin.com/in/maurice-johnson-809a4334,https://consensus.coindesk.com/agenda/speaker/-maurice-johnson
+Speaker,Alexis Johnson,Co-Founder & CEO,Light Node Ventures,,,,,No,Pulchramens,www.lightnodeventures.com,https://www.linkedin.com/in/alexisjohnson92/,https://consensus.coindesk.com/agenda/speaker/-alexis-johnson
+Speaker,David Johnston,Code Maintainer,Morpheus,,,,,No,DJohnstonEC,https://mor.org/,https://www.linkedin.com/in/davidajohnston/,https://consensus.coindesk.com/agenda/speaker/-david-johnston
+Speaker,Anto Joseph,Principal Security Engineer,Eigen Labs,,,,,No,blocksec,https://exp.hackintheblock.com/,https://www.linkedin.com/in/antojoseph,https://consensus.coindesk.com/agenda/speaker/-anto-joseph
+Speaker,Jolie Kahn,CEO,AVAX One,,,,,No,,https://avax-one.com/,https://www.linkedin.com/in/jolie-kahn-b108168/,https://consensus.coindesk.com/agenda/speaker/-jolie-kahn
+Speaker,Elvie Kamalova,Founder,Blockstreet Capital,,,,,No,ElvieKamalova,https://www.blockstreet.capital/,https://www.linkedin.com/in/elvinak/,https://consensus.coindesk.com/agenda/speaker/-elvie-kamalova
+Speaker,Anna  Kazlauskas,Co-Founder and CEO,Open Data Labs (creator of Vana),,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-anna-kazlauskas
+Speaker,Marcin Kaźmierczak,Co-Founder,RedStone,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-marcin-kamierczak
+Speaker,Anthony Kelani,"Director, Ecosystem Growth",Circle,,,,,No,akelani,,https://linkedin.com/in/akelani,https://consensus.coindesk.com/agenda/speaker/-anthony-kelani
+Speaker,Carl Kennedy,"Partner and Co-Chair, Financial Markets and Regulation Practice Group",Katten Muchin Rosenman LLP,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-carl-kennedy
+Speaker,Kara Kennedy,Global Co-Head of Kinexys,J.P. Morgan,,,,,No,,https://www.jpmorgan.com/kinexys/index,https://www.linkedin.com/in/karakennedy1,https://consensus.coindesk.com/agenda/speaker/-kara-kennedy
+Speaker,Cole Kennelly,Founder & CEO,Volmex Labs,,,,,No,ColeGotTweets,https://volmex.finance,https://www.linkedin.com/in/colekennelly,https://consensus.coindesk.com/agenda/speaker/-cole-kennelly
+Speaker,Ji Hun Kim,CEO,Crypto Council for Innovation,,,,,No,_jikim,https://cryptoforinnovation.org/,https://www.linkedin.com/in/ji-hun-k-94568310/,https://consensus.coindesk.com/agenda/speaker/-ji-hun-kim
+Speaker,Katherine Kirkpatrick Bos,Starkware,General Counsel,,,,,No,kkirkbos,,https://www.linkedin.com/in/katherine-kirkpatrick/,https://consensus.coindesk.com/agenda/speaker/-katherine-kirkpatrick-bos
+Speaker,Nicolas Kokkalis,Founder,Pi Network,,,,,No,,minepi.com,,https://consensus.coindesk.com/agenda/speaker/-nicolas-kokkalis
+Speaker,Tomek Kowalski,Head of Crypto Accounting,CoinTracker,,,,,No,TheCrypto_CFO,,https://www.linkedin.com/in/tomek-kowalski-125631293/,https://consensus.coindesk.com/agenda/speaker/-tomek-kowalski
+Speaker,Dr. Bernhard Kronfellner,Partner & AD,"Digital Assets, Blockchain, Frontier Tech",,,,,No,,,https://www.linkedin.com/in/dr-bernhard-kronfellner-b27b19/,https://consensus.coindesk.com/agenda/speaker/-dr-bernhard-kronfellner
+Speaker,Rob Krugman,Chief Digital Officer,Broadridge,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-rob-krugman
+Speaker,Chris Kuiper,VP Research Fidelity Digital Assets,Fidelity Digital Assets,,,,,No,https://x.com/ChrisJKuiper,,https://www.linkedin.com/in/fidelitychriskuiper/,https://consensus.coindesk.com/agenda/speaker/-chris-kuiper
+Speaker,Erik LaPaglia,Managing Partner,NextTech Ventures,,,,,No,eriklapaglia,,https://www.linkedin.com/in/eriklapaglia,https://consensus.coindesk.com/agenda/speaker/-erik-lapaglia
+Speaker,Dave  LaValle,President,CoinDesk Indices & Data,,,,,No,,,,https://consensus.coindesk.com/agenda/speaker/-dave-lavalle
+Speaker,Alex Leishman,CEO,River,,,,,No,leishman,river.com,,https://consensus.coindesk.com/agenda/speaker/-alex-leishman
+Speaker,Jon Lerner,Co-Founder & CEO,CoinTracker,,,,,No,jon_lerner,https://www.cointracker.io/,https://www.linkedin.com/in/jonlerner,https://consensus.coindesk.com/agenda/speaker/-jon-lerner
