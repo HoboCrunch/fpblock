@@ -300,18 +300,19 @@ export const PersonTableRow = React.memo(function PersonTableRow({
       </div>
 
       {/* Events */}
-      <div className="px-1.5 py-1 min-w-0">
-        <div className="flex flex-wrap gap-1">
+      <div
+        className="px-1.5 py-1 min-w-0"
+        title={row.personEvents.length > 0 ? row.personEvents.map((pe) => pe.event_name).join(", ") : undefined}
+      >
+        <div className="flex items-center gap-1 min-w-0 overflow-hidden">
           {row.personEvents.slice(0, 2).map((pe) => (
-            <Badge key={`${pe.event_id}-${pe.role}`} variant="default" className="text-[10px] px-1.5 py-0 truncate max-w-[70px]">
-              {pe.event_name.length > 12
-                ? pe.event_name.slice(0, 12) + "..."
-                : pe.event_name}
+            <Badge key={`${pe.event_id}-${pe.role}`} variant="default" className="text-[10px] px-1.5 py-0 max-w-[70px] flex-shrink">
+              {pe.event_name}
               {pe.role && SPEAKER_ROLES.includes(pe.role) ? `: ${pe.role}` : ""}
             </Badge>
           ))}
           {row.personEvents.length > 2 && (
-            <span className="text-[10px] text-[var(--text-muted)]">
+            <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0">
               +{row.personEvents.length - 2}
             </span>
           )}

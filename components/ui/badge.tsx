@@ -41,20 +41,23 @@ export function Badge({
   variant = "default",
   children,
   className,
+  title,
 }: {
   variant?: string;
   children: React.ReactNode;
   className?: string;
+  title?: string;
 }) {
   return (
     <span
+      title={title}
       className={cn(
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+        "inline-flex items-center max-w-full min-w-0 px-2.5 py-0.5 rounded-full text-xs font-medium border",
         variants[variant] || variants.default,
         className
       )}
     >
-      {children}
+      <span className="truncate min-w-0">{children}</span>
     </span>
   );
 }

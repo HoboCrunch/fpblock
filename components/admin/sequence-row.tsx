@@ -155,9 +155,11 @@ export const SequenceRow = React.memo(function SequenceRow({
       </td>
 
       {/* Event */}
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 max-w-[180px]">
         {sequence.event_name ? (
-          <Badge variant="draft">{sequence.event_name}</Badge>
+          <Badge variant="draft" className="max-w-full" title={sequence.event_name}>
+            {sequence.event_name}
+          </Badge>
         ) : (
           <span className="text-[var(--text-muted)] text-xs">—</span>
         )}

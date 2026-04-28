@@ -283,7 +283,19 @@ export function SequenceListClient() {
         ) : (
           <GlassCard padding={false}>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm table-fixed">
+                <colgroup>
+                  <col className="w-10" />        {/* Checkbox */}
+                  <col />                          {/* Name (flex) */}
+                  <col className="w-24" />        {/* Channel */}
+                  <col className="w-24" />        {/* Status */}
+                  <col className="w-16" />        {/* Steps */}
+                  <col className="w-32" />        {/* Enrolled */}
+                  <col className="w-56" />        {/* Delivery funnel */}
+                  <col className="w-28" />        {/* Mode */}
+                  <col className="w-[200px]" />   {/* Event */}
+                  <col className="w-32" />        {/* Updated */}
+                </colgroup>
                 <thead>
                   <tr className="border-b border-[var(--glass-border)] text-left">
                     <th className="px-4 py-3 w-10">

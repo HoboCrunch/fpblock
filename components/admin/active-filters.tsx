@@ -18,23 +18,31 @@ export function ActiveFilters({ filters, onRemove, onClearAll }: ActiveFiltersPr
   if (filters.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-1.5">
       {filters.map((f) => (
         <span
           key={f.key}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--accent-orange)]/10 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-white/[0.06] text-[var(--text-secondary)] border border-white/[0.08] max-w-[220px]"
+          title={`${f.label}: ${f.value}`}
         >
-          {f.label}: {f.value}
-          <button onClick={() => onRemove(f.key)} className="hover:text-white ml-0.5">
+          <span className="truncate">
+            <span className="text-[var(--text-muted)]">{f.label}:</span> {f.value}
+          </span>
+          <button
+            onClick={() => onRemove(f.key)}
+            className="hover:text-white shrink-0"
+            aria-label={`Remove ${f.label} filter`}
+          >
             <X className="w-3 h-3" />
           </button>
         </span>
       ))}
-      {filters.length > 2 && (
-        <button onClick={onClearAll} className="text-xs text-[var(--text-muted)] hover:text-white ml-1">
-          Clear all
-        </button>
-      )}
+      <button
+        onClick={onClearAll}
+        className="text-[11px] text-[var(--text-muted)] hover:text-white px-1"
+      >
+        Clear all
+      </button>
     </div>
   );
 }

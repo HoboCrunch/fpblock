@@ -182,21 +182,28 @@ export const OrgTableRow = memo(
         </div>
 
         {/* Events */}
-        <div className="px-1.5 py-1 min-w-0">
-          <div className="flex flex-wrap gap-1">
+        <div
+          className="px-1.5 py-1 min-w-0"
+          title={row.events.length > 0 ? row.events.map((e) => e.name).join(", ") : undefined}
+        >
+          <div className="flex items-center gap-1 min-w-0 overflow-hidden">
             {row.events.slice(0, 2).map((ev) => (
               <Badge
                 key={ev.id || `${ev.name}-${ev.role}`}
                 variant={ev.tier ? (ev.tier as string) : "default"}
-                className="text-[10px] px-1.5 py-0 truncate max-w-[70px]"
+                className="text-[10px] px-1.5 py-0 max-w-[70px] flex-shrink"
               >
-                {ev.name.length > 10 ? ev.name.slice(0, 10) + "…" : ev.name}
+                {ev.name}
               </Badge>
             ))}
             {row.events.length > 2 && (
-              <span className="text-[10px] text-[var(--text-muted)]">+{row.events.length - 2}</span>
+              <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0">
+                +{row.events.length - 2}
+              </span>
             )}
-            {row.events.length === 0 && <span className="text-[var(--text-muted)] text-xs">&mdash;</span>}
+            {row.events.length === 0 && (
+              <span className="text-[var(--text-muted)] text-xs">&mdash;</span>
+            )}
           </div>
         </div>
 
