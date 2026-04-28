@@ -246,7 +246,18 @@ export function MessageQueueClient({ sequenceId }: MessageQueueClientProps) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col className="w-8" />        {/* Checkbox */}
+                <col />                          {/* Recipient */}
+                <col className="w-20" />        {/* Step */}
+                <col />                          {/* Subject */}
+                <col className="w-28" />        {/* Status */}
+                <col className="w-32" />        {/* Scheduled */}
+                <col className="w-32" />        {/* Sent */}
+                <col className="w-24" />        {/* Engagement */}
+                <col className="w-10" />        {/* Expand */}
+              </colgroup>
               <thead>
                 <tr className="border-b border-[var(--glass-border)] text-left">
                   <th className="px-4 py-3 w-8">

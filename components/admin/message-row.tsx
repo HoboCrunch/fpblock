@@ -54,8 +54,6 @@ export const MessageRow = React.memo(function MessageRow({
   const stepLabel = step !== null ? `Step ${step + 1}` : "–";
 
   const subject = message.subject ?? "";
-  const truncatedSubject =
-    subject.length > 40 ? subject.slice(0, 40) + "…" : subject;
 
   const hasOpened =
     message.status === "opened" ||
@@ -104,12 +102,12 @@ export const MessageRow = React.memo(function MessageRow({
         )}
 
         {/* Recipient */}
-        <td className="px-4 py-3">
-          <div className="font-medium text-white text-sm leading-tight">
+        <td className="px-4 py-3 overflow-hidden">
+          <div className="font-medium text-white text-sm leading-tight truncate">
             {message.person_name ?? "—"}
           </div>
           {message.person_title && (
-            <div className="text-xs text-[var(--text-muted)] mt-0.5 leading-tight">
+            <div className="text-xs text-[var(--text-muted)] mt-0.5 leading-tight truncate">
               {message.person_title}
             </div>
           )}
@@ -121,8 +119,8 @@ export const MessageRow = React.memo(function MessageRow({
         </td>
 
         {/* Subject */}
-        <td className="px-4 py-3 text-sm text-[var(--text-secondary)] max-w-[200px]">
-          {truncatedSubject || <span className="italic text-[var(--text-muted)]">No subject</span>}
+        <td className="px-4 py-3 text-sm text-[var(--text-secondary)] overflow-hidden text-ellipsis whitespace-nowrap" title={subject || undefined}>
+          {subject || <span className="italic text-[var(--text-muted)]">No subject</span>}
         </td>
 
         {/* Status */}
