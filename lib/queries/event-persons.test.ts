@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getPersonIdsForEvent,
+  getPersonIdsForEvents,
   getPersonRelationsForEvent,
 } from "./event-persons";
 
@@ -64,6 +65,40 @@ describe("getPersonIdsForEvent", () => {
     const empty = { event_participations: [], person_event_affiliations: [] };
     const ids = await getPersonIdsForEvent(fakeSupabase(empty), "e1", "either");
     expect(ids).toEqual([]);
+  });
+});
+
+describe("getPersonIdsForEvents", () => {
+  it("returns empty array when eventIds is empty", async () => {
+    const supabase = fakeSupabase({
+      event_participations: [],
+      person_event_affiliations: [],
+    });
+    const ids = await getPersonIdsForEvents(supabase, [], "either");
+    expect(ids).toEqual([]);
+  });
+
+  it("unions person ids across multiple events for relation=either", async () => {
+    // For test simplicity, return same rows regardless of event_id filter —
+    // the implementation calls fetchDirect/fetchAffiliated per id and unions.
+    const supabase = fakeSupabase({
+      event_participations: [{ person_id: "p1" }, { person_id: "p2" }],
+      person_event_affiliations: [
+        { person_id: "p2", via_organization_id: "o1" },
+        { person_id: "p3", via_organization_id: "o1" },
+      ],
+    });
+    const ids = await getPersonIdsForEvents(supabase, ["e1", "e2"], "either");
+    expect(ids.sort()).toEqual(["p1", "p2", "p3"]);
+  });
+
+  it("respects relation=direct across multiple events", async () => {
+    const supabase = fakeSupabase({
+      event_participations: [{ person_id: "p1" }, { person_id: "p2" }],
+      person_event_affiliations: [{ person_id: "p9", via_organization_id: "o1" }],
+    });
+    const ids = await getPersonIdsForEvents(supabase, ["e1", "e2"], "direct");
+    expect(ids.sort()).toEqual(["p1", "p2"]);
   });
 });
 

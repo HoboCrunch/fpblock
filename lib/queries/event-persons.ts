@@ -54,6 +54,22 @@ export async function getPersonIdsForEvent(
   return Array.from(out);
 }
 
+export async function getPersonIdsForEvents(
+  supabase: SupabaseClient,
+  eventIds: string[],
+  relation: EventPersonRelation
+): Promise<string[]> {
+  if (eventIds.length === 0) return [];
+  const perEvent = await Promise.all(
+    eventIds.map((id) => getPersonIdsForEvent(supabase, id, relation))
+  );
+  const out = new Set<string>();
+  for (const ids of perEvent) {
+    for (const id of ids) out.add(id);
+  }
+  return Array.from(out);
+}
+
 export async function getPersonRelationsForEvent(
   supabase: SupabaseClient,
   eventId: string
