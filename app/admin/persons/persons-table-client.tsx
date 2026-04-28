@@ -10,7 +10,6 @@ import {
   ChevronUp,
   ChevronsUpDown,
   Users,
-  X,
 } from "lucide-react";
 import { TwoPanelLayout } from "@/components/admin/two-panel-layout";
 import { FilterGroup } from "@/components/admin/filter-group";
@@ -19,7 +18,7 @@ import { SelectionSummary } from "@/components/admin/selection-summary";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassInput } from "@/components/ui/glass-input";
 import { GlassSelect } from "@/components/ui/glass-select";
-import { Badge } from "@/components/ui/badge";
+import { MultiSelectField } from "@/components/admin/multi-select-field";
 import { AddToListDropdown } from "@/components/admin/add-to-list-dropdown";
 import { EventRelationToggle, toggleToRelation } from "@/components/admin/event-relation-toggle";
 import { useEventPersonIds, useEventRelationMap } from "@/lib/queries/use-event-affiliations";
@@ -476,19 +475,6 @@ export function PersonsTableClient({
     setSearch("");
   }, []);
 
-  // --- Multi-select helper ---
-  const toggleMultiSelect = useCallback((
-    value: string,
-    current: string[],
-    setter: (v: string[]) => void
-  ) => {
-    if (current.includes(value)) {
-      setter(current.filter((v) => v !== value));
-    } else {
-      setter([...current, value]);
-    }
-  }, []);
-
   // --- Sort header component ---
   function SortHeader({
     label,
@@ -584,32 +570,12 @@ export function PersonsTableClient({
               />
             )}
 
-            <GlassSelect
+            <MultiSelectField
               placeholder="Filter by event..."
               options={eventOptions.map((e) => ({ value: e.id, label: e.name }))}
-              value={filterEvents[0] || ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val) {
-                  toggleMultiSelect(val, filterEvents, setFilterEvents);
-                }
-              }}
+              values={filterEvents}
+              onChange={setFilterEvents}
             />
-            {filterEvents.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {filterEvents.map((id) => (
-                  <span
-                    key={id}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-white/[0.06] text-[var(--text-secondary)]"
-                  >
-                    {eventOptions.find((e) => e.id === id)?.name || id}
-                    <button onClick={() => toggleMultiSelect(id, filterEvents, setFilterEvents)}>
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
 
             <GlassSelect
               placeholder="Has Organization"
@@ -621,7 +587,7 @@ export function PersonsTableClient({
               onChange={(e) => setFilterHasOrg(e.target.value)}
             />
 
-            <GlassSelect
+            <MultiSelectField
               placeholder="Correlation Type"
               options={[
                 { value: "speaker_sponsor", label: "Speaker + Sponsor" },
@@ -630,91 +596,34 @@ export function PersonsTableClient({
                 { value: "org_sponsor", label: "Org Sponsor" },
                 { value: "none", label: "No Event Link" },
               ]}
-              value={filterCorrelationType[0] || ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val) toggleMultiSelect(val, filterCorrelationType, setFilterCorrelationType);
-              }}
+              values={filterCorrelationType}
+              onChange={setFilterCorrelationType}
             />
-            {filterCorrelationType.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {filterCorrelationType.map((ct) => (
-                  <span
-                    key={ct}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-white/[0.06] text-[var(--text-secondary)]"
-                  >
-                    {ct.replace(/_/g, " ")}
-                    <button onClick={() => toggleMultiSelect(ct, filterCorrelationType, setFilterCorrelationType)}>
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
         </FilterGroup>
 
         <FilterGroup title="Profile" defaultOpen={false}>
           <div className="space-y-2">
-            <GlassSelect
+            <MultiSelectField
               placeholder="Seniority"
               options={seniorityOptions.map((s) => ({ value: s, label: s }))}
-              value={filterSeniority[0] || ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val) toggleMultiSelect(val, filterSeniority, setFilterSeniority);
-              }}
+              values={filterSeniority}
+              onChange={setFilterSeniority}
             />
-            {filterSeniority.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {filterSeniority.map((s) => (
-                  <span key={s} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-white/[0.06] text-[var(--text-secondary)]">
-                    {s}
-                    <button onClick={() => toggleMultiSelect(s, filterSeniority, setFilterSeniority)}><X className="w-3 h-3" /></button>
-                  </span>
-                ))}
-              </div>
-            )}
 
-            <GlassSelect
+            <MultiSelectField
               placeholder="Department"
               options={departmentOptions.map((d) => ({ value: d, label: d }))}
-              value={filterDepartment[0] || ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val) toggleMultiSelect(val, filterDepartment, setFilterDepartment);
-              }}
+              values={filterDepartment}
+              onChange={setFilterDepartment}
             />
-            {filterDepartment.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {filterDepartment.map((d) => (
-                  <span key={d} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-white/[0.06] text-[var(--text-secondary)]">
-                    {d}
-                    <button onClick={() => toggleMultiSelect(d, filterDepartment, setFilterDepartment)}><X className="w-3 h-3" /></button>
-                  </span>
-                ))}
-              </div>
-            )}
 
-            <GlassSelect
+            <MultiSelectField
               placeholder="Source"
               options={sourceOptions.map((s) => ({ value: s, label: s }))}
-              value={filterSource[0] || ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val) toggleMultiSelect(val, filterSource, setFilterSource);
-              }}
+              values={filterSource}
+              onChange={setFilterSource}
             />
-            {filterSource.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {filterSource.map((s) => (
-                  <span key={s} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-white/[0.06] text-[var(--text-secondary)]">
-                    {s}
-                    <button onClick={() => toggleMultiSelect(s, filterSource, setFilterSource)}><X className="w-3 h-3" /></button>
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
         </FilterGroup>
 
@@ -730,7 +639,7 @@ export function PersonsTableClient({
 
         <FilterGroup title="Enrichment" defaultOpen={false}>
           <div className="space-y-2">
-            <GlassSelect
+            <MultiSelectField
               placeholder="Enrichment Status"
               options={[
                 { value: "none", label: "None" },
@@ -738,22 +647,9 @@ export function PersonsTableClient({
                 { value: "complete", label: "Complete" },
                 { value: "failed", label: "Failed" },
               ]}
-              value={filterEnrichmentStatus[0] || ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val) toggleMultiSelect(val, filterEnrichmentStatus, setFilterEnrichmentStatus);
-              }}
+              values={filterEnrichmentStatus}
+              onChange={setFilterEnrichmentStatus}
             />
-            {filterEnrichmentStatus.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {filterEnrichmentStatus.map((s) => (
-                  <span key={s} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-white/[0.06] text-[var(--text-secondary)]">
-                    {s}
-                    <button onClick={() => toggleMultiSelect(s, filterEnrichmentStatus, setFilterEnrichmentStatus)}><X className="w-3 h-3" /></button>
-                  </span>
-                ))}
-              </div>
-            )}
 
             <div className="flex items-center gap-2">
               <GlassInput
