@@ -2,7 +2,6 @@
 
 import React from "react";
 import { GlassCard } from "@/components/ui/glass-card";
-import { GlassSelect } from "@/components/ui/glass-select";
 import { GlassInput } from "@/components/ui/glass-input";
 import { cn } from "@/lib/utils";
 import {
@@ -22,16 +21,7 @@ import {
 
 export type OrgStage = "apollo" | "perplexity" | "gemini" | "full" | "people_finder";
 export type EnrichField = "email" | "linkedin" | "twitter" | "phone";
-export type TargetType =
-  | "unenriched"
-  | "failed_incomplete"
-  | "icp_below"
-  | "event"
-  | "initiative"
-  | "saved_list"
-  | "selected";
-
-export interface ConfigPanelProps {
+export interface RunConfigPanelProps {
   tab: "persons" | "organizations";
   // Org config
   stages: OrgStage[];
@@ -46,21 +36,6 @@ export interface ConfigPanelProps {
   onPfSenioritiesChange: (s: string[]) => void;
   pfDepartments: string[];
   onPfDepartmentsChange: (d: string[]) => void;
-  // Target
-  target: TargetType;
-  onTargetChange: (t: TargetType) => void;
-  eventId: string;
-  onEventIdChange: (id: string) => void;
-  initiativeId: string;
-  onInitiativeIdChange: (id: string) => void;
-  icpThreshold: number;
-  onIcpThresholdChange: (n: number) => void;
-  savedListId: string;
-  onSavedListIdChange: (id: string) => void;
-  // Reference data
-  events: { id: string; name: string }[];
-  initiatives: { id: string; name: string }[];
-  savedLists: { id: string; name: string; count: number }[];
   // Selection info
   selectedCount: number;
   // Run state
@@ -120,7 +95,7 @@ const INDIVIDUAL_STAGES: OrgStage[] = ["apollo", "perplexity", "gemini"];
 
 // ---------- component ----------
 
-export const ConfigPanel = React.memo(function ConfigPanel({
+export const RunConfigPanel = React.memo(function RunConfigPanel({
   tab,
   stages,
   onStagesChange,
@@ -132,25 +107,12 @@ export const ConfigPanel = React.memo(function ConfigPanel({
   onPfSenioritiesChange,
   pfDepartments,
   onPfDepartmentsChange,
-  target,
-  onTargetChange,
-  eventId,
-  onEventIdChange,
-  initiativeId,
-  onInitiativeIdChange,
-  icpThreshold,
-  onIcpThresholdChange,
-  savedListId,
-  onSavedListIdChange,
-  events,
-  initiatives,
-  savedLists,
   selectedCount,
   isRunning,
   canRun,
   onRun,
   onStop,
-}: ConfigPanelProps) {
+}: RunConfigPanelProps) {
   const hasPeopleFinder = stages.includes("people_finder");
 
   // ---- stage toggle logic ----
@@ -210,19 +172,6 @@ export const ConfigPanel = React.memo(function ConfigPanel({
     }
   }
 
-  // ---- target options ----
-  const targetOptions = [
-    { value: "unenriched", label: "Never enriched" },
-    { value: "failed_incomplete", label: "Failed / Incomplete" },
-    { value: "icp_below", label: "ICP below threshold" },
-    { value: "event", label: "From event" },
-    { value: "initiative", label: "From initiative" },
-    ...(tab === "persons"
-      ? [{ value: "saved_list", label: "From saved list" }]
-      : []),
-    { value: "selected", label: "Selected items" },
-  ];
-
   return (
     <GlassCard className="relative">
       {/* ---- Header (always interactive) ---- */}
@@ -249,7 +198,7 @@ export const ConfigPanel = React.memo(function ConfigPanel({
             )}
           >
             <Play className="h-3.5 w-3.5" />
-            Run Pipeline
+            Run Pipeline {selectedCount > 0 ? `(${selectedCount})` : ""}
           </button>
         )}
       </div>
@@ -395,71 +344,9 @@ export const ConfigPanel = React.memo(function ConfigPanel({
         </>
       )}
 
-      {/* ---- Target Selector ---- */}
-      <div className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">Target</div>
-      <GlassSelect
-        value={target}
-        onChange={(e) => onTargetChange(e.target.value as TargetType)}
-        options={targetOptions}
-      />
-
-      {/* ---- Conditional sub-inputs ---- */}
-      <div
-        className={cn(
-          "overflow-hidden transition-all duration-300",
-          target === "icp_below" || target === "event" || target === "initiative" || target === "saved_list" || target === "selected"
-            ? "max-h-[80px] opacity-100 mt-2"
-            : "max-h-0 opacity-0 mt-0"
-        )}
-      >
-        {target === "icp_below" && (
-          <GlassInput
-            type="number"
-            min={0}
-            max={100}
-            value={icpThreshold}
-            onChange={(e) => onIcpThresholdChange(Number(e.target.value) || 0)}
-            placeholder="ICP threshold"
-            className="w-full"
-          />
-        )}
-
-        {target === "event" && (
-          <GlassSelect
-            value={eventId}
-            onChange={(e) => onEventIdChange(e.target.value)}
-            options={events.map((ev) => ({ value: ev.id, label: ev.name }))}
-            placeholder="Select event..."
-          />
-        )}
-
-        {target === "initiative" && (
-          <GlassSelect
-            value={initiativeId}
-            onChange={(e) => onInitiativeIdChange(e.target.value)}
-            options={initiatives.map((i) => ({ value: i.id, label: i.name }))}
-            placeholder="Select initiative..."
-          />
-        )}
-
-        {target === "saved_list" && (
-          <GlassSelect
-            value={savedListId}
-            onChange={(e) => onSavedListIdChange(e.target.value)}
-            options={savedLists.map((l) => ({ value: l.id, label: `${l.name} (${l.count})` }))}
-            placeholder="Select list..."
-          />
-        )}
-
-        {target === "selected" && (
-          <p className="text-xs text-[var(--text-muted)] py-1">
-            {selectedCount} item{selectedCount !== 1 ? "s" : ""} selected
-          </p>
-        )}
-      </div>
       </div>{/* end config body dim wrapper */}
     </GlassCard>
   );
 });
 
-ConfigPanel.displayName = "ConfigPanel";
+RunConfigPanel.displayName = "RunConfigPanel";
