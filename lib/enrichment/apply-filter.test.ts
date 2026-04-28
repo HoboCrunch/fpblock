@@ -107,6 +107,27 @@ describe("applyFilter — persons", () => {
     };
     expect(applyFilter(items, f, "persons", ctx).map((i) => i.id)).toEqual(["4"]);
   });
+
+  // I2: icpIncludeNull=false with no icpMin/icpMax excludes null-score rows
+  it("icpIncludeNull=false standalone excludes null-score rows, keeps scored rows", () => {
+    const f: PersonFilterState = { ...EMPTY_FILTERS_PERSONS, icpIncludeNull: false };
+    // Bob (id=2) has icp_score=null → excluded; Alice, Cara, Dan have scores → kept
+    expect(applyFilter(items, f, "persons", ctx).map((i) => i.id)).toEqual(["1", "3", "4"]);
+  });
+
+  // M1: persons tab, concrete eventIds, affiliatedPersonIds=null → fallback to direct event_ids overlap
+  it("persons tab with concrete eventIds and affiliatedPersonIds=null falls back to direct event_ids overlap", () => {
+    const f: PersonFilterState = { ...EMPTY_FILTERS_PERSONS, eventIds: ["e2"] };
+    const nullCtx: FilterContext = { affiliatedPersonIds: null };
+    // Cara (e2) and Dan (e1+e2) overlap with e2; Alice (e1) and Bob ([]) do not
+    expect(applyFilter(items, f, "persons", nullCtx).map((i) => i.id)).toEqual(["3", "4"]);
+  });
+
+  // I1: specificIds=[] is a no-op, not a filter-to-zero
+  it("specificIds=[] is a no-op and returns all items", () => {
+    const f: PersonFilterState = { ...EMPTY_FILTERS_PERSONS, specificIds: [] };
+    expect(applyFilter(items, f, "persons", ctx).map((i) => i.id)).toEqual(["1", "2", "3", "4"]);
+  });
 });
 
 type OrgItem = {

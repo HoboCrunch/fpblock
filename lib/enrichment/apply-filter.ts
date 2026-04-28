@@ -63,8 +63,15 @@ export function applyFilter<T extends PersonItem | OrgItem>(
   tab: "persons" | "organizations",
   ctx: FilterContext
 ): T[] {
+  // Build Set once outside the filter callback for O(1) membership checks.
+  // Guard: an empty specificIds array is treated as a no-op (not "filter to zero").
+  const specificIdSet =
+    filter.specificIds && filter.specificIds.length > 0
+      ? new Set(filter.specificIds)
+      : null;
+
   return items.filter((item) => {
-    if (filter.specificIds && !filter.specificIds.includes(item.id)) return false;
+    if (specificIdSet && !specificIdSet.has(item.id)) return false;
 
     if (filter.search) {
       const name =
