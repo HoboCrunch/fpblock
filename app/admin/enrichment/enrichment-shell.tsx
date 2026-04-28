@@ -153,10 +153,13 @@ export function EnrichmentShell() {
 
   const { data: affiliatedPersonIdsArr } = useEventsPersonIds(concreteEventIds, eventRelation);
 
-  const affiliatedPersonIdsSet = useMemo(
-    () => (affiliatedPersonIdsArr ? new Set(affiliatedPersonIdsArr) : null),
-    [affiliatedPersonIdsArr]
-  );
+  const affiliatedPersonIdsSet = useMemo(() => {
+    // When the user has concrete events selected but both relation toggles off,
+    // the hook is disabled. We surface this as an explicit empty Set so applyFilter
+    // returns zero matches (matches the old useEventPersonIds(eventId, null) behavior).
+    if (concreteEventIds && eventRelation === null) return new Set<string>();
+    return affiliatedPersonIdsArr ? new Set(affiliatedPersonIdsArr) : null;
+  }, [affiliatedPersonIdsArr, concreteEventIds, eventRelation]);
 
   const allItems = itemsData?.items ?? [];
   const totalCount = itemsData?.totalCount ?? 0;
@@ -282,6 +285,10 @@ export function EnrichmentShell() {
   useEffect(() => {
     const nextVisible = new Set<string>(filteredItems.map((i) => i.id));
     const prevVisible = prevVisibleIdsRef.current;
+    // Write the ref synchronously before setSelectedIds so that a second
+    // rapid firing of this effect (React 19 concurrent mode) sees the
+    // updated ref rather than the stale one.
+    prevVisibleIdsRef.current = nextVisible;
     setSelectedIds((prev) => {
       const next = new Set<string>();
       // (prev ∩ nextVisible) — keep deselections from being lost on no-op refilters
@@ -290,7 +297,6 @@ export function EnrichmentShell() {
       for (const id of nextVisible) if (!prevVisible.has(id)) next.add(id);
       return next;
     });
-    prevVisibleIdsRef.current = nextVisible;
   }, [filteredItems]);
 
   // =========================================================================
@@ -350,6 +356,8 @@ export function EnrichmentShell() {
 
   function switchTab(tab: "persons" | "organizations") {
     if (tab === activeTab) return;
+    // Per-tab filter state (filterPersons / filterOrgs) intentionally persists
+    // across tab switches. Only selection + ephemeral UI state is cleared.
     setActiveTab(tab);
     setCenterState("list");
     setSelectedIds(new Set());
