@@ -15,45 +15,32 @@ import { useEnrichmentJobs } from "@/lib/queries/use-enrichment-jobs";
 import { useEnrichmentItems } from "@/lib/queries/use-enrichment-items";
 import { useEvents } from "@/lib/queries/use-events";
 import { useInitiatives } from "@/lib/queries/use-initiatives";
-import { useEventPersonIds } from "@/lib/queries/use-event-affiliations";
-import { GlassCard } from "@/components/ui/glass-card";
+import { useEventsPersonIds } from "@/lib/queries/use-event-affiliations";
 import { cn } from "@/lib/utils";
 import { Settings2 } from "lucide-react";
-import {
-  EventRelationToggle,
-  toggleToRelation,
-} from "@/components/admin/event-relation-toggle";
+import { toggleToRelation } from "@/components/admin/event-relation-toggle";
 
 import {
   CenterPanel,
   type CenterState,
 } from "./components/center-panel";
 import {
-  ConfigPanel,
+  RunConfigPanel,
   type OrgStage,
   type EnrichField,
-  type TargetType,
-} from "./components/config-panel";
+} from "./components/run-config-panel";
 import {
-  JobHistory,
-} from "./components/job-history";
-import type { FilterState } from "./components/filter-bar";
+  FilterPanel,
+  type PersonFilterState,
+  type OrgFilterState,
+  EMPTY_FILTERS_PERSONS,
+  EMPTY_FILTERS_ORGS,
+} from "./components/filter-panel";
+import { JobHistoryDrawer } from "./components/job-history-drawer";
+import { JobHistory } from "./components/job-history";
+import { applyFilter } from "@/lib/enrichment/apply-filter";
 import type { OrgRow, PersonRow, OrgProgress } from "./components/entity-table";
 import type { SummaryStripProps } from "./components/summary-strip";
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const EMPTY_FILTERS: FilterState = {
-  search: "",
-  event: "",
-  initiative: "",
-  icpMin: "",
-  icpMax: "",
-  status: "",
-  categoryOrSource: "",
-};
 
 // ---------------------------------------------------------------------------
 // Shell Component
@@ -88,13 +75,15 @@ export function EnrichmentShell() {
   // ---- Center state machine ----
   const [centerState, setCenterState] = useState<CenterState>("list");
 
-  // ---- Selection ----
+  // ---- Filter state (per-tab so the inactive tab keeps its filter) ----
+  const [filterPersons, setFilterPersons] = useState<PersonFilterState>({ ...EMPTY_FILTERS_PERSONS });
+  const [filterOrgs, setFilterOrgs] = useState<OrgFilterState>({ ...EMPTY_FILTERS_ORGS });
+
+  // ---- Selection (refined by user) ----
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const prevVisibleIdsRef = useRef<Set<string>>(new Set());
 
-  // ---- Filters ----
-  const [filters, setFilters] = useState<FilterState>({ ...EMPTY_FILTERS });
-
-  // ---- Config state (kept here since it interacts with run logic) ----
+  // ---- Run config (unchanged) ----
   const [stages, setStages] = useState<OrgStage[]>(["apollo", "perplexity", "gemini"]);
   const [personFields, setPersonFields] = useState<EnrichField[]>(["email", "linkedin"]);
   const [pfPerCompany, setPfPerCompany] = useState(5);
@@ -103,21 +92,14 @@ export function EnrichmentShell() {
   ]);
   const [pfDepartments, setPfDepartments] = useState<string[]>([]);
 
-  // ---- Target ----
-  // Default to "selected" so initial mount starts with an empty selection.
-  // The URL query-param effect below upgrades this when arriving with
-  // ?organizations=, ?persons=, or ?retry=. Matches the same convention
-  // applied in switchTab (see project_admin_ui_conventions).
-  const [target, setTarget] = useState<TargetType>("selected");
-  const [eventId, setEventId] = useState("");
-  const [initiativeId, setInitiativeId] = useState("");
-  const [icpThreshold, setIcpThreshold] = useState(75);
-  const [savedListId, setSavedListId] = useState("");
-
-  // ---- Event relation toggles (only applies when target === "event") ----
-  const [speakerOn, setSpeakerOn] = useState(true);
-  const [orgAffiliatedOn, setOrgAffiliatedOn] = useState(true);
-  const eventRelation = toggleToRelation(speakerOn, orgAffiliatedOn);
+  // ---- Drawer ----
+  const [historyOpen, setHistoryOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("enrichment.history.open") === "true";
+  });
+  useEffect(() => {
+    localStorage.setItem("enrichment.history.open", String(historyOpen));
+  }, [historyOpen]);
 
   // ---- Running ----
   const [isRunning, setIsRunning] = useState(false);
@@ -155,11 +137,25 @@ export function EnrichmentShell() {
   const { data: eventsRaw = [] } = useEvents();
   const { data: initiativesRaw = [] } = useInitiatives();
 
-  // Authoritative person id set for the chosen (eventId, relation). Unconditional
-  // hook call: args are null when not applicable so it stays disabled.
-  const { data: affiliatedPersonIds } = useEventPersonIds(
-    activeTab === "persons" && target === "event" && eventId ? eventId : null,
-    activeTab === "persons" && target === "event" ? eventRelation : null,
+  // Compute concrete event ids and relation for the multi-event hook.
+  // Hook stays disabled when not on persons tab, no concrete events selected,
+  // or relation toggles are both off.
+  const concreteEventIds = useMemo(() => {
+    if (activeTab !== "persons") return null;
+    const ids = filterPersons.eventIds.filter((id) => id !== "__none__");
+    return ids.length > 0 ? ids : null;
+  }, [activeTab, filterPersons.eventIds]);
+
+  const eventRelation = useMemo(
+    () => toggleToRelation(filterPersons.speakerOn, filterPersons.orgAffiliatedOn),
+    [filterPersons.speakerOn, filterPersons.orgAffiliatedOn]
+  );
+
+  const { data: affiliatedPersonIdsArr } = useEventsPersonIds(concreteEventIds, eventRelation);
+
+  const affiliatedPersonIdsSet = useMemo(
+    () => (affiliatedPersonIdsArr ? new Set(affiliatedPersonIdsArr) : null),
+    [affiliatedPersonIdsArr]
   );
 
   const allItems = itemsData?.items ?? [];
@@ -208,12 +204,10 @@ export function EnrichmentShell() {
     if (itemsLoading || allItems.length === 0) return;
 
     if (activeTab === "organizations" && preSelectedOrgs.length > 0) {
-      setSelectedIds(new Set(preSelectedOrgs));
-      setTarget("selected");
+      setFilterOrgs((prev) => ({ ...prev, specificIds: preSelectedOrgs }));
       hasAppliedQueryParams.current = true;
     } else if (activeTab === "persons" && preSelectedPersons.length > 0) {
-      setSelectedIds(new Set(preSelectedPersons));
-      setTarget("selected");
+      setFilterPersons((prev) => ({ ...prev, specificIds: preSelectedPersons }));
       hasAppliedQueryParams.current = true;
     }
   }, [activeTab, allItems, itemsLoading, preSelectedOrgs, preSelectedPersons]);
@@ -232,54 +226,26 @@ export function EnrichmentShell() {
         .in("status", ["failed", "error"]);
 
       if (childJobs) {
-        const failedIds = new Set(
-          childJobs
-            .map((j: Record<string, unknown>) => j.target_id as string)
-            .filter(Boolean)
-        );
-        if (failedIds.size > 0) {
-          setSelectedIds(failedIds);
-          setTarget("selected");
+        const failedIds = childJobs
+          .map((j: Record<string, unknown>) => j.target_id as string)
+          .filter(Boolean);
+        if (failedIds.length > 0) {
+          setFilterOrgs((prev) => ({ ...prev, specificIds: failedIds }));
         }
       }
     })();
   }, [retryJobId, activeTab, allItems, itemsLoading]);
 
   // =========================================================================
-  // Filtering (client-side)
+  // Filtering (client-side via applyFilter)
   // =========================================================================
 
   const filteredItems = useMemo(() => {
-    return allItems.filter((item) => {
-      // Search filter
-      const name = "full_name" in item ? item.full_name : (item as OrgRow).name;
-      if (filters.search && !name.toLowerCase().includes(filters.search.toLowerCase())) {
-        return false;
-      }
-
-      // Event filter (by event ID)
-      if (filters.event) {
-        const itemEventIds = (item as OrgRow & { event_ids?: string[] }).event_ids ??
-          (item as PersonRow & { event_ids?: string[] }).event_ids;
-        if (!itemEventIds?.includes(filters.event)) return false;
-      }
-
-      // Status filter
-      if (filters.status && item.enrichment_status !== filters.status) return false;
-
-      // ICP filter
-      if (filters.icpMin && (item.icp_score ?? 0) < Number(filters.icpMin)) return false;
-      if (filters.icpMax && (item.icp_score ?? 0) > Number(filters.icpMax)) return false;
-
-      // Category / Source filter
-      if (filters.categoryOrSource) {
-        if ("category" in item && (item as OrgRow).category !== filters.categoryOrSource) return false;
-        if ("source" in item && !("category" in item) && (item as PersonRow).source !== filters.categoryOrSource) return false;
-      }
-
-      return true;
+    const filter = activeTab === "persons" ? filterPersons : filterOrgs;
+    return applyFilter(allItems, filter, activeTab, {
+      affiliatedPersonIds: affiliatedPersonIdsSet,
     });
-  }, [allItems, filters]);
+  }, [allItems, activeTab, filterPersons, filterOrgs, affiliatedPersonIdsSet]);
 
   // =========================================================================
   // Sorting
@@ -309,6 +275,25 @@ export function EnrichmentShell() {
   }, [filteredItems, sortKey, sortDir]);
 
   // =========================================================================
+  // Selection diff: keep prior decisions for rows that stayed visible,
+  // auto-check rows newly entering the filter.
+  // =========================================================================
+
+  useEffect(() => {
+    const nextVisible = new Set<string>(filteredItems.map((i) => i.id));
+    const prevVisible = prevVisibleIdsRef.current;
+    setSelectedIds((prev) => {
+      const next = new Set<string>();
+      // (prev ∩ nextVisible) — keep deselections from being lost on no-op refilters
+      for (const id of prev) if (nextVisible.has(id)) next.add(id);
+      // (nextVisible \ prevVisible) — newly visible rows auto-check
+      for (const id of nextVisible) if (!prevVisible.has(id)) next.add(id);
+      return next;
+    });
+    prevVisibleIdsRef.current = nextVisible;
+  }, [filteredItems]);
+
+  // =========================================================================
   // Display items
   // =========================================================================
 
@@ -335,55 +320,29 @@ export function EnrichmentShell() {
     }
   }
 
-  // =========================================================================
-  // Target / Selection sync
-  // =========================================================================
-
-  useEffect(() => {
-    if (target === "selected") return;
-
-    const matching = new Set<string>();
-    for (const item of allItems) {
-      let matches = false;
-      switch (target) {
-        case "unenriched":
-          matches = item.enrichment_status === "none" || !item.enrichment_status;
-          break;
-        case "failed_incomplete":
-          matches = item.enrichment_status === "failed" || item.enrichment_status === "partial";
-          break;
-        case "icp_below":
-          matches = (item.icp_score ?? 0) < icpThreshold;
-          break;
-        case "event":
-          if (eventId) {
-            if (activeTab === "persons") {
-              // Use authoritative set from affiliation + direct union (server-computed).
-              // When eventRelation is null (both toggles off), affiliatedPersonIds is [] → empty selection.
-              matches = (affiliatedPersonIds ?? []).includes(item.id);
-            } else {
-              // Orgs: existing behavior (event_ids membership)
-              const ids = (item as OrgRow & { event_ids?: string[] }).event_ids;
-              matches = ids?.includes(eventId) ?? false;
-            }
-          }
-          break;
-        case "initiative":
-          break;
-        case "saved_list":
-          break;
-      }
-      if (matches) matching.add(item.id);
-    }
-    setSelectedIds((prev) => {
-      if (prev.size === matching.size && [...matching].every((id) => prev.has(id))) return prev;
-      return matching;
-    });
-  }, [target, allItems, icpThreshold, eventId, activeTab, affiliatedPersonIds]);
-
   function handleSelectionChange(ids: Set<string>) {
     setSelectedIds(ids);
   }
+
+  // =========================================================================
+  // Select-all / Clear-visible callbacks
+  // =========================================================================
+
+  const handleSelectAllVisible = useCallback(() => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const item of filteredItems) next.add(item.id);
+      return next;
+    });
+  }, [filteredItems]);
+
+  const handleClearVisible = useCallback(() => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const item of filteredItems) next.delete(item.id);
+      return next;
+    });
+  }, [filteredItems]);
 
   // =========================================================================
   // Tab switching
@@ -394,8 +353,7 @@ export function EnrichmentShell() {
     setActiveTab(tab);
     setCenterState("list");
     setSelectedIds(new Set());
-    setFilters({ ...EMPTY_FILTERS });
-    setTarget("selected");
+    prevVisibleIdsRef.current = new Set();
     setViewingJobId(null);
     setResultStats(undefined);
     setResultOutcomes(new Map());
@@ -423,12 +381,8 @@ export function EnrichmentShell() {
     if (selectedIds.size === 0) return false;
     if (activeTab === "organizations" && stages.length === 0) return false;
     if (activeTab === "persons" && personFields.length === 0) return false;
-    // When scoping by event on the persons tab, require at least one relation toggle
-    if (activeTab === "persons" && target === "event" && eventId && eventRelation === null) {
-      return false;
-    }
     return true;
-  }, [selectedIds.size, activeTab, stages.length, personFields.length, target, eventId, eventRelation]);
+  }, [selectedIds.size, activeTab, stages.length, personFields.length]);
 
   // =========================================================================
   // Run Pipeline
@@ -509,10 +463,7 @@ export function EnrichmentShell() {
         body.fields = personFields;
         body.source = "apollo";
         body.personIds = ids;
-        if (target === "event" && eventId && eventRelation) {
-          body.eventId = eventId;
-          body.relation = eventRelation;
-        }
+        // Note: we no longer send eventId/relation — selection is already authoritative.
 
         const res = await fetch("/api/enrich/persons", {
           method: "POST",
@@ -813,17 +764,11 @@ export function EnrichmentShell() {
             <CenterPanel
               state={centerState}
               tab={activeTab}
-              filters={filters}
-              onFiltersChange={setFilters}
-              events={events}
-              initiatives={initiatives}
               items={displayItems}
               loading={itemsLoading}
               totalCount={totalCount}
               selectedIds={selectedIds}
               onSelectionChange={handleSelectionChange}
-              categories={categories}
-              sources={sources}
               progressData={progressData}
               activeStages={activeStages}
               progressCompleted={progressCompleted}
@@ -844,7 +789,25 @@ export function EnrichmentShell() {
             "hidden lg:flex w-[360px] min-w-[320px] max-w-[400px] flex-col gap-4 shrink-0",
           )}
         >
-          <ConfigPanel
+          <FilterPanel
+            tab={activeTab}
+            filterPersons={filterPersons}
+            filterOrgs={filterOrgs}
+            onFilterPersonsChange={setFilterPersons}
+            onFilterOrgsChange={setFilterOrgs}
+            events={events}
+            initiatives={initiatives}
+            savedLists={savedLists}
+            categories={categories}
+            sources={sources}
+            filteredCount={filteredItems.length}
+            selectedCount={selectedIds.size}
+            onSelectAllVisible={handleSelectAllVisible}
+            onClearVisible={handleClearVisible}
+            disabled={isRunning}
+          />
+
+          <RunConfigPanel
             tab={activeTab}
             stages={stages}
             onStagesChange={setStages}
@@ -856,50 +819,12 @@ export function EnrichmentShell() {
             onPfSenioritiesChange={setPfSeniorities}
             pfDepartments={pfDepartments}
             onPfDepartmentsChange={setPfDepartments}
-            target={target}
-            onTargetChange={setTarget}
-            eventId={eventId}
-            onEventIdChange={setEventId}
-            initiativeId={initiativeId}
-            onInitiativeIdChange={setInitiativeId}
-            icpThreshold={icpThreshold}
-            onIcpThresholdChange={setIcpThreshold}
-            savedListId={savedListId}
-            onSavedListIdChange={setSavedListId}
-            events={events}
-            initiatives={initiatives}
-            savedLists={savedLists}
             selectedCount={selectedIds.size}
             isRunning={isRunning}
             canRun={canRun}
             onRun={handleRun}
             onStop={handleStop}
           />
-
-          {activeTab === "persons" && target === "event" && eventId && (
-            <GlassCard className="p-3">
-              <div className="text-xs text-[var(--text-muted)] mb-2">
-                Event scope
-              </div>
-              <EventRelationToggle
-                speaker={speakerOn}
-                orgAffiliated={orgAffiliatedOn}
-                onChange={({ speaker, orgAffiliated }) => {
-                  setSpeakerOn(speaker);
-                  setOrgAffiliatedOn(orgAffiliated);
-                }}
-              />
-            </GlassCard>
-          )}
-
-          <GlassCard className="flex-1 min-h-0 flex flex-col overflow-hidden">
-            <JobHistory
-              jobs={jobs}
-              activeJobId={activeJobId}
-              viewingJobId={viewingJobId}
-              onSelectJob={handleSelectJob}
-            />
-          </GlassCard>
         </div>
 
         {/* ---- Mobile sidebar overlay ---- */}
@@ -920,7 +845,25 @@ export function EnrichmentShell() {
                 </button>
               </div>
 
-              <ConfigPanel
+              <FilterPanel
+                tab={activeTab}
+                filterPersons={filterPersons}
+                filterOrgs={filterOrgs}
+                onFilterPersonsChange={setFilterPersons}
+                onFilterOrgsChange={setFilterOrgs}
+                events={events}
+                initiatives={initiatives}
+                savedLists={savedLists}
+                categories={categories}
+                sources={sources}
+                filteredCount={filteredItems.length}
+                selectedCount={selectedIds.size}
+                onSelectAllVisible={handleSelectAllVisible}
+                onClearVisible={handleClearVisible}
+                disabled={isRunning}
+              />
+
+              <RunConfigPanel
                 tab={activeTab}
                 stages={stages}
                 onStagesChange={setStages}
@@ -932,19 +875,6 @@ export function EnrichmentShell() {
                 onPfSenioritiesChange={setPfSeniorities}
                 pfDepartments={pfDepartments}
                 onPfDepartmentsChange={setPfDepartments}
-                target={target}
-                onTargetChange={setTarget}
-                eventId={eventId}
-                onEventIdChange={setEventId}
-                initiativeId={initiativeId}
-                onInitiativeIdChange={setInitiativeId}
-                icpThreshold={icpThreshold}
-                onIcpThresholdChange={setIcpThreshold}
-                savedListId={savedListId}
-                onSavedListIdChange={setSavedListId}
-                events={events}
-                initiatives={initiatives}
-                savedLists={savedLists}
                 selectedCount={selectedIds.size}
                 isRunning={isRunning}
                 canRun={canRun}
@@ -952,23 +882,7 @@ export function EnrichmentShell() {
                 onStop={handleStop}
               />
 
-              {activeTab === "persons" && target === "event" && eventId && (
-                <GlassCard className="p-3">
-                  <div className="text-xs text-[var(--text-muted)] mb-2">
-                    Event scope
-                  </div>
-                  <EventRelationToggle
-                    speaker={speakerOn}
-                    orgAffiliated={orgAffiliatedOn}
-                    onChange={({ speaker, orgAffiliated }) => {
-                      setSpeakerOn(speaker);
-                      setOrgAffiliatedOn(orgAffiliated);
-                    }}
-                  />
-                </GlassCard>
-              )}
-
-              <GlassCard className="flex-1 min-h-0 flex flex-col overflow-hidden">
+              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <JobHistory
                   jobs={jobs}
                   activeJobId={activeJobId}
@@ -978,11 +892,21 @@ export function EnrichmentShell() {
                     setSidebarOpen(false);
                   }}
                 />
-              </GlassCard>
+              </div>
             </div>
           </>
         )}
       </div>
+
+      {/* ---- Desktop Job History Drawer ---- */}
+      <JobHistoryDrawer
+        open={historyOpen}
+        onToggle={() => setHistoryOpen((o) => !o)}
+        jobs={jobs}
+        activeJobId={activeJobId}
+        viewingJobId={viewingJobId}
+        onSelectJob={handleSelectJob}
+      />
     </div>
   );
 }
