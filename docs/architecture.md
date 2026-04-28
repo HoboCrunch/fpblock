@@ -156,8 +156,6 @@ Cannes/
 │       ├── breadcrumb.tsx        # Auto-generated from pathname
 │       ├── search-bar.tsx        # Glass search input
 │       ├── filter-bar.tsx        # Horizontal filter dropdowns
-│       ├── person-table.tsx      # Person data table (glass styling)
-│       ├── organization-table.tsx # Organization data table
 │       ├── interaction-table.tsx # Interaction data table (unified timeline)
 │       ├── message-actions.tsx   # Interaction action buttons
 │       ├── activity-feed.tsx     # Recent job_log entries

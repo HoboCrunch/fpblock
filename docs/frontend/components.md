@@ -80,17 +80,18 @@ The only icon library in the codebase. Verified by `grep -r lucide-react compone
 
 ## `components/ui/*` — primitives
 
-Seven files, all stateless (or local-state-only) presentational primitives.
+Stateless (or local-state-only) presentational primitives.
 
-| File | Lines | Purpose |
-|---|---|---|
-| `glass-card.tsx` | 38 | Wrapper `<GlassCard>` with `hover`, `glow`, `glowColor`, `padding`, `as`, `onClick`. Composes `glass rounded-xl transition-all duration-200`. |
-| `glass-input.tsx` | 37 | `<GlassInput>` text input. Forward-refs to `<input>`. Optional left `icon` (lucide). Focus ring: `focus:ring-2 focus:ring-[var(--accent-orange)]/40`. |
-| `glass-select.tsx` | 47 | `<GlassSelect>` native `<select>` with custom chevron. Takes `options: {value, label}[]` and optional `placeholder`. |
-| `badge.tsx` | 60 | `<Badge variant>` pill. The `variants` map (lines 3-39) defines 24 named variants — every interaction status, sponsor tier, seniority, and a few "glass" variants (`glass`, `glass-orange`, `glass-indigo`). Single source of truth for status pill colors. |
-| `stat-card.tsx` | 44 | `<StatCard label value icon accentColor>` — large numeric display with icon. Used on the Dashboard. |
-| `tabs.tsx` | 36 | `<Tabs tabs={[{id,label,content}]} defaultTab>` — local-state tab switcher. Used by the Settings page. **Limitation:** state is internal — not URL-synced; siblings cannot read or write the active tab. |
-| `virtual-table.tsx` | 131 | Generic `<VirtualTable>` wrapper around `useVirtualizer`. **Inconsistency:** uses an HTML `<table>` for the sticky header (line 84) — most consumers in the app instead use the manual CSS Grid pattern (see `org-table-row.tsx`'s `ORG_GRID_COLS`). `<VirtualTable>` has no current usages in admin pages. |
+| File | Purpose |
+|---|---|
+| `glass-card.tsx` | Wrapper `<GlassCard>` with `hover`, `glow`, `glowColor`, `padding`, `as`, `onClick`. Composes `glass rounded-xl transition-all duration-200`. |
+| `glass-input.tsx` | `<GlassInput>` text input. Forward-refs to `<input>`. Optional left `icon` (lucide). Focus ring: `focus:ring-2 focus:ring-[var(--accent-orange)]/40`. |
+| `glass-select.tsx` | `<GlassSelect>` native `<select>` with custom chevron. **Single-select only**; for multi-select use `MultiSelectField` (see `components/admin/`). |
+| `badge.tsx` | `<Badge variant>` pill. The `variants` map defines 24 named variants — every interaction status, sponsor tier, seniority, and a few "glass" variants (`glass`, `glass-orange`, `glass-indigo`). Children render inside an internal `<span class="truncate min-w-0">` so badges with `max-w-*` ellipsis cleanly. Optional `title` prop for the tooltip on truncated text. |
+| `stat-card.tsx` | `<StatCard label value icon accentColor>` — large numeric display with icon. Used on the Dashboard. |
+| `tabs.tsx` | `<Tabs tabs={[{id,label,content}]} defaultTab>` — local-state tab switcher. Used by Settings. **Limitation:** state is internal — not URL-synced. |
+| `data-table.tsx` | **Canonical table primitive.** `<DataTable<T>>` wraps `@tanstack/react-virtual` over a CSS-Grid layout. Props: `rows`, `gridTemplate`, `header`, `renderRow`, `getRowKey`, plus optional `onRowClick`, `isRowSelected`, `onRowMouseEnter`/`Leave`, `rowClassName`, `estimateRowHeight`, `scrollHeight`, `minWidth`, `emptyMessage`. Sticky header inside the scroll container. Used by sequences, events, organizations, persons, pipeline, enrichment. |
+| `data-cell.tsx` | Cell variants for `DataTable`'s `renderRow`/`header`: `TextCell` (truncated), `NumericCell` (tabular-nums, right-aligned), `PillCell` (overflow-hidden flex container for badges), `DateCell` (whitespace-nowrap, muted), `HeaderCell` (column header with built-in uppercase tracking). All consume the shared `--cell-px` / `--cell-py` / `--cell-py-header` CSS tokens defined in `globals.css :root` so header padding lines up with row padding across surfaces. |
 
 ### What is _missing_ from `components/ui/*`
 
@@ -120,21 +121,23 @@ Roughly 40 components organized by purpose.
 | `selection-summary.tsx` | Footer-style summary with selection count + bulk action buttons (20 LOC). |
 | `filter-bar.tsx` | Sticky filter row container (44 LOC). |
 | `filter-group.tsx` | Collapsible group within a filter sidebar (27 LOC). |
-| `active-filters.tsx` | Inline chips representing active filters with `<X>` to clear. |
+| `active-filters.tsx` | Inline chips representing active filters with `<X>` to clear. Single source of truth for active-filter visualization — multi-select dropdowns no longer render their own chip strips below the trigger; they show "N selected" inside the trigger and rely on this bar for chip removal. Always shows "Clear all" when ≥1 filter; chips use neutral glass styling (orange accent reserved for primary actions). |
+| `multi-select-field.tsx` | `<MultiSelectField placeholder options values onChange>` — multi-select dropdown that displays a placeholder, single-label, or "N selected" inside its trigger. Replaces the old `<GlassSelect> + inline chip strip` pattern (had been duplicated 6× in `persons-table-client.tsx`). Has vitest coverage. |
 | `search-bar.tsx` | Standard search input wrapper (30 LOC). |
 | `summary-cards.tsx` | Generic stat-cards row used by detail pages. |
 | `coverage-metrics.tsx` | Mini bar chart of ICP coverage. |
 | `data-completeness.tsx` | Per-field completeness display. |
 
 ### Tables / rows
+
+All admin tables (sequences, events, organizations, persons, pipeline, enrichment) render through the shared `<DataTable>` primitive in `components/ui/data-table.tsx`. Row components return grid-children fragments rather than `<tr>`/`<td>` trees.
+
 | File | Purpose |
 |---|---|
-| `person-table.tsx` | Legacy/static person table. Most person rendering happens in `app/admin/persons/person-table-row.tsx`. |
-| `organization-table.tsx` | Same as above, legacy. |
 | `initiative-table.tsx` | Initiatives list table. |
-| `pipeline-table.tsx` | Pipeline table view (alternative to kanban). |
-| `message-row.tsx` | Single message row in the sequence message queue (274 LOC). |
-| `sequence-row.tsx` | Single sequence row used by `sequence-list-client.tsx`. |
+| `pipeline-table.tsx` | Pipeline view's table mode — `DataTable` invocation with `TextCell`/`PillCell` columns. Alternative to the kanban view. |
+| `message-row.tsx` | Single message row in the sequence message queue. **Exception**: the message queue keeps an HTML `<table>` (with `table-fixed` + `<colgroup>`) because expandable detail rows don't fit `DataTable`'s fixed-height virtualization. |
+| `sequence-row.tsx` | Returns grid children consumed by `<DataTable>` in `sequence-list-client.tsx`. |
 | `sequence-preview.tsx` | Right-pane sequence detail preview. |
 
 ### Pipeline / DnD
@@ -254,15 +257,12 @@ These are present in the codebase and should not be repeated.
 
 See [admin-ui.md → Selection model](./admin-ui.md#selection-model). The component is conceptually "shared" but physically copy-pasted. Promote to `components/ui/glass-checkbox.tsx`.
 
-### 2. HTML `<table>` in `entity-table.tsx`
+### 2. HTML `<table>` in detail sub-grids
 
-`app/admin/enrichment/components/entity-table.tsx:224` uses `<table>/<tr>/<td>`. This contradicts the CSS-Grid mandate from `PERFORMANCE.md` §2 and breaks if the row count grows enough to warrant virtualization.
+The major admin list pages (sequences, events, organizations, persons, pipeline, enrichment) all migrated to `<DataTable>` in 2026-04. Two HTML-table holdouts remain, both intentional:
 
-`components/ui/virtual-table.tsx:84` also uses an HTML `<table>` for its sticky header — inconsistent with the manual grid pattern in the orgs/persons tables. The component currently has no in-app consumers, but it's misleading as a reference implementation.
-
-`app/admin/events/events-table-client.tsx:577` uses HTML `<table>`. Acceptable because event count is small (~5), but inconsistent with the row-component grid pattern.
-
-`app/admin/organizations/[id]/page.tsx` (org detail) uses HTML `<table>` for sub-grids (signals, people roster, events, initiatives) — not virtualized; acceptable for small lists but inconsistent.
+- `app/admin/organizations/[id]/page.tsx` (org detail) uses HTML `<table>` for small sub-grids (signals, people roster, events, initiatives). Acceptable: each is tiny and never warrants virtualization, but worth migrating for consistency if the surrounding page is ever rewritten.
+- `app/admin/sequences/[id]/messages/message-queue-client.tsx` keeps HTML `<table>` because each row has an expandable detail row (`<td colSpan>`), which doesn't fit `DataTable`'s fixed-height virtualization. The table has `table-fixed` + `<colgroup>` to lock column widths.
 
 ### 3. Pages bypassing React Query
 

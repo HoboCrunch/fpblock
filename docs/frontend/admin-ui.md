@@ -206,7 +206,7 @@ The Enrichment shell makes this explicit:
 ### Events — `/admin/events`
 
 - Server page builds a list of events with role counts.
-- Client (`events-table-client.tsx`) uses an HTML `<table>` (line 577) — **violates** the "CSS Grid not HTML tables" convention. The table is small (one row per event) so it does not exceed the >100-row threshold that mandates virtualization.
+- Client (`events-table-client.tsx`) renders through `<DataTable>` with `EVENT_COLS` grid template. SortHeader returns a `<HeaderCell>` carrying the same chevron sort indicators as the persons/orgs grids. Center-aligned counts use `<NumericCell className="justify-center">`.
 - Detail page: `app/admin/events/[id]/page.tsx` — five-tab interface (Speakers, Sponsors, Org-affiliated, Schedule, Initiatives).
 
 ### Pipeline — `/admin/pipeline`
@@ -246,7 +246,7 @@ app/admin/enrichment/page.tsx                    (server, Suspense)
     ├── components/config-panel.tsx              (memo'd)
     ├── components/job-history.tsx               (memo'd)
     ├── components/filter-bar.tsx                (memo'd)
-    ├── components/entity-table.tsx              (memo'd, but uses HTML table)
+    ├── components/entity-table.tsx              (memo'd, DataTable-based with conditional gridTemplate per tab/mode)
     ├── components/status-icons.tsx              (per-stage icon renderer)
     └── components/summary-strip.tsx             (results summary)
 ```
@@ -257,9 +257,15 @@ app/admin/enrichment/page.tsx                    (server, Suspense)
 - Stage selector (Apollo / Perplexity / Gemini / People Finder / Full Pipeline) — independently toggleable; Full Pipeline is just an additive composite, not a special mode.
 - `app/admin/enrichment/[jobId]/page.tsx` + `job-results-client.tsx` is the per-job dashboard with stat cards, expandable result cards, retry CTA. Polls every 3s while in-progress.
 
-#### Inconsistency: `entity-table.tsx` uses HTML `<table>`
+#### `entity-table.tsx` and conditional columns
 
-`app/admin/enrichment/components/entity-table.tsx:224` opens a `<table>` element with `<thead>`/`<tr>`/`<td>` rows. This contradicts the contract in `PERFORMANCE.md` §2 ("CSS Grid, not HTML tables"). It is also not virtualized. For the typical enrichment row count (a few hundred orgs) this is functional but will degrade if the dataset grows; consider migrating to the org/person CSS-grid pattern.
+`entity-table.tsx` uses `<DataTable>` with a `gridTemplate` computed via `useMemo` from `tab` (orgs vs persons) and `mode` (list / progress / results). Conditional columns:
+
+- Checkbox column (32px) only when `mode === "list"`.
+- Outcome column (100px) only when `mode === "results"`.
+- Org tab has 5 data columns (Name / Event / Category / ICP / Status); Person tab has 6 (Name / Org / Event / Source / ICP / Status).
+
+Per-row queued / processing styling (the `opacity-40` for not-yet-processed rows and `slideIn` animation when a row goes active during a live job) flows through `DataTable`'s `rowClassName` prop.
 
 ### Correlations — `/admin/correlations`
 

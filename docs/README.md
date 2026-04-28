@@ -72,7 +72,7 @@ These are real defects observed in the code while writing the docs. Each is desc
 
 **Convention violations**
 - `GlassCheckbox` is duplicated inline in 6 files instead of being a shared component (despite the project memory note saying it's shared). → `frontend/components.md`
-- HTML `<table>` used in `entity-table.tsx`, `events-table-client.tsx`, the org detail page, and the `virtual-table.tsx` header — violates the CSS-Grid-only rule. → `frontend/components.md`
+- HTML `<table>` remains in the org detail sub-grids (`organizations/[id]/page.tsx`) and the message queue (`message-queue-client.tsx` — kept because expandable detail rows don't fit fixed-height virtualization). All other admin tables migrated to the shared `<DataTable>` primitive in 2026-04. → `frontend/components.md`
 - Lists, Settings, and Uploads pages bypass React Query (`useState` + `useEffect` fetches). → `frontend/data-layer.md`
 - 6 files exceed the stated 300-LOC ceiling (enrichment-shell 988, lists 994, settings 928, persons-table 898, orgs-table 661, sequence-list 417). → `frontend/components.md`
 - `organizations.context` and `icp_score` overwrite on re-enrichment instead of using COALESCE — manual edits get clobbered. → `backend/enrichment.md`
