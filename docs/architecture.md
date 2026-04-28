@@ -1,5 +1,15 @@
 # Architecture Overview
 
+> **Read this first for the system-level picture.** For deep dives that supersede the older sections of this file, see:
+> - Schema → [backend/database.md](./backend/database.md) (canonical, rebuilt from migrations)
+> - API surface → [backend/api-routes.md](./backend/api-routes.md)
+> - Enrichment → [backend/enrichment.md](./backend/enrichment.md)
+> - Sequences + sending + inbox → [backend/sequences-messaging.md](./backend/sequences-messaging.md)
+> - Admin UI / components / data layer → [frontend/](./frontend/)
+> - Bot, integrations, scripts → [integrations/](./integrations/), [operations/](./operations/)
+>
+> Where this file's project-tree listings, table count, or migration list disagree with the deep dives, the deep dives win — they were rebuilt from current source on 2026-04-28.
+
 ## Tech Stack
 
 | Layer | Technology |

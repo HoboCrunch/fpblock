@@ -104,7 +104,11 @@ export function EnrichmentShell() {
   const [pfDepartments, setPfDepartments] = useState<string[]>([]);
 
   // ---- Target ----
-  const [target, setTarget] = useState<TargetType>("unenriched");
+  // Default to "selected" so initial mount starts with an empty selection.
+  // The URL query-param effect below upgrades this when arriving with
+  // ?organizations=, ?persons=, or ?retry=. Matches the same convention
+  // applied in switchTab (see project_admin_ui_conventions).
+  const [target, setTarget] = useState<TargetType>("selected");
   const [eventId, setEventId] = useState("");
   const [initiativeId, setInitiativeId] = useState("");
   const [icpThreshold, setIcpThreshold] = useState(75);

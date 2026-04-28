@@ -1,5 +1,7 @@
 # Setup & Deployment Guide
 
+> See also: [dev-practices.md](./dev-practices.md) for the day-to-day developer workflow (build/lint/test, env var inventory, migration workflow, commit conventions). The migration list in the "Database Setup" section below is from an earlier era — current count is 23 live migrations spanning 001–025; use `npx supabase db push --linked` rather than the hand-listed order.
+
 ## Prerequisites
 
 - Node.js 18+

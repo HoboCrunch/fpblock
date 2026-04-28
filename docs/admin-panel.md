@@ -1,5 +1,15 @@
 # Admin CRM Guide
 
+> **Heads up — this doc is partly superseded.**
+> Frontend structure, components, and the data layer have moved to:
+> - [docs/frontend/admin-ui.md](./frontend/admin-ui.md) — IA, shell, per-section overview, auth gating, selection model
+> - [docs/frontend/components.md](./frontend/components.md) — design system, `components/ui/*` and `components/admin/*` inventory, conventions, anti-patterns
+> - [docs/frontend/data-layer.md](./frontend/data-layer.md) — React Query setup, hook catalog, polling, mutation patterns
+>
+> What remains valuable in this file is the per-feature **behavior** detail (inbox auto-correlation rules, pipeline kanban drag semantics, event detail tab contents, enrichment pipeline stage rules, etc.). For "where do components live" or "how do I add a hook", read the new docs.
+
+---
+
 The admin CRM is at `/admin/*`. All routes require authentication via Supabase Auth.
 
 ## Login
