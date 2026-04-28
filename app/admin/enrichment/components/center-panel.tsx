@@ -3,10 +3,6 @@
 import React from "react";
 import { ArrowLeft } from "lucide-react";
 import {
-  FilterBar,
-  type FilterState,
-} from "./filter-bar";
-import {
   EntityTable,
   type OrgRow,
   type PersonRow,
@@ -21,19 +17,12 @@ export type CenterState = "list" | "progress" | "results";
 export interface CenterPanelProps {
   state: CenterState;
   tab: "persons" | "organizations";
-  // Shared
-  filters: FilterState;
-  onFiltersChange: (f: FilterState) => void;
-  events: { id: string; name: string }[];
-  initiatives: { id: string; name: string }[];
   // List state
   items: (OrgRow | PersonRow)[];
   loading?: boolean;
   totalCount: number;
   selectedIds: Set<string>;
   onSelectionChange: (ids: Set<string>) => void;
-  categories: string[];
-  sources: string[];
   // Progress state
   progressData?: Map<string, OrgProgress>;
   activeStages?: Map<string, string>;
@@ -55,17 +44,11 @@ export interface CenterPanelProps {
 export const CenterPanel = React.memo(function CenterPanel({
   state,
   tab,
-  filters,
-  onFiltersChange,
-  events,
-  initiatives,
   items,
   loading,
   totalCount,
   selectedIds,
   onSelectionChange,
-  categories,
-  sources,
   progressData,
   activeStages,
   progressCompleted,
@@ -81,18 +64,7 @@ export const CenterPanel = React.memo(function CenterPanel({
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
-      {/* Filter Bar — always visible */}
-      <FilterBar
-        filters={filters}
-        onFiltersChange={onFiltersChange}
-        tab={tab}
-        events={events}
-        initiatives={initiatives}
-        categories={categories}
-        sources={sources}
-      />
-
-      {/* Count summary — between filter bar and table */}
+      {/* Count summary — above table */}
       <div className="flex items-center justify-between mb-2 text-[10px] text-[var(--text-muted)] font-[family-name:var(--font-body)]">
         <span>
           Showing {filteredCount} of {totalCount}
