@@ -12,8 +12,12 @@ import { GlassSelect } from "@/components/ui/glass-select";
 import { SequenceRow } from "@/components/admin/sequence-row";
 import { SequencePreview } from "@/components/admin/sequence-preview";
 import { TwoPanelLayout } from "@/components/admin/two-panel-layout";
+import { DataTable } from "@/components/ui/data-table";
+import { HeaderCell } from "@/components/ui/data-cell";
 import { cn } from "@/lib/utils";
 import { Plus, X, GitBranch, Search } from "lucide-react";
+
+const SEQUENCE_COLS = "40px minmax(180px,2fr) 96px 96px 56px 140px minmax(160px,1.5fr) 110px 200px 130px";
 
 const STATUS_OPTIONS = [
   { value: "", label: "All statuses" },
@@ -104,10 +108,6 @@ export function SequenceListClient() {
       else next.delete(id);
       return next;
     });
-  }, []);
-
-  const handleHover = useCallback((id: string | null) => {
-    setHoveredId(id);
   }, []);
 
   const handleSelectAll = (checked: boolean) => {
@@ -282,54 +282,45 @@ export function SequenceListClient() {
           </GlassCard>
         ) : (
           <GlassCard padding={false}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm table-fixed">
-                <colgroup>
-                  <col className="w-10" />        {/* Checkbox */}
-                  <col />                          {/* Name (flex) */}
-                  <col className="w-24" />        {/* Channel */}
-                  <col className="w-24" />        {/* Status */}
-                  <col className="w-16" />        {/* Steps */}
-                  <col className="w-32" />        {/* Enrolled */}
-                  <col className="w-56" />        {/* Delivery funnel */}
-                  <col className="w-28" />        {/* Mode */}
-                  <col className="w-[200px]" />   {/* Event */}
-                  <col className="w-32" />        {/* Updated */}
-                </colgroup>
-                <thead>
-                  <tr className="border-b border-[var(--glass-border)] text-left">
-                    <th className="px-4 py-3 w-10">
-                      <input
-                        type="checkbox"
-                        checked={allSelected}
-                        onChange={(e) => handleSelectAll(e.target.checked)}
-                        className="rounded border-[var(--glass-border)] bg-[var(--glass-bg)] accent-[var(--accent-orange)] cursor-pointer"
-                      />
-                    </th>
-                    <th className="px-4 py-3 text-[var(--text-muted)] font-medium">Name</th>
-                    <th className="px-4 py-3 text-[var(--text-muted)] font-medium">Channel</th>
-                    <th className="px-4 py-3 text-[var(--text-muted)] font-medium">Status</th>
-                    <th className="px-4 py-3 text-[var(--text-muted)] font-medium">Steps</th>
-                    <th className="px-4 py-3 text-[var(--text-muted)] font-medium">Enrolled</th>
-                    <th className="px-4 py-3 text-[var(--text-muted)] font-medium">Delivery</th>
-                    <th className="px-4 py-3 text-[var(--text-muted)] font-medium">Mode</th>
-                    <th className="px-4 py-3 text-[var(--text-muted)] font-medium">Event</th>
-                    <th className="px-4 py-3 text-[var(--text-muted)] font-medium">Updated</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sequences.map((seq) => (
-                    <SequenceRow
-                      key={seq.id}
-                      sequence={seq}
-                      selected={selectedIds.has(seq.id)}
-                      onSelect={handleSelect}
-                      onHover={handleHover}
+            <DataTable
+              rows={sequences}
+              gridTemplate={SEQUENCE_COLS}
+              estimateRowHeight={40}
+              minWidth="1100px"
+              scrollHeight="calc(100vh - 240px)"
+              emptyMessage="No sequences found"
+              header={
+                <>
+                  <HeaderCell>
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="rounded border-[var(--glass-border)] bg-[var(--glass-bg)] accent-[var(--accent-orange)]"
                     />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </HeaderCell>
+                  <HeaderCell>Name</HeaderCell>
+                  <HeaderCell>Channel</HeaderCell>
+                  <HeaderCell>Status</HeaderCell>
+                  <HeaderCell>Steps</HeaderCell>
+                  <HeaderCell>Enrolled</HeaderCell>
+                  <HeaderCell>Delivery</HeaderCell>
+                  <HeaderCell>Mode</HeaderCell>
+                  <HeaderCell>Event</HeaderCell>
+                  <HeaderCell>Updated</HeaderCell>
+                </>
+              }
+              renderRow={(seq) => (
+                <SequenceRow
+                  sequence={seq}
+                  selected={selectedIds.has(seq.id)}
+                  onSelect={handleSelect}
+                />
+              )}
+              getRowKey={(seq) => seq.id}
+              onRowMouseEnter={(seq) => setHoveredId(seq.id)}
+              onRowMouseLeave={() => setHoveredId(null)}
+            />
           </GlassCard>
         )}
       </TwoPanelLayout>

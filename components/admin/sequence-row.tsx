@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { TextCell, NumericCell, PillCell, DateCell } from "@/components/ui/data-cell";
 import type { SequenceWithStats } from "@/lib/queries/use-sequences";
 
 function formatDistanceToNow(date: Date): string {
@@ -49,14 +50,12 @@ interface SequenceRowProps {
   sequence: SequenceWithStats;
   selected: boolean;
   onSelect: (id: string, checked: boolean) => void;
-  onHover: (id: string | null) => void;
 }
 
 export const SequenceRow = React.memo(function SequenceRow({
   sequence,
   selected,
   onSelect,
-  onHover,
 }: SequenceRowProps) {
   const steps = Array.isArray(sequence.steps) ? sequence.steps : [];
   const completionRate =
@@ -78,97 +77,78 @@ export const SequenceRow = React.memo(function SequenceRow({
     : "—";
 
   return (
-    <tr
-      className="border-b border-[var(--glass-border)] last:border-0 hover:bg-[var(--glass-bg-hover)] transition-all duration-200 cursor-pointer"
-      onMouseEnter={() => onHover(sequence.id)}
-      onMouseLeave={() => onHover(null)}
-    >
-      {/* Checkbox */}
-      <td className="px-4 py-3 w-10">
+    <>
+      {/* 1. Checkbox */}
+      <div className="px-2 py-1 flex items-center">
         <input
           type="checkbox"
           checked={selected}
           onChange={(e) => onSelect(sequence.id, e.target.checked)}
           onClick={(e) => e.stopPropagation()}
-          className="rounded border-[var(--glass-border)] bg-[var(--glass-bg)] accent-[var(--accent-orange)] cursor-pointer"
+          className="rounded border-[var(--glass-border)] bg-[var(--glass-bg)] accent-[var(--accent-orange)]"
         />
-      </td>
+      </div>
 
-      {/* Name */}
-      <td className="px-4 py-3">
+      {/* 2. Name */}
+      <TextCell>
         <Link
           href={`/admin/sequences/${sequence.id}`}
-          className="text-white hover:text-[var(--accent-indigo)] transition-colors font-medium"
+          className="text-white font-medium hover:text-[var(--accent-indigo)]"
         >
           {sequence.name}
         </Link>
-      </td>
+      </TextCell>
 
-      {/* Channel */}
-      <td className="px-4 py-3">
-        <Badge variant={channelVariant[sequence.channel] ?? "default"}>
-          {sequence.channel}
-        </Badge>
-      </td>
+      {/* 3. Channel */}
+      <PillCell>
+        <Badge variant={channelVariant[sequence.channel] ?? "default"}>{sequence.channel}</Badge>
+      </PillCell>
 
-      {/* Status */}
-      <td className="px-4 py-3">
-        <Badge variant={statusVariant[sequence.status] ?? "default"}>
-          {sequence.status}
-        </Badge>
-      </td>
+      {/* 4. Status */}
+      <PillCell>
+        <Badge variant={statusVariant[sequence.status] ?? "default"}>{sequence.status}</Badge>
+      </PillCell>
 
-      {/* Steps */}
-      <td className="px-4 py-3 text-[var(--text-secondary)]">{steps.length}</td>
+      {/* 5. Steps */}
+      <NumericCell>{steps.length}</NumericCell>
 
-      {/* Enrolled */}
-      <td className="px-4 py-3 text-[var(--text-secondary)]">
+      {/* 6. Enrolled */}
+      <TextCell>
         {sequence.enrollment_count > 0 ? (
           <>
             {sequence.enrollment_count}{" "}
-            <span className="text-[var(--text-muted)] text-xs">
-              ({sequence.active_enrollment_count} active)
-            </span>
+            <span className="text-[var(--text-muted)]">({sequence.active_enrollment_count} active)</span>
           </>
         ) : (
           <span className="text-[var(--text-muted)]">—</span>
         )}
-      </td>
+      </TextCell>
 
-      {/* Delivery funnel */}
-      <td className="px-4 py-3">
-        {sequence.sent_count > 0 ? (
-          <span className="text-xs text-[var(--text-muted)]">
-            {sequence.sent_count} sent · {sequence.opened_count} opened ·{" "}
-            {sequence.replied_count} replied
-          </span>
-        ) : (
-          <span className="text-[var(--text-muted)] text-xs">No sends yet</span>
-        )}
-      </td>
+      {/* 7. Delivery (compressed) */}
+      <TextCell title={`${sequence.sent_count} sent · ${sequence.opened_count} opened · ${sequence.replied_count} replied`}>
+        {sequence.sent_count > 0
+          ? `${sequence.sent_count} · ${sequence.opened_count}o · ${sequence.replied_count}r`
+          : "No sends"}
+      </TextCell>
 
-      {/* Mode */}
-      <td className="px-4 py-3">
+      {/* 8. Mode */}
+      <PillCell>
         <Badge variant={sequence.send_mode === "auto" ? "sent" : "scheduled"}>
           {sequence.send_mode === "auto" ? "Auto" : "Approval"}
         </Badge>
-      </td>
+      </PillCell>
 
-      {/* Event */}
-      <td className="px-4 py-3 max-w-[180px]">
+      {/* 9. Event */}
+      <PillCell title={sequence.event_name ?? undefined}>
         {sequence.event_name ? (
-          <Badge variant="draft" className="max-w-full" title={sequence.event_name}>
-            {sequence.event_name}
-          </Badge>
+          <Badge variant="draft" className="max-w-full">{sequence.event_name}</Badge>
         ) : (
-          <span className="text-[var(--text-muted)] text-xs">—</span>
+          <span className="text-[var(--text-muted)]">—</span>
         )}
-      </td>
+      </PillCell>
 
-      {/* Updated */}
-      <td className="px-4 py-3 text-[var(--text-muted)] text-xs whitespace-nowrap">
-        {updatedAt}
-      </td>
-    </tr>
+      {/* 10. Updated */}
+      <DateCell>{updatedAt}</DateCell>
+    </>
   );
 });
