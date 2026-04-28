@@ -22,6 +22,8 @@ export interface DataTableProps<T> {
   isRowSelected?: (row: T) => boolean;
   onRowMouseEnter?: (row: T) => void;
   onRowMouseLeave?: (row: T) => void;
+  /** Per-row class string. Useful for state-driven styling like opacity or slide-in animations. */
+  rowClassName?: (row: T, index: number) => string | undefined;
 }
 
 export function DataTable<T>({
@@ -38,6 +40,7 @@ export function DataTable<T>({
   isRowSelected,
   onRowMouseEnter,
   onRowMouseLeave,
+  rowClassName,
 }: DataTableProps<T>) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -84,7 +87,8 @@ export function DataTable<T>({
                   className={cn(
                     "grid items-center text-xs border-b border-white/[0.04]",
                     onRowClick && "cursor-pointer hover:bg-white/[0.03]",
-                    selected && "bg-[var(--accent-orange)]/[0.04]"
+                    selected && "bg-[var(--accent-orange)]/[0.04]",
+                    rowClassName?.(row, vi.index)
                   )}
                   style={{
                     position: "absolute",

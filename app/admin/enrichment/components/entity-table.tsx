@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { OrgStatusIcons, PersonStatusIcons } from "./status-icons";
 import { ChevronUp, ChevronDown, Check } from "lucide-react";
+import { DataTable } from "@/components/ui/data-table";
+import { TextCell, NumericCell, PillCell, HeaderCell } from "@/components/ui/data-cell";
 
 function GlassCheckbox({ checked, onClick }: { checked: boolean; onClick?: (e: React.MouseEvent) => void }) {
   return (
@@ -124,11 +126,8 @@ function SortableHeader({
 }) {
   const isActive = currentSortKey === colKey;
   return (
-    <th
-      className={cn(
-        "px-3 py-2 text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-medium text-left",
-        onSort && "cursor-pointer select-none hover:text-white"
-      )}
+    <HeaderCell
+      className={cn(onSort && "cursor-pointer select-none hover:text-white")}
       onClick={() => onSort?.(colKey)}
     >
       <span className="flex items-center gap-0.5">
@@ -140,7 +139,7 @@ function SortableHeader({
             <ChevronDown className="h-3 w-3" />
           ))}
       </span>
-    </th>
+    </HeaderCell>
   );
 }
 
@@ -163,6 +162,8 @@ export function EntityTable({
   const lastClickedIndex = useRef<number | null>(null);
   const showCheckboxes = mode === "list";
   const [isPending, startTransition] = useTransition();
+
+  const isOrg = tab === "organizations";
 
   const allIds = useMemo(() => items.map((item) => item.id), [items]);
   const allSelected = useMemo(() => {
@@ -216,226 +217,155 @@ export function EntityTable({
     [items, selectedIds, onSelectionChange]
   );
 
-  const isOrg = tab === "organizations";
+  const gridTemplate = useMemo(() => {
+    const cols: string[] = [];
+    if (showCheckboxes) cols.push("32px");
+    if (isOrg) {
+      // Name, Event, Category, ICP, Status
+      cols.push("minmax(160px,2fr)", "minmax(100px,1fr)", "minmax(80px,0.8fr)", "60px", "120px");
+    } else {
+      // Name, Org, Event, Source, ICP, Status
+      cols.push("minmax(140px,1.5fr)", "minmax(100px,1fr)", "minmax(100px,1fr)", "80px", "60px", "120px");
+    }
+    if (mode === "results") cols.push("100px");
+    return cols.join(" ");
+  }, [showCheckboxes, isOrg, mode]);
 
   return (
     <div className="rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] overflow-hidden">
-      <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
-        <table className="w-full">
-          <thead className="sticky top-0 bg-[var(--glass-bg)] backdrop-blur-sm z-10 border-b border-[var(--glass-border)]">
-            <tr>
+      {items.length === 0 ? (
+        <div className="px-3 py-12 text-center text-sm text-[var(--text-muted)]">
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 animate-pulse">
+              <div className="h-1.5 w-1.5 rounded-full bg-[var(--accent-orange)] animate-bounce [animation-delay:0ms]" />
+              <div className="h-1.5 w-1.5 rounded-full bg-[var(--accent-orange)] animate-bounce [animation-delay:150ms]" />
+              <div className="h-1.5 w-1.5 rounded-full bg-[var(--accent-orange)] animate-bounce [animation-delay:300ms]" />
+            </div>
+          ) : (
+            "No items found"
+          )}
+        </div>
+      ) : (
+        <DataTable
+          rows={items}
+          gridTemplate={gridTemplate}
+          estimateRowHeight={36}
+          scrollHeight="calc(100vh - 280px)"
+          minWidth="700px"
+          getRowKey={(item) => item.id}
+          isRowSelected={(item) => selectedIds?.has(item.id) ?? false}
+          rowClassName={(item) => {
+            if (mode !== "progress") return undefined;
+            const progress = progressData?.get(item.id);
+            if (!progress) return "opacity-40";
+            if (progress.status === "processing") return "animate-[slideIn_0.3s_ease-out]";
+            return undefined;
+          }}
+          header={
+            <>
               {showCheckboxes && (
-                <th className="px-3 py-2 w-8">
+                <HeaderCell>
                   <GlassCheckbox checked={isPending ? !allSelected : !!allSelected} onClick={toggleSelectAll} />
-                </th>
+                </HeaderCell>
               )}
               {isOrg ? (
                 <>
-                  <SortableHeader
-                    label="Name"
-                    sortKey="name"
-                    currentSortKey={sortKey}
-                    currentSortDir={sortDir}
-                    onSort={onSort}
-                  />
-                  <SortableHeader
-                    label="Event"
-                    sortKey="event"
-                    currentSortKey={sortKey}
-                    currentSortDir={sortDir}
-                    onSort={onSort}
-                  />
-                  <SortableHeader
-                    label="Category"
-                    sortKey="category"
-                    currentSortKey={sortKey}
-                    currentSortDir={sortDir}
-                    onSort={onSort}
-                  />
-                  <SortableHeader
-                    label="ICP"
-                    sortKey="icp_score"
-                    currentSortKey={sortKey}
-                    currentSortDir={sortDir}
-                    onSort={onSort}
-                  />
-                  <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-medium text-left">
-                    Status
-                  </th>
+                  <SortableHeader label="Name" sortKey="name" currentSortKey={sortKey} currentSortDir={sortDir} onSort={onSort} />
+                  <SortableHeader label="Event" sortKey="event" currentSortKey={sortKey} currentSortDir={sortDir} onSort={onSort} />
+                  <SortableHeader label="Category" sortKey="category" currentSortKey={sortKey} currentSortDir={sortDir} onSort={onSort} />
+                  <SortableHeader label="ICP" sortKey="icp_score" currentSortKey={sortKey} currentSortDir={sortDir} onSort={onSort} />
+                  <HeaderCell>Status</HeaderCell>
                 </>
               ) : (
                 <>
-                  <SortableHeader
-                    label="Name"
-                    sortKey="full_name"
-                    currentSortKey={sortKey}
-                    currentSortDir={sortDir}
-                    onSort={onSort}
-                  />
-                  <SortableHeader
-                    label="Org"
-                    sortKey="primary_org_name"
-                    currentSortKey={sortKey}
-                    currentSortDir={sortDir}
-                    onSort={onSort}
-                  />
-                  <SortableHeader
-                    label="Event"
-                    sortKey="event"
-                    currentSortKey={sortKey}
-                    currentSortDir={sortDir}
-                    onSort={onSort}
-                  />
-                  <SortableHeader
-                    label="Source"
-                    sortKey="source"
-                    currentSortKey={sortKey}
-                    currentSortDir={sortDir}
-                    onSort={onSort}
-                  />
-                  <SortableHeader
-                    label="ICP"
-                    sortKey="icp_score"
-                    currentSortKey={sortKey}
-                    currentSortDir={sortDir}
-                    onSort={onSort}
-                  />
-                  <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-medium text-left">
-                    Status
-                  </th>
+                  <SortableHeader label="Name" sortKey="full_name" currentSortKey={sortKey} currentSortDir={sortDir} onSort={onSort} />
+                  <SortableHeader label="Org" sortKey="primary_org_name" currentSortKey={sortKey} currentSortDir={sortDir} onSort={onSort} />
+                  <SortableHeader label="Event" sortKey="event" currentSortKey={sortKey} currentSortDir={sortDir} onSort={onSort} />
+                  <SortableHeader label="Source" sortKey="source" currentSortKey={sortKey} currentSortDir={sortDir} onSort={onSort} />
+                  <SortableHeader label="ICP" sortKey="icp_score" currentSortKey={sortKey} currentSortDir={sortDir} onSort={onSort} />
+                  <HeaderCell>Status</HeaderCell>
                 </>
               )}
-              {mode === "results" && (
-                <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-medium text-left">
-                  Outcome
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/[0.04]">
-            {items.map((item, index) => {
-              const isSelected = selectedIds?.has(item.id) ?? false;
-              const progress = progressData?.get(item.id);
-              const activeStage = activeStages?.get(item.id);
-              const outcome = resultOutcomes?.get(item.id);
-              const isQueued = mode === "progress" && !progress;
-              const isActive = mode === "progress" && !!progress && progress.status === "processing";
+              {mode === "results" && <HeaderCell>Outcome</HeaderCell>}
+            </>
+          }
+          renderRow={(item, index) => {
+            const isSelected = selectedIds?.has(item.id) ?? false;
+            const progress = progressData?.get(item.id);
+            const activeStage = activeStages?.get(item.id);
+            const outcome = resultOutcomes?.get(item.id);
+            const isQueued = mode === "progress" && !progress;
 
-              return (
-                <tr
-                  key={item.id}
-                  className={cn(
-                    "h-9 hover:bg-white/[0.03] transition-all duration-300 text-xs text-white",
-                    isSelected && "bg-white/[0.05]",
-                    isQueued && "opacity-40",
-                    isActive && "animate-[slideIn_0.3s_ease-out]"
-                  )}
-                >
-                  {showCheckboxes && (
-                    <td className="px-3 py-1 w-8">
-                      <GlassCheckbox
-                        checked={isSelected}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRowCheck(index, e.shiftKey);
-                        }}
-                      />
-                    </td>
-                  )}
-                  {isOrg && isOrgRow(item) ? (
-                    <>
-                      <td className="px-3 py-1 truncate max-w-[200px]" title={item.name}>
-                        {item.name}
-                      </td>
-                      <td className="px-3 py-1 truncate max-w-[120px]">
-                        {item.event_names?.join(", ") ?? "—"}
-                      </td>
-                      <td className="px-3 py-1 truncate max-w-[100px]">
-                        {item.category ?? "—"}
-                      </td>
-                      <td className={cn("px-3 py-1 tabular-nums", icpColor(item.icp_score))}>
-                        {item.icp_score ?? "—"}
-                      </td>
-                      <td className="px-3 py-1">
-                        {isQueued ? (
-                          <span className="text-[10px] text-[var(--text-muted)]">Queued</span>
-                        ) : (
-                          <OrgStatusIcons
-                            stages={item.enrichment_stages}
-                            mode={mode === "progress" ? "live" : "static"}
-                            activeStage={activeStage}
-                            orgData={{ icp_score: item.icp_score, description: item.description }}
-                          />
-                        )}
-                      </td>
-                    </>
-                  ) : !isOrg && !isOrgRow(item) ? (
-                    <>
-                      <td className="px-3 py-1 truncate max-w-[160px]" title={item.full_name}>
-                        {item.full_name}
-                      </td>
-                      <td className="px-3 py-1 truncate max-w-[120px]">
-                        {item.primary_org_name ?? "—"}
-                      </td>
-                      <td className="px-3 py-1 truncate max-w-[120px]">
-                        {item.event_names?.join(", ") ?? "—"}
-                      </td>
-                      <td className="px-3 py-1 truncate max-w-[80px]">
-                        {item.source ?? "—"}
-                      </td>
-                      <td className={cn("px-3 py-1 tabular-nums", icpColor(item.icp_score))}>
-                        {item.icp_score ?? "—"}
-                      </td>
-                      <td className="px-3 py-1">
-                        {isQueued ? (
-                          <span className="text-[10px] text-[var(--text-muted)]">Queued</span>
-                        ) : (
-                          <PersonStatusIcons
-                            email={item.email}
-                            linkedin_url={item.linkedin_url}
-                            twitter_handle={item.twitter_handle}
-                            phone={item.phone}
-                            enrichmentStatus={item.enrichment_status}
-                            mode={mode === "progress" ? "live" : "static"}
-                            activeField={activeStage}
-                          />
-                        )}
-                      </td>
-                    </>
-                  ) : null}
-                  {mode === "results" && (
-                    <td className="px-3 py-1">
-                      {outcome && (
-                        <Badge variant={outcomeBadgeVariant(outcome)} className="text-[10px]">
-                          {outcome}
-                        </Badge>
+            return (
+              <>
+                {showCheckboxes && (
+                  <div className="px-3 py-1 flex items-center">
+                    <GlassCheckbox
+                      checked={isSelected}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRowCheck(index, e.shiftKey);
+                      }}
+                    />
+                  </div>
+                )}
+                {isOrg && isOrgRow(item) ? (
+                  <>
+                    <TextCell title={item.name}>{item.name}</TextCell>
+                    <TextCell>{item.event_names?.join(", ") ?? "—"}</TextCell>
+                    <TextCell>{item.category ?? "—"}</TextCell>
+                    <NumericCell className={icpColor(item.icp_score)}>{item.icp_score ?? "—"}</NumericCell>
+                    <PillCell>
+                      {isQueued ? (
+                        <span className="text-[10px] text-[var(--text-muted)]">Queued</span>
+                      ) : (
+                        <OrgStatusIcons
+                          stages={item.enrichment_stages}
+                          mode={mode === "progress" ? "live" : "static"}
+                          activeStage={activeStage}
+                          orgData={{ icp_score: item.icp_score, description: item.description }}
+                        />
                       )}
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-            {items.length === 0 && (
-              <tr>
-                <td
-                  colSpan={99}
-                  className="px-3 py-12 text-center text-sm text-[var(--text-muted)]"
-                >
-                  {loading ? (
-                    <div className="flex items-center justify-center gap-2 animate-pulse">
-                      <div className="h-1.5 w-1.5 rounded-full bg-[var(--accent-orange)] animate-bounce [animation-delay:0ms]" />
-                      <div className="h-1.5 w-1.5 rounded-full bg-[var(--accent-orange)] animate-bounce [animation-delay:150ms]" />
-                      <div className="h-1.5 w-1.5 rounded-full bg-[var(--accent-orange)] animate-bounce [animation-delay:300ms]" />
-                    </div>
-                  ) : (
-                    "No items found"
-                  )}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                    </PillCell>
+                  </>
+                ) : !isOrg && !isOrgRow(item) ? (
+                  <>
+                    <TextCell title={item.full_name}>{item.full_name}</TextCell>
+                    <TextCell>{item.primary_org_name ?? "—"}</TextCell>
+                    <TextCell>{item.event_names?.join(", ") ?? "—"}</TextCell>
+                    <TextCell>{item.source ?? "—"}</TextCell>
+                    <NumericCell className={icpColor(item.icp_score)}>{item.icp_score ?? "—"}</NumericCell>
+                    <PillCell>
+                      {isQueued ? (
+                        <span className="text-[10px] text-[var(--text-muted)]">Queued</span>
+                      ) : (
+                        <PersonStatusIcons
+                          email={item.email}
+                          linkedin_url={item.linkedin_url}
+                          twitter_handle={item.twitter_handle}
+                          phone={item.phone}
+                          enrichmentStatus={item.enrichment_status}
+                          mode={mode === "progress" ? "live" : "static"}
+                          activeField={activeStage}
+                        />
+                      )}
+                    </PillCell>
+                  </>
+                ) : null}
+                {mode === "results" && (
+                  <PillCell>
+                    {outcome && (
+                      <Badge variant={outcomeBadgeVariant(outcome)} className="text-[10px]">
+                        {outcome}
+                      </Badge>
+                    )}
+                  </PillCell>
+                )}
+              </>
+            );
+          }}
+        />
+      )}
     </div>
   );
 }

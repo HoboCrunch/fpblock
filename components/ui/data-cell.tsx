@@ -6,6 +6,7 @@ interface BaseProps {
   children: React.ReactNode;
   className?: string;
   title?: string;
+  onClick?: () => void;
 }
 
 const cellBase = "px-[var(--cell-px,0.5rem)] py-[var(--cell-py,0.25rem)] min-w-0 flex items-center";
@@ -45,13 +46,14 @@ export function PillCell({ children, className, title }: BaseProps) {
   );
 }
 
-export function HeaderCell({ children, className }: BaseProps) {
+export function HeaderCell({ children, className, onClick }: BaseProps) {
   return (
     <div
       className={cn(
         "px-[var(--cell-px,0.5rem)] py-[var(--cell-py-header,0.5rem)] text-[10px] uppercase tracking-wider font-medium text-[var(--text-muted)] flex items-center min-w-0",
         className
       )}
+      onClick={onClick}
     >
       {children}
     </div>
