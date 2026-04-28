@@ -214,7 +214,6 @@ export const RunConfigPanel = React.memo(function RunConfigPanel({
           </div>
           <div className="flex flex-col gap-1.5 mb-4">
             {STAGE_OPTIONS.map((opt) => {
-              const isIndividual = INDIVIDUAL_STAGES.includes(opt.key);
               // "full" is active when all three individual stages are selected
               const isActive = opt.key === "full"
                 ? hasAllThree

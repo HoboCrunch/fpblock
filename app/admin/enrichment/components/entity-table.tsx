@@ -42,6 +42,7 @@ export interface OrgRow {
     { status?: string; [key: string]: unknown }
   > | null;
   enrichment_status: string;
+  enriched_person_count?: number;
 }
 
 export interface PersonRow {

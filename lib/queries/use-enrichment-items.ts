@@ -90,13 +90,22 @@ export function useEnrichmentItems(params: EnrichmentItemsParams) {
         const orgIds = orgs.map(
           (o: Record<string, unknown>) => o.id as string
         );
-        const eps = await fetchInBatches(
-          supabase,
-          "event_participations",
-          "organization_id, event_id, events(name)",
-          "organization_id",
-          orgIds
-        );
+        const [eps, personLinks] = await Promise.all([
+          fetchInBatches(
+            supabase,
+            "event_participations",
+            "organization_id, event_id, events(name)",
+            "organization_id",
+            orgIds
+          ),
+          fetchInBatches<{ organization_id: string; source: string }>(
+            supabase,
+            "person_organization",
+            "organization_id, source",
+            "organization_id",
+            orgIds
+          ),
+        ]);
 
         // Build event map: org_id -> { event_ids, event_names }
         const eventMap = new Map<
@@ -126,6 +135,15 @@ export function useEnrichmentItems(params: EnrichmentItemsParams) {
           }
         }
 
+        // Build person count map: orgId -> { total, enrichedFromOrg }
+        const personCountMap = new Map<string, { total: number; enrichedFromOrg: number }>();
+        for (const pl of personLinks) {
+          const entry = personCountMap.get(pl.organization_id) ?? { total: 0, enrichedFromOrg: 0 };
+          entry.total++;
+          if (pl.source === "org_enrichment") entry.enrichedFromOrg++;
+          personCountMap.set(pl.organization_id, entry);
+        }
+
         // Build rows
         const rows: OrgRow[] = orgs.map((o: Record<string, unknown>) => {
           const ev = eventMap.get(o.id as string);
@@ -141,6 +159,7 @@ export function useEnrichmentItems(params: EnrichmentItemsParams) {
               (o.enrichment_stages as OrgRow["enrichment_stages"]) ?? null,
             enrichment_status:
               (o.enrichment_status as string) ?? "none",
+            enriched_person_count: personCountMap.get(o.id as string)?.enrichedFromOrg ?? 0,
           };
         });
 

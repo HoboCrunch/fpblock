@@ -32,7 +32,6 @@ export interface CenterPanelProps {
   resultStats?: SummaryStripProps["stats"];
   resultOutcomes?: Map<string, "enriched" | "failed" | "skipped">;
   onBackToList?: () => void;
-  viewingJobId?: string | null;
   // Sorting
   sortKey?: string;
   sortDir?: "asc" | "desc";

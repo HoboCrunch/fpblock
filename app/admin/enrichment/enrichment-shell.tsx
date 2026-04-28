@@ -161,7 +161,7 @@ export function EnrichmentShell() {
     return affiliatedPersonIdsArr ? new Set(affiliatedPersonIdsArr) : null;
   }, [affiliatedPersonIdsArr, concreteEventIds, eventRelation]);
 
-  const allItems = itemsData?.items ?? [];
+  const allItems = useMemo(() => itemsData?.items ?? [], [itemsData]);
   const totalCount = itemsData?.totalCount ?? 0;
   const categories = itemsData?.categories ?? [];
   const sources = itemsData?.sources ?? [];
@@ -305,17 +305,11 @@ export function EnrichmentShell() {
 
   const displayItems = useMemo(() => {
     if (centerState === "progress" && queuedItems.length > 0) return queuedItems;
-
     if (centerState === "results" && viewingJobId && resultOutcomes.size > 0) {
       return sortedItems.filter((item) => resultOutcomes.has(item.id));
     }
-
-    if (selectedIds.size > 0 && selectedIds.size < sortedItems.length) {
-      return sortedItems.filter((item) => selectedIds.has(item.id));
-    }
-
     return sortedItems;
-  }, [sortedItems, centerState, queuedItems, viewingJobId, resultOutcomes, selectedIds]);
+  }, [sortedItems, centerState, queuedItems, viewingJobId, resultOutcomes]);
 
   function handleSort(key: string) {
     if (key === sortKey) {
@@ -356,8 +350,6 @@ export function EnrichmentShell() {
 
   function switchTab(tab: "persons" | "organizations") {
     if (tab === activeTab) return;
-    // Per-tab filter state (filterPersons / filterOrgs) intentionally persists
-    // across tab switches. Only selection + ephemeral UI state is cleared.
     setActiveTab(tab);
     setCenterState("list");
     setSelectedIds(new Set());
@@ -367,6 +359,12 @@ export function EnrichmentShell() {
     setResultOutcomes(new Map());
     setSortKey(tab === "organizations" ? "name" : "full_name");
     setSortDir("asc");
+    // Reset the destination tab's filter per spec (edge cases & defaults: tab switch resets filterState)
+    if (tab === "persons") {
+      setFilterPersons({ ...EMPTY_FILTERS_PERSONS });
+    } else {
+      setFilterOrgs({ ...EMPTY_FILTERS_ORGS });
+    }
   }
 
   // =========================================================================
@@ -784,7 +782,6 @@ export function EnrichmentShell() {
               resultStats={resultStats}
               resultOutcomes={resultOutcomes}
               onBackToList={handleBackToList}
-              viewingJobId={viewingJobId}
               sortKey={sortKey}
               sortDir={sortDir}
               onSort={handleSort}
