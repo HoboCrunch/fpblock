@@ -118,6 +118,8 @@ function TriStatePill({
   return (
     <button
       type="button"
+      aria-pressed={value !== "any"}
+      aria-label={`${label}: ${value}`}
       onClick={() => onChange(next[value])}
       className={cn("flex items-center justify-between px-2 py-1 rounded-md text-[11px] font-medium border transition-colors", tone)}
     >
@@ -217,11 +219,13 @@ export const FilterPanel = React.memo(function FilterPanel({
 
   return (
     <GlassCard className={cn("relative", disabled && "pointer-events-none opacity-40")}>
+      <div inert={disabled || undefined}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">
           Filters
         </span>
         <button
+          type="button"
           onClick={reset}
           className="text-[10px] text-[var(--text-muted)] hover:text-white flex items-center gap-1 transition-colors"
         >
@@ -234,7 +238,7 @@ export const FilterPanel = React.memo(function FilterPanel({
       {f.specificIds && (
         <div className="mb-3 flex items-center justify-between gap-2 px-2 py-1.5 rounded-md bg-[var(--accent-orange)]/10 border border-[var(--accent-orange)]/20 text-[var(--accent-orange)] text-xs">
           <span>Showing {f.specificIds.length} specific item{f.specificIds.length !== 1 ? "s" : ""}</span>
-          <button onClick={clearSpecificIds} aria-label="Clear specific items">
+          <button type="button" onClick={clearSpecificIds} aria-label="Clear specific items">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -324,6 +328,7 @@ export const FilterPanel = React.memo(function FilterPanel({
           const active = f.statuses.includes(opt.value);
           return (
             <button
+              type="button"
               key={opt.value}
               onClick={() => {
                 const next = active
@@ -417,13 +422,14 @@ export const FilterPanel = React.memo(function FilterPanel({
           Filtered: {filteredCount} • Selected: {selectedCount}
         </span>
         <div className="flex gap-2">
-          <button onClick={onSelectAllVisible} className="text-[var(--accent-orange)] hover:underline">
+          <button type="button" onClick={onSelectAllVisible} className="text-[var(--accent-orange)] hover:underline">
             Select all
           </button>
-          <button onClick={onClearVisible} className="text-[var(--text-muted)] hover:text-white">
+          <button type="button" onClick={onClearVisible} className="text-[var(--text-muted)] hover:text-white">
             Clear
           </button>
         </div>
+      </div>
       </div>
     </GlassCard>
   );
