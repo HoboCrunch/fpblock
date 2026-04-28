@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { OrgTableRow, ORG_GRID_COLS } from "./org-table-row";
 import { OrgPreviewCard } from "./org-preview-card";
 import { useOrgEventPropagation } from "@/lib/queries/use-org-event-propagation";
+import { HeaderCell } from "@/components/ui/data-cell";
 
 // ------------------------------------------------------------------
 // Types
@@ -555,7 +556,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
   function SortHeader({ label, field }: { label: string; field: SortField }) {
     const isActive = sortField === field;
     return (
-      <div className="px-1.5 py-2.5 font-medium">
+      <HeaderCell>
         <button
           onClick={() => handleSort(field)}
           className="inline-flex items-center gap-0.5 hover:text-white transition-colors"
@@ -571,7 +572,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
             <ChevronsUpDown className="w-2.5 h-2.5 opacity-40" />
           )}
         </button>
-      </div>
+      </HeaderCell>
     );
   }
 
@@ -592,20 +593,20 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
           >
             {/* Sticky header */}
             <div
-              className="grid sticky top-0 z-10 bg-[var(--glass-bg)] backdrop-blur-sm text-xs text-left text-[var(--text-muted)] border-b border-[var(--glass-border)]"
+              className="grid sticky top-0 z-10 bg-[var(--glass-bg)] backdrop-blur-sm border-b border-[var(--glass-border)]"
               style={{ gridTemplateColumns: ORG_GRID_COLS }}
             >
-              <div className="px-2 py-2.5 flex items-center">
+              <HeaderCell>
                 <GlassCheckbox checked={allVisibleSelected} onChange={toggleSelectAll} />
-              </div>
+              </HeaderCell>
               <SortHeader label="Name" field="name" />
               <SortHeader label="ICP" field="icp_score" />
               <SortHeader label="People" field="person_count" />
-              <div className="px-1.5 py-2.5 font-medium">Events</div>
+              <HeaderCell>Events</HeaderCell>
               <SortHeader label="Signals" field="signal_count" />
               <SortHeader label="Industry" field="industry" />
               <SortHeader label="Emp." field="employee_count" />
-              <div className="px-1.5 py-2.5 font-medium">Enrichment</div>
+              <HeaderCell>Enrichment</HeaderCell>
               <SortHeader label="Events Prop." field="events_propagated" />
               <SortHeader label="Last Sig." field="last_signal" />
             </div>

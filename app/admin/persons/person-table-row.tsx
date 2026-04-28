@@ -213,7 +213,7 @@ export const PersonTableRow = React.memo(function PersonTableRow({
       }}
     >
       {/* Checkbox */}
-      <div className="px-2 py-1.5 flex items-center">
+      <div className="px-[var(--cell-px,0.5rem)] py-1.5 flex items-center">
         <GlassCheckbox
           checked={isSelected}
           onClick={(e) => {
@@ -224,7 +224,7 @@ export const PersonTableRow = React.memo(function PersonTableRow({
       </div>
 
       {/* Name + Title */}
-      <div className="px-2 py-1 min-w-0" title={`${row.full_name}${row.title ? ` — ${row.title}` : ""}`}>
+      <div className="px-[var(--cell-px,0.5rem)] py-1 min-w-0" title={`${row.full_name}${row.title ? ` — ${row.title}` : ""}`}>
         <div className="flex items-center gap-1.5 min-w-0">
           {row.photo_url ? (
             <Image
@@ -262,7 +262,7 @@ export const PersonTableRow = React.memo(function PersonTableRow({
       </div>
 
       {/* Organization + Seniority */}
-      <div className="px-1.5 py-1 text-xs min-w-0" title={`${row.primary_org_name || ""}${row.seniority ? ` · ${row.seniority}` : ""}`}>
+      <div className="px-[var(--cell-px,0.5rem)] py-1 text-xs min-w-0" title={`${row.primary_org_name || ""}${row.seniority ? ` · ${row.seniority}` : ""}`}>
         {row.primary_org_name ? (
           <div className="min-w-0 leading-tight">
             <div className="text-[var(--text-secondary)] truncate text-xs">{row.primary_org_name}</div>
@@ -278,7 +278,7 @@ export const PersonTableRow = React.memo(function PersonTableRow({
       </div>
 
       {/* ICP */}
-      <div className="px-1 py-1">
+      <div className="px-[var(--cell-px,0.5rem)] py-1">
         {row.icp_score !== null ? (
           <Badge variant={icpBadgeVariant(row.icp_score)} className="text-[10px] px-1.5 py-0">
             {row.icp_score}
@@ -289,7 +289,7 @@ export const PersonTableRow = React.memo(function PersonTableRow({
       </div>
 
       {/* Channels */}
-      <div className="px-1.5 py-1">
+      <div className="px-[var(--cell-px,0.5rem)] py-1">
         <div className="flex items-center gap-0.5">
           <Mail className={`w-3 h-3 ${row.email ? "text-[var(--text-secondary)]" : "text-white/[0.1]"}`} />
           <Linkedin className={`w-3 h-3 ${row.linkedin_url ? "text-[var(--text-secondary)]" : "text-white/[0.1]"}`} />
@@ -301,7 +301,7 @@ export const PersonTableRow = React.memo(function PersonTableRow({
 
       {/* Events */}
       <div
-        className="px-1.5 py-1 min-w-0"
+        className="px-[var(--cell-px,0.5rem)] py-1 min-w-0"
         title={row.personEvents.length > 0 ? row.personEvents.map((pe) => pe.event_name).join(", ") : undefined}
       >
         <div className="flex items-center gap-1 min-w-0 overflow-hidden">
@@ -323,7 +323,7 @@ export const PersonTableRow = React.memo(function PersonTableRow({
       </div>
 
       {/* Correlation */}
-      <div className="px-1.5 py-1 hidden lg:block min-w-0">
+      <div className="px-[var(--cell-px,0.5rem)] py-1 hidden lg:block min-w-0">
         <span
           className={`text-[10px] truncate block ${corrColorClass}`}
           title={corrLabel}
@@ -333,12 +333,12 @@ export const PersonTableRow = React.memo(function PersonTableRow({
       </div>
 
       {/* Enrichment */}
-      <div className="px-1 py-1 hidden lg:block">
+      <div className="px-[var(--cell-px,0.5rem)] py-1 hidden lg:block">
         {enrichmentIcon(row.enrichment_status)}
       </div>
 
       {/* Last Activity */}
-      <div className="px-1.5 py-1 text-[var(--text-muted)] text-[10px]">
+      <div className="px-[var(--cell-px,0.5rem)] py-1 text-[var(--text-muted)] text-[10px]">
         {relativeDate(row.last_interaction_at)}
       </div>
     </div>

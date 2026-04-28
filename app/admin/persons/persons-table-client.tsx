@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { PersonTableRow, GlassCheckbox, PERSON_GRID_COLS } from "./person-table-row";
 import { PersonPreviewPanel } from "./person-preview-panel";
 import type { PersonRow, PersonEvent, OrgEvent, CorrelationResult } from "./person-table-row";
+import { HeaderCell } from "@/components/ui/data-cell";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -487,7 +488,7 @@ export function PersonsTableClient({
   }) {
     const isActive = sortField === field;
     return (
-      <div className={cn("px-2 py-2 font-medium", extraClass)}>
+      <HeaderCell className={extraClass}>
         <button
           onClick={() => handleSort(field)}
           className="inline-flex items-center gap-1 hover:text-white transition-colors"
@@ -503,7 +504,7 @@ export function PersonsTableClient({
             <ChevronsUpDown className="w-3 h-3 opacity-40" />
           )}
         </button>
-      </div>
+      </HeaderCell>
     );
   }
 
@@ -718,22 +719,22 @@ export function PersonsTableClient({
           >
             {/* Sticky header */}
             <div
-              className="grid sticky top-0 z-10 bg-[var(--glass-bg)] backdrop-blur-sm text-xs text-left text-[var(--text-muted)] border-b border-[var(--glass-border)] items-center"
+              className="grid sticky top-0 z-10 bg-[var(--glass-bg)] backdrop-blur-sm border-b border-[var(--glass-border)]"
               style={{ gridTemplateColumns: PERSON_GRID_COLS }}
             >
-              <div className="px-2 py-2 flex items-center">
+              <HeaderCell>
                 <GlassCheckbox
                   checked={allVisibleSelected && filteredRows.length > 0}
                   onChange={toggleSelectAll}
                 />
-              </div>
+              </HeaderCell>
               <SortHeader label="Name" field="full_name" />
               <SortHeader label="Organization" field="primary_org_name" />
               <SortHeader label="ICP" field="icp_score" />
-              <div className="px-1.5 py-2 font-medium">Channels</div>
-              <div className="px-1.5 py-2 font-medium">Events</div>
-              <div className="px-1.5 py-2 font-medium hidden lg:block">Correlation</div>
-              <div className="px-1 py-2 font-medium hidden lg:block">Enr.</div>
+              <HeaderCell>Channels</HeaderCell>
+              <HeaderCell>Events</HeaderCell>
+              <HeaderCell className="hidden lg:block">Correlation</HeaderCell>
+              <HeaderCell className="hidden lg:block">Enr.</HeaderCell>
               <SortHeader label="Activity" field="last_interaction_at" />
             </div>
 

@@ -12,6 +12,12 @@
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.7);
   --text-muted: rgba(255, 255, 255, 0.4);
+
+  /* Table cell rhythm — keep header/body padding in sync across surfaces. */
+  --cell-px: 0.5rem;
+  --cell-py: 0.25rem;
+  --cell-py-header: 0.5rem;
+  --row-h: 36px;
 }
 
 @theme inline {

@@ -123,7 +123,7 @@ export const OrgTableRow = memo(
         onMouseLeave={onMouseLeave}
       >
         {/* Checkbox */}
-        <div className="px-2 py-1.5 flex items-center">
+        <div className="px-[var(--cell-px,0.5rem)] py-1.5 flex items-center">
           <GlassCheckbox
             checked={isSelected}
             onClick={(e) => {
@@ -134,7 +134,7 @@ export const OrgTableRow = memo(
         </div>
 
         {/* Logo + Name + Category */}
-        <div className="px-2 py-1 min-w-0" title={`${row.name}${row.category ? ` — ${row.category}` : ""}`}>
+        <div className="px-[var(--cell-px,0.5rem)] py-1 min-w-0" title={`${row.name}${row.category ? ` — ${row.category}` : ""}`}>
           <div className="flex items-center gap-1.5 min-w-0">
             {row.logo_url ? (
               <Image
@@ -160,7 +160,7 @@ export const OrgTableRow = memo(
         </div>
 
         {/* ICP */}
-        <div className="px-1 py-1">
+        <div className="px-[var(--cell-px,0.5rem)] py-1">
           {row.icp_score !== null ? (
             <Badge variant={icpBadgeVariant(row.icp_score)} className="text-[10px] px-1.5 py-0">
               {row.icp_score}
@@ -171,7 +171,7 @@ export const OrgTableRow = memo(
         </div>
 
         {/* People */}
-        <div className="px-1.5 py-1 text-xs">
+        <div className="px-[var(--cell-px,0.5rem)] py-1 text-xs">
           {row.person_count > 0 ? (
             <span className={row.enriched_person_count > 0 ? "text-[var(--accent-orange)]" : "text-[var(--text-secondary)]"}>
               {row.person_count}
@@ -183,7 +183,7 @@ export const OrgTableRow = memo(
 
         {/* Events */}
         <div
-          className="px-1.5 py-1 min-w-0"
+          className="px-[var(--cell-px,0.5rem)] py-1 min-w-0"
           title={row.events.length > 0 ? row.events.map((e) => e.name).join(", ") : undefined}
         >
           <div className="flex items-center gap-1 min-w-0 overflow-hidden">
@@ -208,7 +208,7 @@ export const OrgTableRow = memo(
         </div>
 
         {/* Signals */}
-        <div className="px-1.5 py-1 text-xs">
+        <div className="px-[var(--cell-px,0.5rem)] py-1 text-xs">
           {row.signal_count > 0 ? (
             <span className="text-[var(--text-secondary)]">{row.signal_count}</span>
           ) : (
@@ -217,19 +217,19 @@ export const OrgTableRow = memo(
         </div>
 
         {/* Industry */}
-        <div className="px-1.5 py-1 min-w-0">
+        <div className="px-[var(--cell-px,0.5rem)] py-1 min-w-0">
           <span className="text-[10px] text-[var(--text-muted)] truncate block">
             {row.industry || "\u2014"}
           </span>
         </div>
 
         {/* Employees */}
-        <div className="px-1.5 py-1 text-[10px] text-[var(--text-muted)]">
+        <div className="px-[var(--cell-px,0.5rem)] py-1 text-[10px] text-[var(--text-muted)]">
           {employeeBucket(row.employee_count)}
         </div>
 
         {/* Enrichment Stages */}
-        <div className="px-1.5 py-1">
+        <div className="px-[var(--cell-px,0.5rem)] py-1">
           <OrgStatusIcons
             stages={row.enrichment_stages}
             orgData={{
@@ -241,7 +241,7 @@ export const OrgTableRow = memo(
         </div>
 
         {/* Events Propagated */}
-        <div className="px-1.5 py-1 text-xs">
+        <div className="px-[var(--cell-px,0.5rem)] py-1 text-xs">
           {eventsPropagated > 0 ? (
             <span className="text-[var(--text-secondary)]">{eventsPropagated}</span>
           ) : (
@@ -250,7 +250,7 @@ export const OrgTableRow = memo(
         </div>
 
         {/* Last Signal */}
-        <div className="px-1.5 py-1 text-[10px] text-[var(--text-muted)]">
+        <div className="px-[var(--cell-px,0.5rem)] py-1 text-[10px] text-[var(--text-muted)]">
           {relativeDate(row.last_signal)}
         </div>
       </div>
