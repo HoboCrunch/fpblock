@@ -42,7 +42,7 @@ export default function Home() {
             </div>
             <div className="mt-3 pt-3 border-t border-white/[0.06]">
               <p className="text-[#a1a1aa] text-xs font-[family-name:var(--font-body)] leading-relaxed">
-                Up next &mdash; <span className="text-[#f58327]">EthCC Cannes 2026</span>. Building systems where failure is not an option.
+                Up next &mdash; <span className="text-[#f58327]">Consensus 2026</span>. Building systems where failure is not an option.
               </p>
             </div>
           </Link>
@@ -65,7 +65,7 @@ export default function Home() {
             </div>
             <div className="mt-3 pt-3 border-t border-white/[0.06]">
               <p className="text-[#a1a1aa] text-xs font-[family-name:var(--font-body)] leading-relaxed">
-                Up next &mdash; <span className="text-[#f58327]">EthCC Cannes 2026</span>. Let&apos;s talk infrastructure, ownership, and what comes next.
+                Up next &mdash; <span className="text-[#f58327]">Consensus 2026</span>. Let&apos;s talk infrastructure, ownership, and what comes next.
               </p>
             </div>
           </Link>
