@@ -20,6 +20,8 @@ import { GlassInput } from "@/components/ui/glass-input";
 import { Badge } from "@/components/ui/badge";
 import { CoverageMetrics } from "@/components/admin/coverage-metrics";
 import { cn } from "@/lib/utils";
+import { DataTable } from "@/components/ui/data-table";
+import { TextCell, NumericCell, PillCell, DateCell, HeaderCell } from "@/components/ui/data-cell";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -341,7 +343,7 @@ export function EventsTableClient({ events, eventTypes, locations }: Props) {
   }) {
     const isActive = sortField === field;
     return (
-      <th className={`px-2 py-3 font-medium ${className ?? ""}`}>
+      <HeaderCell className={className}>
         <button
           onClick={() => toggleSort(field)}
           className="inline-flex items-center gap-1 hover:text-white transition-colors"
@@ -357,7 +359,7 @@ export function EventsTableClient({ events, eventTypes, locations }: Props) {
             <ChevronsUpDown className="w-3 h-3 opacity-40" />
           )}
         </button>
-      </th>
+      </HeaderCell>
     );
   }
 
@@ -569,106 +571,97 @@ export function EventsTableClient({ events, eventTypes, locations }: Props) {
     </div>
   );
 
+  // ─── Column template ──────────────────────────────────────────────
+  const EVENT_COLS =
+    "minmax(200px,2fr) 120px 160px minmax(130px,1.2fr) 70px 70px 70px 70px minmax(160px,1.4fr)";
+
   // ─── Render ────────────────────────────────────────────────────────
   return (
     <TwoPanelLayout sidebar={sidebar}>
       <GlassCard padding={false}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-[var(--text-muted)] border-b border-[var(--glass-border)]">
-                <SortHeader label="Name" field="name" />
-                <SortHeader label="Type" field="event_type" />
-                <SortHeader label="Dates" field="date_start" />
-                <SortHeader label="Location" field="location" />
-                <SortHeader label="Speakers" field="speaker_count" />
-                <SortHeader label="Sponsors" field="sponsor_count" />
-                <SortHeader label="Contacts" field="contact_count" />
-                <SortHeader label="Orgs" field="org_count" />
-                <th className="px-2 py-3 font-medium">Coverage</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.04]">
-              {sorted.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-5 py-12 text-center">
-                    <Calendar className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
-                    <p className="text-[var(--text-muted)]">
-                      No events match your filters.
-                    </p>
-                  </td>
-                </tr>
-              )}
-              {sorted.map((event) => (
-                <tr
-                  key={event.id}
-                  className="hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
-                  onMouseEnter={() => handleRowEnter(event.id)}
-                  onMouseLeave={handleRowLeave}
-                  onClick={() => {
-                    window.location.href = `/admin/events/${event.id}`;
-                  }}
+        <DataTable
+          rows={sorted}
+          gridTemplate={EVENT_COLS}
+          estimateRowHeight={44}
+          minWidth="1100px"
+          scrollHeight="calc(100vh - 240px)"
+          emptyMessage="No events match your filters."
+          onRowClick={(event) => { window.location.href = `/admin/events/${event.id}`; }}
+          onRowMouseEnter={(event) => handleRowEnter(event.id)}
+          onRowMouseLeave={() => handleRowLeave()}
+          getRowKey={(event) => event.id}
+          header={
+            <>
+              <SortHeader label="Name" field="name" />
+              <SortHeader label="Type" field="event_type" />
+              <SortHeader label="Dates" field="date_start" />
+              <SortHeader label="Location" field="location" />
+              <SortHeader label="Speakers" field="speaker_count" className="justify-center" />
+              <SortHeader label="Sponsors" field="sponsor_count" className="justify-center" />
+              <SortHeader label="Contacts" field="contact_count" className="justify-center" />
+              <SortHeader label="Orgs" field="org_count" className="justify-center" />
+              <HeaderCell>Coverage</HeaderCell>
+            </>
+          }
+          renderRow={(event) => (
+            <>
+              {/* Name */}
+              <div className="px-[var(--cell-px,0.5rem)] py-[var(--cell-py,0.25rem)] min-w-0 flex items-center">
+                <Link
+                  href={`/admin/events/${event.id}`}
+                  className="text-[var(--accent-indigo)] hover:underline font-medium truncate text-xs"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <td className="px-2 py-3">
-                    <Link
-                      href={`/admin/events/${event.id}`}
-                      className="text-[var(--accent-indigo)] hover:underline font-medium"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {event.name}
-                    </Link>
-                  </td>
-                  <td className="px-2 py-3">
-                    {event.event_type ? (
-                      <Badge
-                        variant={
-                          event.event_type.toLowerCase() === "conference"
-                            ? "glass-orange"
-                            : event.event_type.toLowerCase() === "hackathon"
-                              ? "approved"
-                              : event.event_type.toLowerCase() === "summit"
-                                ? "scheduled"
-                                : event.event_type.toLowerCase() === "meetup"
-                                  ? "replied"
-                                  : "default"
-                        }
-                      >
-                        {event.event_type}
-                      </Badge>
-                    ) : (
-                      <span className="text-[var(--text-muted)]">&mdash;</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-3 text-[var(--text-secondary)] whitespace-nowrap">
-                    {formatDateRange(event.date_start, event.date_end)}
-                  </td>
-                  <td className="px-2 py-3 text-[var(--text-muted)] max-w-[130px] truncate">
-                    {event.location ?? "—"}
-                  </td>
-                  <td className="px-2 py-3 text-[var(--text-secondary)] text-center">
-                    {event.speaker_count}
-                  </td>
-                  <td className="px-2 py-3 text-[var(--text-secondary)] text-center">
-                    {event.sponsor_count}
-                  </td>
-                  <td className="px-2 py-3 text-[var(--text-secondary)] text-center">
-                    {event.contact_count}
-                  </td>
-                  <td className="px-2 py-3 text-[var(--text-secondary)] text-center">
-                    {event.org_count}
-                  </td>
-                  <td className="px-2 py-3">
-                    <CoverageMetrics
-                      enrichedContactPct={event.enriched_contact_pct}
-                      avgIcp={event.avg_icp}
-                      totalSignals={event.total_signals}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  {event.name}
+                </Link>
+              </div>
+
+              {/* Type */}
+              <PillCell>
+                {event.event_type ? (
+                  <Badge
+                    variant={
+                      event.event_type.toLowerCase() === "conference"
+                        ? "glass-orange"
+                        : event.event_type.toLowerCase() === "hackathon"
+                          ? "approved"
+                          : event.event_type.toLowerCase() === "summit"
+                            ? "scheduled"
+                            : event.event_type.toLowerCase() === "meetup"
+                              ? "replied"
+                              : "default"
+                    }
+                  >
+                    {event.event_type}
+                  </Badge>
+                ) : (
+                  <span className="text-[var(--text-muted)] text-xs">&mdash;</span>
+                )}
+              </PillCell>
+
+              {/* Dates */}
+              <DateCell>{formatDateRange(event.date_start, event.date_end)}</DateCell>
+
+              {/* Location */}
+              <TextCell title={event.location ?? undefined}>{event.location ?? "—"}</TextCell>
+
+              {/* Speakers / Sponsors / Contacts / Orgs */}
+              <NumericCell className="justify-center">{event.speaker_count}</NumericCell>
+              <NumericCell className="justify-center">{event.sponsor_count}</NumericCell>
+              <NumericCell className="justify-center">{event.contact_count}</NumericCell>
+              <NumericCell className="justify-center">{event.org_count}</NumericCell>
+
+              {/* Coverage */}
+              <div className="px-[var(--cell-px,0.5rem)] py-[var(--cell-py,0.25rem)] min-w-0 flex items-center">
+                <CoverageMetrics
+                  enrichedContactPct={event.enriched_contact_pct}
+                  avgIcp={event.avg_icp}
+                  totalSignals={event.total_signals}
+                />
+              </div>
+            </>
+          )}
+        />
 
         <div className="px-5 py-3 border-t border-[var(--glass-border)]">
           <p className="text-xs text-[var(--text-muted)]">
