@@ -5,25 +5,29 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
-  Search,
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
   Users,
 } from "lucide-react";
 import { TwoPanelLayout } from "@/components/admin/two-panel-layout";
-import { FilterGroup } from "@/components/admin/filter-group";
 import { ActiveFilters } from "@/components/admin/active-filters";
 import { SelectionSummary } from "@/components/admin/selection-summary";
 import { GlassCard } from "@/components/ui/glass-card";
-import { GlassInput } from "@/components/ui/glass-input";
-import { GlassSelect } from "@/components/ui/glass-select";
-import { MultiSelectField } from "@/components/admin/multi-select-field";
 import { AddToListDropdown } from "@/components/admin/add-to-list-dropdown";
-import { EventRelationToggle, toggleToRelation } from "@/components/admin/event-relation-toggle";
+import { toggleToRelation } from "@/components/admin/event-relation-toggle";
 import { useEventPersonIds, useEventRelationMap } from "@/lib/queries/use-event-affiliations";
 import { useEvents } from "@/lib/queries/use-events";
-import { cn } from "@/lib/utils";
+import { PersonFilterSidebar } from "@/components/admin/person-filter-sidebar";
+import {
+  applyPersonFilters,
+  defaultPersonFilterRules,
+  personFilterRulesToActiveFilters,
+  removeFilterKey,
+  clearAllFilters,
+  type PersonFilterRules,
+  type FilterKey,
+} from "@/lib/filters/person-filters";
 
 import { PersonTableRow, GlassCheckbox, PERSON_GRID_COLS } from "./person-table-row";
 import { PersonPreviewPanel } from "./person-preview-panel";
@@ -134,32 +138,21 @@ export function PersonsTableClient({
   const router = useRouter();
 
   // --- Filter state ---
-  const [search, setSearch] = useState("");
+  const [rules, setRules] = useState<PersonFilterRules>(defaultPersonFilterRules());
   const [searchDebounced, setSearchDebounced] = useState("");
-  const [filterEvents, setFilterEvents] = useState<string[]>([]);
-  const [filterHasOrg, setFilterHasOrg] = useState<string>("");
-  const [filterCorrelationType, setFilterCorrelationType] = useState<string[]>([]);
-  const [filterSeniority, setFilterSeniority] = useState<string[]>([]);
-  const [filterDepartment, setFilterDepartment] = useState<string[]>([]);
-  const [filterSource, setFilterSource] = useState<string[]>([]);
-  const [filterHasEmail, setFilterHasEmail] = useState(false);
-  const [filterHasLinkedin, setFilterHasLinkedin] = useState(false);
-  const [filterHasPhone, setFilterHasPhone] = useState(false);
-  const [filterHasTwitter, setFilterHasTwitter] = useState(false);
-  const [filterHasTelegram, setFilterHasTelegram] = useState(false);
-  const [filterEnrichmentStatus, setFilterEnrichmentStatus] = useState<string[]>([]);
-  const [filterIcpMin, setFilterIcpMin] = useState("");
-  const [filterIcpMax, setFilterIcpMax] = useState("");
 
-  // --- Event relation filter state ---
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [speakerOn, setSpeakerOn] = useState(true);
-  const [orgAffiliatedOn, setOrgAffiliatedOn] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(rules.search ?? ""), 300);
+    return () => clearTimeout(t);
+  }, [rules.search]);
 
-  const eventRelation = toggleToRelation(speakerOn, orgAffiliatedOn);
+  const eventRelation = rules.eventScope
+    ? toggleToRelation(rules.eventScope.speaker, rules.eventScope.orgAffiliated)
+    : null;
   const { data: events } = useEvents();
-  const { data: eventPersonIds } = useEventPersonIds(selectedEventId, eventRelation);
-  const { data: eventRelationMap } = useEventRelationMap(selectedEventId);
+  void events;
+  const { data: eventPersonIds } = useEventPersonIds(rules.eventScope?.eventId ?? null, eventRelation);
+  const { data: eventRelationMap } = useEventRelationMap(rules.eventScope?.eventId ?? null);
 
   // --- Sort state ---
   const [sortField, setSortField] = useState<SortField>("icp_score");
@@ -177,12 +170,6 @@ export function PersonsTableClient({
 
   // --- Virtualizer ref ---
   const parentRef = useRef<HTMLDivElement>(null);
-
-  // Debounce search
-  useEffect(() => {
-    const t = setTimeout(() => setSearchDebounced(search), 300);
-    return () => clearTimeout(t);
-  }, [search]);
 
   // --- Pre-compute row lookup map ---
   const rowMap = useMemo(() => {
@@ -202,83 +189,11 @@ export function PersonsTableClient({
 
   // --- Filter + Sort ---
   const filteredRows = useMemo(() => {
-    let result = rows;
-
-    if (searchDebounced) {
-      const q = searchDebounced.toLowerCase();
-      result = result.filter(
-        (r) =>
-          r.full_name.toLowerCase().includes(q) ||
-          (r.email && r.email.toLowerCase().includes(q)) ||
-          (r.primary_org_name && r.primary_org_name.toLowerCase().includes(q))
-      );
-    }
-
-    if (filterEvents.length > 0) {
-      result = result.filter((r) =>
-        r.personEvents.some((pe) => filterEvents.includes(pe.event_id))
-      );
-    }
-
-    if (filterHasOrg === "yes") {
-      result = result.filter((r) => r.primary_org_name);
-    } else if (filterHasOrg === "no") {
-      result = result.filter((r) => !r.primary_org_name);
-    }
-
-    if (filterCorrelationType.length > 0) {
-      result = result.filter((r) => {
-        const c = correlations[r.id];
-        return filterCorrelationType.includes(c.type);
-      });
-    }
-
-    if (filterSeniority.length > 0) {
-      result = result.filter(
-        (r) => r.seniority && filterSeniority.includes(r.seniority)
-      );
-    }
-
-    if (filterDepartment.length > 0) {
-      result = result.filter(
-        (r) => r.department && filterDepartment.includes(r.department)
-      );
-    }
-
-    if (filterSource.length > 0) {
-      result = result.filter(
-        (r) => r.source && filterSource.includes(r.source)
-      );
-    }
-
-    if (filterHasEmail) result = result.filter((r) => r.email);
-    if (filterHasLinkedin) result = result.filter((r) => r.linkedin_url);
-    if (filterHasPhone) result = result.filter((r) => r.phone);
-    if (filterHasTwitter) result = result.filter((r) => r.twitter_handle);
-    if (filterHasTelegram) result = result.filter((r) => r.telegram_handle);
-
-    if (filterEnrichmentStatus.length > 0) {
-      result = result.filter((r) =>
-        filterEnrichmentStatus.includes(r.enrichment_status || "none")
-      );
-    }
-
-    if (filterIcpMin) {
-      const min = parseInt(filterIcpMin);
-      result = result.filter((r) => r.icp_score !== null && r.icp_score >= min);
-    }
-    if (filterIcpMax) {
-      const max = parseInt(filterIcpMax);
-      result = result.filter((r) => r.icp_score !== null && r.icp_score <= max);
-    }
-
-    // Event-relation scoping. When an event is selected but both toggles are
-    // off, eventRelation is null → useEventPersonIds returns []; the list
-    // becomes empty (spec: "both off" is the empty set).
-    if (selectedEventId) {
-      const eventScopedIds = new Set(eventPersonIds ?? []);
-      result = result.filter((r) => eventScopedIds.has(r.id));
-    }
+    const rulesForApply: PersonFilterRules = { ...rules, search: searchDebounced };
+    let result = applyPersonFilters(rows, rulesForApply, {
+      correlations,
+      eventPersonIds: rules.eventScope ? (eventPersonIds ? new Set(eventPersonIds) : null) : undefined,
+    });
 
     result = [...result].sort((a, b) => {
       let aVal: any = (a as any)[sortField];
@@ -293,29 +208,7 @@ export function PersonsTableClient({
     });
 
     return result;
-  }, [
-    rows,
-    searchDebounced,
-    filterEvents,
-    filterHasOrg,
-    filterCorrelationType,
-    filterSeniority,
-    filterDepartment,
-    filterSource,
-    filterHasEmail,
-    filterHasLinkedin,
-    filterHasPhone,
-    filterHasTwitter,
-    filterHasTelegram,
-    filterEnrichmentStatus,
-    filterIcpMin,
-    filterIcpMax,
-    selectedEventId,
-    eventPersonIds,
-    sortField,
-    sortDir,
-    correlations,
-  ]);
+  }, [rows, rules, searchDebounced, eventPersonIds, sortField, sortDir, correlations]);
 
   // --- Virtualizer ---
   const virtualizer = useVirtualizer({
@@ -417,63 +310,17 @@ export function PersonsTableClient({
   }, [sortField]);
 
   // --- Active filters ---
-  const activeFilters = useMemo(() => {
-    const filters: { key: string; label: string; value: string }[] = [];
-    if (filterEvents.length > 0) {
-      const names = filterEvents.map((id) => eventOptions.find((e) => e.id === id)?.name || id);
-      filters.push({ key: "events", label: "Event", value: names.join(", ") });
-    }
-    if (filterHasOrg) filters.push({ key: "hasOrg", label: "Has Org", value: filterHasOrg });
-    if (filterCorrelationType.length > 0) filters.push({ key: "correlationType", label: "Correlation", value: filterCorrelationType.join(", ") });
-    if (filterSeniority.length > 0) filters.push({ key: "seniority", label: "Seniority", value: filterSeniority.join(", ") });
-    if (filterDepartment.length > 0) filters.push({ key: "department", label: "Department", value: filterDepartment.join(", ") });
-    if (filterSource.length > 0) filters.push({ key: "source", label: "Source", value: filterSource.join(", ") });
-    if (filterHasEmail) filters.push({ key: "hasEmail", label: "Has Email", value: "Yes" });
-    if (filterHasLinkedin) filters.push({ key: "hasLinkedin", label: "Has LinkedIn", value: "Yes" });
-    if (filterHasPhone) filters.push({ key: "hasPhone", label: "Has Phone", value: "Yes" });
-    if (filterHasTwitter) filters.push({ key: "hasTwitter", label: "Has Twitter", value: "Yes" });
-    if (filterHasTelegram) filters.push({ key: "hasTelegram", label: "Has Telegram", value: "Yes" });
-    if (filterEnrichmentStatus.length > 0) filters.push({ key: "enrichmentStatus", label: "Enrichment", value: filterEnrichmentStatus.join(", ") });
-    if (filterIcpMin) filters.push({ key: "icpMin", label: "ICP Min", value: filterIcpMin });
-    if (filterIcpMax) filters.push({ key: "icpMax", label: "ICP Max", value: filterIcpMax });
-    return filters;
-  }, [filterEvents, filterHasOrg, filterCorrelationType, filterSeniority, filterDepartment, filterSource, filterHasEmail, filterHasLinkedin, filterHasPhone, filterHasTwitter, filterHasTelegram, filterEnrichmentStatus, filterIcpMin, filterIcpMax, eventOptions]);
+  const activeFilters = useMemo(
+    () => personFilterRulesToActiveFilters(rules, { eventOptions }),
+    [rules, eventOptions],
+  );
 
   const handleRemoveFilter = useCallback((key: string) => {
-    switch (key) {
-      case "events": setFilterEvents([]); break;
-      case "hasOrg": setFilterHasOrg(""); break;
-      case "correlationType": setFilterCorrelationType([]); break;
-      case "seniority": setFilterSeniority([]); break;
-      case "department": setFilterDepartment([]); break;
-      case "source": setFilterSource([]); break;
-      case "hasEmail": setFilterHasEmail(false); break;
-      case "hasLinkedin": setFilterHasLinkedin(false); break;
-      case "hasPhone": setFilterHasPhone(false); break;
-      case "hasTwitter": setFilterHasTwitter(false); break;
-      case "hasTelegram": setFilterHasTelegram(false); break;
-      case "enrichmentStatus": setFilterEnrichmentStatus([]); break;
-      case "icpMin": setFilterIcpMin(""); break;
-      case "icpMax": setFilterIcpMax(""); break;
-    }
+    setRules((r) => removeFilterKey(r, key as FilterKey));
   }, []);
 
   const handleClearAll = useCallback(() => {
-    setFilterEvents([]);
-    setFilterHasOrg("");
-    setFilterCorrelationType([]);
-    setFilterSeniority([]);
-    setFilterDepartment([]);
-    setFilterSource([]);
-    setFilterHasEmail(false);
-    setFilterHasLinkedin(false);
-    setFilterHasPhone(false);
-    setFilterHasTwitter(false);
-    setFilterHasTelegram(false);
-    setFilterEnrichmentStatus([]);
-    setFilterIcpMin("");
-    setFilterIcpMax("");
-    setSearch("");
+    setRules(clearAllFilters());
   }, []);
 
   // --- Sort header component ---
@@ -508,169 +355,18 @@ export function PersonsTableClient({
     );
   }
 
-  // --- Toggle component ---
-  function Toggle({
-    label,
-    checked,
-    onChange,
-  }: {
-    label: string;
-    checked: boolean;
-    onChange: (v: boolean) => void;
-  }) {
-    return (
-      <label className="flex items-center gap-2 cursor-pointer text-sm text-[var(--text-secondary)] hover:text-white transition-colors">
-        <div
-          className={`w-8 h-4.5 rounded-full relative transition-colors ${
-            checked ? "bg-[var(--accent-orange)]/40" : "bg-white/[0.08]"
-          }`}
-          onClick={(e) => { e.preventDefault(); onChange(!checked); }}
-        >
-          <div
-            className={`absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all ${
-              checked
-                ? "left-4 bg-[var(--accent-orange)]"
-                : "left-0.5 bg-[var(--text-muted)]"
-            }`}
-          />
-        </div>
-        {label}
-      </label>
-    );
-  }
-
   // --- Sidebar ---
   const sidebar = (
     <div className="space-y-3">
       <GlassCard padding={false} className="overflow-hidden">
-        <div className="p-3 border-b border-[var(--glass-border)]">
-          <GlassInput
-            icon={Search}
-            placeholder="Search name, email, org..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="p-3 space-y-1">
-        <FilterGroup title="Relationships" defaultOpen={true}>
-          <div className="space-y-2">
-            <GlassSelect
-              placeholder="Scope by event..."
-              options={(events ?? []).map((ev) => ({ value: ev.id, label: ev.name }))}
-              value={selectedEventId ?? ""}
-              onChange={(e) => setSelectedEventId(e.target.value || null)}
-            />
-            {selectedEventId && (
-              <EventRelationToggle
-                speaker={speakerOn}
-                orgAffiliated={orgAffiliatedOn}
-                onChange={({ speaker, orgAffiliated }) => {
-                  setSpeakerOn(speaker);
-                  setOrgAffiliatedOn(orgAffiliated);
-                }}
-              />
-            )}
-
-            <MultiSelectField
-              placeholder="Filter by event..."
-              options={eventOptions.map((e) => ({ value: e.id, label: e.name }))}
-              values={filterEvents}
-              onChange={setFilterEvents}
-            />
-
-            <GlassSelect
-              placeholder="Has Organization"
-              options={[
-                { value: "yes", label: "Yes" },
-                { value: "no", label: "No" },
-              ]}
-              value={filterHasOrg}
-              onChange={(e) => setFilterHasOrg(e.target.value)}
-            />
-
-            <MultiSelectField
-              placeholder="Correlation Type"
-              options={[
-                { value: "speaker_sponsor", label: "Speaker + Sponsor" },
-                { value: "speaker_only", label: "Speaker Only" },
-                { value: "sponsor_contact", label: "Sponsor Contact" },
-                { value: "org_sponsor", label: "Org Sponsor" },
-                { value: "none", label: "No Event Link" },
-              ]}
-              values={filterCorrelationType}
-              onChange={setFilterCorrelationType}
-            />
-          </div>
-        </FilterGroup>
-
-        <FilterGroup title="Profile" defaultOpen={false}>
-          <div className="space-y-2">
-            <MultiSelectField
-              placeholder="Seniority"
-              options={seniorityOptions.map((s) => ({ value: s, label: s }))}
-              values={filterSeniority}
-              onChange={setFilterSeniority}
-            />
-
-            <MultiSelectField
-              placeholder="Department"
-              options={departmentOptions.map((d) => ({ value: d, label: d }))}
-              values={filterDepartment}
-              onChange={setFilterDepartment}
-            />
-
-            <MultiSelectField
-              placeholder="Source"
-              options={sourceOptions.map((s) => ({ value: s, label: s }))}
-              values={filterSource}
-              onChange={setFilterSource}
-            />
-          </div>
-        </FilterGroup>
-
-        <FilterGroup title="Contact" defaultOpen={false}>
-          <div className="space-y-2">
-            <Toggle label="Has Email" checked={filterHasEmail} onChange={setFilterHasEmail} />
-            <Toggle label="Has LinkedIn" checked={filterHasLinkedin} onChange={setFilterHasLinkedin} />
-            <Toggle label="Has Phone" checked={filterHasPhone} onChange={setFilterHasPhone} />
-            <Toggle label="Has Twitter" checked={filterHasTwitter} onChange={setFilterHasTwitter} />
-            <Toggle label="Has Telegram" checked={filterHasTelegram} onChange={setFilterHasTelegram} />
-          </div>
-        </FilterGroup>
-
-        <FilterGroup title="Enrichment" defaultOpen={false}>
-          <div className="space-y-2">
-            <MultiSelectField
-              placeholder="Enrichment Status"
-              options={[
-                { value: "none", label: "None" },
-                { value: "in_progress", label: "In Progress" },
-                { value: "complete", label: "Complete" },
-                { value: "failed", label: "Failed" },
-              ]}
-              values={filterEnrichmentStatus}
-              onChange={setFilterEnrichmentStatus}
-            />
-
-            <div className="flex items-center gap-2">
-              <GlassInput
-                placeholder="ICP Min"
-                type="number"
-                value={filterIcpMin}
-                onChange={(e) => setFilterIcpMin(e.target.value)}
-                className="w-full"
-              />
-              <GlassInput
-                placeholder="ICP Max"
-                type="number"
-                value={filterIcpMax}
-                onChange={(e) => setFilterIcpMax(e.target.value)}
-                className="w-full"
-              />
-            </div>
-          </div>
-        </FilterGroup>
-        </div>
+        <PersonFilterSidebar
+          rules={rules}
+          onChange={setRules}
+          eventOptions={eventOptions}
+          sourceOptions={sourceOptions}
+          seniorityOptions={seniorityOptions}
+          departmentOptions={departmentOptions}
+        />
       </GlassCard>
 
       {/* Active Filters */}
@@ -754,7 +450,7 @@ export function PersonsTableClient({
                       isSelected={selectedIds.has(row.id)}
                       correlation={correlations[row.id]}
                       eventRelation={
-                        selectedEventId ? eventRelationMap?.get(row.id) : undefined
+                        rules.eventScope?.eventId ? eventRelationMap?.get(row.id) : undefined
                       }
                       idx={virtualItem.index}
                       style={{
