@@ -396,17 +396,17 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
   // ------------------------------------------------------------------
 
   const sidebar = (
-    <div className="space-y-4">
-      {/* Search */}
-      <GlassInput
-        icon={Search}
-        placeholder="Search name, website, description..."
-        value={filters.search}
-        onChange={(e) => setFilter("search", e.target.value)}
-      />
-
-      {/* Filter Groups */}
-      <GlassCard padding={false} className="p-4">
+    <div className="space-y-3">
+      <GlassCard padding={false} className="overflow-hidden">
+        <div className="p-3 border-b border-[var(--glass-border)]">
+          <GlassInput
+            icon={Search}
+            placeholder="Search name, website, description..."
+            value={filters.search}
+            onChange={(e) => setFilter("search", e.target.value)}
+          />
+        </div>
+        <div className="p-3 space-y-1">
         <FilterGroup title="Relationships" defaultOpen={true}>
           <div className="space-y-2">
             <GlassSelect
@@ -510,6 +510,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
             />
           </div>
         </FilterGroup>
+        </div>
       </GlassCard>
 
       {/* Active Filters */}
@@ -584,10 +585,14 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
     <TwoPanelLayout sidebar={sidebar}>
       <GlassCard padding={false}>
         <div className="overflow-x-auto">
-          {/* Single table with colgroup for consistent column widths */}
-          <div className="w-full min-w-[900px]">
+          <div
+            ref={scrollRef}
+            className="w-full min-w-[900px] overflow-y-auto"
+            style={{ height: "calc(100vh - 280px)" }}
+          >
             {/* Sticky header */}
-            <div className="grid text-xs text-left text-[var(--text-muted)] border-b border-[var(--glass-border)]"
+            <div
+              className="grid sticky top-0 z-10 bg-[var(--glass-bg)] backdrop-blur-sm text-xs text-left text-[var(--text-muted)] border-b border-[var(--glass-border)]"
               style={{ gridTemplateColumns: ORG_GRID_COLS }}
             >
               <div className="px-2 py-2.5 flex items-center">
@@ -605,47 +610,40 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
               <SortHeader label="Last Sig." field="last_signal" />
             </div>
 
-            {/* Virtualized scroll container */}
-            <div
-              ref={scrollRef}
-              className="overflow-y-auto"
-              style={{ height: "calc(100vh - 280px)" }}
-            >
-              {filteredRows.length === 0 ? (
-                <div className="px-5 py-12 text-center">
-                  <Building2 className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
-                  <p className="text-[var(--text-muted)]">No organizations found.</p>
-                </div>
-              ) : (
-                <div style={{ position: "relative", height: `${virtualizer.getTotalSize()}px` }}>
-                  {virtualizer.getVirtualItems().map((virtualItem) => {
-                    const row = filteredRows[virtualItem.index];
-                    return (
-                      <OrgTableRow
-                        key={row.id}
-                        row={row}
-                        index={virtualItem.index}
-                        isSelected={selectedIds.has(row.id)}
-                        isHovered={hoveredId === row.id}
-                        eventsPropagated={propagationMap[row.id] ?? 0}
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: "100%",
-                          transform: `translateY(${virtualItem.start}px)`,
-                          height: `${virtualItem.size}px`,
-                        }}
-                        onRowClick={handleRowClick}
-                        onMouseEnter={handleRowMouseEnter}
-                        onMouseLeave={handleRowMouseLeave}
-                        onToggleSelect={toggleSelect}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            {filteredRows.length === 0 ? (
+              <div className="px-5 py-12 text-center">
+                <Building2 className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
+                <p className="text-[var(--text-muted)]">No organizations found.</p>
+              </div>
+            ) : (
+              <div style={{ position: "relative", height: `${virtualizer.getTotalSize()}px` }}>
+                {virtualizer.getVirtualItems().map((virtualItem) => {
+                  const row = filteredRows[virtualItem.index];
+                  return (
+                    <OrgTableRow
+                      key={row.id}
+                      row={row}
+                      index={virtualItem.index}
+                      isSelected={selectedIds.has(row.id)}
+                      isHovered={hoveredId === row.id}
+                      eventsPropagated={propagationMap[row.id] ?? 0}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        transform: `translateY(${virtualItem.start}px)`,
+                        height: `${virtualItem.size}px`,
+                      }}
+                      onRowClick={handleRowClick}
+                      onMouseEnter={handleRowMouseEnter}
+                      onMouseLeave={handleRowMouseLeave}
+                      onToggleSelect={toggleSelect}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 

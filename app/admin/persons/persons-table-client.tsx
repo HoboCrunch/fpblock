@@ -540,17 +540,17 @@ export function PersonsTableClient({
 
   // --- Sidebar ---
   const sidebar = (
-    <div className="space-y-4">
-      {/* Search */}
-      <GlassInput
-        icon={Search}
-        placeholder="Search name, email, org..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
-
-      {/* Filter Groups */}
-      <GlassCard className="!p-3">
+    <div className="space-y-3">
+      <GlassCard padding={false} className="overflow-hidden">
+        <div className="p-3 border-b border-[var(--glass-border)]">
+          <GlassInput
+            icon={Search}
+            placeholder="Search name, email, org..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="p-3 space-y-1">
         <FilterGroup title="Relationships" defaultOpen={true}>
           <div className="space-y-2">
             <GlassSelect
@@ -669,6 +669,7 @@ export function PersonsTableClient({
             </div>
           </div>
         </FilterGroup>
+        </div>
       </GlassCard>
 
       {/* Active Filters */}
@@ -710,10 +711,14 @@ export function PersonsTableClient({
     <TwoPanelLayout sidebar={sidebar}>
       <GlassCard padding={false}>
         <div className="overflow-x-auto">
-          <div className="w-full min-w-[800px]">
+          <div
+            ref={parentRef}
+            className="w-full min-w-[800px] overflow-y-auto"
+            style={{ maxHeight: "calc(100vh - 220px)" }}
+          >
             {/* Sticky header */}
             <div
-              className="grid text-xs text-left text-[var(--text-muted)] border-b border-[var(--glass-border)] items-center"
+              className="grid sticky top-0 z-10 bg-[var(--glass-bg)] backdrop-blur-sm text-xs text-left text-[var(--text-muted)] border-b border-[var(--glass-border)] items-center"
               style={{ gridTemplateColumns: PERSON_GRID_COLS }}
             >
               <div className="px-2 py-2 flex items-center">
@@ -732,49 +737,42 @@ export function PersonsTableClient({
               <SortHeader label="Activity" field="last_interaction_at" />
             </div>
 
-            {/* Virtualized scroll container */}
-            <div
-              ref={parentRef}
-              className="overflow-y-auto"
-              style={{ maxHeight: "calc(100vh - 220px)" }}
-            >
-              {filteredRows.length === 0 ? (
-                <div className="px-5 py-12 text-center">
-                  <Users className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
-                  <p className="text-[var(--text-muted)]">No persons found.</p>
-                </div>
-              ) : (
-                <div style={{ position: "relative", height: `${virtualizer.getTotalSize()}px` }}>
-                  {virtualizer.getVirtualItems().map((virtualItem) => {
-                    const row = filteredRows[virtualItem.index];
-                    return (
-                      <PersonTableRow
-                        key={row.id}
-                        row={row}
-                        isSelected={selectedIds.has(row.id)}
-                        correlation={correlations[row.id]}
-                        eventRelation={
-                          selectedEventId ? eventRelationMap?.get(row.id) : undefined
-                        }
-                        idx={virtualItem.index}
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: "100%",
-                          height: `${virtualItem.size}px`,
-                          transform: `translateY(${virtualItem.start}px)`,
-                        }}
-                        onMouseEnter={handleRowMouseEnter}
-                        onMouseLeave={handleRowMouseLeave}
-                        onCheckboxClick={handleCheckboxClick}
-                        onRowClick={handleRowClick}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            {filteredRows.length === 0 ? (
+              <div className="px-5 py-12 text-center">
+                <Users className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
+                <p className="text-[var(--text-muted)]">No persons found.</p>
+              </div>
+            ) : (
+              <div style={{ position: "relative", height: `${virtualizer.getTotalSize()}px` }}>
+                {virtualizer.getVirtualItems().map((virtualItem) => {
+                  const row = filteredRows[virtualItem.index];
+                  return (
+                    <PersonTableRow
+                      key={row.id}
+                      row={row}
+                      isSelected={selectedIds.has(row.id)}
+                      correlation={correlations[row.id]}
+                      eventRelation={
+                        selectedEventId ? eventRelationMap?.get(row.id) : undefined
+                      }
+                      idx={virtualItem.index}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: `${virtualItem.size}px`,
+                        transform: `translateY(${virtualItem.start}px)`,
+                      }}
+                      onMouseEnter={handleRowMouseEnter}
+                      onMouseLeave={handleRowMouseLeave}
+                      onCheckboxClick={handleCheckboxClick}
+                      onRowClick={handleRowClick}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
