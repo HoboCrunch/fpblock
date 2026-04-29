@@ -216,7 +216,7 @@ All hooks live under `lib/queries/use-*.ts`. Every hook is `"use client"` and re
 - **Returns:** `SavedList[]` from `saved_lists` table.
 - **Polling:** none.
 - **Key:** `queryKeys.savedLists.all`.
-- **Note:** the inline TODO at line 4 acknowledges that the `saved_lists` table is not yet wired to the rest of the app. The Lists page (`app/admin/lists/page.tsx`) does NOT use this hook — it queries Supabase directly.
+- **Note:** the inline TODO at line 4 acknowledges that the `saved_lists` table is not yet wired to the rest of the app. The Lists index (`app/admin/lists/page.tsx`) does NOT use this hook — it calls server actions in `app/admin/lists/actions.ts` directly. The detail route (`app/admin/lists/[id]/page.tsx`) loads server-side via `loadPersonRows()` + `getListById()` and passes data into the client; `addToList` / `removeFromList` / `saveListFilter` are invoked through server actions, no React Query.
 
 ### `useSequences(filters)` — `lib/queries/use-sequences.ts:13-128`
 

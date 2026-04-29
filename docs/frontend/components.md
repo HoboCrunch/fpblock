@@ -219,7 +219,7 @@ The pattern across the app:
 - `app/admin/<section>/page.tsx` is a **server component** when it does heavy data prep (orgs, persons, events, initiatives, inbox, dashboard). It awaits `createClient()` from `lib/supabase/server.ts`, runs parallel `fetchAll` calls, and passes serialized props down.
 - `app/admin/<section>/<section>-table-client.tsx` (or `-list-client.tsx`) is the corresponding **client component** that owns interactive state, filters, and selection.
 - The shell (`admin-shell.tsx`) and `<QueryProvider>` mount once at `app/admin/layout.tsx`.
-- Some pages are 100% client (`/admin/lists`, `/admin/settings`, `/admin/uploads`) — these own their data fetching directly. They predate the React Query convention and have **not** been migrated.
+- Some pages are 100% client (`/admin/lists` index, `/admin/settings`, `/admin/uploads`) — these own their data fetching directly. They predate the React Query convention and have **not** been migrated. The `/admin/lists/[id]` detail route, by contrast, _is_ a server-component shell that loads `loadPersonRows()` server-side and hands it to a client.
 - The Suspense wrapper at `/admin/enrichment/page.tsx` only exists to support `useSearchParams` inside the shell.
 
 ### Styling conventions
@@ -266,7 +266,7 @@ The major admin list pages (sequences, events, organizations, persons, pipeline,
 
 ### 3. Pages bypassing React Query
 
-`app/admin/lists/page.tsx` (994 LOC) and `app/admin/settings/page.tsx` (928 LOC) fetch data via `createClient()` + `useState`/`useEffect`. `PERFORMANCE.md` §1 says: "All client-side data fetching goes through React Query hooks in `lib/queries/`. No exceptions." Both files predate the rule and have not been migrated.
+`app/admin/lists/page.tsx` (218 LOC, index only) and `app/admin/settings/page.tsx` (928 LOC) fetch data via `createClient()` + `useState`/`useEffect`. `PERFORMANCE.md` §1 says: "All client-side data fetching goes through React Query hooks in `lib/queries/`. No exceptions." Both predate the rule and have not been migrated. (The `/admin/lists/[id]` detail route is exempt — it loads via a server component, so no client-side data fetching is needed in its main path.)
 
 ### 4. Files exceeding 300 LOC
 
@@ -275,9 +275,9 @@ The shell-pattern guidance says client components should stay under 300 LOC. Con
 | File | LOC |
 |---|---|
 | `app/admin/enrichment/enrichment-shell.tsx` | 988 |
-| `app/admin/lists/page.tsx` | 994 |
 | `app/admin/settings/page.tsx` | 928 |
-| `app/admin/persons/persons-table-client.tsx` | 898 |
+| `app/admin/lists/[id]/list-detail-client.tsx` | 385 |
+| `app/admin/persons/persons-table-client.tsx` | ~510 (post-extraction) |
 | `app/admin/organizations/organizations-table-client.tsx` | 661 |
 | `app/admin/sequences/sequence-list-client.tsx` | 417 |
 
