@@ -71,10 +71,33 @@ legacy `body_template` strings into single-block text composables.
 
 - `relative` — `delay_days` accumulate from `enrollment.enrolled_at`.
 - `window` — same as relative but constrained to `send_window` (days, hours, TZ).
-  `app/api/sequences/generate/route.ts:41-95` walks forward up to 7 days to find
-  a valid slot.
+  `app/api/sequences/generate/route.ts` walks forward in 30-min steps for up to
+  7 days using `Intl.DateTimeFormat` to resolve zoned hour-of-day and weekday
+  per instant — DST-correct.
 - `anchor` — schedule relative to `anchor_date` with `before` or `after`
   direction (e.g. T-7 days before an event).
+
+### Schedule parameters (the rest of `schedule_config` JSONB)
+
+Beyond the timing mode, `schedule_config` carries optional
+**parameters** that are read by the send pipeline and enrollment helpers
+(undefined values are skipped — back-compat with sequences created before this
+field set existed):
+
+| Field                       | Where enforced                               | Effect                                                                   |
+| --------------------------- | -------------------------------------------- | ------------------------------------------------------------------------ |
+| `throttle_per_day`          | `app/api/sequences/send/route.ts`            | Per-sequence daily ceiling. When hit, defer scheduled rows by 1h.        |
+| `daily_send_cap_global`     | `app/api/sequences/send/route.ts`            | Hard cap across **all** sequences. Defers when hit.                      |
+| `min_interval_minutes`      | `app/api/sequences/send/route.ts`            | Minimum gap between any two sends to the same person. Defers if too soon. |
+| `quiet_hours_local: {start,end}` | `app/api/sequences/send/route.ts`       | Suppresses sends whose current zoned hour falls in the window. Wraps midnight. |
+| `stop_on_reply`             | `app/api/webhooks/sendgrid/route.ts`         | When a `reply` / `inbound_email` event lands, pauses active enrollments for that person whose parent sequence has the flag. |
+| `stop_on_click`             | `app/api/webhooks/sendgrid/route.ts`         | Same, on `click` events.                                                 |
+| `exclude_bounced`           | `lib/segments.ts` + `app/admin/sequences/actions.ts` | Drops persons with `persons.email_bounced_at` set or any interaction with `status='bounced'` in the last 90 days. |
+| `exclude_already_enrolled`  | `app/admin/sequences/actions.ts`             | At enroll time, drops persons currently `active` in any *other* sequence. |
+
+These are surfaced in the UI via `<SequenceParametersPanel>` and
+`<ParameterGuide>` — every field has a popover with description, when-to-use,
+and examples (`components/admin/parameter-guide.tsx`).
 
 ### Enrollment — `lib/types/database.ts:315-322`
 
@@ -96,7 +119,7 @@ The `interactions` table is the universal outbound record. Sequences write rows
 with:
 
 - `interaction_type ∈ {'cold_email','cold_linkedin','cold_twitter',...}`
-  derived from channel via `app/api/sequences/execute/route.ts:34-38`.
+  derived from channel inside `app/api/sequences/generate/route.ts`.
 - `direction = 'outbound'`
 - `status ∈ InteractionStatus` (10 values; see below)
 - `sequence_id`, `sequence_step` for traceability
@@ -139,8 +162,12 @@ the enrollment to `bounced` so future steps are skipped
         ↓
 [Set status='active']                actions.ts:49                    updateSequenceStatus
         ↓
-[Enroll persons]                     actions.ts:59 enrollPersons
-                                     actions.ts:77 enrollFromEvent (uses getPersonIdsForEvent)
+[Enroll persons]                     actions.ts:65  enrollPersons
+                                     actions.ts:83  enrollFromEvent (uses getPersonIdsForEvent)
+                                     actions.ts:221 enrollFromSegment (uses lib/segments.ts)
+                                     ↳ all three pass through applySequenceEnrollFilters
+                                       which honors schedule.exclude_bounced /
+                                       exclude_already_enrolled before insert.
                                      ↳ status='active', current_step=0
         ↓
 [Cron: /api/sequences/generate]      app/api/sequences/generate/route.ts (POST)
@@ -162,14 +189,27 @@ the enrollment to `bounced` so future steps are skipped
 [Cron: /api/sequences/send]            vercel.json:3 — */5 * * * *
    query interactions where status='scheduled' AND scheduled_at <= now() LIMIT 50
    for each:
+     • PRE-SEND PARAMETER GATES (read from sequences.schedule_config):
+         - quiet_hours_local      → defer to next non-quiet hour in zone TZ
+         - throttle_per_day       → defer +60m if today's count ≥ cap
+         - daily_send_cap_global  → defer +60m if global today's count ≥ cap
+         - min_interval_minutes   → defer +N if same person sent recently
      • mark 'sending'
      • call SendGrid via lib/sendgrid.ts
      • on success → 'sent', detail.sendgrid_message_id captured
-     • on failure → exponential backoff via retry_count*5min, max 3 retries → 'failed'
+     • on failure → linear backoff retry_count*5min, max 3 retries → 'failed'
+   response shape: { sent, failed, skipped, deferred }
         ↓
 [SendGrid webhook]                     app/api/webhooks/sendgrid/route.ts
+   ECDSA signature verified via @sendgrid/eventwebhook before any state mutation.
    delivered/open/click/bounce/dropped/spam_report → status update
-   bounce → enrollment.status='bounced'
+   hard bounce  (5xx)            → status='bounced', enrollment='bounced',
+                                   persons.email_bounced_at = now()
+   soft bounce  (4xx, blocked)   → status='failed' (non-terminal — retry path applies)
+   reply / inbound_email         → status='replied'; if parent sequence has
+                                   stop_on_reply, active enrollments for that
+                                   person are paused
+   click                         → status='clicked'; same for stop_on_click
         ↓
 [Cron: pg_cron → /api/inbox/sync]      supabase/migrations/016_inbox_sync_cron.sql
    every 15min per account (jb@, wes@gofpblock.com — staggered by 1min)
@@ -180,11 +220,9 @@ the enrollment to `bounced` so future steps are skipped
      3. on match: most recent outbound interaction → status='replied', Telegram ping
 ```
 
-The `sequences/execute` route (`app/api/sequences/execute/route.ts`) is the
-**legacy** fast path — it does pure template substitution with `{first_name}`,
-`{full_name}`, `{company_name}` placeholders and creates `draft` interactions
-without AI. It is preserved alongside the AI-aware `generate` route as a
-fallback (see `execute/route.ts:146-148` comment).
+> The `sequences/execute` route was deleted (no callers remained); generation
+> now flows exclusively through `/api/sequences/generate`. If you find old
+> docs or scripts pointing at `/api/sequences/execute` they need updating.
 
 ---
 
@@ -345,7 +383,11 @@ hardcoded as `jb@gofpblock.com` and `wes@gofpblock.com`
 (`app/api/inbox/route.ts:6`, also seeded into `inbox_sync_state` by
 `migration 007:57-59`).
 
-### Cron schedule — `supabase/migrations/016_inbox_sync_cron.sql`
+### Cron schedule
+
+Two options exist:
+
+**A) pg_cron — `supabase/migrations/016_inbox_sync_cron.sql`** (currently active)
 
 ```
 sync-inbox-jb  : */15 * * * *      → POST /api/inbox/sync { accountEmail: jb@... }
@@ -355,6 +397,14 @@ sync-inbox-wes : 1-59/15 * * * *   → POST /api/inbox/sync { accountEmail: wes@
 Staggered by 1 minute to avoid concurrent JMAP requests against Fastmail.
 Migration warns the URL must be hand-edited from the placeholder
 `https://YOUR_APP_URL` before running (line 4-7).
+
+**B) Vercel Cron — `app/api/cron/inbox-sync/route.ts`** (alternative; not currently in `vercel.json`)
+
+Single GET endpoint loops both accounts in one pass. Gated by
+`Authorization: Bearer $CRON_SECRET` — Vercel injects the header automatically
+when the path is declared in `vercel.json:crons`. To use, add:
+`{ "path": "/api/cron/inbox-sync", "schedule": "*/5 * * * *" }`. If switching
+to this, retire the pg_cron jobs in 016 to avoid double-pulling.
 
 ### Fetch + dedup — `app/api/inbox/sync/route.ts`
 
@@ -450,25 +500,41 @@ this route.
 wins. Non-terminal updates are gated by `newPriority > currentPriority`
 (line 98-108).
 
-#### Bounce cascade
+#### Always-200 (post-verification)
 
-`bounced` updates the matching enrollment to `status='bounced'` so the
-enrollment is dropped from `/api/sequences/generate`'s active filter
-(`webhooks/sendgrid/route.ts:124-145`).
+After signature verification passes, the route returns `200` even on
+per-event errors so SendGrid does not retry-storm. Failures are logged.
+A failed signature, however, returns `401` so SendGrid retries (giving you
+a chance to fix the public key).
 
-#### Always-200
+#### Verification
 
-The route returns `200` even on parse errors (line 55) and per-event errors
-(line 147-149) so SendGrid does not retry storms. Failures are logged.
+`@sendgrid/eventwebhook` v8 is used. The route reads the raw body via
+`request.text()` (so the signature bytes match), then calls
+`EventWebhook.verifySignature(publicKey, payload, signature, timestamp)`
+where `publicKey = ew.convertPublicKeyToECDSA(SENDGRID_WEBHOOK_PUBLIC_KEY)`.
+A ±300s timestamp freshness check is layered on top. Failures return 401 —
+no state mutations happen unless verification passes. `SENDGRID_WEBHOOK_PUBLIC_KEY`
+must be set (PEM, from SendGrid Mail Settings → Signed Event Webhook). If the
+env var is unset the route returns 401 immediately.
 
-#### Verification — known weakness
+#### Bounce categorization
 
-`lib/sendgrid.ts:65-80` `verifyWebhookSignature` is **not actually called from
-the route**, and even when used it only checks the timestamp is within ±300s
-— there is no ECDSA signature verification. The file header
-(`lib/sendgrid.ts:64`) and route header (`app/api/webhooks/sendgrid/route.ts:1`)
-both flag this with WARNING comments. **Add `@sendgrid/eventwebhook` before
-production.**
+- **Hard** (`type==='bounce'` or reason `^5\d{2}` or status `^5\.`): terminal
+  → status `bounced`, enrollment bounced, `persons.email_bounced_at` stamped.
+- **Soft** (`type==='blocked'` or `^4\d{2}` / `^4\.`): non-terminal → status
+  `failed`, retry path remains.
+- **Dropped** / **spam_report**: treated as hard.
+
+`bounce_category`, `bounce_reason`, `bounce_type` are written to
+`interactions.detail`.
+
+#### Stop-on-reply / stop-on-click
+
+When a `reply`/`inbound_email`/`click` event arrives, the route loads the
+person's active enrollments and pauses any whose parent sequence has
+`schedule_config.stop_on_reply` (or `stop_on_click`) set. Sequences without
+the flag are unaffected.
 
 ### Fastmail webhook
 
@@ -752,18 +818,15 @@ This is a real bug to flag.
   is not transactional with the subsequent insert — two concurrent generate
   jobs could both pass the check.
 
-### Webhook signature verification
+### `bounced` cascade — historical note
 
-`lib/sendgrid.ts:65-80` — placeholder timestamp-only check, **never invoked**.
-Any caller that knows the URL can post events. See WARNINGs in
-`lib/sendgrid.ts:64` and `app/api/webhooks/sendgrid/route.ts:1`.
-
-### `bounced` cascade is per-sequence
-
-A bounce on one sequence marks the **enrollment** bounced, not the **person**.
-The same person enrolled in another sequence will continue to receive sends —
-even though the email clearly does not deliver. Consider an extension that
-sets `persons.email = NULL` on bounce or a `do_not_contact` flag.
+Originally a hard bounce only marked the per-sequence enrollment, not the
+person. Since migration 026 added `persons.email_bounced_at`, the webhook
+also stamps the person row, and `schedule_config.exclude_bounced` reads it at
+enroll time. There is still no `do_not_contact` *flag* — the column is the
+signal. UIs that compose new enrollments without going through the standard
+actions (`enrollPersons` / `enrollFromEvent` / `enrollFromSegment`) will bypass
+the guard.
 
 ### `replied` only catches the most recent outbound
 
@@ -804,28 +867,11 @@ event after a `bounced` is correctly ignored by the terminal-set check
 (line 17, 96), but a late `bounced` after `failed` *would* update — which is
 probably fine, but worth noting.
 
-### Schedule TZ math
-
-`nextSendWindowTime` (`generate/route.ts:41-95`) uses
-`toLocaleString` to read the day-of-week and hour in the configured TZ, then
-constructs a JS Date by manipulating local hours. For UTC-relative servers
-this is approximate (line 87 comment: "rough approximation"). Don't rely on
-exact-minute scheduling.
-
 ### `current_step >= steps.length` already at enrollment
 
 If a sequence is edited to remove steps, an existing enrollment may have
 `current_step` past the array. The generate route handles this by marking
 `completed` (line 186-193), but no notification is sent.
-
-### `sequences/execute` is dead-ish code
-
-It pre-dates `ComposableTemplate` and only handles `string` body templates
-(`execute/route.ts:40-58`). With migration 023 converting all templates to
-JSONB, `templateToString` extracts only `text` blocks and ignores `ai` blocks
-(line 40-47). So invoking `/api/sequences/execute` against a modern sequence
-silently produces messages with all AI placeholders dropped. Prefer
-`/api/sequences/generate`.
 
 ---
 

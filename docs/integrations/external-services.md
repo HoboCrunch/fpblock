@@ -121,7 +121,8 @@ If the team wants in-app Claude calls, that integration does not yet exist.
 **Entry points**
 - `app/api/inbox/route.ts:29` — list endpoint.
 - `app/api/inbox/sync/route.ts:13` — POST sync endpoint (called by the bot's `inbox:sync` button via `${APP_URL}/api/inbox/sync`).
-- `supabase/migrations/016_inbox_sync_cron.sql` — scheduled inbox sync, **verify cadence with team**.
+- `app/api/cron/inbox-sync/route.ts` — GET, both accounts in one pass, gated by `Authorization: Bearer $CRON_SECRET`. Designed for Vercel Cron; not currently scheduled in `vercel.json`.
+- `supabase/migrations/016_inbox_sync_cron.sql` — pg_cron schedule (every 15 min per account, staggered by 1 min) hitting `/api/inbox/sync`.
 
 ---
 

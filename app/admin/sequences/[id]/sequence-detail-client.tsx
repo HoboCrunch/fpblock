@@ -6,18 +6,16 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useSequenceDetail } from "@/lib/queries/use-sequence-detail";
 import { queryKeys } from "@/lib/queries/query-keys";
 import {
-  updateSequenceSteps,
   updateSequenceStatus,
   updateSequenceName,
   updateSequenceSendMode,
   updateSequenceSender,
   updateSequenceSchedule,
   enrollPersons,
-  unenrollPerson,
   searchPersons,
 } from "../actions";
 import { StepEditor } from "@/components/admin/step-editor";
-import { ScheduleConfig } from "@/components/admin/schedule-config";
+import { SequenceParametersPanel } from "@/components/admin/sequence-parameters-panel";
 import { ActivityLog } from "@/components/admin/activity-log";
 import { TwoPanelLayout } from "@/components/admin/two-panel-layout";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -36,13 +34,6 @@ const STATUS_OPTIONS = [
   { value: "paused", label: "Paused" },
   { value: "completed", label: "Completed" },
 ];
-
-const statusVariant: Record<string, string> = {
-  draft: "draft",
-  active: "sent",
-  paused: "scheduled",
-  completed: "replied",
-};
 
 interface EnrollSearchResult {
   id: string;
@@ -120,11 +111,6 @@ export function SequenceDetailClient({ sequenceId }: Props) {
     },
   });
 
-  const unenrollMutation = useMutation({
-    mutationFn: unenrollPerson,
-    onSuccess: invalidate,
-  });
-
   async function handleEnrollSearch(q: string) {
     setEnrollSearch(q);
     if (q.length < 2) { setEnrollResults([]); return; }
@@ -180,11 +166,6 @@ export function SequenceDetailClient({ sequenceId }: Props) {
 
   const primaryActionIcon =
     data.status === "active" ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />;
-
-  const senderOptions = [
-    { value: "", label: "No sender" },
-    ...senderProfiles.map((s) => ({ value: s.id, label: s.name + (s.email ? ` <${s.email}>` : "") })),
-  ];
 
   const defaultSchedule: SequenceSchedule = { timing_mode: "relative" };
 
@@ -340,32 +321,7 @@ export function SequenceDetailClient({ sequenceId }: Props) {
       {/* Channel badge (read-only) */}
       <Badge variant="glass-indigo">{data.channel}</Badge>
 
-      {/* Send mode toggle */}
-      <div className="flex rounded-lg overflow-hidden border border-[var(--glass-border)]">
-        {(["auto", "approval"] as const).map((mode) => (
-          <button
-            key={mode}
-            onClick={() => sendModeMutation.mutate(mode)}
-            className={`px-3 py-1.5 text-xs capitalize transition-colors ${
-              data.send_mode === mode
-                ? "bg-[var(--accent-orange)]/20 text-[var(--accent-orange)]"
-                : "text-[var(--text-muted)] hover:text-white"
-            }`}
-          >
-            {mode}
-          </button>
-        ))}
-      </div>
-
-      {/* Sender select */}
-      <div className="w-48">
-        <GlassSelect
-          options={senderOptions}
-          value={data.sender_id ?? ""}
-          onChange={(e) => senderMutation.mutate(e.target.value || null)}
-          placeholder="No sender"
-        />
-      </div>
+      <div className="flex-1" />
 
       {/* Primary action */}
       {primaryActionLabel && (
@@ -398,6 +354,20 @@ export function SequenceDetailClient({ sequenceId }: Props) {
       <TwoPanelLayout sidebar={sidebar}>
         {header}
 
+        {/* Centralized parameters panel — Delivery, Schedule, Throttle, Stop, Audience */}
+        <div className="mb-6">
+          <SequenceParametersPanel
+            channel={data.channel}
+            sendMode={data.send_mode}
+            senderId={data.sender_id}
+            senderProfiles={senderProfiles}
+            scheduleConfig={data.schedule_config ?? defaultSchedule}
+            onSendModeChange={(mode) => sendModeMutation.mutate(mode)}
+            onSenderChange={(id) => senderMutation.mutate(id)}
+            onScheduleChange={(config) => scheduleMutation.mutate(config)}
+          />
+        </div>
+
         {/* Step editor */}
         <StepEditor
           sequenceId={sequenceId}
@@ -405,14 +375,6 @@ export function SequenceDetailClient({ sequenceId }: Props) {
           channel={data.channel}
           stepStats={data.step_stats}
         />
-
-        {/* Schedule config */}
-        <div className="mt-6">
-          <ScheduleConfig
-            value={data.schedule_config ?? defaultSchedule}
-            onChange={(config) => scheduleMutation.mutate(config)}
-          />
-        </div>
       </TwoPanelLayout>
 
       {/* Enroll modal */}

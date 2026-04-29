@@ -15,6 +15,7 @@ import {
   Trash2,
   Loader2,
   Calendar,
+  Filter,
 } from "lucide-react";
 import Link from "next/link";
 import type { SequenceEnrollment, Person } from "@/lib/types/database";
@@ -26,6 +27,7 @@ import {
 } from "../actions";
 import { EventRelationToggle, toggleToRelation } from "@/components/admin/event-relation-toggle";
 import { useEvents } from "@/lib/queries/use-events";
+import { SegmentBuilder } from "@/components/admin/segment-builder";
 
 interface EnrollmentWithPerson extends SequenceEnrollment {
   persons: Pick<Person, "id" | "full_name" | "email"> | null;
@@ -55,7 +57,8 @@ export function EnrollmentPanel({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addMode, setAddMode] = useState<"segment" | "search">("segment");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -102,7 +105,7 @@ export function EnrollmentPanel({
       Array.from(selectedIds)
     );
     if (result.success) {
-      setShowSearchModal(false);
+      setShowAddModal(false);
       setSearchQuery("");
       setSearchResults([]);
       setSelectedIds(new Set());
@@ -153,7 +156,24 @@ export function EnrollmentPanel({
               Enroll from Event
             </button>
             <button
-              onClick={() => setShowSearchModal(true)}
+              onClick={() => {
+                setAddMode("segment");
+                setShowAddModal(true);
+              }}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
+                "bg-[var(--accent-orange)]/10 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20",
+                "hover:bg-[var(--accent-orange)]/20"
+              )}
+            >
+              <Filter className="h-3.5 w-3.5" />
+              Build Segment
+            </button>
+            <button
+              onClick={() => {
+                setAddMode("search");
+                setShowAddModal(true);
+              }}
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
                 "bg-[var(--accent-indigo)]/10 text-[var(--accent-indigo)] border border-[var(--accent-indigo)]/20",
@@ -217,134 +237,172 @@ export function EnrollmentPanel({
         )}
       </GlassCard>
 
-      {/* Search & Enroll Modal */}
-      {showSearchModal && (
+      {/* Add Persons Modal — Segment Builder | Search & Pick */}
+      {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowSearchModal(false)}
+            onClick={() => setShowAddModal(false)}
           />
-          <div className="relative glass rounded-xl p-6 w-full max-w-lg mx-4 shadow-2xl max-h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold font-[family-name:var(--font-heading)] text-white">
-                Add Persons to Sequence
-              </h2>
+          <div
+            className={cn(
+              "relative glass rounded-xl p-6 w-full mx-4 shadow-2xl max-h-[90vh] flex flex-col",
+              addMode === "segment" ? "max-w-5xl" : "max-w-lg"
+            )}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-1 glass rounded-lg p-1">
+                <button
+                  onClick={() => setAddMode("segment")}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+                    addMode === "segment"
+                      ? "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20"
+                      : "text-[var(--text-muted)] hover:text-white border border-transparent"
+                  )}
+                >
+                  Segment builder
+                </button>
+                <button
+                  onClick={() => setAddMode("search")}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+                    addMode === "search"
+                      ? "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20"
+                      : "text-[var(--text-muted)] hover:text-white border border-transparent"
+                  )}
+                >
+                  Search & pick
+                </button>
+              </div>
               <button
-                onClick={() => setShowSearchModal(false)}
+                onClick={() => setShowAddModal(false)}
                 className="text-[var(--text-muted)] hover:text-white transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="mb-4">
-              <GlassInput
-                icon={Search}
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Search persons by name or email..."
-                autoFocus
-              />
-            </div>
-
-            <div className="flex-1 overflow-y-auto min-h-0 space-y-1.5 mb-4">
-              {isSearching && (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-5 w-5 text-[var(--text-muted)] animate-spin" />
+            {addMode === "segment" ? (
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <SegmentBuilder
+                  sequenceId={sequenceId}
+                  onClose={() => setShowAddModal(false)}
+                  onEnrolled={() => startTransition(() => router.refresh())}
+                />
+              </div>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <GlassInput
+                    icon={Search}
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    placeholder="Search persons by name or email..."
+                    autoFocus
+                  />
                 </div>
-              )}
 
-              {!isSearching && searchResults.length === 0 && searchQuery.trim().length >= 2 && (
-                <p className="text-sm text-[var(--text-muted)] text-center py-8">
-                  No persons found
-                </p>
-              )}
+                <div className="flex-1 overflow-y-auto min-h-0 space-y-1.5 mb-4">
+                  {isSearching && (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-5 w-5 text-[var(--text-muted)] animate-spin" />
+                    </div>
+                  )}
 
-              {!isSearching && searchQuery.trim().length < 2 && (
-                <p className="text-sm text-[var(--text-muted)] text-center py-8">
-                  Type at least 2 characters to search
-                </p>
-              )}
+                  {!isSearching && searchResults.length === 0 && searchQuery.trim().length >= 2 && (
+                    <p className="text-sm text-[var(--text-muted)] text-center py-8">
+                      No persons found
+                    </p>
+                  )}
 
-              {searchResults.map((contact) => {
-                const alreadyEnrolled = enrolledPersonIds.has(contact.id);
-                const isSelected = selectedIds.has(contact.id);
+                  {!isSearching && searchQuery.trim().length < 2 && (
+                    <p className="text-sm text-[var(--text-muted)] text-center py-8">
+                      Type at least 2 characters to search
+                    </p>
+                  )}
 
-                return (
+                  {searchResults.map((contact) => {
+                    const alreadyEnrolled = enrolledPersonIds.has(contact.id);
+                    const isSelected = selectedIds.has(contact.id);
+
+                    return (
+                      <button
+                        key={contact.id}
+                        onClick={() => !alreadyEnrolled && toggleSelected(contact.id)}
+                        disabled={alreadyEnrolled}
+                        className={cn(
+                          "w-full flex items-center justify-between p-3 rounded-lg text-left transition-all duration-200",
+                          "border",
+                          alreadyEnrolled
+                            ? "opacity-50 cursor-not-allowed bg-[var(--glass-bg)] border-[var(--glass-border)]"
+                            : isSelected
+                            ? "bg-[var(--accent-indigo)]/10 border-[var(--accent-indigo)]/30"
+                            : "bg-[var(--glass-bg)] border-[var(--glass-border)] hover:bg-[var(--glass-bg-hover)]"
+                        )}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-white truncate">
+                            {contact.full_name}
+                          </p>
+                          {contact.email && (
+                            <p className="text-xs text-[var(--text-muted)] truncate">
+                              {contact.email}
+                            </p>
+                          )}
+                        </div>
+                        <div className="ml-3 shrink-0">
+                          {alreadyEnrolled ? (
+                            <Badge variant="default">enrolled</Badge>
+                          ) : isSelected ? (
+                            <div className="h-5 w-5 rounded bg-[var(--accent-indigo)] flex items-center justify-center">
+                              <svg
+                                className="h-3 w-3 text-white"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={3}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            </div>
+                          ) : (
+                            <div className="h-5 w-5 rounded border border-[var(--glass-border)]" />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-[var(--glass-border)]">
+                  <span className="text-sm text-[var(--text-muted)]">
+                    {selectedIds.size} selected
+                  </span>
                   <button
-                    key={contact.id}
-                    onClick={() => !alreadyEnrolled && toggleSelected(contact.id)}
-                    disabled={alreadyEnrolled}
+                    onClick={handleEnroll}
+                    disabled={selectedIds.size === 0 || isEnrolling}
                     className={cn(
-                      "w-full flex items-center justify-between p-3 rounded-lg text-left transition-all duration-200",
-                      "border",
-                      alreadyEnrolled
-                        ? "opacity-50 cursor-not-allowed bg-[var(--glass-bg)] border-[var(--glass-border)]"
-                        : isSelected
-                        ? "bg-[var(--accent-indigo)]/10 border-[var(--accent-indigo)]/30"
-                        : "bg-[var(--glass-bg)] border-[var(--glass-border)] hover:bg-[var(--glass-bg-hover)]"
+                      "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                      "bg-[var(--accent-orange)] text-white hover:bg-[var(--accent-orange)]/90",
+                      "shadow-lg shadow-[var(--accent-orange)]/20",
+                      "disabled:opacity-50 disabled:cursor-not-allowed"
                     )}
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-white truncate">
-                        {contact.full_name}
-                      </p>
-                      {contact.email && (
-                        <p className="text-xs text-[var(--text-muted)] truncate">
-                          {contact.email}
-                        </p>
-                      )}
-                    </div>
-                    <div className="ml-3 shrink-0">
-                      {alreadyEnrolled ? (
-                        <Badge variant="default">enrolled</Badge>
-                      ) : isSelected ? (
-                        <div className="h-5 w-5 rounded bg-[var(--accent-indigo)] flex items-center justify-center">
-                          <svg
-                            className="h-3 w-3 text-white"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={3}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        </div>
-                      ) : (
-                        <div className="h-5 w-5 rounded border border-[var(--glass-border)]" />
-                      )}
-                    </div>
+                    {isEnrolling ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                    Enroll Selected
                   </button>
-                );
-              })}
-            </div>
-
-            <div className="flex items-center justify-between pt-4 border-t border-[var(--glass-border)]">
-              <span className="text-sm text-[var(--text-muted)]">
-                {selectedIds.size} selected
-              </span>
-              <button
-                onClick={handleEnroll}
-                disabled={selectedIds.size === 0 || isEnrolling}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                  "bg-[var(--accent-orange)] text-white hover:bg-[var(--accent-orange)]/90",
-                  "shadow-lg shadow-[var(--accent-orange)]/20",
-                  "disabled:opacity-50 disabled:cursor-not-allowed"
-                )}
-              >
-                {isEnrolling ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-                Enroll Selected
-              </button>
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

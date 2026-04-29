@@ -4,6 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { SequenceStep, SequenceSchedule } from "@/lib/types/database";
 import { getPersonIdsForEvent, type EventPersonRelation } from "@/lib/queries/event-persons";
+import {
+  resolvePersonIds,
+  fetchSampleForIds,
+  applySequenceEnrollFilters,
+  type SegmentSpec,
+  type SamplePerson,
+} from "@/lib/segments";
 
 export async function updateSequenceSteps(
   sequenceId: string,
@@ -61,7 +68,20 @@ export async function enrollPersons(
   personIds: string[]
 ) {
   const supabase = await createClient();
-  const rows = personIds.map((pid) => ({
+  const filtered = await applySequenceEnrollFilters(
+    supabase,
+    sequenceId,
+    personIds
+  );
+  if (filtered.ids.length === 0) {
+    return {
+      success: true as const,
+      enrolled: 0,
+      requested: personIds.length,
+      dropped: filtered.dropped,
+    };
+  }
+  const rows = filtered.ids.map((pid) => ({
     sequence_id: sequenceId,
     person_id: pid,
     current_step: 0,
@@ -70,8 +90,13 @@ export async function enrollPersons(
   const { error } = await supabase
     .from("sequence_enrollments")
     .upsert(rows, { onConflict: "sequence_id,person_id" });
-  if (error) return { success: false, error: error.message };
-  return { success: true };
+  if (error) return { success: false as const, error: error.message };
+  return {
+    success: true as const,
+    enrolled: filtered.ids.length,
+    requested: personIds.length,
+    dropped: filtered.dropped,
+  };
 }
 
 export async function enrollFromEvent(
@@ -82,9 +107,17 @@ export async function enrollFromEvent(
   const supabase = await createClient();
   const personIds = await getPersonIdsForEvent(supabase, eventId, relation);
   if (personIds.length === 0) {
-    return { success: true, enrolled: 0 };
+    return { success: true as const, enrolled: 0, dropped: { bounced: 0, already_in_active_sequence: 0 } };
   }
-  const rows = personIds.map((pid) => ({
+  const filtered = await applySequenceEnrollFilters(supabase, sequenceId, personIds);
+  if (filtered.ids.length === 0) {
+    return {
+      success: true as const,
+      enrolled: 0,
+      dropped: filtered.dropped,
+    };
+  }
+  const rows = filtered.ids.map((pid) => ({
     sequence_id: sequenceId,
     person_id: pid,
     current_step: 0,
@@ -94,7 +127,11 @@ export async function enrollFromEvent(
     .from("sequence_enrollments")
     .upsert(rows, { onConflict: "sequence_id,person_id" });
   if (error) return { success: false as const, error: error.message };
-  return { success: true as const, enrolled: personIds.length };
+  return {
+    success: true as const,
+    enrolled: filtered.ids.length,
+    dropped: filtered.dropped,
+  };
 }
 
 export async function unenrollPerson(enrollmentId: string) {
@@ -148,6 +185,72 @@ export async function updateSequenceSender(id: string, senderId: string | null) 
   if (error) return { success: false, error: error.message };
   revalidatePath(`/admin/sequences/${id}`);
   return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Segment-based enrollment
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve a SegmentSpec without enrolling. Returns the total match count
+ * (pre-limit) and a small sample for UI preview.
+ */
+export async function previewSegment(
+  spec: SegmentSpec,
+  sequenceId?: string
+): Promise<{
+  count: number;
+  limited: number;
+  sample: SamplePerson[];
+}> {
+  const supabase = await createClient();
+  const resolved = await resolvePersonIds(supabase, spec, sequenceId);
+  const sample = await fetchSampleForIds(supabase, resolved.ids, 5);
+  return {
+    count: resolved.totalBeforeLimit,
+    limited: resolved.ids.length,
+    sample,
+  };
+}
+
+/**
+ * Resolve a SegmentSpec and enroll the resulting person IDs into the given
+ * sequence. Reuses the same `enrollPersons` upsert as the manual flow so
+ * downstream behaviour is identical.
+ */
+export async function enrollFromSegment(
+  sequenceId: string,
+  spec: SegmentSpec
+): Promise<
+  | {
+      success: true;
+      enrolled: number;
+      totalMatched: number;
+      dropped: { bounced: number; already_in_active_sequence: number };
+    }
+  | { success: false; error: string }
+> {
+  const supabase = await createClient();
+  const resolved = await resolvePersonIds(supabase, spec, sequenceId);
+  if (resolved.ids.length === 0) {
+    return {
+      success: true,
+      enrolled: 0,
+      totalMatched: resolved.totalBeforeLimit,
+      dropped: { bounced: 0, already_in_active_sequence: 0 },
+    };
+  }
+  const result = await enrollPersons(sequenceId, resolved.ids);
+  if (!result.success) {
+    return { success: false, error: result.error ?? "Enrollment failed" };
+  }
+  revalidatePath(`/admin/sequences/${sequenceId}`);
+  return {
+    success: true,
+    enrolled: result.enrolled,
+    totalMatched: resolved.totalBeforeLimit,
+    dropped: result.dropped,
+  };
 }
 
 export async function updateSequenceSchedule(id: string, scheduleConfig: SequenceSchedule) {

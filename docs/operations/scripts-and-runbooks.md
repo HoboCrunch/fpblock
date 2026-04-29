@@ -192,4 +192,5 @@ The Wes pool is calmer/peer-to-peer; the JB pool opens "Hey {first} —" more of
 
 - `consensus/send_day_1.csv` … `send_day_5.csv` — Mon–Fri schedule produced by `chunk-employee-sends.ts`. Operator runs `send-outreach.ts --csv consensus/send_day_N.csv --yes` once per day. **Not automated** — the script is interactive.
 - `vercel.json` schedules `/api/sequences/send` every 5 minutes — that is a separate pipeline (Sequences feature) for ongoing drips, not the campaign-day batch script.
-- `supabase/migrations/016_inbox_sync_cron.sql` schedules inbox sync — verify cadence with the team.
+- `supabase/migrations/016_inbox_sync_cron.sql` schedules inbox sync via pg_cron (every 15 min per account, staggered) — verify cadence with the team.
+- `app/api/cron/inbox-sync/route.ts` is a Vercel-cron-ready alternative gated by `CRON_SECRET`. Add to `vercel.json:crons` to enable; retire 016's pg_cron jobs first to avoid double-pulling.

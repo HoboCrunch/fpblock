@@ -40,6 +40,8 @@ If anything here disagrees with the migrations on disk, the migrations win — f
 | 023 | `supabase/migrations/023_sequences_redesign.sql` | Adds `sequences.send_mode` (`'approval'`), `sequences.sender_id` FK, `sequences.schedule_config jsonb`. Migrates `steps` JSONB body/subject from raw strings into `ComposableTemplate` blocks. Drops `prompt_template_id` from each step. |
 | 024 | `supabase/migrations/024_org_firmographic_columns.sql` | Adds `organizations.industry`, `employee_count`, `annual_revenue`, `founded_year`, `hq_location`, `funding_total`, `latest_funding_stage` + indexes on `industry` and `employee_count`. |
 | 025 | `supabase/migrations/025_person_event_affiliations.sql` | New table `person_event_affiliations` + indexes + RLS. Two trigger functions (`tg_pea_sync_from_person_org`, `tg_pea_sync_from_event_participation`) keep it in sync from both sides. Idempotent backfill at the bottom. |
+| 026 | `supabase/migrations/026_persons_email_bounced.sql` | Adds `persons.email_bounced_at timestamptz` + partial index. Stamped by the SendGrid webhook on hard-bounce / dropped events; consumed by `schedule_config.exclude_bounced` at enroll time and by `lib/segments.ts`. |
+| 027 | `supabase/migrations/027_person_lists_filter_rules.sql` | Adds `person_lists.filter_rules jsonb` (nullable). Optional saved `PersonFilterRules` powering the filter sidebar on `/admin/lists/[id]`; null = manual list. Membership remains in `person_list_items` — filter_rules never auto-mutates membership. |
 
 Numbers 006 and 018 are skipped intentionally — no files exist in `supabase/migrations/`.
 
@@ -74,10 +76,11 @@ The permanent identity record. One row per real human.
 | `notes` | text | YES | — | |
 | `enrichment_status` | text | NO | `'none'` | `'none' \| 'in_progress' \| 'complete' \| 'failed'` (`022_enrichment_status.sql:8`) |
 | `last_enriched_at` | timestamptz | YES | — | |
+| `email_bounced_at` | timestamptz | YES | — | Set by SendGrid webhook on hard bounce / dropped (`026_persons_email_bounced.sql`). Consumed by `schedule_config.exclude_bounced`. |
 | `created_at` | timestamptz | NO | `now()` | |
 | `updated_at` | timestamptz | NO | `now()` | Maintained by trigger |
 
-**Indexes:** `idx_persons_email`, `idx_persons_apollo_id`, `idx_persons_full_name_trgm` (GIN, `gin_trgm_ops`), `idx_persons_linkedin`, `idx_persons_twitter`, `idx_persons_enrichment_status`.
+**Indexes:** `idx_persons_email`, `idx_persons_apollo_id`, `idx_persons_full_name_trgm` (GIN, `gin_trgm_ops`), `idx_persons_linkedin`, `idx_persons_twitter`, `idx_persons_enrichment_status`, `idx_persons_email_bounced_at` (partial WHERE NOT NULL).
 
 **Triggers:** `trg_persons_updated_at` (BEFORE UPDATE → `update_updated_at()`).
 
@@ -216,9 +219,9 @@ Indirect person↔event link maintained by triggers — *never* written by appli
 
 **Access pattern:** `lib/queries/event-persons.ts` → `getPersonIdsForEvent(supabase, eventId, relation)` with `relation: "direct" | "org_affiliated" | "either" | "both"`. Do not hand-join `event_participations ↔ person_organization`.
 
-#### `person_lists` / `person_list_items` (`020_person_lists.sql`)
+#### `person_lists` / `person_list_items` (`020_person_lists.sql`, `027_person_lists_filter_rules.sql`)
 
-Saved lists for targeting in enrichment, sequences, and initiatives.
+Saved lists for targeting in enrichment, sequences, and initiatives. A list optionally carries a saved `PersonFilterRules` blob used by the filter sidebar on `/admin/lists/[id]` to grow membership; the rules never auto-mutate `person_list_items`.
 
 `person_lists`:
 
@@ -227,6 +230,7 @@ Saved lists for targeting in enrichment, sequences, and initiatives.
 | `id` | uuid PK | NO | `gen_random_uuid()` |
 | `name` | text | NO | — |
 | `description` | text | YES | — |
+| `filter_rules` | jsonb | YES | — | `PersonFilterRules` shape (`lib/filters/person-filters.ts`). Null = manual list (no saved filter). (`027`) |
 | `created_at` | timestamptz | NO | `now()` |
 | `updated_at` | timestamptz | NO | `now()` (trigger `trg_person_lists_updated_at`) |
 
@@ -277,7 +281,7 @@ Templates and enrollments for outreach sequences.
 | `status` | text | YES | `'draft'` | CHECK in (`draft`,`active`,`paused`,`completed`) (added in 008) |
 | `send_mode` | text | NO | `'approval'` | (`023:1`) `'auto' \| 'approval'` |
 | `sender_id` | uuid | YES | — | FK `sender_profiles(id)` (`023:2`) |
-| `schedule_config` | jsonb | NO | `'{}'` | `SequenceSchedule` shape (timing_mode, send_window, anchor_date/direction) (`023:3`) |
+| `schedule_config` | jsonb | NO | `'{}'` | `SequenceSchedule` shape: `timing_mode`, `send_window`, `anchor_date/direction` (`023:3`); plus optional throttle/pacing/stop/exclusion params: `throttle_per_day`, `min_interval_minutes`, `daily_send_cap_global`, `quiet_hours_local`, `stop_on_reply`, `stop_on_click`, `exclude_bounced`, `exclude_already_enrolled`. See `docs/backend/sequences-messaging.md` §1 for the enforcement matrix. |
 | `created_at` | timestamptz | YES | `now()` | |
 | `updated_at` | timestamptz | YES | `now()` | |
 

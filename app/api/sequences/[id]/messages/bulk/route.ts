@@ -1,5 +1,69 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import type { InteractionStatus } from "@/lib/types/database";
+
+type BulkAction = "approve" | "reject" | "reschedule" | "retry";
+
+interface BulkBody {
+  action: BulkAction;
+  ids?: string[];
+  messageIds?: string[]; // legacy alias
+  scheduled_at?: string;
+  scheduledAt?: string; // legacy alias
+  reason?: string;
+}
+
+const ALLOWED_FROM: Record<BulkAction, ReadonlySet<InteractionStatus>> = {
+  approve: new Set<InteractionStatus>(["draft"]),
+  reject: new Set<InteractionStatus>(["draft", "scheduled"]),
+  reschedule: new Set<InteractionStatus>(["draft", "scheduled", "failed"]),
+  retry: new Set<InteractionStatus>(["failed", "bounced"]),
+};
+
+function buildPayload(
+  action: BulkAction,
+  scheduledAt: string | undefined,
+  reason: string | undefined
+): { ok: true; payload: Record<string, unknown> } | { ok: false; error: string } {
+  switch (action) {
+    case "approve":
+      return {
+        ok: true,
+        payload: {
+          status: "scheduled",
+          scheduled_at: scheduledAt ?? new Date().toISOString(),
+        },
+      };
+    case "reject":
+      return {
+        ok: true,
+        payload: {
+          status: "failed",
+          scheduled_at: null,
+          detail: { rejected: true, reason: reason ?? "rejected" },
+        },
+      };
+    case "reschedule": {
+      if (!scheduledAt) return { ok: false, error: "scheduled_at required for reschedule" };
+      const ts = Date.parse(scheduledAt);
+      if (Number.isNaN(ts) || ts <= Date.now() - 60_000) {
+        return { ok: false, error: "scheduled_at must be a valid future timestamp" };
+      }
+      return {
+        ok: true,
+        payload: { status: "scheduled", scheduled_at: new Date(ts).toISOString() },
+      };
+    }
+    case "retry": {
+      const when = scheduledAt
+        ? new Date(Date.parse(scheduledAt)).toISOString()
+        : new Date(Date.now() + 5 * 60 * 1000).toISOString();
+      return { ok: true, payload: { status: "scheduled", scheduled_at: when } };
+    }
+    default:
+      return { ok: false, error: "Invalid action" };
+  }
+}
 
 export async function POST(
   req: Request,
@@ -8,70 +72,70 @@ export async function POST(
   const { id } = await params;
   const supabase = await createClient();
 
-  let body: {
-    action: "approve" | "reject" | "reschedule";
-    messageIds: string[];
-    scheduledAt?: string;
-  };
-
+  let body: BulkBody;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { action, messageIds, scheduledAt } = body;
+  const ids = body.ids ?? body.messageIds ?? [];
+  const scheduledAt = body.scheduled_at ?? body.scheduledAt;
 
-  if (!Array.isArray(messageIds) || messageIds.length === 0) {
-    return NextResponse.json({ error: "messageIds required" }, { status: 400 });
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return NextResponse.json({ error: "ids required" }, { status: 400 });
   }
 
-  // Verify all messages belong to this sequence
-  const { data: existing } = await supabase
+  const built = buildPayload(body.action, scheduledAt, body.reason);
+  if (!built.ok) {
+    return NextResponse.json({ error: built.error }, { status: 400 });
+  }
+
+  // Fetch existing rows to validate ownership + per-row state transition
+  const { data: existing, error: fetchError } = await supabase
     .from("interactions")
-    .select("id")
+    .select("id,status")
     .eq("sequence_id", id)
-    .in("id", messageIds);
+    .in("id", ids);
 
-  const validIds = (existing ?? []).map((r: { id: string }) => r.id);
-
-  if (validIds.length === 0) {
-    return NextResponse.json({ error: "No valid messages found" }, { status: 404 });
+  if (fetchError) {
+    return NextResponse.json({ error: fetchError.message }, { status: 500 });
   }
 
-  let updatePayload: Record<string, unknown>;
+  const allowed = ALLOWED_FROM[body.action];
+  const valid: string[] = [];
+  const failed: { id: string; error: string }[] = [];
+  const seen = new Set<string>();
 
-  switch (action) {
-    case "approve":
-      updatePayload = {
-        status: "scheduled",
-        scheduled_at: new Date().toISOString(),
-      };
-      break;
-    case "reject":
-      updatePayload = { status: "failed" };
-      break;
-    case "reschedule":
-      if (!scheduledAt) {
-        return NextResponse.json(
-          { error: "scheduledAt required for reschedule" },
-          { status: 400 }
-        );
-      }
-      updatePayload = { status: "scheduled", scheduled_at: scheduledAt };
-      break;
-    default:
-      return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  for (const row of (existing ?? []) as { id: string; status: InteractionStatus }[]) {
+    seen.add(row.id);
+    if (allowed.has(row.status)) {
+      valid.push(row.id);
+    } else {
+      failed.push({ id: row.id, error: `status "${row.status}" not eligible` });
+    }
+  }
+  for (const requested of ids) {
+    if (!seen.has(requested)) {
+      failed.push({ id: requested, error: "not found in this sequence" });
+    }
   }
 
-  const { error } = await supabase
+  if (valid.length === 0) {
+    return NextResponse.json(
+      { succeeded: [], failed, error: "No eligible messages" },
+      { status: 409 }
+    );
+  }
+
+  const { error: updateError } = await supabase
     .from("interactions")
-    .update(updatePayload)
-    .in("id", validIds);
+    .update(built.payload)
+    .in("id", valid);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (updateError) {
+    return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ updated: validIds.length });
+  return NextResponse.json({ succeeded: valid, failed });
 }

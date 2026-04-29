@@ -21,7 +21,7 @@ The doc library is organized by concern. Start at **architecture.md** for the hi
 
 | File | What it covers |
 |---|---|
-| [api-routes.md](./backend/api-routes.md) | Every Next.js API route under `app/api/`: method, auth, inputs/outputs, side effects, file:line refs. Flags the routes currently lacking auth + the SendGrid webhook with no signature verification. |
+| [api-routes.md](./backend/api-routes.md) | Every Next.js API route under `app/api/`: method, auth, inputs/outputs, side effects, file:line refs. Flags the routes currently lacking auth (the SendGrid webhook now does ECDSA verification via `@sendgrid/eventwebhook`). |
 | [database.md](./backend/database.md) | **Canonical schema reference** rebuilt from the 23 live migrations (001–025, with 006 + 018 absent). All ~26 tables with full column definitions, RLS posture, RPCs, views, triggers, cron, conventions, and the migration-immutability rule. |
 | [enrichment.md](./backend/enrichment.md) | Org + person enrichment pipelines (Apollo / Perplexity / Gemini / People Finder). Stage-by-stage I/O, status lifecycle, the JSONB-vs-relational truth rule, source tagging tables, runbook, and 12 known gotchas. |
 | [sequences-messaging.md](./backend/sequences-messaging.md) | Sequences → enrollments → interactions, ComposableTemplate JSONB blocks, schedule modes, the legacy/current dual generate path, send pipeline (SendGrid retry/backoff + HeyReach), inbox sync (JMAP + cron), reply correlation, and replay/recovery runbooks. |
@@ -60,7 +60,6 @@ These are real defects observed in the code while writing the docs. Each is desc
 
 **Security**
 - `app/api/enrich/organizations`, `app/api/enrich/persons`, `app/api/enrich/cancel`, `app/api/inbox/sync` are publicly callable — `middleware.ts` only matches `/admin/:path*`, not `/api/*`. Anyone can trigger paid Apollo/Perplexity calls. → `backend/api-routes.md`
-- SendGrid webhook (`app/api/webhooks/sendgrid/route.ts`) has no ECDSA signature verification; `verifyWebhookSignature` is a timestamp-only stub and isn't invoked. → `backend/api-routes.md`, `backend/sequences-messaging.md`
 
 **Bugs**
 - Person enrichment writes `enrichment_person_match` jobs but the UI poller and history loader query `enrichment_person`. Person progress and history never appear in the UI. → `backend/enrichment.md`

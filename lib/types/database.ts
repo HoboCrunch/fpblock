@@ -287,6 +287,17 @@ export interface SequenceSchedule {
   };
   anchor_date?: string;
   anchor_direction?: 'before' | 'after';
+  // Throttle & pacing (Preview — not yet enforced by backend)
+  throttle_per_day?: number;
+  min_interval_minutes?: number;
+  daily_send_cap_global?: number;
+  quiet_hours_local?: { start: number; end: number };
+  // Stop rules (Preview — not yet enforced by backend)
+  stop_on_reply?: boolean;
+  stop_on_click?: boolean;
+  // Audience filters (Preview — not yet enforced by backend)
+  exclude_bounced?: boolean;
+  exclude_already_enrolled?: boolean;
 }
 
 export interface SequenceStep {

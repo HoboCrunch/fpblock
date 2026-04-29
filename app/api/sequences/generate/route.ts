@@ -32,62 +32,92 @@ interface PersonOrgRow {
 
 // ─── Send-window helpers ─────────────────────────────────────────────────────
 
-const DAY_NAMES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+type DayKey = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
+
+const WEEKDAY_SHORT_TO_KEY: Record<string, DayKey> = {
+  Sun: "sun",
+  Mon: "mon",
+  Tue: "tue",
+  Wed: "wed",
+  Thu: "thu",
+  Fri: "fri",
+  Sat: "sat",
+};
+
+/**
+ * Return the hour-of-day (0-23) for `date` as observed in `timeZone`.
+ * Uses Intl.DateTimeFormat which correctly accounts for DST transitions.
+ */
+function getZonedHour(date: Date, timeZone: string): number {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    hour: "2-digit",
+  });
+  // en-US with hour12:false occasionally renders midnight as "24" — normalize.
+  const raw = fmt.format(date);
+  const n = parseInt(raw, 10);
+  if (Number.isNaN(n)) return 0;
+  return n % 24;
+}
+
+/**
+ * Return the day-of-week key ('sun'..'sat') for `date` as observed in `timeZone`.
+ */
+function getZonedDayKey(date: Date, timeZone: string): DayKey {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "short",
+  });
+  const short = fmt.format(date);
+  return WEEKDAY_SHORT_TO_KEY[short] ?? "sun";
+}
 
 /**
  * Given a schedule_config with a send_window, return the next Date (>= now)
  * that falls within the window. Falls back to now if no window is configured.
+ *
+ * Iterates forward in 30-minute steps for up to 7 days, checking each
+ * candidate against the configured timezone via Intl.DateTimeFormat — so DST
+ * transitions (e.g., America/New_York switching between -5 and -4) are handled
+ * correctly without manual offset math.
  */
 function nextSendWindowTime(schedule: SequenceSchedule): Date {
   const { send_window } = schedule;
   if (!send_window) return new Date();
 
   const { days, start_hour, end_hour, timezone } = send_window;
+  const allowedDays = new Set<DayKey>(days as DayKey[]);
 
-  // Walk through today + next 7 days looking for a valid slot
-  for (let offset = 0; offset <= 7; offset++) {
-    const candidate = new Date();
-    candidate.setDate(candidate.getDate() + offset);
+  const now = new Date();
 
-    // Determine the day-of-week in the target timezone
-    const localStr = candidate.toLocaleString("en-US", {
-      timeZone: timezone,
-      weekday: "short",
-    });
-    const dayKey = localStr.slice(0, 3).toLowerCase() as (typeof DAY_NAMES)[number];
+  // If we're already inside a valid window, return now.
+  const nowDay = getZonedDayKey(now, timezone);
+  const nowHour = getZonedHour(now, timezone);
+  if (
+    allowedDays.has(nowDay) &&
+    nowHour >= start_hour &&
+    nowHour < end_hour
+  ) {
+    return now;
+  }
 
-    if (!days.includes(dayKey)) continue;
+  // Walk forward in 30-minute increments for up to 7 days.
+  const STEP_MS = 30 * 60 * 1000;
+  const MAX_STEPS = (7 * 24 * 60) / 30; // 336 steps
 
-    // Determine the current hour in the target timezone
-    const tzHourStr = candidate.toLocaleString("en-US", {
-      timeZone: timezone,
-      hour: "numeric",
-      hour12: false,
-    });
-    const tzHour = parseInt(tzHourStr, 10);
+  // Snap to next 30-min boundary so the result is tidy.
+  let cursor = new Date(
+    Math.ceil(now.getTime() / STEP_MS) * STEP_MS
+  );
 
-    if (offset === 0) {
-      // Same day — use current time if within window, else skip to tomorrow
-      if (tzHour >= start_hour && tzHour < end_hour) {
-        return new Date(); // right now is valid
-      }
-      // If before the window, advance to start_hour today
-      if (tzHour < start_hour) {
-        const start = new Date(candidate);
-        start.setHours(start.getHours() + (start_hour - tzHour));
-        start.setMinutes(0, 0, 0);
-        return start;
-      }
-      // After today's window — try next valid day
-      continue;
+  for (let i = 0; i < MAX_STEPS; i++) {
+    const day = getZonedDayKey(cursor, timezone);
+    const hour = getZonedHour(cursor, timezone);
+    if (allowedDays.has(day) && hour >= start_hour && hour < end_hour) {
+      return cursor;
     }
-
-    // Future day — schedule at start_hour in the target timezone
-    // (rough approximation: adjust hours by the TZ offset difference)
-    const tzOffset = candidate.getHours() - tzHour;
-    const result = new Date(candidate);
-    result.setHours(start_hour + tzOffset, 0, 0, 0);
-    return result;
+    cursor = new Date(cursor.getTime() + STEP_MS);
   }
 
   // No window found within 7 days — fall back to now

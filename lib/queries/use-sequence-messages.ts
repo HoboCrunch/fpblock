@@ -50,13 +50,11 @@ export function useSequenceMessages(sequenceId: string, filters: MessageFilters 
   return useQuery({
     queryKey: queryKeys.sequences.messages.list(sequenceId, filters as Record<string, unknown>),
     enabled: !!sequenceId,
-    refetchInterval: (query) => {
-      const msgs = (query.state.data as SequenceMessage[]) ?? [];
-      const hasPending = msgs.some(
-        (m) => m.status === "sending" || m.status === "scheduled"
-      );
-      return hasPending ? 10_000 : false;
-    },
+    // Always poll every 12s while page is mounted so newly-generated drafts,
+    // status changes from the sender worker, and bounced/failed transitions
+    // surface without a manual refresh. Cheap query, small payload.
+    refetchInterval: 12_000,
+    refetchIntervalInBackground: false,
     queryFn: async (): Promise<SequenceMessage[]> => {
       const { data } = await fetchAll<InteractionWithPerson>(
         supabase,

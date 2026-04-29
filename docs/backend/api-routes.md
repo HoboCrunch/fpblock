@@ -21,7 +21,6 @@ This document covers only Next.js route handlers. When a route is a thin wrapper
   - `app/api/enrich/organizations/route.ts:5` — 300s
   - `app/api/enrich/persons/route.ts:6` — 300s
   - `app/api/enrich/route.ts:4` — 60s (legacy contacts table)
-  - `app/api/sequences/execute/route.ts:5` — 60s
   - `app/api/sequences/generate/route.ts:19` — 60s
   - `app/api/sequences/send/route.ts:5` — 60s
   - `app/api/sequences/[id]/preview/route.ts:10` — 60s
@@ -41,11 +40,13 @@ There is no per-route auth check inside handlers. Auth is enforced at two layers
 Handlers split into two client patterns:
 
 - **Cookie-bound SSR client** (`createClient` from `lib/supabase/server.ts`) — inherits the user's session from cookies. Used by all "user action" routes (messages, sequences, correlations, inbox link-to-person, sendgrid webhook, legacy enrich).
-- **Service-role client** (`createClient` from `@supabase/supabase-js` using `NEXT_SUPABASE_SECRET_KEY`) — bypasses RLS. Used by background/batch routes (`enrich/organizations`, `enrich/persons`, `enrich/cancel`, `inbox/sync`).
+- **Service-role client** (`createClient` from `@supabase/supabase-js` using `NEXT_SUPABASE_SECRET_KEY`) — bypasses RLS. Used by background/batch routes (`enrich/organizations`, `enrich/persons`, `enrich/cancel`, `inbox/sync`, `cron/inbox-sync`).
 
 **This is a security gap worth flagging:** any unauthenticated client on the public internet can `POST /api/enrich/organizations`, `/api/enrich/persons`, `/api/enrich/cancel`, or `/api/inbox/sync` and trigger paid Apollo/Perplexity/Gemini calls or run pipeline jobs. There is no shared secret, JWT check, or IP allowlist on these routes. See §4.
 
-The SendGrid webhook (`app/api/webhooks/sendgrid/route.ts`) similarly has **no signature verification** — see §2.6.1.
+**Auth-gated cron pattern:** `/api/cron/inbox-sync` checks `Authorization: Bearer $CRON_SECRET` before running. Vercel injects this header automatically when a path is declared in `vercel.json:crons`. New cron routes should follow this pattern; the existing `/api/sequences/send` cron is **not** gated and is the same kind of gap as the routes above.
+
+The SendGrid webhook (`app/api/webhooks/sendgrid/route.ts`) verifies ECDSA signatures via `@sendgrid/eventwebhook` and rejects unsigned/forged payloads with 401 — see §2.6.1.
 
 ### 1.3 Conventions
 
@@ -59,7 +60,7 @@ The SendGrid webhook (`app/api/webhooks/sendgrid/route.ts`) similarly has **no s
 
 - `lib/supabase/server.ts` — cookie-bound server client (anon key, RLS enforced).
 - `lib/supabase/client.ts` — browser client.
-- `lib/sendgrid.ts` — `sendEmail()` and `verifyWebhookSignature()` (the latter is a stub — only checks timestamp recency, see §4).
+- `lib/sendgrid.ts` — `sendEmail()` and `verifyWebhookSignature()` (ECDSA via `@sendgrid/eventwebhook` + ±300s freshness; requires `SENDGRID_WEBHOOK_PUBLIC_KEY` env).
 - `lib/fastmail.ts` — `fetchEmails(apiKey, account, sinceId)` for inbox polling.
 - `lib/inbox-correlator.ts` — `correlateAndNotify(supabase, email)` does email→person matching (exact email then domain) and dispatches Telegram notifications.
 - `lib/telegram.ts` — Telegram bot notifications.
@@ -306,30 +307,12 @@ Mappings:
 - Multiple AI block invocations per step (one edge function call per `{{ai:...}}` block, sequentially — not parallel). This adds up — verify timeouts on long sequences.
 
 **Scheduling:**
-- `nextSendWindowTime` (`route.ts:41`) computes the next slot inside `schedule_config.send_window` (timezone-aware via `toLocaleString`). The TZ-offset math at `route.ts:87-90` is approximate — flagged as "rough approximation" in code.
-- `isDue` (`route.ts:99`) supports `relative`, `window`, and `anchor` timing modes.
+- `nextSendWindowTime` walks 30-min candidates forward (≤7 days) using `Intl.DateTimeFormat` to derive the zoned hour and weekday — DST-correct.
+- `isDue` supports `relative`, `window`, and `anchor` timing modes.
 
 **Idempotency:** Checks for existing `interactions` row matching `(sequence_id, person_id, sequence_step)` before inserting (`route.ts:202-213`). Skips if found.
 
-#### 2.3.2 `POST /api/sequences/execute`
-
-**File:** `app/api/sequences/execute/route.ts:60`
-**Purpose:** **Legacy** sequence executor. Same loop structure as `/generate` but uses simple `{first_name}` / `{full_name}` / `{company_name}` substitution. Per the comment at `route.ts:146-148`, AI block generation now lives in `/api/sequences/generate`.
-**Auth:** Cookie-bound SSR client.
-**Timeout:** 60s.
-
-**Body:** None (POST with empty body).
-
-**Response:** `{ enrollments_checked, processed, interactions_created, completed, errors? }`.
-
-**Caveats:**
-- No body filtering (cannot scope to one sequence).
-- No idempotency check before insert — running this twice for a due enrollment can create duplicate interactions. (Contrast with `/generate` which checks at `route.ts:202`.)
-- Does not honor `schedule_config.send_window` — only checks cumulative `delay_days`.
-- Inserts a `job_log` summary row at the end (`route.ts:203`); `/generate` does not.
-- **Two routes do mostly the same thing** — see §4.
-
-#### 2.3.3 `POST /api/sequences/send`
+#### 2.3.2 `POST /api/sequences/send`
 
 **File:** `app/api/sequences/send/route.ts:29`
 **Purpose:** Email dispatcher. Picks up `interactions` where `status = "scheduled"` and `scheduled_at <= now()`, sends via SendGrid, updates status, retries with backoff.
@@ -338,23 +321,28 @@ Mappings:
 
 **Body:** None.
 
-**Response:** `{ sent, failed, skipped }`.
+**Response:** `{ sent, failed, skipped, deferred }`.
 
 **Send flow per row:**
 1. Skip if `persons.email` is null → mark `failed` with `detail.error`.
 2. Skip if `sequences.sender_profiles` is null → mark `failed`.
-3. Mark `sending`.
-4. Call `sendEmail` (`lib/sendgrid.ts:15`).
-5. On success: status `sent`, `occurred_at = now`, store `detail.sendgrid_message_id` (used by webhook).
-6. On failure: increment `detail.retry_count`. If < 3, reschedule with `retry_count * 5min` linear backoff and status `scheduled`. Else mark `failed`.
+3. **Pre-send parameter gates** (each gracefully skipped when the field is undefined):
+   - `quiet_hours_local`: defer until next non-quiet hour (zoned via `Intl.DateTimeFormat`).
+   - `throttle_per_day`: defer +60m if today's send count for this sequence ≥ cap.
+   - `daily_send_cap_global`: defer +60m if today's send count across all sequences ≥ cap.
+   - `min_interval_minutes`: defer if a send to this person occurred within the window.
+4. Mark `sending`.
+5. Call `sendEmail` (`lib/sendgrid.ts`).
+6. On success: status `sent`, `occurred_at = now`, store `detail.sendgrid_message_id` (used by webhook).
+7. On failure: increment `detail.retry_count`. If < 3, reschedule with `retry_count * 5min` linear backoff and status `scheduled`. Else mark `failed`.
 
 **Caveats:**
-- Channel-agnostic field name `interactions.body` is sent as `html` to SendGrid (`route.ts:98`). If LinkedIn/Twitter interactions ever land in this query, they would be emailed in HTML — but this query doesn't filter by channel, only by status. Verify upstream code only schedules emails.
+- Channel-agnostic field name `interactions.body` is sent as `html` to SendGrid. If LinkedIn/Twitter interactions ever land in this query, they would be emailed in HTML — but this query doesn't filter by channel, only by status. Verify upstream code only schedules emails.
 - "Sending" rows are not unwound on crash.
 - 50-row cap and 60s timeout means this needs to be invoked frequently (cron) for high volume.
 - No locking — two concurrent invocations can pick up the same row before either has updated to `sending`.
 
-#### 2.3.4 `GET /api/sequences/[id]/messages`
+#### 2.3.3 `GET /api/sequences/[id]/messages`
 
 **File:** `app/api/sequences/[id]/messages/route.ts:4`
 **Purpose:** List interactions for a sequence with status/step/search filters. Used by the sequence detail page.
@@ -367,7 +355,7 @@ Mappings:
 
 **Response:** Array of `{ id, person_id, person_name, person_title, person_org, sequence_step, subject, body, status, scheduled_at, occurred_at, detail }`. `person_org` is hardcoded `null` (`route.ts:61`) — verify whether a join is intended.
 
-#### 2.3.5 `PATCH /api/sequences/[id]/messages/[msgId]`
+#### 2.3.4 `PATCH /api/sequences/[id]/messages/[msgId]`
 
 **File:** `app/api/sequences/[id]/messages/[msgId]/route.ts:4`
 **Purpose:** Single-message lifecycle update.
@@ -376,36 +364,49 @@ Mappings:
 **Body:**
 ```ts
 {
-  action: "edit" | "approve" | "reject" | "cancel" | "resend";
-  body?: string;
-  subject?: string;     // edit only
+  action: "approve" | "approve_at" | "reschedule" | "cancel"
+        | "reject" | "retry" | "resend" | "edit";
+  scheduled_at?: string;   // approve_at, reschedule
+  reason?: string;         // reject (stored in detail.reason)
+  subject?: string;        // edit only
+  body?: string;            // edit only
 }
 ```
 
-Action mappings:
-- `approve` / `resend`: `status: "scheduled"`, `scheduled_at: now()`.
-- `reject`: `status: "failed"`.
-- `cancel`: `status: "draft"`, `scheduled_at: null`.
-- `edit`: patch `subject` and/or `body`. Returns 400 if neither provided.
+Action gates (server-side, by current status):
 
-**Notes:**
-- Verifies the `msgId` belongs to `sequence_id = id` before updating (`route.ts:24-32`).
-- `resend` does **not** clear retry counters in `detail` — verify whether intentional.
+| current status | allowed actions                                      |
+| -------------- | ---------------------------------------------------- |
+| draft          | approve, approve_at, reschedule, reject, edit       |
+| scheduled      | reschedule, cancel, reject, edit                    |
+| failed / bounced | retry / resend (failed only), reschedule (failed) |
+| sent / delivered / opened / clicked / replied | (read-only)         |
 
-#### 2.3.6 `POST /api/sequences/[id]/messages/bulk`
+Mappings:
+- `approve` → `status: "scheduled"`, `scheduled_at: now()`.
+- `approve_at` / `reschedule` → `status: "scheduled"`, `scheduled_at: <provided>`.
+- `cancel` → `status: "draft"`, `scheduled_at: null`.
+- `reject` → `status: "failed"`, `detail.reason` set.
+- `retry` / `resend` → `status: "scheduled"`, `scheduled_at: now()`, retry_count preserved.
+- `edit` → patch `subject` / `body`. 400 if neither provided.
 
-**File:** `app/api/sequences/[id]/messages/bulk/route.ts:4`
-**Purpose:** Multi-message version of the above for `approve` / `reject` / `reschedule`.
+**Notes:** Verifies `msgId` belongs to `sequence_id = id` before updating.
+
+#### 2.3.5 `POST /api/sequences/[id]/messages/bulk`
+
+**File:** `app/api/sequences/[id]/messages/bulk/route.ts`
+**Purpose:** Multi-message version of the per-message PATCH.
 **Auth:** Cookie-bound SSR client.
 
-**Body:** `{ action, messageIds: string[], scheduledAt?: string }`.
-**Response:** `{ updated: number }`.
+**Body:** `{ ids: string[]; action: "approve" | "reject" | "reschedule" | "retry"; scheduled_at?: string; reason?: string }`.
+**Response:** `{ succeeded: string[]; failed: Array<{ id: string; error: string }> }`.
 
 **Caveats:**
-- `reschedule` requires `scheduledAt`; the others ignore it.
-- Filters input IDs to those that actually belong to this sequence (`route.ts:30-36`) before updating.
+- `reschedule` / `approve` with future time requires `scheduled_at`.
+- `reject` may include `reason`.
+- Per-row eligibility check applied (a `retry` only succeeds for failed rows; a `reject` only for drafts/scheduled). Rows that fail validation appear in `failed[]` with an `error` string.
 
-#### 2.3.7 `POST /api/sequences/[id]/preview`
+#### 2.3.6 `POST /api/sequences/[id]/preview`
 
 **File:** `app/api/sequences/[id]/preview/route.ts:12`
 **Purpose:** Render a single step for a single person without persisting. Resolves AI blocks live.
@@ -467,6 +468,17 @@ Action mappings:
 - Two ways to sync (GET-all vs POST-one) with subtly different write behaviors. Recommend consolidating.
 - Service-role usage means a leaked URL pattern lets anyone trigger Fastmail polling and Telegram blasts. Add an auth check.
 
+#### 2.4.4 `GET /api/cron/inbox-sync`
+
+**File:** `app/api/cron/inbox-sync/route.ts`
+**Purpose:** Vercel-cron-ready inbox sync. Loops both Fastmail accounts (`jb@`, `wes@gofpblock.com`) in one pass, dedups, correlates, notifies — same logic as `POST /api/inbox/sync` but for both accounts and gated for unattended use.
+**Auth:** Bearer token — requires `Authorization: Bearer $CRON_SECRET`. Vercel injects this automatically when the path is declared in `vercel.json`'s `crons`. Returns `401` on mismatch, `500` if `CRON_SECRET` env var is unset.
+**Supabase client:** Service role (`NEXT_SUPABASE_SECRET_KEY`).
+
+**Response:** `{ success: true, accounts: { [email]: { new_emails, correlated, error? } }, synced_at }`.
+
+**Cadence:** Currently not scheduled in `vercel.json`. To enable, add `{ "path": "/api/cron/inbox-sync", "schedule": "*/5 * * * *" }` to `vercel.json:crons`. Provides an alternative to the pg_cron approach in `supabase/migrations/016_inbox_sync_cron.sql` (which polls `/api/inbox/sync` per account every 15 min).
+
 ---
 
 ### 2.5 Correlations
@@ -505,28 +517,28 @@ Action mappings:
 
 #### 2.6.1 `POST /api/webhooks/sendgrid`
 
-**File:** `app/api/webhooks/sendgrid/route.ts:44`
-**Purpose:** Process SendGrid event webhook (delivered/open/click/bounce/dropped/spam_report) and update interactions accordingly.
-**Auth:** **None — see §4.** A WARNING comment at `route.ts:1` and at `lib/sendgrid.ts:64` flags that `verifyWebhookSignature` is timestamp-only and does not implement ECDSA. The webhook handler does not even call this stub.
+**File:** `app/api/webhooks/sendgrid/route.ts`
+**Purpose:** Process SendGrid event webhook (delivered/open/click/bounce/dropped/spam_report/reply) and update interactions accordingly.
+**Auth:** ECDSA via `@sendgrid/eventwebhook` (`EventWebhook.verifySignature(...)`) plus a ±300s timestamp freshness check. Requires `SENDGRID_WEBHOOK_PUBLIC_KEY` env var. Returns `401` if missing or invalid.
 
 **Body:** SendGrid event array (or single event — handler normalizes). Each event has `sg_message_id`, `event`, etc.
 
 **Behavior per event:**
 1. Skip if no `sg_message_id`.
 2. Strip `.filterXXX` suffix → base ID.
-3. Map event type to interaction status (`mapSendGridEvent` at `route.ts:19`):
-   - `delivered → delivered`, `open → opened`, `click → clicked`, `bounce|dropped|spam_report → bounced`.
+3. Map event type to interaction status (`mapSendGridEvent`):
+   - `delivered → delivered`, `open → opened`, `click → clicked`, `bounce → bounced` (hard) or `failed` (soft), `dropped|spam_report → bounced`, `reply|inbound_email → replied`.
 4. Look up interaction by `detail->>sendgrid_message_id`.
-5. For non-terminal statuses, only advance if new priority > current priority (`STATUS_PRIORITY` at `route.ts:6`). Prevents downgrades (e.g. `replied` won't be overwritten by `opened`).
-6. Update `interactions.status`.
-7. For terminal `bounced`: also mark `sequence_enrollments.status = "bounced"` for the matching `(sequence_id, person_id)`.
+5. For non-terminal statuses, only advance if new priority > current priority (`STATUS_PRIORITY`). Prevents downgrades.
+6. Update `interactions.status` and write `bounce_category` / `bounce_reason` / `bounce_type` to `interactions.detail`.
+7. For terminal `bounced` (hard): also mark `sequence_enrollments.status = "bounced"` and stamp `persons.email_bounced_at = now()`.
+8. For `replied` / `clicked`: pause active enrollments where the parent sequence has `schedule_config.stop_on_reply` / `stop_on_click` set.
 
-**Always returns 200** (`route.ts:153`) — even on parse failure — so SendGrid doesn't retry.
+**Returns 200 after verification** even on per-event errors so SendGrid does not retry-storm. A failed signature returns 401, prompting SendGrid to retry.
 
 **Caveats:**
-- **No signature verification.** Any caller can POST and mutate interaction statuses.
 - The lookup uses `detail->>sendgrid_message_id` which is JSONB — make sure there's an index (verify in migrations).
-- "replied" status comes from the inbox-correlator path, not from SendGrid. The priority table includes it (priority 7) so SendGrid events can never downgrade a replied interaction.
+- "replied" status from this route flows through the same priority table as the inbox-correlator path, so the two cannot regress each other.
 
 ---
 
@@ -553,7 +565,7 @@ Reasoning given in code comments: "this runs server-side without user session" /
 |---|---|
 | `{ success: true, ... }` | `correlations/merge`, `inbox/sync`, `inbox` (POST), `enrich/cancel` |
 | `{ jobId, status, ...counts }` | `enrich/organizations`, `enrich/persons`, `enrich` (legacy) |
-| Counters `{ generated, failed, skipped, ... }` | `sequences/generate`, `sequences/execute`, `sequences/send` |
+| Counters `{ generated, failed, skipped, ... }` | `sequences/generate`, `sequences/send` |
 | Raw payload | `messages/generate` (proxies edge fn), `messages/send` |
 | Custom | `sequences/[id]/preview` ({subject,body,hasSender}), `sequences/[id]/messages` (array), bulk (`{updated}`) |
 
@@ -573,7 +585,7 @@ There is no validator library in use. Patterns observed:
 
 - Most routes just destructure `body` and check truthy on required fields.
 - A subset wraps `request.json()` in try/catch (`enrich/organizations:33`, `enrich/persons:29`, `enrich/cancel:18`, `inbox/sync:22`, `correlations/merge` — verify, etc.).
-- Many do not — e.g. `messages/generate`, `messages/send`, `messages/actions`, `sequences/execute`, `inbox` GET branches all call `await request.json()` unguarded. A malformed body throws and yields a default 500 with no `{error}` shape.
+- Many do not — e.g. `messages/generate`, `messages/send`, `messages/actions`, `inbox` GET branches all call `await request.json()` unguarded. A malformed body throws and yields a default 500 with no `{error}` shape.
 - No type narrowing — bodies are `as` cast to expected shapes.
 
 ### 3.5 Job lifecycle (where applicable)
@@ -587,7 +599,7 @@ Long-running batch routes follow:
 5. Return `{ jobId, ... }`.
 
 Routes following this pattern: `enrich/organizations`, `enrich/persons`, `enrich` (legacy).
-Routes that should but don't: `sequences/execute` only logs at the end; `sequences/generate` and `sequences/send` log nothing.
+Routes that should but don't: `sequences/generate` and `sequences/send` log nothing.
 
 ### 3.6 Cancellation
 
@@ -596,7 +608,6 @@ Only the enrichment pipeline supports cancellation. `POST /api/enrich/cancel` fl
 ### 3.7 Idempotency
 
 - `sequences/generate` checks `(sequence_id, person_id, sequence_step)` before inserting (good).
-- `sequences/execute` does not (bad).
 - `sequences/send` has no row-level lock; concurrent invocations can double-send.
 - `messages/send` does not check status before invoking edge function — re-running can re-send rows that just transitioned to `sent`.
 - `webhooks/sendgrid` uses status priority comparison to prevent downgrade. No explicit replay protection (e.g. event ID dedupe).
@@ -617,34 +628,23 @@ This section flags inconsistencies and concrete risks. Each item references file
 
 `middleware.ts:19` only matches `/admin/:path*`. Suggested fix: extend matcher to `/api/:path*` and require auth, OR add explicit `Authorization: Bearer <secret>` checks inside service-role handlers, OR move them under `/admin/api/...` so middleware applies.
 
-### 4.2 No SendGrid webhook signature verification
-
-`app/api/webhooks/sendgrid/route.ts:44` accepts any POST and mutates `interactions.status` and `sequence_enrollments.status`. The `verifyWebhookSignature` helper in `lib/sendgrid.ts:65` is a stub (timestamp-only) and isn't even called. The file's own header comment flags this. Implement ECDSA verification with `@sendgrid/eventwebhook` before sending real volume.
-
-### 4.3 Two routes do "advance enrollments and create interactions"
-
-- `app/api/sequences/execute/route.ts` (legacy, simple `{var}` substitution, no idempotency check, no AI blocks).
-- `app/api/sequences/generate/route.ts` (modern, AI blocks, idempotency check, send window timing).
-
-Both are reachable. A cron or scheduled invocation pointed at the wrong one will create duplicate interactions or skip AI block rendering. Recommend: delete `/execute` once verified no consumers remain, or have it 410 Gone.
-
-### 4.4 `messages/actions` writes "failed" for "supersede"
+### 4.2 `messages/actions` writes "failed" for "supersede"
 
 `app/api/messages/actions/route.ts:35-37` — there's no `superseded` enum value, so the route writes `status: "failed"`. The semantic intent (replace this draft with a new one) is lost in the audit trail. Either add the enum value or rename the action.
 
-### 4.5 Error swallowing in legacy enrich
+### 4.3 Error swallowing in legacy enrich
 
 `app/api/enrich/route.ts:130` — per-contact Apollo errors are `console.error`'d and skipped. The `job_log` summary doesn't track failed contacts. Compare to `enrich/organizations` which records per-org success/failure in `results[]`.
 
-### 4.6 Inbox handler conflates two operations
+### 4.4 Inbox handler conflates two operations
 
 `app/api/inbox/route.ts:18-26` does person search; the rest does email sync. The two have nothing to do with each other. Move person search to `/api/persons/search` or similar.
 
-### 4.7 Two ways to sync inbox
+### 4.5 Two ways to sync inbox
 
 `GET /api/inbox` syncs both accounts; `POST /api/inbox/sync` syncs one. They have slightly different fields they upsert (`unread_count` only on sync). Consolidate.
 
-### 4.8 No transactions around multi-step state changes
+### 4.6 No transactions around multi-step state changes
 
 - `correlations/merge`: RPC then status update — if the second fails the first sticks.
 - `messages/send`: `interactions.status = sending` then edge function — if edge invocation fails the row is stuck in `sending`.
@@ -653,30 +653,26 @@ Both are reachable. A cron or scheduled invocation pointed at the wrong one will
 
 Use a Postgres function or, where invoking external APIs, a "claim → process → confirm" state machine with timeout-based reaper.
 
-### 4.9 No row-level locking in `sequences/send`
+### 4.7 No row-level locking in `sequences/send`
 
 `app/api/sequences/send/route.ts:33-40` selects 50 scheduled rows. Two concurrent invocations will both pick up the same rows and double-send. Use `SELECT ... FOR UPDATE SKIP LOCKED` via an RPC, or a state transition that acts as the lock (`UPDATE ... WHERE status='scheduled' RETURNING ...`).
 
-### 4.10 Approximate timezone math in send window
-
-`app/api/sequences/generate/route.ts:87-90` admits to a "rough approximation" of TZ offset. For TZ-sensitive scheduling this should use a proper library (Intl.DateTimeFormat with explicit parts, or date-fns-tz) and be tested across DST transitions.
-
-### 4.11 Ad-hoc input validation, no schema layer
+### 4.8 Ad-hoc input validation, no schema layer
 
 No `zod` / `valibot` / `yup`. Body shapes are `as`-cast and trust the client. For a CRM with destructive operations (merge, delete) this is a risk. Suggest adding a `lib/validators/` directory with per-route schemas.
 
-### 4.12 No structured logging
+### 4.9 No structured logging
 
 Routes log via `console.log` / `console.error` with `[name]` prefixes. There is no request ID, no correlation ID, no log level configuration. For Vercel observability that's fine; for debugging pipeline issues it makes correlation across many routes hard.
 
-### 4.13 Mixed naming conventions
+### 4.10 Mixed naming conventions
 
 - Snake_case in bodies: `person_ids`, `interaction_ids`, `event_id`, `scheduled_at`.
 - camelCase in bodies: `organizationIds`, `personIds`, `eventId`, `scheduledAt`, `messageIds`, `candidate_id` (snake!).
 
 Even within a single route family it's inconsistent (`messages/actions` uses `interaction_ids`; `sequences/[id]/messages/bulk` uses `messageIds`). Pick one.
 
-### 4.14 Hardcoded values
+### 4.11 Hardcoded values
 
 - `app/api/inbox/route.ts:6` — Fastmail accounts hardcoded.
 - `app/api/sequences/send/route.ts:40` — 50-row cap hardcoded.
@@ -698,7 +694,6 @@ Consider env vars or config.
 | POST | `/api/messages/send` | `app/api/messages/send/route.ts` |
 | POST | `/api/messages/actions` | `app/api/messages/actions/route.ts` |
 | POST | `/api/sequences/generate` | `app/api/sequences/generate/route.ts` |
-| POST | `/api/sequences/execute` | `app/api/sequences/execute/route.ts` |
 | POST | `/api/sequences/send` | `app/api/sequences/send/route.ts` |
 | GET | `/api/sequences/[id]/messages` | `app/api/sequences/[id]/messages/route.ts` |
 | PATCH | `/api/sequences/[id]/messages/[msgId]` | `app/api/sequences/[id]/messages/[msgId]/route.ts` |
@@ -707,5 +702,6 @@ Consider env vars or config.
 | GET | `/api/inbox` | `app/api/inbox/route.ts` |
 | POST | `/api/inbox` | `app/api/inbox/route.ts` |
 | POST | `/api/inbox/sync` | `app/api/inbox/sync/route.ts` |
+| GET | `/api/cron/inbox-sync` | `app/api/cron/inbox-sync/route.ts` |
 | POST | `/api/correlations/merge` | `app/api/correlations/merge/route.ts` |
 | POST | `/api/webhooks/sendgrid` | `app/api/webhooks/sendgrid/route.ts` |

@@ -76,7 +76,7 @@ Sidebar nav data is declared in `components/admin/sidebar.tsx:30-47`:
 |---|---|---|---|
 | Dashboard | `/admin` | `LayoutDashboard` | `app/admin/page.tsx` |
 | Persons | `/admin/persons` | `Users` | `app/admin/persons/page.tsx` + `persons-table-client.tsx` |
-| Lists | `/admin/lists` | `List` | `app/admin/lists/page.tsx` (single client file, 994 LOC) |
+| Lists | `/admin/lists` (index) + `/admin/lists/[id]` (detail) | `List` | `app/admin/lists/page.tsx` (index, 218 LOC) + `app/admin/lists/[id]/{page.tsx,list-detail-client.tsx,list-members-table.tsx,list-matches-table.tsx}` |
 | Organizations | `/admin/organizations` | `Building2` | `app/admin/organizations/page.tsx` + `organizations-table-client.tsx` |
 | Events | `/admin/events` | `Calendar` (sub-items: events list inline) | `app/admin/events/page.tsx` + `events-table-client.tsx` |
 | Pipeline | `/admin/pipeline` | `Kanban` | `app/admin/pipeline/page.tsx` (renders `PipelineView`) |
@@ -155,7 +155,7 @@ The memory note claims `GlassCheckbox` is a shared selection control. It is **no
 | `app/admin/persons/person-table-row.tsx:153-168` | exported, the closest thing to canonical |
 | `app/admin/organizations/org-table-row.tsx:63` | local function |
 | `app/admin/organizations/organizations-table-client.tsx:125` | header's "select all" — duplicated |
-| `app/admin/lists/page.tsx:82` | local function |
+| `app/admin/lists/[id]/list-members-table.tsx` | imported from `person-table-row.tsx` |
 | `app/admin/enrichment/components/entity-table.tsx:9` | local function |
 | `app/admin/events/events-table-client.tsx:94` | local function |
 
@@ -224,10 +224,14 @@ The Enrichment shell makes this explicit:
 
 - Page is one line: `<SequenceListClient />`.
 - `sequence-list-client.tsx`:
-  - Uses `useSequences(filters)` hook (`tsx:4`) — first React Query consumer in the section.
+  - Uses `useSequences(filters)` hook — first React Query consumer in the section.
   - Mutations: `deleteSequence`, `updateSequenceStatus` from `actions.ts`, both wired to `useMutation` with `invalidateQueries(queryKeys.sequences.all)` on success.
-  - Layout: `<TwoPanelLayout>` (`components/admin/two-panel-layout.tsx`), `<SequenceRow>` rows, `<SequencePreview>` right pane.
+  - Layout: `<TwoPanelLayout>`, `<SequenceRow>` rows, `<SequencePreview>` right pane.
 - Detail page: `app/admin/sequences/[id]/page.tsx` → `sequence-detail-client.tsx` + `enrollment-panel.tsx`. Sub-route `/messages` for the message queue.
+- **Parameters panel** (`components/admin/sequence-parameters-panel.tsx`): centralized config for delivery / schedule / throttle / stop rules / audience filters. Each field renders through `<ParameterField>` / `<ParameterToggle>` from `components/admin/parameter-guide.tsx`, which adds an info popover (description, when-to-use, example, tips) per field. The metadata dictionary `PARAMETER_GUIDE` is the single source of truth for parameter docs and supports a `preview: true` flag for fields not yet enforced backend-side.
+- **Segment builder** (`components/admin/segment-builder.tsx`): the "Build Segment" tab on the enrollment modal. Composes filters into a `SegmentSpec` (`lib/segments.ts`), debounce-calls `previewSegment` to display match count + 5-row sample, then `enrollFromSegment` to commit. Presets persist to localStorage. Sequence-level guards (`exclude_bounced`, `exclude_already_enrolled`) are applied server-side in `applySequenceEnrollFilters` regardless of which enrollment path the UI uses.
+- **Message queue** (`app/admin/sequences/[id]/messages/message-queue-client.tsx`): per-row approve / approve_at / reschedule / cancel / reject (with reason) / retry / edit. Bulk equivalents via the action bar. 12s react-query polling; counts derived in-memory via `useMemo` from the cached list. Approval-mode banner renders when `sequence.send_mode === "approval"`. In-house `<ToastViewport>` lives in `components/ui/toast.tsx` (no third-party toast lib).
+- **Step editor** (`components/admin/step-editor.tsx`): blocks save on validation errors (delay 0–365, non-empty body, action_type sequencing); warns on duplicates; `Preview` button per step calls `/api/sequences/[id]/preview` and renders through `<MessagePreviewModal>`.
 
 ### Inbox — `/admin/inbox`
 
@@ -278,11 +282,26 @@ Per-row queued / processing styling (the `opacity-40` for not-yet-processed rows
 - Components: `<FileDropzone>`, `<ColumnMapper>`, `Papa` (papaparse) for CSV parsing.
 - `actions.ts` exports `importCsvData`.
 
-### Lists — `/admin/lists`
+### Lists — `/admin/lists` (index) + `/admin/lists/[id]` (detail)
 
-- Single 994-LOC client component (`app/admin/lists/page.tsx`).
-- Defines its own `GlassCheckbox` (line 82), `getSupabase()` cached client (line 77), nested list/edit/manage views in one file.
-- Does **not** consume any React Query hook — uses `useState` + `useEffect` to fetch lists/persons directly. **Violates** the "all client-side data goes through React Query" rule from `PERFORMANCE.md` §1. Candidate for refactor.
+Lists organize persons into buckets used by enrichment, sequences, pipeline, and `/admin/persons` views. Membership is concrete rows in `person_list_items`; a list optionally carries a saved `PersonFilterRules` (column added in `027_person_lists_filter_rules.sql`) that powers the filter sidebar but never auto-mutates membership.
+
+**Index page** (`app/admin/lists/page.tsx`, ~218 LOC, client):
+- Renders the roster of lists with member count, "saved filter" pill when `filter_rules !== null`, and a New List modal.
+- Clicking a row navigates to `/admin/lists/[id]`. Deletion is inline.
+- Uses server actions from `app/admin/lists/actions.ts` directly, not React Query (same exception class as `/admin/settings`).
+
+**Detail route** (`app/admin/lists/[id]/`):
+- `page.tsx` (server) — `Promise.all` of `getListById`, `getListItems` (returns `{ person_id }[]`), and `loadPersonRows()` (`lib/data/load-person-rows.ts`, shared with `/admin/persons`). All `PersonRow[]` are loaded once and handed to the client.
+- `list-detail-client.tsx` — owns `rules: PersonFilterRules`, the Members/Matches tab, the saved-filter chip, and inline name/description edit. Uses `<PersonFilterSidebar>` (the same component `/admin/persons` uses) inside `<TwoPanelLayout>`. Filters are applied via the pure `applyPersonFilters()` from `lib/filters/person-filters.ts`.
+- `list-members-table.tsx` — Members tab. Filters scope **within** the list's members. Bulk "Remove from list" action.
+- `list-matches-table.tsx` — Matches tab. Filters scope across **all** persons. Rows already in the list are faded with an "in list" badge; the rest get checkboxes and a bulk "Add N to list" button. Empty filter state prompts the user to apply filters.
+
+**Saved filter** semantics: `[Save filter]` calls `saveListFilter(listId, normalizeRules(rules))`; `[Clear saved filter]` writes `null`. Reopening the list hydrates the sidebar from `list.filter_rules`. Re-running the saved filter is **add-only** — `handleAddMatches` filters out members already in the list before calling `addToList`. Removal is always an explicit user action.
+
+**Filter module** (reusable, pure):
+- `lib/filters/person-filters.ts` — `PersonFilterRules` type, `applyPersonFilters(rows, rules, deps)`, `normalizeRules`, `isEmptyRules`, `personFilterRulesToActiveFilters`, `removeFilterKey`, `clearAllFilters`. Covered by `lib/filters/person-filters.test.ts` (24 unit tests).
+- `components/admin/person-filter-sidebar.tsx` — controlled component rendering the filter UI. Consumed by both `/admin/persons` and `/admin/lists/[id]`.
 
 ### Settings — `/admin/settings`
 

@@ -35,6 +35,9 @@ GEMINI_API_KEY=...
 # Email (inbox sync)
 FASTMAIL_API_KEY=...
 
+# Cron auth (required by /api/cron/* routes — Vercel injects this as Bearer header)
+CRON_SECRET=...           # Generate: node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+
 # Telegram Bot (optional — notifications silently skipped if unset)
 TELEGRAM_BOT_TOKEN=...     # From @BotFather
 TELEGRAM_CHAT_ID=...       # Chat/group ID for notifications
@@ -155,11 +158,27 @@ npx supabase secrets list
 
 ## CRON Configuration
 
+### pg_cron jobs (Supabase)
+
 The `004_cron.sql` migration sets up two hourly jobs:
 - **send-scheduled** (`:00`) — calls send-message to send due messages
 - **sync-status** (`:30`) — calls sync-status to poll delivery updates
 
 These use `current_setting('app.settings.supabase_url')` and `current_setting('app.settings.secret_key')`. Set these in **Supabase Dashboard > Project Settings > Database > Custom configuration**.
+
+`016_inbox_sync_cron.sql` adds two pg_cron jobs that POST to `/api/inbox/sync` every 15 min for each Fastmail account (jb, wes — staggered by 1 min).
+
+### Vercel Cron jobs
+
+`vercel.json` declares Vercel-managed crons:
+
+| Schedule | Path | Purpose |
+|----------|------|---------|
+| `*/5 * * * *` | `/api/sequences/send` | Drain due `interactions` and send via SendGrid |
+
+A Vercel-cron-ready inbox sync also exists at `/api/cron/inbox-sync` (gated by `CRON_SECRET`, syncs both accounts in one pass). Add to `vercel.json` as an alternative to the pg_cron approach above.
+
+**Auth pattern:** `/api/cron/*` routes check `Authorization: Bearer $CRON_SECRET`. Vercel injects this header automatically when triggering cron paths declared in `vercel.json`. Set `CRON_SECRET` in Vercel env vars (Production + Preview).
 
 ---
 
@@ -180,6 +199,7 @@ Set these in **Vercel Dashboard > Project Settings > Environment Variables** (Pr
 | `PERPLEXITY_API_KEY` | Perplexity Sonar API key |
 | `GEMINI_API_KEY` | Google Gemini API key |
 | `FASTMAIL_API_KEY` | Fastmail JMAP API key |
+| `CRON_SECRET` | Bearer token Vercel injects on `/api/cron/*` triggers; required by gated cron routes |
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot API token |
 | `TELEGRAM_CHAT_ID` | Telegram chat ID for notifications |
 
@@ -194,7 +214,10 @@ Pushes to `main` on [github.com/HoboCrunch/fpblock](https://github.com/HoboCrunc
 Long-running routes have `maxDuration` configured:
 - `/api/enrich` — 60s
 - `/api/enrich/organizations` — 300s (requires Vercel Pro for >60s)
-- `/api/sequences/execute` — 60s
+- `/api/enrich/persons` — 300s
+- `/api/sequences/generate` — 60s
+- `/api/sequences/send` — 60s
+- `/api/sequences/[id]/preview` — 60s
 
 ### Middleware
 

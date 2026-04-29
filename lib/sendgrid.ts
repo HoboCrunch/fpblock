@@ -1,3 +1,5 @@
+import { EventWebhook } from "@sendgrid/eventwebhook";
+
 export interface SendEmailParams {
   to: string;
   from: { email: string; name: string };
@@ -61,20 +63,37 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
   }
 }
 
-// WARNING: Timestamp-only verification — add @sendgrid/eventwebhook for ECDSA before production
+/**
+ * Verify a SendGrid signed event webhook request using ECDSA.
+ *
+ * @param publicKey PEM-formatted public key (set in SendGrid Mail Settings, exposed via
+ *                  env var `SENDGRID_WEBHOOK_PUBLIC_KEY`).
+ * @param payload   Raw request body as a string (must be the un-parsed bytes — JSON.stringify
+ *                  re-serialization will break the signature).
+ * @param signature Value of the `X-Twilio-Email-Event-Webhook-Signature` header.
+ * @param timestamp Value of the `X-Twilio-Email-Event-Webhook-Timestamp` header.
+ * @returns true iff signature is valid AND timestamp is within freshness window (5 minutes).
+ */
 export function verifyWebhookSignature(
   publicKey: string,
   payload: string,
   signature: string,
   timestamp: string
 ): boolean {
-  void publicKey;
-  void payload;
-  void signature;
+  if (!publicKey || !payload || !signature || !timestamp) return false;
 
+  // Freshness check — reject anything outside +/- 5 minutes
   const ts = parseInt(timestamp, 10);
   if (isNaN(ts)) return false;
-
   const nowSeconds = Math.floor(Date.now() / 1000);
-  return Math.abs(nowSeconds - ts) <= 300;
+  if (Math.abs(nowSeconds - ts) > 300) return false;
+
+  try {
+    const ew = new EventWebhook();
+    const ecdsaKey = ew.convertPublicKeyToECDSA(publicKey);
+    return ew.verifySignature(ecdsaKey, payload, signature, timestamp);
+  } catch (err) {
+    console.error("[sendgrid] Webhook signature verification threw:", err);
+    return false;
+  }
 }

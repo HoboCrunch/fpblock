@@ -1,10 +1,10 @@
 "use client";
 
-import { GlassCard } from "@/components/ui/glass-card";
 import { GlassInput } from "@/components/ui/glass-input";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { cn } from "@/lib/utils";
 import type { SequenceSchedule } from "@/lib/types/database";
+import { ParameterField, ParameterSection } from "./parameter-guide";
 
 const TIMING_MODE_OPTIONS = [
   { value: "relative", label: "Relative — send N days after enrollment" },
@@ -23,6 +23,8 @@ const TIMEZONE_OPTIONS = [
   { value: "Asia/Tokyo", label: "Asia/Tokyo (JST)" },
 ];
 
+const VALID_TIMEZONES = new Set(TIMEZONE_OPTIONS.map((tz) => tz.value));
+
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 type Day = typeof DAYS[number];
 
@@ -38,9 +40,11 @@ const ANCHOR_DIRECTION_OPTIONS = [
 interface ScheduleConfigProps {
   value: SequenceSchedule;
   onChange: (config: SequenceSchedule) => void;
+  /** When true, omit the section heading wrapper (used when embedded in the parameters panel) */
+  embedded?: boolean;
 }
 
-export function ScheduleConfig({ value, onChange }: ScheduleConfigProps) {
+export function ScheduleConfig({ value, onChange, embedded = false }: ScheduleConfigProps) {
   const mode = value.timing_mode;
   const window = value.send_window;
 
@@ -91,115 +95,153 @@ export function ScheduleConfig({ value, onChange }: ScheduleConfigProps) {
     });
   }
 
-  return (
-    <GlassCard>
-      <h3 className="text-sm font-semibold text-white mb-4">Schedule Configuration</h3>
+  // Validation
+  const startHour = window?.start_hour ?? 9;
+  const endHour = window?.end_hour ?? 17;
+  const hourWarning =
+    (mode === "window" || mode === "anchor") && endHour <= startHour
+      ? "End hour must be greater than start hour."
+      : null;
+  const tz = window?.timezone ?? "UTC";
+  const tzWarning =
+    (mode === "window" || mode === "anchor") && !VALID_TIMEZONES.has(tz)
+      ? `Unknown timezone "${tz}" — pick one from the list.`
+      : null;
 
-      <div className="space-y-4">
-        {/* Timing mode */}
-        <div>
-          <label className="text-xs text-[var(--text-muted)] mb-1 block">Timing Mode</label>
-          <GlassSelect
-            options={TIMING_MODE_OPTIONS}
-            value={mode}
-            onChange={(e) => setMode(e.target.value as SequenceSchedule["timing_mode"])}
-          />
-        </div>
+  const body = (
+    <div className="space-y-4">
+      {/* Timing mode */}
+      <ParameterField paramKey="timing_mode">
+        <GlassSelect
+          options={TIMING_MODE_OPTIONS}
+          value={mode}
+          onChange={(e) => setMode(e.target.value as SequenceSchedule["timing_mode"])}
+        />
+      </ParameterField>
 
-        {/* Window controls — shown for 'window' and 'anchor' */}
-        {(mode === "window" || mode === "anchor") && (
-          <>
-            {/* Day toggles */}
-            <div>
-              <label className="text-xs text-[var(--text-muted)] mb-2 block">Allowed Days</label>
-              <div className="flex gap-1">
-                {DAYS.map((day) => {
-                  const active = window?.days?.includes(day) ?? false;
-                  return (
-                    <button
-                      key={day}
-                      type="button"
-                      onClick={() => toggleDay(day)}
-                      className={cn(
-                        "w-8 h-8 rounded text-xs font-medium transition-all duration-150",
-                        active
-                          ? "bg-[var(--accent-orange)]/20 text-[var(--accent-orange)] border border-[var(--accent-orange)]/40"
-                          : "bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-white"
-                      )}
-                    >
-                      {DAY_LABELS[day]}
-                    </button>
-                  );
-                })}
-              </div>
+      {/* Window controls — shown for 'window' and 'anchor' */}
+      {(mode === "window" || mode === "anchor") && (
+        <>
+          {/* Day toggles */}
+          <ParameterField paramKey="send_window_days">
+            <div className="flex gap-1">
+              {DAYS.map((day) => {
+                const active = window?.days?.includes(day) ?? false;
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleDay(day)}
+                    aria-pressed={active}
+                    className={cn(
+                      "w-8 h-8 rounded text-xs font-medium transition-all duration-150",
+                      active
+                        ? "bg-[var(--accent-orange)]/20 text-[var(--accent-orange)] border border-[var(--accent-orange)]/40"
+                        : "bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-white"
+                    )}
+                  >
+                    {DAY_LABELS[day]}
+                  </button>
+                );
+              })}
             </div>
+          </ParameterField>
 
-            {/* Hour range */}
+          {/* Hour range */}
+          <ParameterField paramKey="send_window_hours" warning={hourWarning}>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-[var(--text-muted)] mb-1 block">Start Hour (0–23)</label>
+                <span className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+                  Start
+                </span>
                 <GlassInput
                   type="number"
                   min={0}
                   max={23}
-                  value={window?.start_hour ?? 9}
-                  onChange={(e) => setWindowField("start_hour", parseInt(e.target.value) || 0)}
+                  value={startHour}
+                  onChange={(e) =>
+                    setWindowField("start_hour", parseInt(e.target.value) || 0)
+                  }
                 />
               </div>
               <div>
-                <label className="text-xs text-[var(--text-muted)] mb-1 block">End Hour (0–23)</label>
+                <span className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+                  End
+                </span>
                 <GlassInput
                   type="number"
                   min={0}
                   max={23}
-                  value={window?.end_hour ?? 17}
-                  onChange={(e) => setWindowField("end_hour", parseInt(e.target.value) || 0)}
+                  value={endHour}
+                  onChange={(e) =>
+                    setWindowField("end_hour", parseInt(e.target.value) || 0)
+                  }
                 />
               </div>
             </div>
+          </ParameterField>
 
-            {/* Timezone */}
-            <div>
-              <label className="text-xs text-[var(--text-muted)] mb-1 block">Timezone</label>
-              <GlassSelect
-                options={TIMEZONE_OPTIONS}
-                value={window?.timezone ?? "UTC"}
-                onChange={(e) => setTimezone(e.target.value)}
-              />
-            </div>
-          </>
-        )}
+          {/* Timezone */}
+          <ParameterField paramKey="send_window_timezone" warning={tzWarning}>
+            <GlassSelect
+              options={TIMEZONE_OPTIONS}
+              value={tz}
+              onChange={(e) => setTimezone(e.target.value)}
+            />
+          </ParameterField>
+        </>
+      )}
 
-        {/* Anchor-specific controls */}
-        {mode === "anchor" && (
-          <>
-            <div>
-              <label className="text-xs text-[var(--text-muted)] mb-1 block">Anchor Date</label>
-              <GlassInput
-                type="date"
-                value={value.anchor_date ?? ""}
-                onChange={(e) => onChange({ ...value, anchor_date: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-[var(--text-muted)] mb-1 block">Direction</label>
-              <GlassSelect
-                options={ANCHOR_DIRECTION_OPTIONS}
-                value={value.anchor_direction ?? "before"}
-                onChange={(e) =>
-                  onChange({ ...value, anchor_direction: e.target.value as "before" | "after" })
-                }
-              />
-            </div>
-          </>
-        )}
+      {/* Anchor-specific controls */}
+      {mode === "anchor" && (
+        <>
+          <ParameterField paramKey="anchor_date">
+            <GlassInput
+              type="date"
+              value={value.anchor_date ?? ""}
+              onChange={(e) => onChange({ ...value, anchor_date: e.target.value })}
+            />
+          </ParameterField>
+          <ParameterField paramKey="anchor_direction">
+            <GlassSelect
+              options={ANCHOR_DIRECTION_OPTIONS}
+              value={value.anchor_direction ?? "before"}
+              onChange={(e) =>
+                onChange({
+                  ...value,
+                  anchor_direction: e.target.value as "before" | "after",
+                })
+              }
+            />
+          </ParameterField>
+        </>
+      )}
 
-        {mode === "relative" && (
-          <p className="text-xs text-[var(--text-muted)]">
-            Messages send N days after enrollment with no time-of-day restriction.
-          </p>
-        )}
-      </div>
-    </GlassCard>
+      {mode === "relative" && (
+        <p className="text-xs text-[var(--text-muted)] italic">
+          Messages send N days after enrollment with no time-of-day restriction.
+        </p>
+      )}
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <ParameterSection
+        title="Schedule"
+        description="When messages are eligible to send"
+      >
+        {body}
+      </ParameterSection>
+    );
+  }
+
+  return (
+    <div className="glass rounded-xl p-5">
+      <h3 className="text-sm font-semibold text-white mb-4">
+        Schedule Configuration
+      </h3>
+      {body}
+    </div>
   );
 }
