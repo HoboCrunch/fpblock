@@ -12,6 +12,12 @@ export interface SendEmailResult {
   success: boolean;
   messageId?: string;
   error?: string;
+  /**
+   * HTTP status code from SendGrid, or undefined for pre-flight failures
+   * (missing API key) and network errors caught in the catch block.
+   * 4xx (except 408/429) = client error, no retry. 5xx/timeout = retry.
+   */
+  statusCode?: number;
 }
 
 export async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
@@ -51,10 +57,10 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
       } catch {
         errorText = `HTTP ${response.status}`;
       }
-      return { success: false, error: errorText };
+      return { success: false, error: errorText, statusCode: response.status };
     }
 
-    return { success: true, messageId };
+    return { success: true, messageId, statusCode: response.status };
   } catch (err) {
     return {
       success: false,

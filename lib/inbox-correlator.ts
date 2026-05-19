@@ -6,6 +6,7 @@ import {
   sendTelegramNotification,
   formatReplyNotification,
 } from "@/lib/telegram";
+import { findPersonByEmail } from "@/lib/inbox/find-person-by-email";
 
 export interface CorrelationResult {
   person_id: string | null;
@@ -13,29 +14,6 @@ export interface CorrelationResult {
   correlated_interaction_id: string | null;
   person?: { id: string; full_name: string };
   organization?: { id: string; name: string; icp_score: number | null } | null;
-}
-
-/**
- * Extract domain from an email address.
- */
-function extractDomain(email: string): string | null {
-  const parts = email.split("@");
-  if (parts.length !== 2) return null;
-  return parts[1].toLowerCase();
-}
-
-/**
- * Normalize a website URL to just its domain for comparison.
- */
-function normalizeDomain(url: string): string {
-  try {
-    const hostname = new URL(
-      url.startsWith("http") ? url : `https://${url}`
-    ).hostname;
-    return hostname.replace(/^www\./, "").toLowerCase();
-  } catch {
-    return url.replace(/^(https?:\/\/)?(www\.)?/, "").split("/")[0].toLowerCase();
-  }
 }
 
 /**
@@ -54,92 +32,38 @@ export async function correlateEmail(
     "id" | "from_address" | "from_name" | "subject" | "body_preview" | "received_at"
   >
 ): Promise<CorrelationResult> {
-  const fromAddress = inboundEmail.from_address.toLowerCase();
+  const match = await findPersonByEmail(supabase, inboundEmail.from_address);
 
-  // 1. Exact email match
-  const { data: exactMatch } = await supabase
-    .from("persons")
-    .select("id, full_name")
-    .ilike("email", fromAddress)
-    .limit(1)
-    .single();
-
-  if (exactMatch) {
-    const result = await processCorrelation(
-      supabase,
-      inboundEmail,
-      exactMatch,
-      "exact_email"
-    );
-    return result;
+  if (match.match_type === "none") {
+    await logCorrelation(supabase, inboundEmail.id, null, "none", null);
+    return {
+      person_id: null,
+      correlation_type: "none",
+      correlated_interaction_id: null,
+    };
   }
 
-  // 2. Domain match — extract domain from sender, match against organizations
-  const senderDomain = extractDomain(fromAddress);
-  if (senderDomain) {
-    const { data: organizations } = await supabase
-      .from("organizations")
-      .select("id, name, website, icp_score")
-      .not("website", "is", null);
-
-    if (organizations?.length) {
-      const matchedOrg = organizations.find((o) => {
-        if (!o.website) return false;
-        return normalizeDomain(o.website) === senderDomain;
-      });
-
-      if (matchedOrg) {
-        // Find a person at this organization
-        const { data: personOrg } = await supabase
-          .from("person_organizations")
-          .select("person_id")
-          .eq("organization_id", matchedOrg.id)
-          .limit(1)
-          .single();
-
-        if (personOrg) {
-          const { data: person } = await supabase
-            .from("persons")
-            .select("id, full_name")
-            .eq("id", personOrg.person_id)
-            .single();
-
-          if (person) {
-            const result = await processCorrelation(
-              supabase,
-              inboundEmail,
-              person,
-              "domain_match",
-              matchedOrg
-            );
-            return result;
-          }
-        }
-
-        // Organization matched but no person linked — return domain match with no person
-        await logCorrelation(supabase, inboundEmail.id, null, "domain_match", null, {
-          organization_id: matchedOrg.id,
-          organization_name: matchedOrg.name,
-        });
-
-        return {
-          person_id: null,
-          correlation_type: "domain_match",
-          correlated_interaction_id: null,
-          organization: matchedOrg,
-        };
-      }
-    }
+  if (!match.person) {
+    // Domain match but no person linked
+    await logCorrelation(supabase, inboundEmail.id, null, "domain_match", null, {
+      organization_id: match.organization?.id,
+      organization_name: match.organization?.name,
+    });
+    return {
+      person_id: null,
+      correlation_type: "domain_match",
+      correlated_interaction_id: null,
+      organization: match.organization,
+    };
   }
 
-  // 3. No match
-  await logCorrelation(supabase, inboundEmail.id, null, "none", null);
-
-  return {
-    person_id: null,
-    correlation_type: "none",
-    correlated_interaction_id: null,
-  };
+  return processCorrelation(
+    supabase,
+    inboundEmail,
+    match.person,
+    match.match_type as "exact_email" | "domain_match",
+    match.organization
+  );
 }
 
 async function processCorrelation(
@@ -255,19 +179,27 @@ async function logCorrelation(
   });
 }
 
+export interface CorrelateOptions {
+  notify?: boolean; // default true
+}
+
 /**
  * Correlate an email and send a Telegram notification if successfully correlated.
+ * Pass `{ notify: false }` to suppress the Telegram notification (e.g. during historical backfill).
  */
 export async function correlateAndNotify(
   supabase: SupabaseClient,
   inboundEmail: Pick<
     InboundEmail,
     "id" | "from_address" | "from_name" | "subject" | "body_preview" | "received_at"
-  >
+  >,
+  opts: CorrelateOptions = {}
 ): Promise<CorrelationResult> {
   const result = await correlateEmail(supabase, inboundEmail);
 
-  if (result.person_id && result.person) {
+  const envDisabled = process.env.INBOX_TELEGRAM_DISABLED === "1";
+  const shouldNotify = opts.notify !== false && !envDisabled;
+  if (shouldNotify && result.person_id && result.person) {
     const message = formatReplyNotification(
       result.person,
       result.organization || null,

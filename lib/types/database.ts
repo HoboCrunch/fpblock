@@ -121,37 +121,14 @@ export interface PersonEventAffiliation {
 }
 
 // ============================================
-// INITIATIVES & INTERACTIONS
+// INTERACTIONS
 // ============================================
-
-export interface Initiative {
-  id: string;
-  name: string;
-  initiative_type: string | null;
-  event_id: string | null;
-  status: string;
-  owner: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface InitiativeEnrollment {
-  id: string;
-  initiative_id: string;
-  person_id: string | null;
-  organization_id: string | null;
-  status: string;
-  priority: string | null;
-  enrolled_at: string;
-}
 
 export interface Interaction {
   id: string;
   person_id: string | null;
   organization_id: string | null;
   event_id: string | null;
-  initiative_id: string | null;
   interaction_type: InteractionType;
   channel: InteractionChannel | null;
   direction: InteractionDirection | null;
@@ -313,7 +290,6 @@ export interface Sequence {
   name: string;
   channel: string;
   event_id: string | null;
-  initiative_id: string | null;
   steps: SequenceStep[];
   status: "draft" | "active" | "paused" | "completed";
   created_at: string;
@@ -350,6 +326,7 @@ export interface InboxSyncState {
   account_email: string;
   last_sync_at: string | null;
   last_email_id: string | null;
+  last_sent_email_id: string | null;
   unread_count: number;
   status: "connected" | "error" | "disconnected";
   error_message: string | null;
@@ -360,8 +337,11 @@ export interface InboundEmail {
   id: string;
   account_email: string;
   message_id: string;
+  thread_id: string | null;
+  direction: "inbound" | "outbound";
   from_address: string;
   from_name: string | null;
+  to_address: string | null;
   subject: string | null;
   body_preview: string | null;
   body_html: string | null;

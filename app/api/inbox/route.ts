@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { fetchEmails } from "@/lib/fastmail";
-import { correlateAndNotify } from "@/lib/inbox-correlator";
-
-const ACCOUNTS = ["jb@gofpblock.com", "wes@gofpblock.com"];
+import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { getInboxIdentities, runInboxSync } from "@/lib/inbox-sync";
 
 /**
  * GET /api/inbox
- * Fetch emails from both Fastmail accounts, correlate, store, and return.
+ * - With `?type=persons&search=…`, returns a person search for the
+ *   link-to-person modal.
+ * - Without parameters, triggers a Fastmail inbox sync across every
+ *   configured identity.
  */
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
@@ -25,111 +26,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ persons: persons || [] });
   }
 
-  // Original email sync logic continues below...
-  const apiKey = process.env.FASTMAIL_API_KEY;
-  if (!apiKey) {
+  const identities = getInboxIdentities();
+  if (!identities.length) {
     return NextResponse.json(
-      { error: "FASTMAIL_API_KEY not configured" },
+      { error: "No Fastmail identities configured" },
       { status: 500 }
     );
   }
 
-  const supabase = await createClient();
-  const allEmails: unknown[] = [];
-  const errors: Record<string, string> = {};
-
-  for (const account of ACCOUNTS) {
-    try {
-      // Get last sync state for this account
-      const { data: syncState } = await supabase
-        .from("inbox_sync_state")
-        .select("last_email_id")
-        .eq("account_email", account)
-        .single();
-
-      const sinceId = syncState?.last_email_id || undefined;
-
-      // Fetch emails from Fastmail
-      const emails = await fetchEmails(apiKey, account, sinceId);
-
-      if (emails.length === 0) continue;
-
-      // Upsert emails into inbound_emails (skip duplicates by message_id)
-      for (const email of emails) {
-        const { data: existing } = await supabase
-          .from("inbound_emails")
-          .select("id")
-          .eq("message_id", email.message_id)
-          .eq("account_email", account)
-          .limit(1)
-          .single();
-
-        if (existing) {
-          allEmails.push({ ...email, id: existing.id, already_stored: true });
-          continue;
-        }
-
-        const { data: inserted, error: insertError } = await supabase
-          .from("inbound_emails")
-          .insert(email)
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error(`[inbox] Insert error for ${email.message_id}:`, insertError);
-          continue;
-        }
-
-        if (inserted) {
-          // Run correlation + Telegram notification
-          const correlation = await correlateAndNotify(supabase, inserted);
-          allEmails.push({
-            ...inserted,
-            correlation,
-          });
-        }
-      }
-
-      // Update sync state
-      const latestEmailId = emails[0]?.message_id;
-      if (latestEmailId) {
-        await supabase
-          .from("inbox_sync_state")
-          .upsert(
-            {
-              account_email: account,
-              last_email_id: latestEmailId,
-              last_sync_at: new Date().toISOString(),
-              status: "connected",
-              error_message: null,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "account_email" }
-          );
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      errors[account] = message;
-      console.error(`[inbox] Sync error for ${account}:`, message);
-
-      // Update sync state to error
-      await supabase
-        .from("inbox_sync_state")
-        .upsert(
-          {
-            account_email: account,
-            status: "error",
-            error_message: message,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "account_email" }
-        );
-    }
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.NEXT_SUPABASE_SECRET_KEY;
+  if (!supabaseUrl || !serviceKey) {
+    return NextResponse.json(
+      { error: "Supabase not configured" },
+      { status: 500 }
+    );
   }
+  const supabase = createServiceClient(supabaseUrl, serviceKey);
 
+  const summary = await runInboxSync(supabase, identities);
   return NextResponse.json({
-    emails: allEmails,
-    errors: Object.keys(errors).length > 0 ? errors : undefined,
+    success: true,
+    ...summary,
     synced_at: new Date().toISOString(),
   });
 }
