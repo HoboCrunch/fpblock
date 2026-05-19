@@ -1,0 +1,10 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+sessions/*.session
+sessions/*.session-journal
+logs/
+data/*.csv
+!data/contacts.example.csv

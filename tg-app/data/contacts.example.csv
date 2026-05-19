@@ -1,0 +1,4 @@
+identifier,name,message
+@durov,Pavel,"Hey Pavel — quick note from EthCC prep."
++14155550123,Test User,"Hi {name}, this is a personalized test message."
+123456789,Numeric ID,"Plain user_id works too."
