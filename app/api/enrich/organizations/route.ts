@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
     organizationIds?: string[];
     stages?: string[];
     eventId?: string;
-    initiativeId?: string;
     icpBelow?: number;
     failedIncomplete?: boolean;
     peopleFinderConfig?: {
@@ -43,7 +42,6 @@ export async function POST(request: NextRequest) {
     organizationIds,
     stages = ["full"],
     eventId,
-    initiativeId,
     icpBelow,
     failedIncomplete,
     peopleFinderConfig,
@@ -69,21 +67,6 @@ export async function POST(request: NextRequest) {
       new Set(
         (participations ?? [])
           .map((p: { organization_id: string | null }) => p.organization_id)
-          .filter((id): id is string => id !== null)
-      )
-    );
-  } else if (initiativeId) {
-    // All orgs enrolled in an initiative
-    const { data: enrollments } = await supabase
-      .from("initiative_enrollments")
-      .select("organization_id")
-      .eq("initiative_id", initiativeId)
-      .not("organization_id", "is", null);
-
-    orgIds = Array.from(
-      new Set(
-        (enrollments ?? [])
-          .map((e: { organization_id: string | null }) => e.organization_id)
           .filter((id): id is string => id !== null)
       )
     );
@@ -140,9 +123,8 @@ export async function POST(request: NextRequest) {
         stages,
         org_count: orgIds.length,
         organization_ids: orgIds.length <= 500 ? orgIds : null,
-        target_label: organizationIds ? `${orgIds.length} selected` : eventId ? "from event" : initiativeId ? "from initiative" : failedIncomplete ? "retry failed/incomplete" : icpBelow != null ? `ICP below ${icpBelow}` : "unenriched",
+        target_label: organizationIds ? `${orgIds.length} selected` : eventId ? "from event" : failedIncomplete ? "retry failed/incomplete" : icpBelow != null ? `ICP below ${icpBelow}` : "unenriched",
         event_id: eventId ?? null,
-        initiative_id: initiativeId ?? null,
         icp_below: icpBelow ?? null,
       },
     })
@@ -199,7 +181,6 @@ export async function POST(request: NextRequest) {
           signals_created: totalSignals,
           duration_ms: result.durationMs,
           event_id: eventId ?? null,
-          initiative_id: initiativeId ?? null,
           icp_below: icpBelow ?? null,
         },
       })

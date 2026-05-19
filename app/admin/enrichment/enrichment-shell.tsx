@@ -14,7 +14,6 @@ import { queryKeys } from "@/lib/queries/query-keys";
 import { useEnrichmentJobs } from "@/lib/queries/use-enrichment-jobs";
 import { useEnrichmentItems } from "@/lib/queries/use-enrichment-items";
 import { useEvents } from "@/lib/queries/use-events";
-import { useInitiatives } from "@/lib/queries/use-initiatives";
 import { useEventsPersonIds } from "@/lib/queries/use-event-affiliations";
 import { cn } from "@/lib/utils";
 import { Settings2 } from "lucide-react";
@@ -135,7 +134,6 @@ export function EnrichmentShell() {
   const { data: jobs = [] } = useEnrichmentJobs();
   const { data: itemsData, isLoading: itemsLoading } = useEnrichmentItems({ tab: activeTab });
   const { data: eventsRaw = [] } = useEvents();
-  const { data: initiativesRaw = [] } = useInitiatives();
 
   // Compute concrete event ids and relation for the multi-event hook.
   // Hook stays disabled when not on persons tab, no concrete events selected,
@@ -166,14 +164,10 @@ export function EnrichmentShell() {
   const categories = itemsData?.categories ?? [];
   const sources = itemsData?.sources ?? [];
 
-  // Map events/initiatives to the { id, name } shape expected by sub-components
+  // Map events to the { id, name } shape expected by sub-components
   const events = useMemo(
     () => eventsRaw.map((e) => ({ id: e.id, name: e.name })),
     [eventsRaw]
-  );
-  const initiatives = useMemo(
-    () => initiativesRaw.map((i) => ({ id: i.id, name: i.name })),
-    [initiativesRaw]
   );
 
   // Saved lists (fetched directly since no existing hook matches the schema)
@@ -801,7 +795,6 @@ export function EnrichmentShell() {
             onFilterPersonsChange={setFilterPersons}
             onFilterOrgsChange={setFilterOrgs}
             events={events}
-            initiatives={initiatives}
             savedLists={savedLists}
             categories={categories}
             sources={sources}
@@ -857,7 +850,6 @@ export function EnrichmentShell() {
                 onFilterPersonsChange={setFilterPersons}
                 onFilterOrgsChange={setFilterOrgs}
                 events={events}
-                initiatives={initiatives}
                 savedLists={savedLists}
                 categories={categories}
                 sources={sources}

@@ -63,7 +63,18 @@ describe("ImportTable", () => {
     expect(next.columns[0].field).toBe("first_name");
   });
 
-  it("adds a new empty row when + Row is clicked", () => {
+  it("does not render an Add Row button", () => {
+    render(
+      <ImportTable
+        state={emptyState}
+        onChange={() => {}}
+        fieldSet={PERSON_FIELDS}
+      />
+    );
+    expect(screen.queryByRole("button", { name: /add row/i })).toBeNull();
+  });
+
+  it("appends a ghost row when typing makes the last row non-empty", () => {
     const onChange = vi.fn();
     render(
       <ImportTable
@@ -72,10 +83,44 @@ describe("ImportTable", () => {
         fieldSet={PERSON_FIELDS}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /add row/i }));
+    // emptyState has rows [["Alice","alice@..."], ["",""]] — type into the
+    // last row to consume the ghost.
+    const cells = screen.getAllByRole("textbox");
+    fireEvent.change(cells[2], { target: { value: "Bob" } });
     const next = onChange.mock.calls[0][0];
     expect(next.rows).toHaveLength(3);
+    expect(next.rows[1]).toEqual(["Bob", ""]);
     expect(next.rows[2]).toEqual(["", ""]);
+  });
+
+  it("does not append a ghost row when the last row is already empty", () => {
+    const onChange = vi.fn();
+    render(
+      <ImportTable
+        state={emptyState}
+        onChange={onChange}
+        fieldSet={PERSON_FIELDS}
+      />
+    );
+    // Edit a cell in a non-last row; last row stays empty → no expansion.
+    const cells = screen.getAllByRole("textbox");
+    fireEvent.change(cells[0], { target: { value: "Renamed" } });
+    const next = onChange.mock.calls[0][0];
+    expect(next.rows).toHaveLength(2);
+  });
+
+  it("does not render a Remove Row button on the last (ghost) row", () => {
+    render(
+      <ImportTable
+        state={emptyState}
+        onChange={() => {}}
+        fieldSet={PERSON_FIELDS}
+      />
+    );
+    // emptyState has 2 rows; only the non-ghost one should expose Remove Row.
+    expect(
+      screen.getAllByRole("button", { name: /remove row/i }),
+    ).toHaveLength(1);
   });
 
   it("adds a new column with empty field and corresponding empty cells", () => {
@@ -176,9 +221,11 @@ describe("ImportTable paste", () => {
     });
     const next = onChange.mock.calls[0][0];
     expect(next.columns).toHaveLength(2);
-    expect(next.rows).toHaveLength(2);
     expect(next.rows[0]).toEqual(["a", "b"]);
     expect(next.rows[1]).toEqual(["1", "2"]);
+    // Ghost row appended after the pasted data
+    expect(next.rows).toHaveLength(3);
+    expect(next.rows[2]).toEqual(["", ""]);
   });
 
   it("treats a single-value paste as a normal input change (no spread)", () => {

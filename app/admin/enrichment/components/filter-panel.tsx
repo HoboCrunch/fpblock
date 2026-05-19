@@ -17,7 +17,6 @@ export interface PersonFilterState {
   eventIds: string[];
   speakerOn: boolean;
   orgAffiliatedOn: boolean;
-  initiativeIds: string[];
   savedListIds: string[];
   sources: string[];
   statuses: string[];
@@ -34,7 +33,6 @@ export interface PersonFilterState {
 export interface OrgFilterState {
   search: string;
   eventIds: string[];
-  initiativeIds: string[];
   categories: string[];
   statuses: string[];
   icpMin: number | null;
@@ -49,7 +47,6 @@ export const EMPTY_FILTERS_PERSONS: PersonFilterState = {
   eventIds: [],
   speakerOn: true,
   orgAffiliatedOn: true,
-  initiativeIds: [],
   savedListIds: [],
   sources: [],
   statuses: [],
@@ -66,7 +63,6 @@ export const EMPTY_FILTERS_PERSONS: PersonFilterState = {
 export const EMPTY_FILTERS_ORGS: OrgFilterState = {
   search: "",
   eventIds: [],
-  initiativeIds: [],
   categories: [],
   statuses: [],
   icpMin: null,
@@ -148,7 +144,6 @@ export interface FilterPanelProps {
   onFilterPersonsChange: (f: PersonFilterState) => void;
   onFilterOrgsChange: (f: OrgFilterState) => void;
   events: { id: string; name: string }[];
-  initiatives: { id: string; name: string }[];
   savedLists: { id: string; name: string; count: number }[];
   categories: string[];
   sources: string[];
@@ -168,7 +163,6 @@ export const FilterPanel = React.memo(function FilterPanel({
   onFilterPersonsChange,
   onFilterOrgsChange,
   events,
-  initiatives,
   savedLists,
   categories,
   sources,
@@ -278,19 +272,6 @@ export const FilterPanel = React.memo(function FilterPanel({
           />
         </div>
       )}
-
-      {/* Initiative */}
-      <SectionLabel>Initiative</SectionLabel>
-      <MultiSelectField
-        placeholder="Any initiative"
-        options={initiatives.map((i) => ({ value: i.id, label: i.name }))}
-        values={f.initiativeIds}
-        onChange={(next) =>
-          tab === "persons"
-            ? updatePerson({ initiativeIds: next })
-            : updateOrg({ initiativeIds: next })
-        }
-      />
 
       {/* Saved list (persons only) */}
       {tab === "persons" && (

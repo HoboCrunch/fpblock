@@ -5,7 +5,7 @@ import { GlassSelect } from "@/components/ui/glass-select";
 
 /**
  * Generic filter bar used across entity list pages (persons, organizations,
- * interactions, initiatives, etc.). Consumers pass FilterConfig arrays with
+ * interactions, etc.). Consumers pass FilterConfig arrays with
  * entity-specific keys and option labels.
  */
 export interface FilterConfig {

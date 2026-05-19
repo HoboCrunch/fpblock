@@ -10,7 +10,7 @@ export function AdminShell({
   userEmail,
   children,
 }: {
-  events: { id: string; name: string }[];
+  events: { id: string; name: string; date_start: string | null }[];
   userEmail: string;
   children: React.ReactNode;
 }) {

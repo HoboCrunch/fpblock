@@ -118,10 +118,7 @@ export function applyFilter<T extends PersonItem | OrgItem>(
         if (!matchesNull && !matchesConcrete) return false;
       }
 
-      // initiativeIds, savedListIds: stub-applied below — see Task 6 for data wiring
-      // Until item shape includes initiative/list ids, these dimensions are no-ops.
-      // (We keep the filter fields wired so the UI works; integration with item data
-      // happens when the items hook returns those columns.)
+      // savedListIds: no-op until item shape includes list ids.
 
       if (!checkTriState(p.email, f.hasEmail)) return false;
       if (!checkTriState(p.linkedin_url, f.hasLinkedin)) return false;

@@ -41,7 +41,6 @@ export default async function PersonDetailPage({
     { data: affiliations },
     { data: eventParticipations },
     { data: interactions },
-    { data: enrollments },
     { data: lists },
   ] = await Promise.all([
     supabase
@@ -58,10 +57,6 @@ export default async function PersonDetailPage({
       .eq("person_id", id)
       .order("occurred_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false }),
-    supabase
-      .from("initiative_enrollments")
-      .select("*, initiative:initiatives(*, event:events(id, name))")
-      .eq("person_id", id),
     supabase.from("lists").select("id, name").order("name"),
   ]);
 
@@ -510,52 +505,6 @@ export default async function PersonDetailPage({
               Signals ({orgSignals.length})
             </h2>
             <SignalsTimeline signals={orgSignals} />
-          </div>
-        )}
-
-        {/* Initiative Enrollments */}
-        {(enrollments || []).length > 0 && (
-          <div>
-            <h2 className="text-lg font-medium font-[family-name:var(--font-heading)] mb-2">
-              Initiatives ({(enrollments || []).length})
-            </h2>
-            <div className="space-y-2">
-              {(enrollments || []).map((enrollment: any) => (
-                <GlassCard
-                  key={enrollment.id}
-                  className="flex items-center gap-3 !p-3"
-                >
-                  <Link
-                    href={`/admin/initiatives/${enrollment.initiative.id}`}
-                    className="text-[var(--accent-indigo)] hover:underline text-sm"
-                  >
-                    {enrollment.initiative.name}
-                  </Link>
-                  {enrollment.initiative.initiative_type && (
-                    <Badge>{enrollment.initiative.initiative_type}</Badge>
-                  )}
-                  <Badge
-                    variant={
-                      enrollment.status === "active"
-                        ? "approved"
-                        : enrollment.status
-                    }
-                  >
-                    {enrollment.status}
-                  </Badge>
-                  {enrollment.priority && (
-                    <span className="text-[var(--text-muted)] text-sm">
-                      Priority: {enrollment.priority}
-                    </span>
-                  )}
-                  {enrollment.initiative.event?.name && (
-                    <span className="text-[var(--text-muted)] text-sm">
-                      ({enrollment.initiative.event.name})
-                    </span>
-                  )}
-                </GlassCard>
-              ))}
-            </div>
           </div>
         )}
 

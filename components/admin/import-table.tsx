@@ -4,6 +4,7 @@ import { useId } from "react";
 import { X, Plus } from "lucide-react";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { GlassCard } from "@/components/ui/glass-card";
+import { cn } from "@/lib/utils";
 import type { FieldDef, ImportMode } from "@/lib/uploads/field-sets";
 import { parseClipboard } from "@/lib/uploads/paste-parser";
 
@@ -31,6 +32,14 @@ function makeColumnId(): string {
   return `col_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function ensureGhostRow(s: ImportTableState): ImportTableState {
+  const last = s.rows[s.rows.length - 1];
+  if (!last || last.some((v) => v !== "")) {
+    return { ...s, rows: [...s.rows, s.columns.map(() => "")] };
+  }
+  return s;
+}
+
 export function ImportTable({ state, onChange, fieldSet }: ImportTableProps) {
   const labelId = useId();
   const options = [
@@ -38,11 +47,15 @@ export function ImportTable({ state, onChange, fieldSet }: ImportTableProps) {
     ...fieldSet.map((f) => ({ value: f.id, label: f.label })),
   ];
 
+  function emit(next: ImportTableState) {
+    onChange(ensureGhostRow(next));
+  }
+
   function updateCell(r: number, c: number, value: string) {
     const rows = state.rows.map((row, ri) =>
       ri === r ? row.map((v, ci) => (ci === c ? value : v)) : row,
     );
-    onChange({ ...state, rows });
+    emit({ ...state, rows });
   }
 
   function handlePaste(r: number, c: number, e: React.ClipboardEvent<HTMLInputElement>) {
@@ -83,49 +96,38 @@ export function ImportTable({ state, onChange, fieldSet }: ImportTableProps) {
       }
     }
 
-    onChange({ ...state, columns, rows: padded });
+    emit({ ...state, columns, rows: padded });
   }
 
   function updateColumnField(c: number, field: string) {
     const columns = state.columns.map((col, ci) =>
       ci === c ? { ...col, field } : col,
     );
-    onChange({ ...state, columns });
-  }
-
-  function addRow() {
-    const rows = [...state.rows, state.columns.map(() => "")];
-    onChange({ ...state, rows });
+    emit({ ...state, columns });
   }
 
   function addColumn() {
     const columns = [...state.columns, { id: makeColumnId(), field: "" }];
     const rows = state.rows.map((row) => [...row, ""]);
-    onChange({ ...state, columns, rows });
+    emit({ ...state, columns, rows });
   }
 
   function removeColumn(c: number) {
     const columns = state.columns.filter((_, ci) => ci !== c);
     const rows = state.rows.map((row) => row.filter((_, ci) => ci !== c));
-    onChange({ ...state, columns, rows });
+    emit({ ...state, columns, rows });
   }
 
   function removeRow(r: number) {
     const rows = state.rows.filter((_, ri) => ri !== r);
-    onChange({ ...state, rows });
+    emit({ ...state, rows });
   }
+
+  const lastRowIndex = state.rows.length - 1;
 
   return (
     <GlassCard padding={false}>
       <div className="p-4 flex items-center gap-3 border-b border-[var(--glass-border)]">
-        <button
-          type="button"
-          aria-label="Add row"
-          onClick={addRow}
-          className="flex items-center gap-1 text-sm text-[var(--text-secondary)] hover:text-white"
-        >
-          <Plus className="h-4 w-4" /> Row
-        </button>
         <button
           type="button"
           aria-label="Add column"
@@ -143,7 +145,13 @@ export function ImportTable({ state, onChange, fieldSet }: ImportTableProps) {
           <thead>
             <tr className="border-b border-[var(--glass-border)]">
               {state.columns.map((col, ci) => (
-                <th key={col.id} className="px-3 py-2 align-bottom">
+                <th
+                  key={col.id}
+                  className={cn(
+                    "px-3 py-2 align-bottom",
+                    ci > 0 && "border-l border-[var(--glass-border)]/40",
+                  )}
+                >
                   <div className="flex items-center gap-2">
                     <GlassSelect
                       options={options}
@@ -170,34 +178,48 @@ export function ImportTable({ state, onChange, fieldSet }: ImportTableProps) {
             </tr>
           </thead>
           <tbody>
-            {state.rows.map((row, ri) => (
-              <tr
-                key={ri}
-                className="border-b border-[var(--glass-border)] last:border-0"
-              >
-                {row.map((value, ci) => (
-                  <td key={ci} className="px-3 py-1">
-                    <input
-                      type="text"
-                      value={value}
-                      onChange={(e) => updateCell(ri, ci, e.target.value)}
-                      onPaste={(e) => handlePaste(ri, ci, e)}
-                      className="w-full bg-transparent border-0 px-1 py-1 text-[var(--text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-orange)] rounded"
-                    />
+            {state.rows.map((row, ri) => {
+              const isGhost = ri === lastRowIndex;
+              return (
+                <tr
+                  key={ri}
+                  className={cn(
+                    "border-b border-[var(--glass-border)] last:border-0",
+                    isGhost && "opacity-60",
+                  )}
+                >
+                  {row.map((value, ci) => (
+                    <td
+                      key={ci}
+                      className={cn(
+                        "px-3 py-1",
+                        ci > 0 && "border-l border-[var(--glass-border)]/40",
+                      )}
+                    >
+                      <input
+                        type="text"
+                        value={value}
+                        onChange={(e) => updateCell(ri, ci, e.target.value)}
+                        onPaste={(e) => handlePaste(ri, ci, e)}
+                        className="w-full bg-transparent border-0 px-1 py-1 text-[var(--text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-orange)] rounded"
+                      />
+                    </td>
+                  ))}
+                  <td className="px-2">
+                    {!isGhost && (
+                      <button
+                        type="button"
+                        aria-label="Remove row"
+                        onClick={() => removeRow(ri)}
+                        className="text-[var(--text-muted)] hover:text-red-400"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
                   </td>
-                ))}
-                <td className="px-2">
-                  <button
-                    type="button"
-                    aria-label="Remove row"
-                    onClick={() => removeRow(ri)}
-                    className="text-[var(--text-muted)] hover:text-red-400"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
