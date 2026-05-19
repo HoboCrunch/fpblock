@@ -10,6 +10,7 @@ export interface DashboardStats {
   totalInteractions: number;
   repliedCount: number;
   statusCounts: Record<string, number>;
+  activeConversations: number;
 }
 
 export function useDashboardStats() {
@@ -22,17 +23,20 @@ export function useDashboardStats() {
         { count: personCount, error: personErr },
         { count: orgCount, error: orgErr },
         { data: interactionCounts, error: rpcErr },
+        { data: activeCount, error: activeErr },
       ] = await Promise.all([
         supabase.from("persons").select("id", { count: "exact", head: true }),
         supabase
           .from("organizations")
           .select("id", { count: "exact", head: true }),
         supabase.rpc("interaction_status_counts"),
+        supabase.rpc("active_conversations_count", { window_days: 14 }),
       ]);
 
       if (personErr) throw personErr;
       if (orgErr) throw orgErr;
       if (rpcErr) throw rpcErr;
+      if (activeErr) throw activeErr;
 
       const statusCounts: Record<string, number> = {};
       if (interactionCounts) {
@@ -56,6 +60,7 @@ export function useDashboardStats() {
         totalInteractions,
         repliedCount,
         statusCounts,
+        activeConversations: Number(activeCount ?? 0),
       } satisfies DashboardStats;
     },
   });
