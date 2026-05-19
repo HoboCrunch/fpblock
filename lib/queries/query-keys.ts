@@ -25,7 +25,6 @@ export const queryKeys = {
     },
   },
   events: { all: ["events"] as const },
-  initiatives: { all: ["initiatives"] as const },
   savedLists: { all: ["saved-lists"] as const },
   dashboard: { stats: ["dashboard", "stats"] as const },
   sequences: {

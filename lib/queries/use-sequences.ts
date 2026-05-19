@@ -11,7 +11,6 @@ export interface SequenceFilters {
   status?: string[];
   sendMode?: string;
   eventId?: string;
-  initiativeId?: string;
   hasEnrollments?: boolean;
 }
 
@@ -48,9 +47,6 @@ export function useSequences(filters: SequenceFilters = {}) {
             }
             if (filters.eventId) {
               q = q.eq("event_id", filters.eventId);
-            }
-            if (filters.initiativeId) {
-              q = q.eq("initiative_id", filters.initiativeId);
             }
             return q;
           },

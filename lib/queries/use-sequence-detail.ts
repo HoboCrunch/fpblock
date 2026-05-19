@@ -33,7 +33,6 @@ export interface SequenceEnrollmentWithPerson extends SequenceEnrollment {
 export interface SequenceDetail extends Sequence {
   enrollments: SequenceEnrollmentWithPerson[];
   event_name: string | null;
-  initiative_name: string | null;
   sender_profile: SenderProfile | null;
   delivery_stats: DeliveryStats;
   step_stats: Record<number, { sent: number; opened: number; replied: number }>;
@@ -66,13 +65,10 @@ export function useSequenceDetail(id: string) {
       const enrollments = (enrollmentsResult.data ?? []) as SequenceEnrollmentWithPerson[];
       const interactions = interactionsResult.data;
 
-      // Then parallel fetch: event name, initiative name, sender profile (conditional on FK)
-      const [eventResult, initiativeResult, senderResult] = await Promise.all([
+      // Then parallel fetch: event name, sender profile (conditional on FK)
+      const [eventResult, senderResult] = await Promise.all([
         sequence.event_id
           ? supabase.from("events").select("name").eq("id", sequence.event_id).single()
-          : Promise.resolve({ data: null, error: null }),
-        sequence.initiative_id
-          ? supabase.from("initiatives").select("name").eq("id", sequence.initiative_id).single()
           : Promise.resolve({ data: null, error: null }),
         sequence.sender_id
           ? supabase.from("sender_profiles").select("*").eq("id", sequence.sender_id).single()
@@ -80,7 +76,6 @@ export function useSequenceDetail(id: string) {
       ]);
 
       const event_name = (eventResult.data as { name: string } | null)?.name ?? null;
-      const initiative_name = (initiativeResult.data as { name: string } | null)?.name ?? null;
       const sender_profile = (senderResult.data as SenderProfile | null) ?? null;
 
       // Aggregate delivery stats
@@ -143,7 +138,6 @@ export function useSequenceDetail(id: string) {
         ...sequence,
         enrollments,
         event_name,
-        initiative_name,
         sender_profile,
         delivery_stats,
         step_stats,
