@@ -10,7 +10,7 @@
  *   3. Import EthCC sponsors → organizations + event_participations
  *   4. Import DC Blockchain speakers → persons + event_participations
  *   5. Import DC Blockchain sponsors → organizations + event_participations
- *   6. Import Genzio Sheet3 → orgs + persons + initiative + enrollments
+ *   6. Import Genzio Sheet3 → orgs + persons
  *   7. Import Genzio Exploration Leads (deduplicated against Sheet3)
  *   8. Import Genzio Intros Made → warm_intro interactions
  *   9. Run correlation pass
@@ -52,8 +52,6 @@ const stats = {
   organizations: 0,
   person_organization: 0,
   event_participations: 0,
-  initiatives: 0,
-  initiative_enrollments: 0,
   interactions: 0,
   correlations_auto_merged: 0,
   correlations_pending: 0,
@@ -251,11 +249,9 @@ async function clearExistingData() {
   const tables = [
     "correlation_candidates",
     "interactions",
-    "initiative_enrollments",
     "event_participations",
     "person_organization",
     "organization_signals",
-    "initiatives",
     "persons",
     "organizations",
     "events",
@@ -690,7 +686,7 @@ async function importDCSponsors(eventId: string) {
   }
 }
 
-async function importGenzioSheet3(initiativeId: string): Promise<Set<string>> {
+async function importGenzioSheet3(): Promise<Set<string>> {
   console.log("\n=== Importing Genzio Sheet3 ===");
   // Sheet3 does NOT have leading empty rows (header is line 1)
   const rows = parseCSV(path.join(BASE, "Genzio/FP Block Leads - Sheet3.csv"));
@@ -814,40 +810,10 @@ async function importGenzioSheet3(initiativeId: string): Promise<Set<string>> {
     console.log(`  Created ${inserted.length} person-org links`);
   }
 
-  // Initiative enrollments — enroll each org
-  const enrollRows: Record<string, unknown>[] = [];
-  for (const meta of personMeta) {
-    const orgId = orgCache.get(norm(meta.orgName));
-    if (orgId) {
-      enrollRows.push({
-        initiative_id: initiativeId,
-        organization_id: orgId,
-        status: "active",
-        priority: meta.priority?.toLowerCase() || "low",
-      });
-    }
-  }
-
-  // Deduplicate by org id
-  const seenOrgs = new Set<string>();
-  const dedupedEnrollRows = enrollRows.filter((r) => {
-    const orgId = r.organization_id as string;
-    if (seenOrgs.has(orgId)) return false;
-    seenOrgs.add(orgId);
-    return true;
-  });
-
-  if (dedupedEnrollRows.length > 0) {
-    const inserted = await batchInsert("initiative_enrollments", dedupedEnrollRows);
-    stats.initiative_enrollments += inserted.length;
-    console.log(`  Created ${inserted.length} initiative enrollments`);
-  }
-
   return importedCompanies;
 }
 
 async function importGenzioExplorationLeads(
-  initiativeId: string,
   importedFromSheet3: Set<string>
 ) {
   console.log("\n=== Importing Genzio Exploration Leads (deduplicated) ===");
@@ -979,26 +945,6 @@ async function importGenzioExplorationLeads(
     console.log(`  Created ${inserted.length} person-org links`);
   }
 
-  // Initiative enrollments
-  const enrollRows: Record<string, unknown>[] = [];
-  const seenOrgs = new Set<string>();
-  for (const meta of personMeta) {
-    const orgId = orgCache.get(norm(meta.orgName));
-    if (orgId && !seenOrgs.has(orgId)) {
-      seenOrgs.add(orgId);
-      enrollRows.push({
-        initiative_id: initiativeId,
-        organization_id: orgId,
-        status: "active",
-        priority: meta.priority?.toLowerCase() || "low",
-      });
-    }
-  }
-  if (enrollRows.length > 0) {
-    const inserted = await batchInsert("initiative_enrollments", enrollRows);
-    stats.initiative_enrollments += inserted.length;
-    console.log(`  Created ${inserted.length} initiative enrollments`);
-  }
 }
 
 async function importGenzioIntrosMade() {
@@ -1225,73 +1171,17 @@ async function main() {
   // 5. Import DC Blockchain sponsors
   await importDCSponsors(dcId);
 
-  // 6. Create "FP Block Partnerships" initiative
-  console.log("\n=== Creating Initiative ===");
-  const { data: initiative, error: initErr } = await supabase
-    .from("initiatives")
-    .upsert(
-      {
-        name: "FP Block Partnerships",
-        initiative_type: "outreach",
-        status: "active",
-        owner: "Genzio",
-        notes: "Imported from Genzio FP Block Leads spreadsheet",
-      },
-      { onConflict: "name" }
-    )
-    .select()
-    .single();
+  // 6. Import Genzio Sheet3
+  const importedCompanies = await importGenzioSheet3();
 
-  if (initErr || !initiative) {
-    console.error("Error creating initiative:", initErr?.message);
-    // Try without onConflict since there may not be a unique constraint
-    const { data: initFallback, error: initErr2 } = await supabase
-      .from("initiatives")
-      .insert({
-        name: "FP Block Partnerships",
-        initiative_type: "outreach",
-        status: "active",
-        owner: "Genzio",
-        notes: "Imported from Genzio FP Block Leads spreadsheet",
-      })
-      .select()
-      .single();
+  // 7. Import Genzio Exploration Leads (deduplicated)
+  await importGenzioExplorationLeads(importedCompanies);
 
-    if (initErr2 || !initFallback) {
-      console.error("Failed to create initiative:", initErr2?.message);
-      process.exit(1);
-    }
+  // 8. Import Genzio Intros Made
+  await importGenzioIntrosMade();
 
-    stats.initiatives++;
-    console.log(`  Created initiative: ${initFallback.name} (${initFallback.id})`);
-
-    // 7. Import Genzio Sheet3
-    const importedCompanies = await importGenzioSheet3(initFallback.id);
-
-    // 8. Import Genzio Exploration Leads (deduplicated)
-    await importGenzioExplorationLeads(initFallback.id, importedCompanies);
-
-    // 9. Import Genzio Intros Made
-    await importGenzioIntrosMade();
-
-    // 10. Correlation pass
-    await runCorrelationPass();
-  } else {
-    stats.initiatives++;
-    console.log(`  Created initiative: ${initiative.name} (${initiative.id})`);
-
-    // 7. Import Genzio Sheet3
-    const importedCompanies = await importGenzioSheet3(initiative.id);
-
-    // 8. Import Genzio Exploration Leads (deduplicated)
-    await importGenzioExplorationLeads(initiative.id, importedCompanies);
-
-    // 9. Import Genzio Intros Made
-    await importGenzioIntrosMade();
-
-    // 10. Correlation pass
-    await runCorrelationPass();
-  }
+  // 9. Correlation pass
+  await runCorrelationPass();
 
   // Final summary
   console.log("\n=== Seeding Complete ===");
@@ -1299,8 +1189,6 @@ async function main() {
   console.log(`  Organizations:           ${stats.organizations}`);
   console.log(`  Person-Org links:        ${stats.person_organization}`);
   console.log(`  Event participations:    ${stats.event_participations}`);
-  console.log(`  Initiatives:             ${stats.initiatives}`);
-  console.log(`  Initiative enrollments:  ${stats.initiative_enrollments}`);
   console.log(`  Interactions:            ${stats.interactions}`);
   console.log(`  Correlations merged:     ${stats.correlations_auto_merged}`);
   console.log(`  Correlations pending:    ${stats.correlations_pending}`);
