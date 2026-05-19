@@ -6,9 +6,9 @@ export interface PipelineContact {
   channel: string | null;
   pipeline_stage: string;
   last_updated: string;
-  initiative_id: string | null;
   event_id: string | null;
   event_name: string | null;
+  source: "script_backfill" | "script_send" | "sent_folder_reconciler" | "sequence" | "manual" | null;
 }
 
 export interface KanbanColumnDef {
