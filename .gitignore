@@ -49,3 +49,11 @@ next-env.d.ts
 
 # Local outreach data (PII: contact CSVs, send logs). Keep on disk only.
 /consensus
+/email-napalm*.csv
+/tg-napalm*.csv
+/tg-app/contacts/
+/tg-app/sessions/
+
+# Local Claude session settings + scratch
+/.claude/
+/scripts/_*
