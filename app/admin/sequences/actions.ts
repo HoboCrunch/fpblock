@@ -32,14 +32,20 @@ export async function updateSequenceSteps(
 
 export async function createSequence(data: {
   name: string;
-  channel: string;
   event_id: string | null;
   send_mode?: 'auto' | 'approval';
 }) {
   const supabase = await createClient();
   const { data: seq, error } = await supabase
     .from("sequences")
-    .insert({ ...data, steps: [], status: "draft" })
+    .insert({
+      ...data,
+      channel: "email",
+      steps: [],
+      status: "draft",
+      // exclude_bounced is always on — protect sender reputation.
+      schedule_config: { timing_mode: "relative", exclude_bounced: true },
+    })
     .select("id")
     .single();
   if (error) return { success: false, error: error.message };
@@ -255,9 +261,11 @@ export async function enrollFromSegment(
 
 export async function updateSequenceSchedule(id: string, scheduleConfig: SequenceSchedule) {
   const supabase = await createClient();
+  // Enforce always-on enrollment guards; the UI no longer exposes these toggles.
+  const safeConfig: SequenceSchedule = { ...scheduleConfig, exclude_bounced: true };
   const { error } = await supabase
     .from("sequences")
-    .update({ schedule_config: scheduleConfig, updated_at: new Date().toISOString() })
+    .update({ schedule_config: safeConfig, updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) return { success: false, error: error.message };
   revalidatePath(`/admin/sequences/${id}`);

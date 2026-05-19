@@ -479,22 +479,17 @@ export async function applySequenceEnrollFilters(
     .select("schedule_config")
     .eq("id", sequenceId)
     .single();
-  const schedule = (seq?.schedule_config ?? null) as {
+  // `exclude_bounced` is always enforced — UI no longer exposes the toggle.
+  const schedule = ((seq?.schedule_config ?? {}) as {
     exclude_bounced?: boolean;
     exclude_already_enrolled?: boolean;
-  } | null;
-  if (!schedule) {
-    return {
-      ids: personIds,
-      dropped: { bounced: 0, already_in_active_sequence: 0 },
-    };
-  }
+  });
 
   const drop = new Set<string>();
   let bounced = 0;
   let alreadyActive = 0;
 
-  if (schedule.exclude_bounced) {
+  {
     const bouncedIds = await resolveBouncedPersons(supabase);
     const intStatusIds = await resolveByInteractionStatus(
       supabase,
@@ -534,8 +529,8 @@ export async function applySequenceEnrollFilters(
 
   // Best-effort split of the drop reasons (a person may match both — counted
   // once toward `bounced` first to keep numbers simple).
-  if (schedule.exclude_bounced) bounced = totalDropped;
-  if (schedule.exclude_already_enrolled && !schedule.exclude_bounced) {
+  bounced = totalDropped;
+  if (schedule.exclude_already_enrolled && bounced === 0) {
     alreadyActive = totalDropped;
   }
 

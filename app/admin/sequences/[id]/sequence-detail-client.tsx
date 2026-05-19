@@ -15,25 +15,25 @@ import {
   searchPersons,
 } from "../actions";
 import { StepEditor } from "@/components/admin/step-editor";
-import { SequenceParametersPanel } from "@/components/admin/sequence-parameters-panel";
+import { SequenceConfigCard } from "@/components/admin/sequence-config-card";
+import { SequenceSettingsSheet } from "@/components/admin/sequence-settings-sheet";
 import { ActivityLog } from "@/components/admin/activity-log";
 import { TwoPanelLayout } from "@/components/admin/two-panel-layout";
 import { GlassCard } from "@/components/ui/glass-card";
-import { GlassSelect } from "@/components/ui/glass-select";
 import { GlassInput } from "@/components/ui/glass-input";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Play, Pause, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ArrowLeft, Play, Pause, Check, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import type { SequenceSchedule, SenderProfile } from "@/lib/types/database";
 
-const STATUS_OPTIONS = [
-  { value: "draft", label: "Draft" },
-  { value: "active", label: "Active" },
-  { value: "paused", label: "Paused" },
-  { value: "completed", label: "Completed" },
-];
+const STATUS_META: Record<string, { label: string; dot: string; bg: string }> = {
+  draft: { label: "Draft", dot: "bg-yellow-400", bg: "text-yellow-300" },
+  active: { label: "Active", dot: "bg-emerald-400", bg: "text-emerald-300" },
+  paused: { label: "Paused", dot: "bg-orange-400", bg: "text-orange-300" },
+  completed: { label: "Completed", dot: "bg-zinc-400", bg: "text-zinc-300" },
+};
 
 interface EnrollSearchResult {
   id: string;
@@ -71,6 +71,8 @@ export function SequenceDetailClient({ sequenceId }: Props) {
   const [enrollSearch, setEnrollSearch] = useState("");
   const [enrollResults, setEnrollResults] = useState<EnrollSearchResult[]>([]);
   const [enrollModalOpen, setEnrollModalOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: queryKeys.sequences.detail(sequenceId) });
@@ -132,7 +134,8 @@ export function SequenceDetailClient({ sequenceId }: Props) {
     else if (data.status === "paused") statusMutation.mutate("active");
   }
 
-  const canActivate = data && data.steps.length >= 1 && data.enrollments.length >= 1 && !!data.sender_id;
+  const canActivate =
+    data && data.steps.length >= 1 && data.enrollments.length >= 1 && !!data.sender_id;
 
   if (isLoading) {
     return (
@@ -168,86 +171,73 @@ export function SequenceDetailClient({ sequenceId }: Props) {
     data.status === "active" ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />;
 
   const defaultSchedule: SequenceSchedule = { timing_mode: "relative" };
+  const scheduleConfig = data.schedule_config ?? defaultSchedule;
+  const statusMeta = STATUS_META[data.status] ?? STATUS_META.draft;
 
-  // Sidebar content
+  // Sidebar — runtime data + configuration entry point
   const sidebar = (
     <>
-      {/* Enrollment Summary */}
-      <GlassCard>
-        <h3 className="text-sm font-semibold text-white mb-3">Enrollment</h3>
-        <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+      <SequenceConfigCard
+        sendMode={data.send_mode}
+        senderId={data.sender_id}
+        senderProfiles={senderProfiles}
+        scheduleConfig={scheduleConfig}
+        onSendModeChange={(m) => sendModeMutation.mutate(m)}
+        onOpenAdvanced={() => setSettingsOpen(true)}
+      />
+
+      {/* Enrollment */}
+      <GlassCard padding={false}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--glass-border)]">
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-indigo)]" />
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/85">
+              Enrollment
+            </h3>
+          </div>
+          <span className="text-[11px] text-white/80 tabular-nums">
+            {data.enrollments.length}
+          </span>
+        </div>
+        <div className="px-4 py-3 grid grid-cols-2 gap-y-1.5 text-[11px]">
           {[
             ["Active", enrollmentCounts.active ?? 0],
             ["Completed", enrollmentCounts.completed ?? 0],
             ["Paused", enrollmentCounts.paused ?? 0],
             ["Bounced", enrollmentCounts.bounced ?? 0],
           ].map(([label, count]) => (
-            <div key={label as string} className="flex justify-between">
+            <div key={label as string} className="flex justify-between pr-3">
               <span className="text-[var(--text-muted)]">{label}</span>
-              <span className="text-white font-medium">{count}</span>
+              <span className="text-white font-medium tabular-nums">{count}</span>
             </div>
           ))}
-          <div className="col-span-2 border-t border-[var(--glass-border)] pt-2 flex justify-between">
-            <span className="text-[var(--text-muted)]">Total</span>
-            <span className="text-white font-medium">{data.enrollments.length}</span>
-          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 px-4 pb-3">
           <button
             onClick={() => setEnrollModalOpen(true)}
-            className="flex-1 text-xs px-3 py-2 rounded-lg bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25 transition-colors"
+            className="flex-1 text-[11px] px-3 py-1.5 rounded-md bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25 transition-colors"
           >
-            Enroll Persons
+            Enroll
           </button>
           <Link
             href={`/admin/sequences/${sequenceId}/messages`}
-            className="flex-1 text-xs px-3 py-2 rounded-lg glass text-[var(--text-muted)] hover:text-white border border-[var(--glass-border)] transition-colors text-center"
+            className="flex-1 text-[11px] px-3 py-1.5 rounded-md text-[var(--text-muted)] hover:text-white border border-[var(--glass-border)] hover:border-[var(--glass-border-hover)] transition-colors text-center"
           >
-            View Messages →
+            Messages →
           </Link>
-        </div>
-      </GlassCard>
-
-      {/* Schedule Overview */}
-      <GlassCard>
-        <h3 className="text-sm font-semibold text-white mb-3">Schedule</h3>
-        <div className="space-y-1.5 text-xs">
-          <div className="flex justify-between">
-            <span className="text-[var(--text-muted)]">Mode</span>
-            <span className="text-white capitalize">{data.send_mode}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[var(--text-muted)]">Timing</span>
-            <span className="text-white capitalize">{data.schedule_config?.timing_mode ?? "relative"}</span>
-          </div>
-          {data.schedule_config?.send_window && (
-            <>
-              <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">Days</span>
-                <span className="text-white uppercase">
-                  {data.schedule_config.send_window.days.join(", ")}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">Hours</span>
-                <span className="text-white">
-                  {data.schedule_config.send_window.start_hour}:00–{data.schedule_config.send_window.end_hour}:00
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">TZ</span>
-                <span className="text-white">{data.schedule_config.send_window.timezone}</span>
-              </div>
-            </>
-          )}
         </div>
       </GlassCard>
 
       {/* Performance */}
       {hasSentMessages && (
-        <GlassCard>
-          <h3 className="text-sm font-semibold text-white mb-3">Performance</h3>
-          <div className="space-y-1.5 text-xs">
+        <GlassCard padding={false}>
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--glass-border)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/85">
+              Performance
+            </h3>
+          </div>
+          <div className="px-4 py-3 space-y-1.5 text-[11px]">
             {([
               ["Sent", data.delivery_stats.sent, null],
               ["Delivered", data.delivery_stats.delivered, data.delivery_stats.sent],
@@ -258,9 +248,13 @@ export function SequenceDetailClient({ sequenceId }: Props) {
             ] as [string, number, number | null][]).map(([label, count, base]) => (
               <div key={label} className="flex justify-between">
                 <span className="text-[var(--text-muted)]">{label}</span>
-                <span className="text-white">
+                <span className="text-white tabular-nums">
                   {count}
-                  {base ? ` (${Math.round((count / base) * 100)}%)` : ""}
+                  {base ? (
+                    <span className="text-[var(--text-muted)] ml-1">
+                      {Math.round((count / base) * 100)}%
+                    </span>
+                  ) : ""}
                 </span>
               </div>
             ))}
@@ -268,78 +262,19 @@ export function SequenceDetailClient({ sequenceId }: Props) {
         </GlassCard>
       )}
 
-      {/* Activity Log */}
-      <GlassCard>
-        <h3 className="text-sm font-semibold text-white mb-3">Activity</h3>
-        <ActivityLog sequenceId={sequenceId} />
+      {/* Activity */}
+      <GlassCard padding={false}>
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--glass-border)]">
+          <span className="h-1.5 w-1.5 rounded-full bg-white/40" />
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/85">
+            Activity
+          </h3>
+        </div>
+        <div className="px-4 py-3">
+          <ActivityLog sequenceId={sequenceId} />
+        </div>
       </GlassCard>
     </>
-  );
-
-  // Center panel header
-  const header = (
-    <div className="flex flex-wrap items-center gap-3 mb-6">
-      <Link
-        href="/admin/sequences"
-        className="flex items-center gap-1 text-sm text-[var(--text-muted)] hover:text-white transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Sequences
-      </Link>
-
-      <span className="text-[var(--glass-border)]">/</span>
-
-      {/* Inline-editable name */}
-      {editingName ? (
-        <input
-          autoFocus
-          className="text-xl font-semibold bg-transparent border-b border-[var(--accent-orange)]/50 text-white outline-none"
-          value={nameInput}
-          onChange={(e) => setNameInput(e.target.value)}
-          onBlur={handleNameSave}
-          onKeyDown={(e) => { if (e.key === "Enter") handleNameSave(); if (e.key === "Escape") setEditingName(false); }}
-        />
-      ) : (
-        <button
-          onClick={() => { setNameInput(data.name); setEditingName(true); }}
-          className="text-xl font-semibold text-white hover:text-[var(--accent-orange)] transition-colors"
-          title="Click to rename"
-        >
-          {data.name}
-        </button>
-      )}
-
-      {/* Status select */}
-      <div className="w-32">
-        <GlassSelect
-          options={STATUS_OPTIONS}
-          value={data.status}
-          onChange={(e) => statusMutation.mutate(e.target.value)}
-        />
-      </div>
-
-      {/* Channel badge (read-only) */}
-      <Badge variant="glass-indigo">{data.channel}</Badge>
-
-      <div className="flex-1" />
-
-      {/* Primary action */}
-      {primaryActionLabel && (
-        <button
-          onClick={handlePrimaryAction}
-          disabled={data.status === "draft" && !canActivate}
-          title={data.status === "draft" && !canActivate ? "Need ≥1 step, ≥1 enrollment, and a sender" : undefined}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
-            data.status === "active"
-              ? "bg-orange-500/15 text-orange-400 border border-orange-500/20 hover:bg-orange-500/25"
-              : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25"
-          }`}
-        >
-          {primaryActionIcon}
-          {primaryActionLabel}
-        </button>
-      )}
-    </div>
   );
 
   return (
@@ -352,23 +287,110 @@ export function SequenceDetailClient({ sequenceId }: Props) {
       )}
 
       <TwoPanelLayout sidebar={sidebar}>
-        {header}
+        {/* HEADER */}
+        <header className="mb-7">
+          <Link
+            href="/admin/sequences"
+            className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)] hover:text-white transition-colors mb-3"
+          >
+            <ArrowLeft className="h-3 w-3" />
+            All sequences
+          </Link>
 
-        {/* Centralized parameters panel — Delivery, Schedule, Throttle, Stop, Audience */}
-        <div className="mb-6">
-          <SequenceParametersPanel
-            channel={data.channel}
-            sendMode={data.send_mode}
-            senderId={data.sender_id}
-            senderProfiles={senderProfiles}
-            scheduleConfig={data.schedule_config ?? defaultSchedule}
-            onSendModeChange={(mode) => sendModeMutation.mutate(mode)}
-            onSenderChange={(id) => senderMutation.mutate(id)}
-            onScheduleChange={(config) => scheduleMutation.mutate(config)}
-          />
-        </div>
+          <div className="flex items-end justify-between gap-4 flex-wrap">
+            <div className="min-w-0 flex-1">
+              {editingName ? (
+                <input
+                  autoFocus
+                  className="text-3xl font-semibold tracking-tight bg-transparent border-b border-[var(--accent-orange)]/50 text-white outline-none w-full font-[family-name:var(--font-heading)]"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  onBlur={handleNameSave}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleNameSave(); if (e.key === "Escape") setEditingName(false); }}
+                />
+              ) : (
+                <button
+                  onClick={() => { setNameInput(data.name); setEditingName(true); }}
+                  className="text-3xl font-semibold tracking-tight text-white hover:text-[var(--accent-orange)] transition-colors text-left font-[family-name:var(--font-heading)] truncate max-w-full"
+                  title="Click to rename"
+                >
+                  {data.name}
+                </button>
+              )}
 
-        {/* Step editor */}
+              <div className="flex items-center gap-3 mt-2 text-[11px] text-[var(--text-muted)]">
+                {/* Status pill with dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setStatusMenuOpen((v) => !v)}
+                    onBlur={() => setTimeout(() => setStatusMenuOpen(false), 150)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg)]/60 hover:bg-[var(--glass-bg-hover)] transition-colors",
+                      statusMeta.bg
+                    )}
+                  >
+                    <span className={cn("h-1.5 w-1.5 rounded-full", statusMeta.dot)} />
+                    <span className="font-medium tracking-wide">{statusMeta.label}</span>
+                    <ChevronDown className="h-3 w-3 opacity-70" />
+                  </button>
+                  {statusMenuOpen && (
+                    <div className="absolute left-0 top-full mt-1 z-30 min-w-[140px] rounded-md bg-[#15151a] border border-[var(--glass-border-hover)] shadow-2xl py-1">
+                      {Object.entries(STATUS_META).map(([value, meta]) => (
+                        <button
+                          key={value}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            statusMutation.mutate(value);
+                            setStatusMenuOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-white hover:bg-white/5 transition-colors"
+                        >
+                          <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} />
+                          {meta.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <span className="opacity-50">·</span>
+                <span>{data.steps.length} step{data.steps.length === 1 ? "" : "s"}</span>
+                <span className="opacity-50">·</span>
+                <span>{data.enrollments.length} enrolled</span>
+                {!data.sender_id && (
+                  <>
+                    <span className="opacity-50">·</span>
+                    <button
+                      onClick={() => setSettingsOpen(true)}
+                      className="text-amber-400 hover:underline"
+                    >
+                      Set sender
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {primaryActionLabel && (
+              <button
+                onClick={handlePrimaryAction}
+                disabled={data.status === "draft" && !canActivate}
+                title={data.status === "draft" && !canActivate ? "Need ≥1 step, ≥1 enrollment, and a sender" : undefined}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed",
+                  data.status === "active"
+                    ? "bg-orange-500/15 text-orange-400 border border-orange-500/20 hover:bg-orange-500/25"
+                    : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25"
+                )}
+              >
+                {primaryActionIcon}
+                {primaryActionLabel}
+              </button>
+            )}
+          </div>
+        </header>
+
+        {/* STEP EDITOR — the hero of this page */}
         <StepEditor
           sequenceId={sequenceId}
           initialSteps={data.steps}
@@ -376,6 +398,19 @@ export function SequenceDetailClient({ sequenceId }: Props) {
           stepStats={data.step_stats}
         />
       </TwoPanelLayout>
+
+      {/* Settings slide-over */}
+      <SequenceSettingsSheet
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        sendMode={data.send_mode}
+        senderId={data.sender_id}
+        senderProfiles={senderProfiles}
+        scheduleConfig={scheduleConfig}
+        onSendModeChange={(m) => sendModeMutation.mutate(m)}
+        onSenderChange={(id) => senderMutation.mutate(id)}
+        onScheduleChange={(c) => scheduleMutation.mutate(c)}
+      />
 
       {/* Enroll modal */}
       {enrollModalOpen && (

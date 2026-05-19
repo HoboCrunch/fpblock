@@ -34,7 +34,7 @@ HeyReach for LinkedIn), inbox sync (Fastmail/JMAP), and reply correlation.
 interface Sequence {
   id: string;
   name: string;
-  channel: string;            // 'email' | 'linkedin' | 'twitter'
+  channel: string;            // always 'email' for new sequences (the UI no longer exposes other channels; legacy rows may still be 'linkedin' / 'twitter')
   event_id: string | null;
   steps: SequenceStep[];
   status: 'draft' | 'active' | 'paused' | 'completed';
@@ -45,6 +45,9 @@ interface Sequence {
   updated_at: string;
 }
 ```
+
+`createSequence` (`app/admin/sequences/actions.ts`) hard-codes
+`channel='email'` and seeds `schedule_config = { timing_mode: 'relative', exclude_bounced: true }` for every new row.
 
 `steps` is a JSONB array on the `sequences` row. Each step
 (`SequenceStep`, `lib/types/database.ts:292-298`):
@@ -83,19 +86,22 @@ Beyond the timing mode, `schedule_config` carries optional
 (undefined values are skipped — back-compat with sequences created before this
 field set existed):
 
-| Field                       | Where enforced                               | Effect                                                                   |
-| --------------------------- | -------------------------------------------- | ------------------------------------------------------------------------ |
-| `throttle_per_day`          | `app/api/sequences/send/route.ts`            | Per-sequence daily ceiling. When hit, defer scheduled rows by 1h.        |
-| `daily_send_cap_global`     | `app/api/sequences/send/route.ts`            | Hard cap across **all** sequences. Defers when hit.                      |
-| `min_interval_minutes`      | `app/api/sequences/send/route.ts`            | Minimum gap between any two sends to the same person. Defers if too soon. |
-| `quiet_hours_local: {start,end}` | `app/api/sequences/send/route.ts`       | Suppresses sends whose current zoned hour falls in the window. Wraps midnight. |
-| `stop_on_reply`             | `app/api/webhooks/sendgrid/route.ts`         | When a `reply` / `inbound_email` event lands, pauses active enrollments for that person whose parent sequence has the flag. |
-| `stop_on_click`             | `app/api/webhooks/sendgrid/route.ts`         | Same, on `click` events.                                                 |
-| `exclude_bounced`           | `lib/segments.ts` + `app/admin/sequences/actions.ts` | Drops persons with `persons.email_bounced_at` set or any interaction with `status='bounced'` in the last 90 days. |
-| `exclude_already_enrolled`  | `app/admin/sequences/actions.ts`             | At enroll time, drops persons currently `active` in any *other* sequence. |
+| Field                       | UI?  | Where enforced                                       | Effect                                                                   |
+| --------------------------- | ---- | ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| `throttle_per_day`          | yes  | `app/api/sequences/send/route.ts`                    | Per-sequence daily ceiling. When hit, defer scheduled rows by 1h.        |
+| `daily_send_cap_global`     | no   | `app/api/sequences/send/route.ts`                    | Hard cap across **all** sequences. UI control removed; honored only if set on legacy rows. |
+| `min_interval_minutes`      | no   | `app/api/sequences/send/route.ts`                    | Minimum gap between any two sends to the same person. UI control removed; legacy values still honored. |
+| `quiet_hours_local: {start,end}` | no | `app/api/sequences/send/route.ts`                  | Local-hour suppression window. UI control removed; legacy values still honored. |
+| `stop_on_reply`             | yes  | `app/api/webhooks/sendgrid/route.ts`                 | When a `reply` / `inbound_email` event lands, pauses active enrollments for that person whose parent sequence has the flag. |
+| `stop_on_click`             | yes  | `app/api/webhooks/sendgrid/route.ts`                 | Same, on `click` events.                                                 |
+| `exclude_bounced`           | **always on** | `lib/segments.ts` (`applySequenceEnrollFilters`)     | Always drops persons with `persons.email_bounced_at` set or any interaction with `status='bounced'` in the last 90 days. `updateSequenceSchedule` re-asserts `exclude_bounced: true` on every save; `applySequenceEnrollFilters` enforces unconditionally regardless of the stored flag. |
+| `exclude_already_enrolled`  | yes  | `app/admin/sequences/actions.ts`                     | At enroll time, drops persons currently `active` in any *other* sequence. |
 
-These are surfaced in the UI via `<SequenceParametersPanel>` and
-`<ParameterGuide>` — every field has a popover with description, when-to-use,
+The surviving knobs are surfaced through `<SequenceConfigCard>` (compact
+sidebar summary + inline send-mode toggle) and the
+`<SequenceSettingsSheet>` slide-over, which renders
+`<SequenceParametersPanel>` with full Delivery / Schedule / Pacing / Stop /
+Audience sections. Every field has a popover with description, when-to-use,
 and examples (`components/admin/parameter-guide.tsx`).
 
 ### Enrollment — `lib/types/database.ts:315-322`

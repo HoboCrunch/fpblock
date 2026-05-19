@@ -203,16 +203,26 @@ Each contact row in both views shows a **source chip** derived from the best-sta
 
 **URL:** `/admin/sequences`
 
-Manage outreach sequence templates.
+Manage outreach sequence templates. Email is the only channel; the create modal asks for Name, Send Mode (Auto / Approval), and an optional Event. Bounced contacts are always excluded.
 
 ### List View
 Table: Name, Channel, Steps count, Persons Enrolled, Completion Rate.
 
-### Detail View (`/admin/sequences/{id}`)
-- **Step timeline** — vertical list of glass cards, each showing: step number, delay (days), action type (initial/follow_up/break_up), subject template (email only), body template preview
-- **Step editor** — add/remove/edit steps, save via server action
-- **Enrolled persons** — right sidebar showing persons with their current step and status
+### Detail View (`/admin/sequences/{id}`) — refreshed 2026-05-19
+
+Layout puts the step composer in the spotlight; sequence-level configuration is demoted into the sidebar and a slide-over sheet.
+
+- **Header** — back link, large editable title, status pill with dropdown (Draft / Active / Paused / Completed), inline meta strip (`status · n steps · n enrolled · Set sender` warning when applicable), primary **Activate / Pause / Resume** button on the right.
+- **Step editor (main column, hero)** — vertical timeline of glass cards. Each card has a step-number bubble, action-type badge, "Day +N" label, and compact controls: a fixed-width Delay stepper (–/+ with `d` suffix, hidden for step 1) and a 3-button Action Type segmented control. Subject (email) and Body composable editors take the dominant width. Per-step actions: Preview, Up, Down, Delete. "Add step" is an inline pill at the bottom of the timeline.
+- **Sidebar:**
+  - **Configuration card** — sender summary, inline send-mode segmented toggle (Auto / Approval), one-line schedule summary, channel + stop-rule chips, "Edit" → opens the settings sheet.
+  - **Enrollment card** — counts (Active / Completed / Paused / Bounced) + Enroll and Messages buttons.
+  - **Performance card** — Sent, Delivered, Opened, Clicked, Replied, Bounced with percentages (only renders once anything has been sent).
+  - **Activity card** — recent enrollment status changes.
+- **Settings slide-over** — right-side sheet with the full parameter set: Delivery (sender + send-mode tiles) → Schedule → Pacing (`throttle_per_day` only) → Stop Rules (`stop_on_reply`, `stop_on_click`) → Audience (`exclude_already_enrolled`). Esc or backdrop click closes it.
 - **Enroll from Event** — modal launched from the enrollment panel. Event picker + the same `Speaker` / `Org-affiliated` toggle. Bulk-enrolls every person matching `getPersonIdsForEvent(event, relation)` via the `enrollFromEvent` server action, which upserts into `sequence_enrollments` with `onConflict: sequence_id,person_id` (safe to re-run).
+
+Controls dropped in May 2026 (no UI surface; legacy values still honored by the send pipeline if present): `daily_send_cap_global`, `min_interval_minutes`, `quiet_hours_local`, and the `exclude_bounced` toggle (now always-on).
 
 ## Inbox
 

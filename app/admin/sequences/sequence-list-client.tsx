@@ -33,13 +33,6 @@ const MODE_OPTIONS = [
   { value: "approval", label: "Approval" },
 ];
 
-const CHANNEL_OPTIONS = [
-  { value: "email", label: "Email" },
-  { value: "linkedin", label: "LinkedIn" },
-  { value: "twitter", label: "Twitter" },
-  { value: "telegram", label: "Telegram" },
-];
-
 export function SequenceListClient() {
   const queryClient = useQueryClient();
 
@@ -57,9 +50,8 @@ export function SequenceListClient() {
   // Create modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newChannel, setNewChannel] = useState("email");
   const [newEventId, setNewEventId] = useState("");
-  const [newSendMode, setNewSendMode] = useState("auto");
+  const [newSendMode, setNewSendMode] = useState<"auto" | "approval">("auto");
 
   // Data
   const { data: sequences = [], isLoading } = useSequences(filters);
@@ -138,13 +130,12 @@ export function SequenceListClient() {
     if (!newName.trim()) return;
     const result = await createSequence({
       name: newName.trim(),
-      channel: newChannel,
       event_id: newEventId || null,
+      send_mode: newSendMode,
     });
     if (result.success) {
       setShowCreateModal(false);
       setNewName("");
-      setNewChannel("email");
       setNewEventId("");
       setNewSendMode("auto");
       queryClient.invalidateQueries({ queryKey: queryKeys.sequences.all });
@@ -333,10 +324,15 @@ export function SequenceListClient() {
             onClick={() => setShowCreateModal(false)}
           />
           <div className="relative glass rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold font-[family-name:var(--font-heading)] text-white">
-                New Sequence
-              </h2>
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  Outreach
+                </p>
+                <h2 className="text-xl font-semibold font-[family-name:var(--font-heading)] text-white mt-0.5">
+                  New email sequence
+                </h2>
+              </div>
               <button
                 onClick={() => setShowCreateModal(false)}
                 className="text-[var(--text-muted)] hover:text-white transition-colors"
@@ -347,41 +343,59 @@ export function SequenceListClient() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1.5">Name</label>
+                <label className="block text-xs font-medium text-white/90 mb-1.5">Name</label>
                 <GlassInput
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. EthCC LinkedIn Outreach"
+                  placeholder="e.g. EthCC pre-event invites"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1.5">Channel</label>
-                <GlassSelect
-                  options={CHANNEL_OPTIONS}
-                  value={newChannel}
-                  onChange={(e) => setNewChannel(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1.5">
-                  Send Mode
+                <label className="block text-xs font-medium text-white/90 mb-1.5">
+                  Send mode
                 </label>
-                <GlassSelect
-                  options={[
-                    { value: "auto", label: "Auto — send automatically" },
-                    { value: "approval", label: "Approval — review before sending" },
-                  ]}
-                  value={newSendMode}
-                  onChange={(e) => setNewSendMode(e.target.value)}
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      { v: "auto", t: "Auto", h: "Send on schedule" },
+                      { v: "approval", t: "Approval", h: "Review every send" },
+                    ] as { v: "auto" | "approval"; t: string; h: string }[]
+                  ).map((opt) => {
+                    const active = newSendMode === opt.v;
+                    return (
+                      <button
+                        key={opt.v}
+                        type="button"
+                        onClick={() => setNewSendMode(opt.v)}
+                        className={cn(
+                          "rounded-lg px-3 py-2.5 text-left border transition-all",
+                          active
+                            ? "bg-[var(--accent-orange)]/15 border-[var(--accent-orange)]/40"
+                            : "bg-[var(--glass-bg)]/60 border-[var(--glass-border)] hover:border-[var(--glass-border-hover)]"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "text-sm font-medium",
+                            active ? "text-[var(--accent-orange)]" : "text-white"
+                          )}
+                        >
+                          {opt.t}
+                        </span>
+                        <span className="block text-[11px] text-[var(--text-muted)] mt-0.5">
+                          {opt.h}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm text-[var(--text-secondary)] mb-1.5">
-                  Event (optional)
+                <label className="block text-xs font-medium text-white/90 mb-1.5">
+                  Event <span className="text-[var(--text-muted)] font-normal">(optional)</span>
                 </label>
                 <GlassSelect
                   options={eventModalOptions}
@@ -390,12 +404,16 @@ export function SequenceListClient() {
                   placeholder="Select an event"
                 />
               </div>
+
+              <p className="text-[11px] text-[var(--text-muted)] leading-snug pt-1 border-t border-[var(--glass-border)]/60">
+                Channel is email. Bounced contacts are automatically excluded. You&apos;ll add steps, sender, and schedule on the next screen.
+              </p>
             </div>
 
-            <div className="flex items-center justify-end gap-3 mt-6">
+            <div className="flex items-center justify-end gap-2 mt-6">
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 rounded-lg text-sm text-[var(--text-secondary)] hover:text-white transition-colors"
+                className="px-3 py-1.5 rounded-lg text-sm text-[var(--text-secondary)] hover:text-white transition-colors"
               >
                 Cancel
               </button>
@@ -403,13 +421,13 @@ export function SequenceListClient() {
                 onClick={handleCreate}
                 disabled={!newName.trim()}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  "px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
                   "bg-[var(--accent-orange)] text-white hover:bg-[var(--accent-orange)]/90",
                   "shadow-lg shadow-[var(--accent-orange)]/20",
                   "disabled:opacity-50 disabled:cursor-not-allowed"
                 )}
               >
-                Create Sequence
+                Create
               </button>
             </div>
           </div>
