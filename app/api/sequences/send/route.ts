@@ -1,23 +1,32 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/sendgrid";
+import { sendTelegramNotification } from "@/lib/telegram";
 import type { SequenceSchedule } from "@/lib/types/database";
 
 export const maxDuration = 60;
 
-interface InteractionRow {
+const CLAIM_LIMIT = 50;
+const STUCK_MINUTES = 10;
+
+interface ClaimedInteraction {
   id: string;
   person_id: string;
   sequence_id: string;
   subject: string | null;
   body: string | null;
   detail: Record<string, unknown> | null;
+}
+
+interface JoinedInteraction extends ClaimedInteraction {
   persons: {
     id: string;
     email: string | null;
+    full_name: string | null;
   };
   sequences: {
     id: string;
+    name: string | null;
     sender_id: string | null;
     schedule_config: SequenceSchedule | null;
     sender_profiles: {
@@ -26,6 +35,15 @@ interface InteractionRow {
       name: string;
     } | null;
   };
+}
+
+interface TerminalFailure {
+  interactionId: string;
+  personName: string | null;
+  personEmail: string | null;
+  sequenceName: string | null;
+  reason: string;
+  kind: "send_failure" | "missing_email" | "missing_sender" | "stuck_sweep";
 }
 
 /** Start of the current UTC day, ISO. */
@@ -71,24 +89,86 @@ function minutesUntilHour(now: Date, endHour: number, timeZone: string): number 
   return 60;
 }
 
+/**
+ * Classify a SendGrid failure to decide retry behavior.
+ *
+ * - 4xx (except 408 timeout and 429 rate-limit): permanent client error, no retry.
+ * - 5xx, 408, 429, or network errors (no statusCode): transient, retry with backoff.
+ */
+function isPermanentFailure(statusCode: number | undefined): boolean {
+  if (statusCode === undefined) return false; // network/timeout — retry
+  if (statusCode === 408 || statusCode === 429) return false;
+  return statusCode >= 400 && statusCode < 500;
+}
+
+/** Backoff schedule for transient failures, in minutes. */
+const RETRY_BACKOFFS_MINUTES = [5, 30, 120];
+
 export async function POST() {
   const supabase = await createClient();
 
-  // Query scheduled interactions that are due
-  const { data: interactions, error: fetchError } = await supabase
-    .from("interactions")
-    .select(
-      "id, person_id, sequence_id, subject, body, detail, persons!inner(id, email), sequences!inner(id, sender_id, schedule_config, sender_profiles(id, email, name))"
-    )
-    .eq("status", "scheduled")
-    .lte("scheduled_at", new Date().toISOString())
-    .limit(50);
+  const terminalFailures: TerminalFailure[] = [];
 
-  if (fetchError) {
-    return NextResponse.json({ error: fetchError.message }, { status: 500 });
+  // ── 1) Stuck-row sweep ────────────────────────────────────────────────────
+  // Reverts any 'sending' row older than STUCK_MINUTES to 'scheduled'.
+  // Crashed handlers, function timeouts, and any residual race condition
+  // would otherwise leave rows stuck mid-flight forever.
+  const { data: sweptData, error: sweepError } = await supabase.rpc(
+    "reclaim_stuck_interactions",
+    { p_stuck_minutes: STUCK_MINUTES }
+  );
+  if (sweepError) {
+    console.error("[sequences/send] sweeper failed:", sweepError.message);
+  }
+  const swept = (sweptData ?? []) as ClaimedInteraction[];
+  if (swept.length > 0) {
+    console.log(`[sequences/send] swept ${swept.length} stuck row(s)`);
+    // Surface the sweep via Telegram alongside terminal failures.
+    for (const row of swept) {
+      terminalFailures.push({
+        interactionId: row.id,
+        personName: null,
+        personEmail: null,
+        sequenceName: null,
+        reason: "Row stuck in 'sending' — reverted to scheduled",
+        kind: "stuck_sweep",
+      });
+    }
   }
 
-  const rows = (interactions ?? []) as unknown as InteractionRow[];
+  // ── 2) Atomic claim ───────────────────────────────────────────────────────
+  // Single SQL statement flips up to CLAIM_LIMIT due rows from 'scheduled' to
+  // 'sending' via FOR UPDATE SKIP LOCKED, so overlapping invocations claim
+  // disjoint sets.
+  const { data: claimedData, error: claimError } = await supabase.rpc(
+    "claim_due_interactions",
+    { p_limit: CLAIM_LIMIT }
+  );
+  if (claimError) {
+    return NextResponse.json({ error: claimError.message }, { status: 500 });
+  }
+  const claimed = (claimedData ?? []) as ClaimedInteraction[];
+
+  if (claimed.length === 0) {
+    await maybeNotify(terminalFailures);
+    return NextResponse.json({ sent: 0, failed: 0, skipped: 0, deferred: 0, swept: swept.length });
+  }
+
+  // Hydrate joined data for the claimed ids.
+  const claimedIds = claimed.map((c) => c.id);
+  const { data: hydratedData, error: hydrateError } = await supabase
+    .from("interactions")
+    .select(
+      "id, person_id, sequence_id, subject, body, detail, persons!inner(id, email, full_name), sequences!inner(id, name, sender_id, schedule_config, sender_profiles(id, email, name))"
+    )
+    .in("id", claimedIds);
+
+  if (hydrateError) {
+    // The rows are still 'sending'; the sweeper will recover them on the next run.
+    return NextResponse.json({ error: hydrateError.message }, { status: 500 });
+  }
+  const rows = (hydratedData ?? []) as unknown as JoinedInteraction[];
+
   let sent = 0;
   let failed = 0;
   let skipped = 0;
@@ -122,6 +202,10 @@ export async function POST() {
     return n;
   }
 
+  /**
+   * Defer a claimed row back to 'scheduled' for later. Resets status because
+   * the atomic claim already flipped it to 'sending'.
+   */
   async function deferInteraction(
     interactionId: string,
     minutes: number,
@@ -130,7 +214,7 @@ export async function POST() {
     const next = new Date(Date.now() + minutes * 60 * 1000).toISOString();
     await supabase
       .from("interactions")
-      .update({ scheduled_at: next })
+      .update({ status: "scheduled", scheduled_at: next })
       .eq("id", interactionId);
     deferred++;
     console.log(
@@ -143,12 +227,13 @@ export async function POST() {
     const senderProfile = interaction.sequences?.sender_profiles;
     const schedule = interaction.sequences?.schedule_config ?? null;
 
-    // Skip if no email
+    // Skip if no email — terminal.
     if (!person.email) {
       await supabase
         .from("interactions")
         .update({
           status: "failed",
+          occurred_at: new Date().toISOString(),
           detail: {
             ...(interaction.detail ?? {}),
             error: "No email address",
@@ -156,15 +241,24 @@ export async function POST() {
         })
         .eq("id", interaction.id);
       skipped++;
+      terminalFailures.push({
+        interactionId: interaction.id,
+        personName: person.full_name,
+        personEmail: null,
+        sequenceName: interaction.sequences?.name ?? null,
+        reason: "No email address on person",
+        kind: "missing_email",
+      });
       continue;
     }
 
-    // Skip if no sender profile
+    // Skip if no sender profile — terminal.
     if (!senderProfile) {
       await supabase
         .from("interactions")
         .update({
           status: "failed",
+          occurred_at: new Date().toISOString(),
           detail: {
             ...(interaction.detail ?? {}),
             error: "No sender profile configured for sequence",
@@ -172,6 +266,14 @@ export async function POST() {
         })
         .eq("id", interaction.id);
       skipped++;
+      terminalFailures.push({
+        interactionId: interaction.id,
+        personName: person.full_name,
+        personEmail: person.email,
+        sequenceName: interaction.sequences?.name ?? null,
+        reason: "No sender profile configured for sequence",
+        kind: "missing_sender",
+      });
       continue;
     }
 
@@ -256,13 +358,7 @@ export async function POST() {
       }
     }
 
-    // Mark as sending
-    await supabase
-      .from("interactions")
-      .update({ status: "sending" })
-      .eq("id", interaction.id);
-
-    // Attempt to send
+    // Attempt to send. Status is already 'sending' from the atomic claim.
     const result = await sendEmail({
       to: person.email,
       from: { email: senderProfile.email, name: senderProfile.name },
@@ -284,50 +380,125 @@ export async function POST() {
         })
         .eq("id", interaction.id);
       sent++;
-      // Bump today-count cache so subsequent iterations see it.
       todayCounts.set(
         interaction.sequence_id,
         (todayCounts.get(interaction.sequence_id) ?? 0) + 1
       );
+      continue;
+    }
+
+    // Failure path: classify, then retry-with-backoff or fail terminally.
+    const currentDetail = interaction.detail ?? {};
+    const retryCount =
+      typeof currentDetail.retry_count === "number" ? currentDetail.retry_count : 0;
+    const permanent = isPermanentFailure(result.statusCode);
+    const exhausted = retryCount >= RETRY_BACKOFFS_MINUTES.length;
+
+    if (permanent || exhausted) {
+      await supabase
+        .from("interactions")
+        .update({
+          status: "failed",
+          occurred_at: new Date().toISOString(),
+          detail: {
+            ...currentDetail,
+            retry_count: retryCount,
+            last_error: result.error,
+            last_status_code: result.statusCode ?? null,
+            terminal_reason: permanent ? "permanent_4xx" : "retries_exhausted",
+          },
+        })
+        .eq("id", interaction.id);
+      failed++;
+      terminalFailures.push({
+        interactionId: interaction.id,
+        personName: person.full_name,
+        personEmail: person.email,
+        sequenceName: interaction.sequences?.name ?? null,
+        reason: `${permanent ? `Permanent error (HTTP ${result.statusCode})` : "Retries exhausted"}: ${result.error?.slice(0, 200) ?? "unknown"}`,
+        kind: "send_failure",
+      });
     } else {
-      const currentDetail = interaction.detail ?? {};
-      const retryCount = typeof currentDetail.retry_count === "number"
-        ? currentDetail.retry_count
-        : 0;
+      const nextRetry = retryCount + 1;
+      const backoffMinutes =
+        RETRY_BACKOFFS_MINUTES[retryCount] ??
+        RETRY_BACKOFFS_MINUTES[RETRY_BACKOFFS_MINUTES.length - 1];
+      const nextScheduledAt = new Date(
+        Date.now() + backoffMinutes * 60 * 1000
+      ).toISOString();
 
-      if (retryCount < 3) {
-        const nextRetry = retryCount + 1;
-        const backoffMs = nextRetry * 5 * 60 * 1000; // retry_count * 5 minutes
-        const nextScheduledAt = new Date(Date.now() + backoffMs).toISOString();
-
-        await supabase
-          .from("interactions")
-          .update({
-            status: "scheduled",
-            scheduled_at: nextScheduledAt,
-            detail: {
-              ...currentDetail,
-              retry_count: nextRetry,
-              last_error: result.error,
-            },
-          })
-          .eq("id", interaction.id);
-      } else {
-        await supabase
-          .from("interactions")
-          .update({
-            status: "failed",
-            detail: {
-              ...currentDetail,
-              retry_count: retryCount,
-              last_error: result.error,
-            },
-          })
-          .eq("id", interaction.id);
-        failed++;
-      }
+      await supabase
+        .from("interactions")
+        .update({
+          status: "scheduled",
+          scheduled_at: nextScheduledAt,
+          detail: {
+            ...currentDetail,
+            retry_count: nextRetry,
+            last_error: result.error,
+            last_status_code: result.statusCode ?? null,
+          },
+        })
+        .eq("id", interaction.id);
     }
   }
 
-  return NextResponse.json({ sent, failed, skipped, deferred });
+  await maybeNotify(terminalFailures);
+  return NextResponse.json({
+    sent,
+    failed,
+    skipped,
+    deferred,
+    swept: swept.length,
+  });
+}
+
+async function maybeNotify(failures: TerminalFailure[]) {
+  if (failures.length === 0) return;
+
+  const lines: string[] = [
+    `⚠️ <b>Sequence dispatcher: ${failures.length} issue${failures.length === 1 ? "" : "s"}</b>`,
+  ];
+
+  const sendFailures = failures.filter((f) => f.kind === "send_failure");
+  const sweeps = failures.filter((f) => f.kind === "stuck_sweep");
+  const missing = failures.filter(
+    (f) => f.kind === "missing_email" || f.kind === "missing_sender"
+  );
+
+  if (sendFailures.length > 0) {
+    lines.push("");
+    lines.push(`<b>Send failures (${sendFailures.length})</b>`);
+    for (const f of sendFailures.slice(0, 5)) {
+      const who = f.personName || f.personEmail || f.interactionId.slice(0, 8);
+      const seq = f.sequenceName ? ` · ${f.sequenceName}` : "";
+      lines.push(`• ${who}${seq} — ${f.reason}`);
+    }
+    if (sendFailures.length > 5) {
+      lines.push(`• …and ${sendFailures.length - 5} more`);
+    }
+  }
+
+  if (sweeps.length > 0) {
+    lines.push("");
+    lines.push(`<b>Stuck rows reclaimed (${sweeps.length})</b>`);
+    lines.push("Rows reverted from 'sending' to 'scheduled' after sitting >10m.");
+  }
+
+  if (missing.length > 0) {
+    lines.push("");
+    lines.push(`<b>Config gaps (${missing.length})</b>`);
+    for (const f of missing.slice(0, 3)) {
+      const who = f.personName || f.personEmail || f.interactionId.slice(0, 8);
+      lines.push(`• ${who} — ${f.reason}`);
+    }
+    if (missing.length > 3) {
+      lines.push(`• …and ${missing.length - 3} more`);
+    }
+  }
+
+  lines.push("");
+  lines.push("→ /admin/sequences/failures");
+
+  await sendTelegramNotification(lines.join("\n"));
 }
