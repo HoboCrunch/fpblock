@@ -17,7 +17,7 @@ Reference for every third-party service the Cannes app and bot talk to. All file
 - Browser: `lib/supabase/client.ts:5` (`createBrowserClient`, anon).
 - SSR/route handlers: `lib/supabase/server.ts:8` (cookie-aware, anon — auth flows on user's session).
 - Middleware (auth gate for `/admin`): `lib/supabase/middleware.ts:8`. The matcher itself is in `middleware.ts:18`.
-- Service-role server clients: directly via `createClient` in API routes — e.g. `app/api/inbox/sync/route.ts:37-38`, `app/api/enrich/cancel/route.ts:11-13`, `app/api/enrich/persons/route.ts:15-17`, `app/api/enrich/organizations/route.ts:14-16`.
+- Service-role server clients: directly via `createClient` in API routes — e.g. `app/api/inbox/sync/route.ts`, `app/api/enrich/cancel/route.ts:11-13`, `app/api/enrich/persons/route.ts:15-17`, `app/api/enrich/organizations/route.ts:14-16`.
 - Bot: `bot/src/supabase.ts:10` (service role + `ws` Realtime transport).
 
 **Realtime** — channel `crm-notifications` subscribes to `inbound_emails`, `interactions`, `job_log` (`bot/src/realtime.ts:34-72`). Tables enabled for replication in migration `supabase/migrations/021_enable_realtime.sql`.
@@ -110,19 +110,26 @@ If the team wants in-app Claude calls, that integration does not yet exist.
 
 ## Fastmail (JMAP)
 
-**Purpose** — pulls inbound emails so the bot/admin can show replies. Pairs with `inbox-correlator.ts` to match replies back to a `person`/`interaction`.
+**Purpose** — full 2-way email integration with two managed identities. Pulls inbound + Sent for each identity, threads them by JMAP `threadId`, runs correlation against pipeline persons, and sends replies via `EmailSubmission/set`. Pairs with `inbox-correlator.ts` for inbound matching and `lib/inbox-sync.ts → reconcileOutboundToInteraction` for outbound interaction reconciliation.
 
-**Auth** — `Authorization: Bearer <token>` to JMAP session URL `https://api.fastmail.com/jmap/session` (`lib/fastmail.ts:5, 42`).
+**Auth** — `Authorization: Bearer <token>` per identity to JMAP session URL `https://api.fastmail.com/jmap/session`. Each managed identity (`jb@gofpblock.com`, `wes@gofpblock.com`) lives in its **own** Fastmail account and authenticates with its own token. Identities are NOT pooled under a single JMAP account.
 
-**Env var** — `FASTMAIL_API_KEY`.
+**Env vars** — `FASTMAIL_API_KEY_JB`, `FASTMAIL_API_KEY_WES`. Identities are registered in `lib/inbox-sync.ts → getInboxIdentities()` which maps each identity email to its env var; add a third identity by appending `{ identity, envVar }` there and setting the matching `FASTMAIL_API_KEY_<HANDLE>` in the environment. The legacy single `FASTMAIL_API_KEY` is no longer used.
 
-**Client** — `lib/fastmail.ts` — `fetchEmails()` does session discovery → mailbox/query for INBOX → email/query + email/get with optional `sinceEmailId` anchor.
+**Optional kill switch** — `INBOX_TELEGRAM_DISABLED=1` short-circuits all `sendTelegramNotification` calls inside `correlateAndNotify` (env check at `lib/inbox-correlator.ts:200`). Set during bulk historical syncs to avoid Telegram flooding.
+
+**Client** — `lib/fastmail.ts`:
+- `fetchEmails(apiKey, identities[], sinceEmailId?, limit?)` — pulls Inbox; resolves each message to one of the caller's managed identities by recipient match (`to`/`cc`/`bcc`). Detects `anchorNotFound` from JMAP and retries without the cursor.
+- `fetchSentEmails(apiKey, identity, sinceEmailId?, limit?)` — pulls the Sent mailbox; emits records with `direction='outbound'`, `from_address = identity`, `to_address = primary recipient`.
+- `submitEmail(apiKey, { fromIdentity, to, cc, bcc, subject, bodyText, bodyHtml, inReplyToMessageId, referencesHeader })` — creates a draft, calls `EmailSubmission/set` with `onSuccessUpdateEmail` to atomically move draft → Sent. Threading uses the first-class `inReplyTo` + `references` Email properties (arrays of bare Message-Ids without angle brackets) — not `header:` accessors, which Fastmail rejects for these headers.
+- `getMessageIdHeader(apiKey, jmapEmailId)` — resolves the rfc822 `Message-Id` + existing `References` from a stored JMAP email so a reply can chain its threading headers correctly.
 
 **Entry points**
-- `app/api/inbox/route.ts:29` — list endpoint.
-- `app/api/inbox/sync/route.ts:13` — POST sync endpoint (called by the bot's `inbox:sync` button via `${APP_URL}/api/inbox/sync`).
-- `app/api/cron/inbox-sync/route.ts` — GET, both accounts in one pass, gated by `Authorization: Bearer $CRON_SECRET`. Designed for Vercel Cron; not currently scheduled in `vercel.json`.
-- `supabase/migrations/016_inbox_sync_cron.sql` — pg_cron schedule (every 15 min per account, staggered by 1 min) hitting `/api/inbox/sync`.
+- `app/api/inbox/route.ts` — `?type=persons&search=…` is person search for the Link-to-Person modal; otherwise triggers a sync.
+- `app/api/inbox/sync/route.ts` — `POST` sync endpoint, body ignored. Iterates every configured identity in one pass.
+- `app/api/cron/inbox-sync/route.ts` — `GET`, same single-pass logic, gated by `Authorization: Bearer $CRON_SECRET`.
+- `app/api/inbox/reply/route.ts` — `POST` reply send. Body: `{ identity, to[], cc?[], bcc?[], subject, bodyText, bodyHtml?, replyToJmapId? }`. Resolves the right JMAP token from the identity, looks up the original's rfc822 Message-Id when replying, submits, then triggers a per-identity sync so the new outbound row ingests immediately.
+- `supabase/migrations/034_inbox_sync_cron_hourly.sql` — current pg_cron schedule: one `sync-inbox` job hitting `/api/inbox/sync` hourly at `:00`. Supersedes the 15-min per-account jobs from migration 016 (the original two jobs are unscheduled by 034).
 
 ---
 

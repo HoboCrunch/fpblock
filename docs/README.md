@@ -22,7 +22,7 @@ The doc library is organized by concern. Start at **architecture.md** for the hi
 | File | What it covers |
 |---|---|
 | [api-routes.md](./backend/api-routes.md) | Every Next.js API route under `app/api/`: method, auth, inputs/outputs, side effects, file:line refs. Flags the routes currently lacking auth (the SendGrid webhook now does ECDSA verification via `@sendgrid/eventwebhook`). |
-| [database.md](./backend/database.md) | **Canonical schema reference** rebuilt from the 23 live migrations (001–025, with 006 + 018 absent). All ~26 tables with full column definitions, RLS posture, RPCs, views, triggers, cron, conventions, and the migration-immutability rule. |
+| [database.md](./backend/database.md) | **Canonical schema reference** rebuilt from live migrations (001–032, with 006 + 018 absent). All tables with full column definitions, RLS posture, RPCs (including `interaction_status_counts`, `active_conversations_count`), views, triggers, cron, conventions, and the migration-immutability rule. |
 | [enrichment.md](./backend/enrichment.md) | Org + person enrichment pipelines (Apollo / Perplexity / Gemini / People Finder). Stage-by-stage I/O, status lifecycle, the JSONB-vs-relational truth rule, source tagging tables, runbook, and 12 known gotchas. |
 | [sequences-messaging.md](./backend/sequences-messaging.md) | Sequences → enrollments → interactions, ComposableTemplate JSONB blocks, schedule modes, the legacy/current dual generate path, send pipeline (SendGrid retry/backoff + HeyReach), inbox sync (JMAP + cron), reply correlation, and replay/recovery runbooks. |
 
@@ -45,7 +45,7 @@ The doc library is organized by concern. Start at **architecture.md** for the hi
 
 | File | What it covers |
 |---|---|
-| [scripts-and-runbooks.md](./operations/scripts-and-runbooks.md) | Catalogue of every `scripts/*.ts` file. The "consensus" parallel-agent pipeline (5 speaker agents + 8 employee agents → merge → chunk → send), the `AGENT_BRIEF` vs `EMPLOYEE_BRIEF` split, day-by-day campaign runbooks. |
+| [scripts-and-runbooks.md](./operations/scripts-and-runbooks.md) | Catalogue of every `scripts/*.ts` file. The "consensus" parallel-agent pipeline (5 speaker agents + 8 employee agents → merge → chunk → send), the `AGENT_BRIEF` vs `EMPLOYEE_BRIEF` split, day-by-day campaign runbooks. Also: backfill runbooks for `backfill_script_sends.ts` (Stage 1: insert past sends into `interactions`) and `recorrelate_inbound.ts` (Stage 2: re-correlate inbound against new rows). |
 
 ### Specs / archive
 

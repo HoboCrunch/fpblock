@@ -57,14 +57,13 @@ External Services
 
 ## Data Model
 
-The CRM is built around five core entities:
+The CRM is built around four core entities:
 
 | Entity | Table | Description |
 |--------|-------|-------------|
 | **Persons** | `persons` | Individuals — speakers, founders, partners, etc. ICP scoring via `persons_with_icp` Postgres view |
 | **Organizations** | `organizations` | Companies, DAOs, protocols, funds. Tracks `enrichment_status`, `enrichment_stages` (per-stage jsonb), `last_enriched_at` |
 | **Events** | `events` | Conferences and gatherings |
-| **Initiatives** | `initiatives` | Campaign tracking units (e.g., "EthCC 2026 Outreach") |
 | **Interactions** | `interactions` | Unified timeline of all touchpoints (cold_email, cold_linkedin, reply, meeting, note, etc.) |
 | **Company Context** | `company_context` | Singleton — ICP criteria, positioning, language rules for enrichment |
 
@@ -72,7 +71,7 @@ The CRM is built around five core entities:
 - `person_organizations` — many-to-many with role/title
 - `event_participations` — many-to-many between persons/organizations and events, with roles (speaker, sponsor, attendee, organizer, panelist, etc.)
 - `person_event_affiliations` — trigger-maintained indirect person↔event link derived from `person_organization` × `event_participations`; lets callers target "persons affiliated through a participating org" as a first-class set
-- `interactions` — ties a person + initiative + channel into a single interaction record; replaces the old messages table
+- `interactions` — ties a person + channel into a single interaction record; replaces the old messages table
 - `persons_with_icp` — Postgres view that computes ICP score and enrichment status
 - `company_context` — singleton row storing ICP criteria, positioning, and language rules used by Gemini scoring
 
@@ -104,9 +103,6 @@ Cannes/
 │   │   ├── events/
 │   │   │   ├── page.tsx          # Events card grid
 │   │   │   └── [id]/page.tsx     # Event detail (tabs, participations)
-│   │   ├── initiatives/
-│   │   │   ├── page.tsx          # Initiatives list
-│   │   │   └── [id]/page.tsx     # Initiative detail + interactions
 │   │   ├── correlations/
 │   │   │   └── page.tsx          # Correlation review (merge/dismiss duplicate persons)
 │   │   ├── pipeline/
@@ -271,8 +267,7 @@ Cannes/
    → People Finder: Apollo People Search finds contacts → dedup → insert/merge persons
    → Updates org record + inserts signals + creates person records with source tracking
          │
-5. Create initiatives and outreach sequences
-   → /admin/initiatives (campaign grouping)
+5. Create outreach sequences
    → /admin/sequences (step editor with timing + templates)
          │
 6. Generate interactions (Gemini)
@@ -326,4 +321,3 @@ Cannes/
 - **Correlation engine**: Uses `pg_trgm` extension for fuzzy matching across name, email, LinkedIn, and Twitter fields. The `find_person_correlations` RPC surfaces potential duplicates; `merge_persons` RPC handles the merge, reassigning all related records to the surviving person.
 - **Company context**: ICP criteria, positioning, and language rules stored in `company_context` singleton table, editable via Settings > Company Profile. Gemini reads these at enrichment time, falling back to hardcoded defaults if the DB row is missing.
 - **Event participation model**: Events link to persons and organizations via `event_participations` with explicit roles (speaker, sponsor, attendee, organizer, panelist), replacing simple foreign keys. A companion table `person_event_affiliations` (migration 025) captures the indirect person↔event link that arises when a person belongs to an organization that participates in an event. It's maintained automatically by bidirectional Postgres triggers on `person_organization` and `event_participations`: inserts propagate for `is_current=true` links and any org participation; structural deletes cascade, but flipping `is_current` to false is intentionally a no-op so historical affiliation is preserved. Consumers (persons list, event detail, enrichment API, sequences enrollment, org detail stats) always go through `lib/queries/event-persons.ts` → `getPersonIdsForEvent(supabase, eventId, relation)`, supporting four relation modes: `direct`, `org_affiliated`, `either`, `both`.
-- **Initiative-based tracking**: Initiatives group interactions into campaigns, enabling per-campaign analytics and sequence management.

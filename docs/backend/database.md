@@ -13,7 +13,7 @@ If anything here disagrees with the migrations on disk, the migrations win — f
 
 ## 1. Migration history
 
-23 migrations on disk (numbers 001–025; 006 and 018 are intentionally absent — 018 was reserved for "people finder" but required no schema changes per the prior doc).
+29 migrations on disk (numbers 001–032; 006 and 018 are intentionally absent — 018 was reserved for "people finder" but required no schema changes per the prior doc).
 
 | # | File | Purpose |
 |---|------|---------|
@@ -25,13 +25,13 @@ If anything here disagrees with the migrations on disk, the migrations win — f
 | 007 | `supabase/migrations/007_sequences_uploads_inbox.sql` | Adds `sequences`, `sequence_enrollments`, `uploads`, `inbox_sync_state` (seeded with two accounts), `inbound_emails`. Adds `messages.replied_at`. Re-creates `message_status_counts()`. |
 | 008 | `supabase/migrations/008_sequence_status.sql` | Adds `sequences.status` text with CHECK in (`draft`,`active`,`paused`,`completed`). |
 | 009 | `supabase/migrations/009_rls_new_tables.sql` | RLS on the 007 tables. |
-| 010 | `supabase/migrations/010_crm_redesign_schema.sql` | **CRM redesign.** Creates `persons`, `organizations`, `person_organization`, `events_new`, `event_participations`, `initiatives`, `initiative_enrollments`, `interactions`, `correlation_candidates`. Renames `company_signals` → `organization_signals`. Renames `inbound_emails.contact_id` → `person_id`, `correlated_message_id` → `correlated_interaction_id`. Renames `uploads.contacts_created/companies_created` → `persons_created/organizations_created`. Renames `events_new` → `events` (after `events` → `events_old`). |
+| 010 | `supabase/migrations/010_crm_redesign_schema.sql` | **CRM redesign.** Creates `persons`, `organizations`, `person_organization`, `events_new`, `event_participations`, `initiatives`, `initiative_enrollments`, `interactions`, `correlation_candidates` (initiatives tables dropped later in migration 029). Renames `company_signals` → `organization_signals`. Renames `inbound_emails.contact_id` → `person_id`, `correlated_message_id` → `correlated_interaction_id`. Renames `uploads.contacts_created/companies_created` → `persons_created/organizations_created`. Renames `events_new` → `events` (after `events` → `events_old`). |
 | 011 | `supabase/migrations/011_crm_redesign_rls.sql` | RLS on every new CRM table (single policy each, `auth.uid() IS NOT NULL`). |
 | 012 | `supabase/migrations/012_crm_redesign_functions.sql` | `update_updated_at()` triggers on new tables; `persons_with_icp` view; `interaction_status_counts()` RPC; `find_person_correlations()`, `find_org_correlations()`; `merge_persons()`, `merge_organizations()`. |
 | 013 | `supabase/migrations/013_crm_drop_old_tables.sql` | Drops `contact_event`, `company_event`, `contact_company`, `messages`, `contacts`, `companies`, `events_old`. |
 | 014 | `supabase/migrations/014_crm_upsert_constraints.sql` | `organizations_name_unique` UNIQUE constraint. Rewrites correlation fns to use proper jsonb array filtering (the original used invalid `jsonb - 'null'::jsonb`). |
-| 015 | `supabase/migrations/015_crm_enrollment_constraint_and_correlation_fix.sql` | Re-adds partial unique indexes on `initiative_enrollments` for upsert support. `initiatives_name_unique`. Final correlation fn rewrite (proper VALUES + WHERE filter). |
-| 016 | `supabase/migrations/016_inbox_sync_cron.sql` | Cron jobs `sync-inbox-jb` (`*/15 * * * *`) and `sync-inbox-wes` (`1-59/15 * * * *`) that POST to the Next.js `/api/inbox/sync` route. **Hardcoded `https://YOUR_APP_URL` placeholder must be replaced post-deploy.** |
+| 015 | `supabase/migrations/015_crm_enrollment_constraint_and_correlation_fix.sql` | Re-adds partial unique indexes on `initiative_enrollments` for upsert support (later dropped by 029). `initiatives_name_unique` (later dropped by 029). Final correlation fn rewrite (proper VALUES + WHERE filter). |
+| 016 | `supabase/migrations/016_inbox_sync_cron.sql` | Cron jobs `sync-inbox-jb` (`*/15 * * * *`) and `sync-inbox-wes` (`1-59/15 * * * *`) that POST to the Next.js `/api/inbox/sync` route. **Hardcoded `https://YOUR_APP_URL` placeholder must be replaced post-deploy.** Superseded by 034. |
 | 017 | `supabase/migrations/017_fix_persons_with_icp_view.sql` | Rewrites `persons_with_icp` view with `DISTINCT ON (p.id)` ORDER BY `po.created_at DESC` to deduplicate when a person has multiple `is_primary = true` rows. |
 | 019 | `supabase/migrations/019_company_context.sql` | Singleton `company_context` table + RLS + seeded with default ICP framework, positioning, language rules. |
 | 020 | `supabase/migrations/020_person_lists.sql` | `person_lists`, `person_list_items` (saved lists for targeting). RLS on both. |
@@ -42,6 +42,13 @@ If anything here disagrees with the migrations on disk, the migrations win — f
 | 025 | `supabase/migrations/025_person_event_affiliations.sql` | New table `person_event_affiliations` + indexes + RLS. Two trigger functions (`tg_pea_sync_from_person_org`, `tg_pea_sync_from_event_participation`) keep it in sync from both sides. Idempotent backfill at the bottom. |
 | 026 | `supabase/migrations/026_persons_email_bounced.sql` | Adds `persons.email_bounced_at timestamptz` + partial index. Stamped by the SendGrid webhook on hard-bounce / dropped events; consumed by `schedule_config.exclude_bounced` at enroll time and by `lib/segments.ts`. |
 | 027 | `supabase/migrations/027_person_lists_filter_rules.sql` | Adds `person_lists.filter_rules jsonb` (nullable). Optional saved `PersonFilterRules` powering the filter sidebar on `/admin/lists/[id]`; null = manual list. Membership remains in `person_list_items` — filter_rules never auto-mutates membership. |
+| 028 | `supabase/migrations/028_sequence_send_atomic_claim.sql` | Atomic claim for sequence send (see migration for details). |
+| 029 | `supabase/migrations/029_drop_initiatives.sql` | **Initiatives removal.** Drops `initiatives` and `initiative_enrollments` tables (CASCADE) and removes `initiative_id` columns from `sequences` and `interactions` along with their indexes. The CRM no longer surfaces initiatives. |
+| 030 | `supabase/migrations/030_inbound_email_threads.sql` | Adds `inbound_emails.thread_id text` (indexed on `(thread_id)` and `(thread_id, received_at)`), `inbound_emails.direction text NOT NULL DEFAULT 'inbound'` (CHECK in (`inbound`,`outbound`)), and `inbound_emails.to_address text`. Adds `inbox_sync_state.last_sent_email_id text`. Enables the inbox to render JMAP-threaded 2-way conversations: outbound rows are pulled from each identity's Sent mailbox in the same sync pass, and the UI groups by `thread_id`. |
+| 031 | `supabase/migrations/031_interactions_message_id_index.sql` | Partial unique index `uniq_interactions_sendgrid_message_id` on `interactions ((detail->>'sendgrid_message_id')) WHERE (detail->>'sendgrid_message_id') IS NOT NULL`. Enforces idempotency for SendGrid-routed sends and the script-backfill pipeline — inserting a duplicate `sendgrid_message_id` is a conflict, not a silent duplicate. See `docs/backend/sequences-messaging.md` §4a for the `detail.source` enum that distinguishes sequence-sends from script-backfill vs. sent-folder-reconciler rows. |
+| 032 | `supabase/migrations/032_active_conversations_rpc.sql` | RPC `active_conversations_count(window_days int DEFAULT 14)` — see §4 below. |
+| 033 | `supabase/migrations/033_dashboard_rpcs.sql` | Additional dashboard RPCs. |
+| 034 | `supabase/migrations/034_inbox_sync_cron_hourly.sql` | Replaces the per-account 15-min pg_cron jobs from 016 with a single `sync-inbox` job at hourly cadence (`0 * * * *`). One POST to `/api/inbox/sync` covers every configured identity; body is ignored. Drops `sync-inbox-jb` and `sync-inbox-wes`. |
 
 Numbers 006 and 018 are skipped intentionally — no files exist in `supabase/migrations/`.
 
@@ -221,7 +228,7 @@ Indirect person↔event link maintained by triggers — *never* written by appli
 
 #### `person_lists` / `person_list_items` (`020_person_lists.sql`, `027_person_lists_filter_rules.sql`)
 
-Saved lists for targeting in enrichment, sequences, and initiatives. A list optionally carries a saved `PersonFilterRules` blob used by the filter sidebar on `/admin/lists/[id]` to grow membership; the rules never auto-mutate `person_list_items`.
+Saved lists for targeting in enrichment and sequences. A list optionally carries a saved `PersonFilterRules` blob used by the filter sidebar on `/admin/lists/[id]` to grow membership; the rules never auto-mutate `person_list_items`.
 
 `person_lists`:
 
@@ -276,7 +283,6 @@ Templates and enrollments for outreach sequences.
 | `name` | text | NO | — | |
 | `channel` | text | NO | — | "email", "linkedin", etc. |
 | `event_id` | uuid | YES | — | FK `events(id)` (rebound to new events table in 010) |
-| `initiative_id` | uuid | YES | — | FK `initiatives(id)` (added in 010) |
 | `steps` | jsonb | NO | `'[]'` | Array of step objects (schema below) |
 | `status` | text | YES | `'draft'` | CHECK in (`draft`,`active`,`paused`,`completed`) (added in 008) |
 | `send_mode` | text | NO | `'approval'` | (`023:1`) `'auto' \| 'approval'` |
@@ -285,7 +291,7 @@ Templates and enrollments for outreach sequences.
 | `created_at` | timestamptz | YES | `now()` | |
 | `updated_at` | timestamptz | YES | `now()` | |
 
-**Indexes:** `idx_sequences_event`, `idx_sequences_initiative`.
+**Indexes:** `idx_sequences_event`. (`idx_sequences_initiative` and the `initiative_id` column were dropped in 029.)
 
 **Steps schema** (post-023; see `lib/types/database.ts:292`):
 ```jsonc
@@ -324,7 +330,6 @@ Replaces the original `messages` table. Single timeline for cold emails, LinkedI
 | `person_id` | uuid | YES | — | FK `persons(id)` SET NULL |
 | `organization_id` | uuid | YES | — | FK `organizations(id)` SET NULL |
 | `event_id` | uuid | YES | — | FK `events(id)` SET NULL |
-| `initiative_id` | uuid | YES | — | FK `initiatives(id)` SET NULL |
 | `interaction_type` | text | NO | — | `cold_email \| cold_linkedin \| cold_twitter \| warm_intro \| meeting \| call \| event_encounter \| note \| research` |
 | `channel` | text | YES | — | `email \| linkedin \| twitter \| telegram \| in_person \| phone` |
 | `direction` | text | YES | — | `outbound \| inbound \| internal` |
@@ -341,7 +346,9 @@ Replaces the original `messages` table. Single timeline for cold emails, LinkedI
 | `created_at` | timestamptz | YES | `now()` | |
 | `updated_at` | timestamptz | YES | `now()` | Trigger |
 
-**Indexes:** `idx_interactions_person`, `idx_interactions_org`, `idx_interactions_event`, `idx_interactions_initiative`, `idx_interactions_status`, `idx_interactions_occurred` (DESC), `idx_interactions_type`.
+**Indexes:** `idx_interactions_person`, `idx_interactions_org`, `idx_interactions_event`, `idx_interactions_status`, `idx_interactions_occurred` (DESC), `idx_interactions_type`. (`idx_interactions_initiative` and the `initiative_id` column were dropped in 029.)
+
+**Partial unique index:** `uniq_interactions_sendgrid_message_id` (migration 031) on `(detail->>'sendgrid_message_id') WHERE (detail->>'sendgrid_message_id') IS NOT NULL`. Prevents duplicate rows when the same SendGrid message ID arrives via multiple paths (sequence send, script backfill, sent-folder reconciler). The `detail.source` field (`'sequence_send'`, `'script_send'`, `'script_backfill'`, `'sent_folder_reconciler'`) identifies which path wrote each row — see `docs/backend/sequences-messaging.md` §4a.
 
 **`detail` shapes by `interaction_type`:**
 - `warm_intro`: `{ introducer, relationship_strength, target_outcome, intro_status, follow_up_date }`
@@ -360,71 +367,43 @@ Per-account JMAP cursor state for Fastmail polling.
 | `id` | uuid PK | NO | `gen_random_uuid()` | |
 | `account_email` | text | NO | — | UNIQUE |
 | `last_sync_at` | timestamptz | YES | — | |
-| `last_email_id` | text | YES | — | JMAP cursor |
-| `unread_count` | int | YES | `0` | |
+| `last_email_id` | text | YES | — | JMAP cursor for the Inbox mailbox |
+| `last_sent_email_id` | text | YES | — | JMAP cursor for the Sent mailbox (added in 030) |
+| `unread_count` | int | YES | `0` | Computed from `inbound_emails` after each sync (inbound + unread only) |
 | `status` | text | YES | `'connected'` | CHECK in (`connected`,`error`,`disconnected`) |
 | `error_message` | text | YES | — | |
 | `updated_at` | timestamptz | YES | `now()` | |
 
-Seeded with `jb@gofpblock.com` and `wes@gofpblock.com`.
+Seeded with `jb@gofpblock.com` and `wes@gofpblock.com`. Each identity has its own JMAP account on Fastmail, authenticated with its own `FASTMAIL_API_KEY_<HANDLE>` token; the two cursor columns advance independently per identity.
 
-#### `inbound_emails` (`007_sequences_uploads_inbox.sql:62`, repointed in 010)
+#### `inbound_emails` (`007_sequences_uploads_inbox.sql:62`, repointed in 010, extended in 030)
+
+Holds every email message we sync from Fastmail — both directions. The name is historical; this table is the unified mail store, not just inbound.
 
 | Column | Type | Null | Default | Notes |
 |--------|------|------|---------|-------|
 | `id` | uuid PK | NO | `gen_random_uuid()` | |
-| `account_email` | text | NO | — | |
+| `account_email` | text | NO | — | The managed identity this row is attributed to (jb or wes). For inbound: the recipient identity in To/Cc/Bcc. For outbound: the sending identity. |
 | `message_id` | text | NO | — | UNIQUE — JMAP email ID, dedup key |
+| `thread_id` | text | YES | — | JMAP `threadId` (added in 030). Used by the inbox UI to group messages into conversations. Indexed. |
+| `direction` | text | NO | `'inbound'` | CHECK in (`inbound`,`outbound`). Added in 030. Outbound rows come from each identity's Sent mailbox during the same sync pass. |
 | `from_address` | text | NO | — | |
 | `from_name` | text | YES | — | |
+| `to_address` | text | YES | — | Primary recipient. Populated for outbound rows (the person/address sent to); also set for inbound rows to the matched managed identity. Added in 030. |
 | `subject` | text | YES | — | |
 | `body_preview` | text | YES | — | First 500 chars |
-| `body_html` | text | YES | — | |
-| `received_at` | timestamptz | NO | — | |
-| `is_read` | bool | YES | `false` | |
-| `person_id` | uuid | YES | — | FK `persons(id)` (renamed from `contact_id` in 010) |
+| `body_html` | text | YES | — | Sender-original HTML — rendered in a sandboxed iframe by the inbox UI |
+| `received_at` | timestamptz | NO | — | For outbound rows this is `sentAt` from JMAP, not the receive time |
+| `is_read` | bool | YES | `false` | Outbound rows are always inserted as read (`true`) |
+| `person_id` | uuid | YES | — | FK `persons(id)` (renamed from `contact_id` in 010). Outbound rows skip correlation, so this is null for them. |
 | `correlated_interaction_id` | uuid | YES | — | (renamed from `correlated_message_id` in 010; **FK was dropped on rename and not re-added** — this is now a loose uuid pointing into `interactions.id`) |
 | `correlation_type` | text | YES | — | CHECK in (`exact_email`,`domain_match`,`manual`,`none`) |
-| `raw_headers` | jsonb | YES | — | In-Reply-To, References |
+| `raw_headers` | jsonb | YES | — | In-Reply-To, References (used by `submitEmail` to thread replies). For outbound rows, also captures Cc list. |
 | `created_at` | timestamptz | YES | `now()` | |
 
-**Indexes:** `idx_inbound_emails_account`, `idx_inbound_emails_contact` (kept old name; really person), `idx_inbound_emails_received` (DESC), `idx_inbound_emails_from`.
+**Indexes:** `idx_inbound_emails_account`, `idx_inbound_emails_contact` (kept old name; really person), `idx_inbound_emails_received` (DESC), `idx_inbound_emails_from`, `idx_inbound_emails_thread_id`, `idx_inbound_emails_thread_received`.
 
-### 2.5 Initiatives & enrollment
-
-#### `initiatives` (`010_crm_redesign_schema.sql:124`)
-
-Campaigns / workstreams.
-
-| Column | Type | Null | Default | Notes |
-|--------|------|------|---------|-------|
-| `id` | uuid PK | NO | `gen_random_uuid()` | |
-| `name` | text | NO | — | UNIQUE since 015 (`initiatives_name_unique`) |
-| `initiative_type` | text | YES | — | "cold_outreach", "partnership", "event_prep", "research" |
-| `event_id` | uuid | YES | — | FK `events(id)` |
-| `status` | text | YES | `'active'` | "active", "paused", "completed" |
-| `owner` | text | YES | — | |
-| `notes` | text | YES | — | |
-| `created_at` | timestamptz | YES | `now()` | |
-| `updated_at` | timestamptz | YES | `now()` | Trigger |
-
-**Indexes:** `idx_initiatives_event`, `idx_initiatives_status`.
-
-#### `initiative_enrollments` (`010_crm_redesign_schema.sql:139`)
-
-| Column | Type | Null | Default | Notes |
-|--------|------|------|---------|-------|
-| `id` | uuid PK | NO | `gen_random_uuid()` | |
-| `initiative_id` | uuid | NO | — | FK `initiatives(id)` CASCADE |
-| `person_id` | uuid | YES | — | FK `persons(id)` CASCADE |
-| `organization_id` | uuid | YES | — | FK `organizations(id)` CASCADE |
-| `status` | text | YES | `'active'` | "active", "paused", "completed", "removed" |
-| `priority` | text | YES | — | high/medium/low |
-| `enrolled_at` | timestamptz | YES | `now()` | |
-
-**Constraints:** XOR `CHECK ((person_id IS NULL) != (organization_id IS NULL))`. Partial UNIQUE `(initiative_id, person_id) WHERE person_id IS NOT NULL` — original from 010 + duplicate-but-idempotent re-add `idx_ie_upsert_person/org` in 015 for PostgREST upsert support. **Indexes:** `idx_ie_initiative`, `idx_ie_person`, `idx_ie_org`.
-
-### 2.6 Auxiliary
+### 2.5 Auxiliary
 
 #### `correlation_candidates` (`010_crm_redesign_schema.sql:191`)
 
@@ -581,8 +560,6 @@ Seed row inserted by 019 with the production ICP/positioning/language-rules cont
 | `person_organization` | 011 |
 | `events` | 011 |
 | `event_participations` | 011 |
-| `initiatives` | 011 |
-| `initiative_enrollments` | 011 |
 | `interactions` | 011 |
 | `correlation_candidates` | 011 |
 | `sequences` | 009 |
@@ -627,12 +604,12 @@ Match reasons array contains any of `'exact_email'`, `'exact_linkedin'`, `'exact
 Same pattern: website 0.98, linkedin 0.97, name trigram ≥ 0.6.
 
 ### `merge_persons(winner_id uuid, loser_id uuid) → void` (`012:142`)
-Repoints all loser FKs to winner across `person_organization`, `event_participations`, `initiative_enrollments`, `interactions`, `sequence_enrollments`, `inbound_emails`. Pre-deletes `person_organization` rows that would violate the `(person_id, organization_id)` UNIQUE before the UPDATE. COALESCEs winner's null fields from loser. Deletes loser correlation candidates and the loser row itself.
+Repoints all loser FKs to winner across `person_organization`, `event_participations`, `interactions`, `sequence_enrollments`, `inbound_emails`. Pre-deletes `person_organization` rows that would violate the `(person_id, organization_id)` UNIQUE before the UPDATE. COALESCEs winner's null fields from loser. Deletes loser correlation candidates and the loser row itself.
 
 **NOT updated by this fn (gap to know about):** `person_event_affiliations`. Affiliations belonging to the loser would currently orphan or duplicate after merge unless the trigger is re-fired (the trigger only watches `person_organization`, which the merge does update). Verify before relying on merge in production.
 
 ### `merge_organizations(winner_id uuid, loser_id uuid) → void` (`012:180`)
-Same pattern across `person_organization`, `event_participations`, `initiative_enrollments`, `interactions`, `organization_signals`. COALESCEs winner null fields.
+Same pattern across `person_organization`, `event_participations`, `interactions`, `organization_signals`. COALESCEs winner null fields.
 
 ### `update_updated_at() → trigger` (`003_triggers.sql:6`, recreated `012:4`)
 Standard `NEW.updated_at = now()` trigger fn shared by every table that has an `updated_at`.
@@ -644,6 +621,29 @@ Standard `NEW.updated_at = now()` trigger fn shared by every table that has an `
 - `tg_pea_sync_from_person_org()` (`025:35`)
 - `tg_pea_sync_from_event_participation()` (`025:92`)
 See section 2.1 for behaviour.
+
+### `active_conversations_count(window_days int DEFAULT 14) → bigint` (migration 032)
+
+```sql
+-- pseudocode; see 032_active_conversations_rpc.sql for the exact query
+SELECT count(DISTINCT person_id)
+FROM persons p
+WHERE EXISTS (
+  SELECT 1 FROM interactions i
+  WHERE i.person_id = p.id
+    AND i.direction = 'outbound'
+    AND i.status IN ('sent','delivered','opened','replied')
+    AND i.occurred_at > now() - (window_days * 2 || ' days')::interval
+)
+AND EXISTS (
+  SELECT 1 FROM inbound_emails ie
+  WHERE ie.person_id = p.id
+    AND ie.direction = 'inbound'
+    AND ie.received_at > now() - (window_days || ' days')::interval
+);
+```
+
+LANGUAGE sql STABLE. Granted to `service_role` and `authenticated`. Powers the **Active Conversations** tile on the dashboard (default `window_days = 14`). The asymmetric window (2× for outbound, 1× for inbound) means a send qualifies as a "conversation" only when an inbound reply arrives within the shorter window. Call as `rpc('active_conversations_count')` or `rpc('active_conversations_count', { window_days: N })`.
 
 ### Legacy / orphaned
 - `message_status_counts()` (`005`, redefined `007:86`) — references the dropped `messages` table; calling it post-013 errors.
@@ -684,7 +684,6 @@ No materialized views exist.
 | `trg_persons_updated_at` | `persons` | BEFORE UPDATE | `update_updated_at()` | `012:13` |
 | `trg_organizations_updated_at` | `organizations` | BEFORE UPDATE | `update_updated_at()` | `012:14` |
 | `trg_person_org_updated_at` | `person_organization` | BEFORE UPDATE | `update_updated_at()` | `012:15` |
-| `trg_initiatives_updated_at` | `initiatives` | BEFORE UPDATE | `update_updated_at()` | `012:16` |
 | `trg_interactions_updated_at` | `interactions` | BEFORE UPDATE | `update_updated_at()` | `012:17` |
 | `trg_company_context_updated_at` | `company_context` | BEFORE UPDATE | `update_updated_at()` | `019:16` |
 | `trg_person_lists_updated_at` | `person_lists` | BEFORE UPDATE | `update_updated_at()` | `020:12` |
@@ -717,16 +716,11 @@ Both jobs use `pg_cron` with `pg_net` HTTP POST. Three scheduled jobs total.
 - Schedule: `30 * * * *` (every hour at :30)
 - Action: `POST {SUPABASE_URL}/functions/v1/sync-status`
 
-### `sync-inbox-jb` (`016_inbox_sync_cron.sql:17`)
-- Schedule: `*/15 * * * *` (`:00`, `:15`, `:30`, `:45`)
-- Action: `POST https://YOUR_APP_URL/api/inbox/sync` body `{"accountEmail":"jb@gofpblock.com"}`
+### `sync-inbox` (`034_inbox_sync_cron_hourly.sql`)
+- Schedule: `0 * * * *` (once per hour, on the hour)
+- Action: `POST https://YOUR_APP_URL/api/inbox/sync` body `{}` — the route iterates every configured identity using its own `FASTMAIL_API_KEY_<HANDLE>`.
 - **Hardcoded `YOUR_APP_URL` placeholder** — must be updated post-deploy.
-
-### `sync-inbox-wes` (`016_inbox_sync_cron.sql:33`)
-- Schedule: `1-59/15 * * * *` (`:01`, `:16`, `:31`, `:46`) — offset by 1 min from JB
-- Same pattern, body `{"accountEmail":"wes@gofpblock.com"}`
-
-Both inbox cron entries are guarded by `cron.unschedule(...) WHERE EXISTS` so the migration is idempotent.
+- Supersedes the per-account jobs from 016 (`sync-inbox-jb`, `sync-inbox-wes`); 034 unschedules both before registering the consolidated entry. All three `cron.unschedule(...)` calls are guarded by `WHERE EXISTS` so 034 is idempotent.
 
 ---
 
@@ -735,13 +729,13 @@ Both inbox cron entries are guarded by `cron.unschedule(...) WHERE EXISTS` so th
 - **Timestamps:** every table has `created_at timestamptz NOT NULL DEFAULT now()`. Tables that mutate also have `updated_at` driven by `update_updated_at()` BEFORE-UPDATE triggers.
 - **PKs:** uuid via `gen_random_uuid()` (Postgres built-in; the `uuid-ossp` extension is enabled by 001 but `gen_random_uuid()` is from `pgcrypto`/built-in).
 - **Soft deletes:** none. Deletes are real. Junction tables CASCADE; `interactions` and `inbound_emails` SET NULL.
-- **XOR junction pattern:** `event_participations` and `initiative_enrollments` use `CHECK ((person_id IS NULL) != (organization_id IS NULL))` so a row references exactly one side.
+- **XOR junction pattern:** `event_participations` uses `CHECK ((person_id IS NULL) != (organization_id IS NULL))` so a row references exactly one side.
 - **Source tagging:** `person.source` and `person_organization.source` track first-touch origin and are *never overwritten*. See 2.2.
 - **Naming:**
   - tables: snake_case singular (`persons`, `organizations`) or junction (`person_organization`).
   - indexes: `idx_<table>_<col>` (some legacy ones — `idx_inbound_emails_contact`, `idx_company_signals_company_id` — kept old names after column renames in 010).
   - triggers: `trg_<table>_<purpose>`.
-  - constraints: `<table>_<col>_unique` for added uniques (`organizations_name_unique`, `initiatives_name_unique`).
+  - constraints: `<table>_<col>_unique` for added uniques (`organizations_name_unique`).
   - RPCs: snake_case verb-first (`merge_persons`, `find_person_correlations`).
 - **Renames in 010:** `contact_id → person_id` on `inbound_emails` and `sequence_enrollments`; `company_id → organization_id` on `organization_signals`; `correlated_message_id → correlated_interaction_id`. Some downstream index names were not renamed (see notes).
 - **Enrichment data truth:** the `enrichment_stages` jsonb is a log only. Derive whether enrichment "produced results" from real columns (`organizations.icp_score`, `organizations.description`, person counts on `person_organization`).
@@ -750,7 +744,7 @@ Both inbox cron entries are guarded by `cron.unschedule(...) WHERE EXISTS` so th
 
 ## 9. Migration practices
 
-- **Add migrations as `NNN_short_name.sql`** under `supabase/migrations/`, monotonically numbered. The current next number is `026`.
+- **Add migrations as `NNN_short_name.sql`** under `supabase/migrations/`, monotonically numbered. The current next number is `033`.
 - **Do not edit applied migrations.** Once a migration has been run against any environment (local, staging, prod), it is immutable. Add a follow-up migration instead. Migrations 014 and 015 demonstrate this — they re-defined `find_person_correlations` and `find_org_correlations` rather than editing 012.
 - **Idempotency:** prefer `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`. For `cron.schedule`, guard with `cron.unschedule(...) WHERE EXISTS (...)` — see 016 for the pattern.
 - **Renames:** when renaming a column referenced by indexes, drop+recreate the index too (010 missed a couple, see notes on `idx_inbound_emails_contact` and `idx_company_signals_company_id`).

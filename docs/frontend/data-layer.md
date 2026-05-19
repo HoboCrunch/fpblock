@@ -35,7 +35,7 @@ export function createClient() {
 Async, cookie-aware client used in:
 
 - `app/admin/layout.tsx` for the auth check.
-- Every server `page.tsx` that does data prep (orgs, persons, events, dashboard, inbox, initiatives, correlations, pipeline).
+- Every server `page.tsx` that does data prep (orgs, persons, events, dashboard, inbox, correlations, pipeline).
 - API routes under `app/api/**`.
 
 The `setAll` callback wraps `cookieStore.set` in a try/catch — Server Components can't write cookies, so failures are silently ignored (line 24).
@@ -69,7 +69,7 @@ fetchAll<T>(
 ): Promise<{ data: T[]; count: number }>
 ```
 
-Use whenever a query could exceed 1000 rows. Avoid for small fixed-size lists (events, initiatives) — direct queries are simpler.
+Use whenever a query could exceed 1000 rows. Avoid for small fixed-size lists (events) — direct queries are simpler.
 
 Note: `lib/queries/use-enrichment-items.ts:78-90` defines its **own** `fetchAll` helper inline — duplicate logic that should call the shared `lib/supabase/fetch-all.ts` instead.
 
@@ -113,7 +113,6 @@ export const queryKeys = {
   persons:       { all, list(filters), detail(id) },
   enrichment:    { all, jobs: { all, detail(id) }, items: { all, list(tab, filters) } },
   events:        { all },
-  initiatives:   { all },
   savedLists:    { all },
   dashboard:     { stats },
   sequences:     { all, list(filters), detail(id), messages: { all(id), list(id, filters) }, stats(id) },
@@ -187,12 +186,6 @@ All hooks live under `lib/queries/use-*.ts`. Every hook is `"use client"` and re
 - **Key:** `queryKeys.events.all`.
 - **Used by:** the event scope dropdown in many places (Persons, Enrichment, Sequences). Also the source for the sidebar's events sub-nav (which gets a server-side prefetched list, not this hook).
 
-### `useInitiatives()` — `lib/queries/use-initiatives.ts:8-19`
-
-- **Returns:** `InitiativeWithEvent[]` (initiative joined with the optional event).
-- **Polling:** none.
-- **Key:** `queryKeys.initiatives.all`.
-
 ### `useOrganizations(params?)` — `lib/queries/use-organizations.ts:7-39`
 
 - **Returns:** `Organization[]`
@@ -221,14 +214,14 @@ All hooks live under `lib/queries/use-*.ts`. Every hook is `"use client"` and re
 ### `useSequences(filters)` — `lib/queries/use-sequences.ts:13-128`
 
 - **Returns:** `SequenceWithStats[]` — sequences joined with enrollment counts, interaction counts, next-send timestamp, and event name.
-- **Filter params:** `search`, `status[]`, `sendMode`, `eventId`, `initiativeId`, `hasEnrollments`. Some filters apply server-side; `search` and `hasEnrollments` apply client-side.
+- **Filter params:** `search`, `status[]`, `sendMode`, `eventId`, `hasEnrollments`. Some filters apply server-side; `search` and `hasEnrollments` apply client-side.
 - **Polling:** none.
 - **Key:** `queryKeys.sequences.list(filters)`.
 - **Implementation:** parallel fetch of sequences, enrollments, interactions, events; aggregates client-side.
 
 ### `useSequenceDetail(id)` — `lib/queries/use-sequence-detail.ts:31-100`
 
-- **Returns:** `SequenceDetail` — sequence + enrollments (with person join) + delivery_stats (counts by status) + per-step stats + linked event/initiative/sender names.
+- **Returns:** `SequenceDetail` — sequence + enrollments (with person join) + delivery_stats (counts by status) + per-step stats + linked event/sender names.
 - **Polling:** none.
 - **Key:** `queryKeys.sequences.detail(id)`.
 - **Enabled:** only when `id` is non-empty.
@@ -252,9 +245,18 @@ All hooks live under `lib/queries/use-*.ts`. Every hook is `"use client"` and re
 - **Polling:** none.
 - **Key:** `["org-event-propagation"]` — **inline, not in the query keys factory** (anti-pattern, see "Inconsistencies" below).
 
+### `useEntityName(kind, id)` — `lib/queries/use-entity-name.ts`
+
+- **Returns:** the entity's display name (`name` or `full_name`) or `null`.
+- **Supported `kind`:** `events`, `persons`, `organizations`, `lists` (resolves to table `person_lists`).
+- **Guard:** the hook returns disabled unless `id` is a valid UUID (`isUuid()` check), so it's safe to call with `null` / non-UUID values — no wasted query.
+- **Polling:** none. `staleTime` = 5 minutes — revisiting a detail page shows the name from cache without a refetch.
+- **Key:** `["entity-name", kind, id]` — **inline, not in the query keys factory** (same anti-pattern as `useOrgEventPropagation`; consolidate when the factory is overhauled).
+- **Consumer:** `components/admin/breadcrumb.tsx` — turns `/admin/events/{uuid}` into a breadcrumb that reads the event name instead of the raw UUID.
+
 ### Hook count
 
-The memory note says "8 hooks." The actual count is **13** `lib/queries/use-*.ts` files (counted: dashboard-stats, enrichment-items, enrichment-jobs, event-affiliations [exports 2 hooks], events, initiatives, org-event-propagation, organizations, persons, saved-lists, sequence-detail, sequence-messages, sequence-stats, sequences). The memory note is stale — update it.
+The memory note says "8 hooks." The actual count is **13** `lib/queries/use-*.ts` files (counted: dashboard-stats, enrichment-items, enrichment-jobs, entity-name, event-affiliations [exports 2 hooks], events, org-event-propagation, organizations, persons, saved-lists, sequence-detail, sequence-messages, sequence-stats, sequences). The memory note is stale — update it.
 
 ---
 

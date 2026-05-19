@@ -86,7 +86,8 @@ All `process.env.*` references in TypeScript across `app/`, `lib/`, `bot/`, `scr
 | `PERPLEXITY_API_KEY` | Perplexity research stage | Secret | `lib/enrichment/perplexity.ts:162` |
 | `GEMINI_API_KEY` | Gemini synthesis stage | Secret | `lib/enrichment/gemini.ts:177` |
 | `SENDGRID_API_KEY` | Outbound email | Secret | `lib/sendgrid.ts:16` |
-| `FASTMAIL_API_KEY` | JMAP for inbox sync | Secret | `app/api/inbox/route.ts:29`, `app/api/inbox/sync/route.ts:13` |
+| `FASTMAIL_API_KEY_JB`, `FASTMAIL_API_KEY_WES` | One JMAP token per managed identity; used by inbox sync + reply send | Secret | `lib/inbox-sync.ts → getInboxIdentities()`, `app/api/inbox/sync/route.ts`, `app/api/inbox/reply/route.ts` |
+| `INBOX_TELEGRAM_DISABLED` | Optional kill switch — when `1`, the inbox correlator skips all Telegram notifications | Secret | `lib/inbox-correlator.ts:200` |
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot API auth (used by both bot and app-side notifier) | Secret | `bot/src/index.ts:18`, `bot/src/notifications.ts:3`, `lib/telegram.ts:15` |
 | `TELEGRAM_CHAT_ID` | Single chat the bot serves and posts into | Secret | `bot/src/notifications.ts:4`, `bot/src/menus/main.ts:10`, `lib/telegram.ts:16` |
 | `APP_URL` | Public app base URL for "View job" links + bot → app callbacks | Public | `bot/src/notifications.ts:169`, `bot/src/menus/main.ts:98` |
@@ -122,7 +123,7 @@ Observed in `git log`:
 
 ## Migration workflow
 
-`supabase/migrations/` numbered sequentially (currently up to `025_person_event_affiliations.sql`). Conventions:
+`supabase/migrations/` numbered sequentially (currently up to `032_active_conversations_rpc.sql`). Conventions:
 
 - **Don't edit applied migrations.** Add a new numbered file instead.
 - Naming: `<NNN>_<short_snake_case_purpose>.sql` — three-digit prefix, then a description tight enough to grep.

@@ -26,11 +26,11 @@ This redesign unifies the data shape (`{columns, rows}`) across all three entry 
 ### Landing (empty table)
 
 1. Page opens with `[Persons | Organizations]` toggle at top, defaulted to Persons.
-2. Below the toggle: a toolbar with `[+ Row]`, `[+ Column]`, `[Upload CSV]`, and `[Import N rows]` (disabled until something is staged).
-3. Empty editable table with ~5 blank rows and a default column set:
+2. Below the toggle: a toolbar with `[+ Column]`, `[Upload CSV]`, `[Reset table]`, duplicate-handling select, and `[Import N rows]` (disabled until something is staged). There is **no** `+ Row` button — the table maintains a persistent trailing empty row (the *ghost row*) and auto-expands on paste or when the last row gets content.
+3. Empty editable table with 5 blank rows and a default column set:
    - **Persons default columns:** `full_name`, `email`, `linkedin`, `title`, `event`
    - **Organizations default columns:** `name`, `website`, `category`, `linkedin_url`, `event`
-4. Each column header is a `<GlassSelect>` populated with the canonical fields for the current mode plus `— Discard —`.
+4. Each column header is a `<GlassSelect>` populated with the canonical fields for the current mode plus `— Discard —`. Subtle vertical separators (`border-l border-[var(--glass-border)]/40`) run between columns so empty columns are visually distinct.
 
 ### CSV upload
 
@@ -43,6 +43,10 @@ This redesign unifies the data shape (`{columns, rows}`) across all three entry 
 - Pasting multi-line / tab-delimited text into any cell splatters the values across cells starting from the focused cell (rows × columns expanding as needed).
 - Paste into an empty table without a focused cell seeds the entire table from `(0, 0)`.
 - Single-cell paste (no tabs/newlines) behaves like a normal text input paste.
+
+### Ghost row invariant
+
+The table maintains a "ghost row" invariant: there is always exactly one trailing empty row. `ensureGhostRow()` wraps every state mutation (cell edit, column add/remove, row remove, paste expansion). When typing into the last row makes it non-empty, a fresh empty row is appended. The ghost row renders at reduced opacity and hides its Remove control (removing it would just re-add it). This removes the need for a `+ Row` button — the table grows organically as data arrives.
 
 ### Switching modes
 
@@ -187,7 +191,7 @@ Person rows with `organization_name` set: look up org by name, create stub if mi
 ## Data Flow
 
 ```
-[mode toggle / + Column / + Row / CSV upload / paste]
+[mode toggle / + Column / CSV upload / paste / typing into ghost row]
     │
     ▼
 ImportTableState  ──(edit)──►  ImportTableState

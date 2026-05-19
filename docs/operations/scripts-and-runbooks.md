@@ -19,7 +19,7 @@ All operational scripts live in `scripts/`. They are TypeScript files run via `n
 | `scripts/merge-employee-outreach.ts` | Merge 8 employee agent outputs; runs banned-phrase scan | After agents finish | `consensus/employee_agent_outputs/agent_{1..8}.json` + `employees_classified.csv` | `consensus/outreach_messages_employees.csv` |
 | `scripts/revise-subject-lines.ts` | Replace agent-written subjects with deterministic templates from a per-sender pool (hash by `person_id`); back-propagates to agent JSONs | When subjects are too repetitive or off-tone | `consensus/outreach_messages.csv` | rewrites `outreach_messages.csv` + `consensus/outreach_agent_outputs/agent_{1..5}.json` |
 | `scripts/chunk-employee-sends.ts` | Bucket employee rows into 5 send days (Mon–Fri) by sponsor tier × C-level × founder | After merging employee outreach | `consensus/outreach_messages_employees.csv` | `consensus/send_day_{1..5}.csv` |
-| `scripts/send-outreach.ts` | Actually send via SendGrid. Idempotent (skips entries already in `send_log.jsonl`), paced 1/sec, aborts on 3 consecutive failures in first 5 sends | Daily, once per `send_day_N.csv` | `--csv` (default `consensus/outreach_messages.csv`), `--limit`, `--dry-run`, `--test-to`, `--yes` | `consensus/send_log.jsonl` (append-only JSONL) |
+| `scripts/send-outreach.ts` | Actually send via SendGrid. Idempotent (skips entries already in `send_log.jsonl`), paced 1/sec, aborts on 3 consecutive failures in first 5 sends. After each successful send, writes an `interactions` row inline (`detail.source='script_send'`). | Daily, once per `send_day_N.csv` | `--csv` (default `consensus/outreach_messages.csv`), `--limit`, `--dry-run`, `--test-to`, `--yes` | `consensus/send_log.jsonl` (append-only JSONL) + `interactions` DB rows |
 
 ### Other / legacy data scripts
 
@@ -192,5 +192,98 @@ The Wes pool is calmer/peer-to-peer; the JB pool opens "Hey {first} —" more of
 
 - `consensus/send_day_1.csv` … `send_day_5.csv` — Mon–Fri schedule produced by `chunk-employee-sends.ts`. Operator runs `send-outreach.ts --csv consensus/send_day_N.csv --yes` once per day. **Not automated** — the script is interactive.
 - `vercel.json` schedules `/api/sequences/send` every 5 minutes — that is a separate pipeline (Sequences feature) for ongoing drips, not the campaign-day batch script.
-- `supabase/migrations/016_inbox_sync_cron.sql` schedules inbox sync via pg_cron (every 15 min per account, staggered) — verify cadence with the team.
-- `app/api/cron/inbox-sync/route.ts` is a Vercel-cron-ready alternative gated by `CRON_SECRET`. Add to `vercel.json:crons` to enable; retire 016's pg_cron jobs first to avoid double-pulling.
+- `supabase/migrations/034_inbox_sync_cron_hourly.sql` schedules inbox sync via pg_cron (single `sync-inbox` job at `0 * * * *`). Replaces the per-account 15-min jobs from `016_inbox_sync_cron.sql` (both unscheduled by 034). One POST covers every configured identity.
+- `app/api/cron/inbox-sync/route.ts` is a Vercel-cron-ready alternative gated by `CRON_SECRET`. Add to `vercel.json:crons` to enable; first unschedule the pg_cron `sync-inbox` job to avoid double-pulling.
+
+---
+
+## Runbook: backfill script-send interactions (Stage 1)
+
+**Script:** `scripts/backfill_script_sends.ts`
+
+**What it does:**
+Reads the three JSONL send logs produced by `scripts/send-outreach.ts` (`consensus/send_log.jsonl`, `consensus/miami_dinner_send_log.jsonl`, `consensus/miami_dinner_bump1_send_log.jsonl`) and, for each successful, non-test-redirect, non-dry-run entry, inserts one `interactions` row into Supabase with `interaction_type='cold_email'`, `channel='email'`, `direction='outbound'`, `status='sent'`, `detail.source='script_backfill'`, and the original `sendgrid_message_id`. Body/subject are resolved from per-log source CSVs (see CSV→log mapping below).
+
+**When to run:**
+Once after any net-new campaign send log is produced — particularly after running `scripts/send-outreach.ts` for a new CSV that wasn't previously in the DB. Also run if migration 031 (the `uniq_interactions_sendgrid_message_id` index) is applied to a DB that hasn't been backfilled yet. **Always run before `scripts/recorrelate_inbound.ts` (Stage 2).**
+
+**CSV → log mapping:**
+Defined in `lib/script-sends/source-csv-map.ts`. Each log's source CSV candidates are walked in order; first `(person_id, subject)` match wins.
+
+| Log basename | Source CSV candidates |
+|---|---|
+| `send_log.jsonl` | `consensus/outreach_messages.csv`, `consensus/outreach_messages_employees.csv` |
+| `miami_dinner_send_log.jsonl` | `email-napalm.csv`, `email-napalm-q{1q2,3,4-half}.csv`, `email-napalm-no-replies.csv` |
+| `miami_dinner_bump1_send_log.jsonl` | `email-napalm-bump1.csv`, `email-napalm-bump1-q{1q2,3}.csv` |
+
+**Commands:**
+
+```bash
+# 1. Dry-run — no DB writes, prints what would be inserted
+npx tsx scripts/backfill_script_sends.ts --dry-run
+
+# 2. Live run (required --yes flag)
+npx tsx scripts/backfill_script_sends.ts --yes
+
+# 3. Single log only
+npx tsx scripts/backfill_script_sends.ts --yes --only miami_dinner_send_log.jsonl
+
+# 4. Limited rows (for testing)
+npx tsx scripts/backfill_script_sends.ts --yes --limit 50
+```
+
+**Env required:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_SUPABASE_SECRET_KEY` in `.env.local`.
+
+**Before running:**
+- Confirm migrations 030 and 031 are applied (`npx supabase db push --linked` or check `supabase/migrations/`).
+- Confirm the source CSV files exist at repo root / `consensus/` (dry-run will fail fast if they're missing).
+
+**After running:**
+- Check the printed summary (`inserted`, `skipped`, `errors`). Zero errors is expected — duplicate `sendgrid_message_id` rows are skipped via the unique index (not an error).
+- Verify in Supabase: `SELECT count(*) FROM interactions WHERE detail->>'source' = 'script_backfill';` should match the inserted count.
+
+**Idempotency:** Fully idempotent. Duplicate rows conflict on `uniq_interactions_sendgrid_message_id` and are ignored. Re-running after partial failure is safe.
+
+**Caveats:**
+- Entries with `dry_run=true` or a `to_actual` that looks like a test redirect (not the real recipient) are skipped and counted as `unbackfillable`.
+- Entries where body resolution finds no match in any source CSV are also skipped. The script prints the first few unresolvable entries for debugging.
+- Sender is resolved by looking up the sender email in `sender_profiles`. A missing profile causes a skip.
+
+---
+
+## Runbook: re-correlate inbound emails against new interactions (Stage 2)
+
+**Script:** `scripts/recorrelate_inbound.ts`
+
+**What it does:**
+Pages through all `inbound_emails` rows where `direction='inbound'`, re-runs `correlateAndNotify(..., { notify: false })` against each one, and prints a final summary: `{ processed, newlyMatched, flipped, stillUnmatched }`. Telegram notifications are suppressed — historical mail does not need to re-alert the team. "Flipped" means an inbound email now has a `correlated_interaction_id` pointing to an outbound row that was previously absent.
+
+**When to run:**
+Always run **after** `scripts/backfill_script_sends.ts` (Stage 1) completes. Also useful after any correlator logic change or after a batch of new persons is imported whose emails match historical inbound. The API equivalent (`POST /api/inbox/recorrelate`) does the same thing but without per-100 progress logging.
+
+**Commands:**
+
+```bash
+# Full pass
+npx tsx scripts/recorrelate_inbound.ts
+
+# Limited (for testing)
+npx tsx scripts/recorrelate_inbound.ts --limit 200
+```
+
+**Env required:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_SUPABASE_SECRET_KEY` in `.env.local`.
+
+**Before running:**
+- Stage 1 backfill must be complete. Running this first means replies from script recipients won't find their matching outbound rows yet.
+- No migrations required beyond 031 (already needed by Stage 1).
+
+**After running:**
+- Review `flipped` count — this is the number of inbound emails now correlated to an outbound interaction (reply threads resolved).
+- `stillUnmatched` covers emails with no person in the DB; those are expected for cold inbound from unknown senders.
+- Verify a sample: in Supabase, pick a `correlated_interaction_id` and confirm it points to a `status='replied'` interactions row.
+
+**Idempotency:** Fully idempotent. Re-running overwrites `correlated_interaction_id` with the best current match, which is harmless (same result on repeat). No inserts or deletes are performed.
+
+**Caveats:**
+- Pages in batches of 500 ordered by `received_at ASC`. Very large datasets take a few minutes — use `--limit` to test a subset first.
+- Progress is logged every 100 rows to stdout.

@@ -26,7 +26,7 @@ HeyReach for LinkedIn), inbox sync (Fastmail/JMAP), and reply correlation.
 | `sender_profiles`      | Outbound identity (email, signature, HeyReach LinkedIn account ID).     |
 | `inbound_emails`       | Cached emails fetched from Fastmail; correlated to persons.             |
 | `inbox_sync_state`     | Per-account JMAP cursor (`last_email_id`) and status.                   |
-| `events`, `initiatives`| Optional sequence parents (provide context tokens like `{event.name}`). |
+| `events`               | Optional sequence parent (provides context tokens like `{event.name}`). |
 
 ### Sequence shape — `lib/types/database.ts:300-313`
 
@@ -36,7 +36,6 @@ interface Sequence {
   name: string;
   channel: string;            // 'email' | 'linkedin' | 'twitter'
   event_id: string | null;
-  initiative_id: string | null;
   steps: SequenceStep[];
   status: 'draft' | 'active' | 'paused' | 'completed';
   send_mode: 'auto' | 'approval';   // approval requires human action; auto schedules immediately
@@ -187,18 +186,30 @@ the enrollment to `bounced` so future steps are skipped
                                        /api/sequences/[id]/messages/[msgId] (PATCH)
         ↓
 [Cron: /api/sequences/send]            vercel.json:3 — */5 * * * *
-   query interactions where status='scheduled' AND scheduled_at <= now() LIMIT 50
-   for each:
-     • PRE-SEND PARAMETER GATES (read from sequences.schedule_config):
-         - quiet_hours_local      → defer to next non-quiet hour in zone TZ
-         - throttle_per_day       → defer +60m if today's count ≥ cap
-         - daily_send_cap_global  → defer +60m if global today's count ≥ cap
-         - min_interval_minutes   → defer +N if same person sent recently
-     • mark 'sending'
-     • call SendGrid via lib/sendgrid.ts
-     • on success → 'sent', detail.sendgrid_message_id captured
-     • on failure → linear backoff retry_count*5min, max 3 retries → 'failed'
-   response shape: { sent, failed, skipped, deferred }
+   1. SWEEP: rpc('reclaim_stuck_interactions', { p_stuck_minutes: 10 })
+      reverts any 'sending' rows older than 10m back to 'scheduled' with
+      retry_count++ — defends against crashed handlers / function timeouts.
+   2. CLAIM: rpc('claim_due_interactions', { p_limit: 50 })
+      atomic UPDATE...RETURNING using FOR UPDATE SKIP LOCKED — flips up to
+      50 due 'scheduled' rows to 'sending' in a single statement, so
+      overlapping cron invocations claim disjoint sets. Stamps detail.claimed_at.
+   3. HYDRATE: SELECT joined persons + sequences + sender_profiles by id.
+   4. PER ROW:
+      • PRE-SEND PARAMETER GATES (read from sequences.schedule_config):
+          - quiet_hours_local      → defer to next non-quiet hour in zone TZ
+          - throttle_per_day       → defer +60m if today's count ≥ cap
+          - daily_send_cap_global  → defer +60m if global today's count ≥ cap
+          - min_interval_minutes   → defer +N if same person sent recently
+        (defer flips status back to 'scheduled' with updated scheduled_at)
+      • call SendGrid via lib/sendgrid.ts (row is already 'sending' from the claim)
+      • on success → 'sent', detail.sendgrid_message_id captured
+      • on failure → classify by HTTP status:
+          - permanent (4xx, except 408/429) → 'failed' immediately
+          - transient (5xx / 408 / 429 / network / timeout) → reschedule with
+            backoff [5, 30, 120] minutes; after 3 attempts → 'failed'
+   5. NOTIFY: if any terminal failures or sweeps happened, send a single
+      Telegram message summarizing them (links to /admin/sequences/failures).
+   response shape: { sent, failed, skipped, deferred, swept }
         ↓
 [SendGrid webhook]                     app/api/webhooks/sendgrid/route.ts
    ECDSA signature verified via @sendgrid/eventwebhook before any state mutation.
@@ -315,20 +326,35 @@ without committing an interaction. AI failures here silently leave
   webhooks later report as `sg_message_id`.
 - **Cron**: `vercel.json:3` schedules `/api/sequences/send` every 5 minutes.
 - **Send loop**: `app/api/sequences/send/route.ts`
-  - Pulls up to 50 interactions where `status='scheduled' AND scheduled_at <= now()`.
-  - Resolves sender profile via the `sequences.sender_id` join (lines 36, 53).
-  - Skips interactions with no `person.email` (mark `failed`, line 57-69) or
-    no sender profile (line 72-85).
-  - **Optimistic lock**: marks `sending` before the SendGrid call (line 88-91).
-    There is no compare-and-swap, so concurrent invocations *could* double-send
-    the same row — the cron interval (5min) and 60s `maxDuration` keep this
-    rare in practice.
-  - **Retry policy**: on failure increments `detail.retry_count`, computes
-    `backoffMs = retry_count * 5 * 60 * 1000` and reschedules. After 3
-    retries → `failed` (line 121-151).
-  - **Idempotency**: stores `sendgrid_message_id` in `interactions.detail`
-    so the webhook can correlate; the route itself does not dedupe at the
-    SendGrid level beyond the `sending` status lock.
+  - **Stuck-row sweep first**: `rpc('reclaim_stuck_interactions', { p_stuck_minutes: 10 })`
+    reverts any row stranded in `sending` for >10 minutes back to `scheduled`
+    with `detail.retry_count++` and `detail.last_error='sweeper: stuck in sending state'`.
+    Crashed handlers, function timeouts, and any residual race are recovered here.
+  - **Atomic claim**: `rpc('claim_due_interactions', { p_limit: 50 })` runs a single
+    SQL statement (`UPDATE ... FROM (SELECT ... FOR UPDATE SKIP LOCKED) RETURNING *`)
+    that flips up to 50 due rows from `scheduled` to `sending`. Overlapping cron
+    invocations claim disjoint sets — no double-send. Defined in migration
+    `028_sequence_send_atomic_claim.sql`.
+  - **Hydration**: after the claim returns ids, a single `.in('id', claimedIds)`
+    SELECT loads the joined `persons`, `sequences`, `sender_profiles` rows.
+  - Skips interactions with no `person.email` or no sender profile (each marks
+    `failed` with `detail.error` and is included in the Telegram batch).
+  - **Defer path**: pacing gates set `status='scheduled'` + new `scheduled_at`
+    (the claim already flipped status to `sending`, so deferral must explicitly
+    revert it).
+  - **Retry policy** (per-failure classification):
+    - Permanent (HTTP 4xx **except** 408 timeout and 429 rate-limit) → `failed`
+      immediately. Bad payloads / unauthorized / not-found won't get better on retry.
+    - Transient (5xx, 408, 429, network errors with no statusCode) → reschedule
+      with `[5, 30, 120]` minute backoff. After 3 attempts → `failed` with
+      `detail.terminal_reason='retries_exhausted'`.
+    - `detail.last_status_code` and `detail.terminal_reason` are written for
+      observability.
+  - **Telegram notification**: at end of run, if any terminal failures, stuck-row
+    sweeps, or config-gap skips happened, sends a single batched message via
+    `lib/telegram.ts` linking to `/admin/sequences/failures` for triage.
+  - **Idempotency**: the atomic claim is the lock. `sendgrid_message_id` is stored
+    in `interactions.detail` for webhook correlation.
 - **From/replyTo**: `from = { email: senderProfile.email, name: senderProfile.name }`,
   `replyTo = senderProfile.email` — replies route back to the human inbox we
   poll in §5.
@@ -368,9 +394,32 @@ integration.
 - **Generate-side**: `generate/route.ts:202-213` checks for an existing
   interaction at `(sequence_id, person_id, sequence_step)` and skips if present.
   This is the primary idempotency guarantee.
-- **Send-side**: status transition `scheduled → sending` (line 88-91) before the
-  HTTP call. Not transactionally safe but sufficient at low concurrency.
+- **Send-side**: the atomic claim RPC (`claim_due_interactions`, migration 028)
+  flips `scheduled → sending` via `FOR UPDATE SKIP LOCKED` in a single statement
+  — overlapping invocations claim disjoint sets, no double-send. The
+  complementary `reclaim_stuck_interactions` RPC reverts rows stranded in
+  `sending` (10-minute threshold) so a crashed handler doesn't strand work.
 - **Webhook-side**: `STATUS_PRIORITY` map prevents downgrades.
+
+---
+
+## 4a. Interaction sources (`detail.source`)
+
+Every outbound `interactions` row carries a `detail.source` indicating how it
+got there:
+
+- `sequence` — created by the approval pipeline (`app/api/sequences/send`).
+- `script_send` — created inline by `scripts/send-outreach.ts` on successful SendGrid send.
+- `script_backfill` — created by `scripts/backfill_script_sends.ts` from the
+  three historical `consensus/*.jsonl` logs.
+- `sent_folder_reconciler` — created by `lib/inbox-sync.ts` when an outbound
+  email shows up in the Fastmail Sent mailbox without a matching DB row
+  (catches manual sends from the Fastmail web UI).
+
+Idempotency: `interactions ((detail->>'sendgrid_message_id'))` is a partial
+unique index. Anything routed through SendGrid populates this and cannot be
+double-inserted. Sent-folder reconciler rows have no message-id (they came
+from JMAP) and are deduplicated by ±2-min + normalized subject.
 
 ---
 
@@ -560,7 +609,6 @@ cron `sync-status` at `:30` past every hour
 | `id`              | uuid, pk                                                  |
 | `name`, `channel` | channel ∈ {'email','linkedin','twitter'}                  |
 | `event_id`        | optional FK to `events`                                   |
-| `initiative_id`   | optional FK to `initiatives` (added in 010:217)           |
 | `steps`           | JSONB array of `SequenceStep`                             |
 | `status`          | draft / active / paused / completed (added in 008)        |
 | `send_mode`       | 'auto' or 'approval' (added in 023)                       |
@@ -716,6 +764,30 @@ re-sets `status='scheduled'` and `scheduled_at=now()`
 For bulk: `POST /api/sequences/[id]/messages/bulk` with
 `{ action: 'approve', messageIds: [...] }`.
 
+### Triage failed sends across sequences
+
+`/admin/sequences/failures` lists every `failed` / `bounced` interaction
+(up to 500 most recent), with filters by status, free-text search across
+person / sequence / error, and per-row + bulk **Requeue** that resets
+`status='scheduled'`, `retry_count=0`, `scheduled_at=now()`. Only `failed`
+and `bounced` rows are eligible — the server action enforces this.
+
+Telegram notifications from the send dispatcher (`maybeNotify` at the end
+of `/api/sequences/send`) deep-link to this page when terminal failures
+or stuck-row sweeps occur in a run.
+
+### Recover stuck `sending` rows manually
+
+The send-route sweeper handles this automatically every 5 minutes, but to
+force-recover immediately:
+
+```sql
+SELECT * FROM reclaim_stuck_interactions(0);  -- 0min threshold = sweep everything in 'sending'
+```
+
+Returns the reverted rows. Each one has `detail.last_error='sweeper: stuck in sending state'`
+and `detail.last_sweep_at` set.
+
 ### Force-mark replied (false negative correlation)
 
 ```sql
@@ -809,14 +881,17 @@ This is a real bug to flag.
 
 ### Concurrency races
 
-- `/api/sequences/send` and `/api/sequences/generate` both have
-  `maxDuration = 60` and run in parallel via cron. There is no `FOR UPDATE
-  SKIP LOCKED` — only the `status='sending'` write before SendGrid call
-  (`send/route.ts:88-91`) acts as a coarse lock. Risk window for double-send
-  is small but nonzero.
-- The optimistic check before insert in `sequences/generate` (line 202-213)
-  is not transactional with the subsequent insert — two concurrent generate
-  jobs could both pass the check.
+- `/api/sequences/send` — **resolved as of migration 028**. The claim is now an
+  atomic `UPDATE ... FROM (SELECT ... FOR UPDATE SKIP LOCKED) RETURNING *` via
+  the `claim_due_interactions` RPC, and a sweeper (`reclaim_stuck_interactions`,
+  10-min threshold) reverts any row left stranded in `sending`. Overlapping
+  cron invocations claim disjoint sets.
+- `/api/sequences/generate` — still uses the older "check then insert" pattern.
+  The optimistic check before insert (line 202-213) is not transactional with
+  the subsequent insert — two concurrent generate jobs could both pass the
+  check. Lower-impact than the send race (worst case: a duplicate `draft`
+  interaction; the unique constraint can be added or generate can be moved
+  behind a claim RPC similar to send).
 
 ### `bounced` cascade — historical note
 

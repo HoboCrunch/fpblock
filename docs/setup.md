@@ -32,8 +32,13 @@ APOLLO_API_KEY=...
 PERPLEXITY_API_KEY=...
 GEMINI_API_KEY=...
 
-# Email (inbox sync)
-FASTMAIL_API_KEY=...
+# Email (inbox sync + reply send) — one JMAP token per identity
+FASTMAIL_API_KEY_JB=...    # JMAP token from jb@gofpblock.com's Fastmail account
+FASTMAIL_API_KEY_WES=...   # JMAP token from wes@gofpblock.com's Fastmail account
+
+# Optional: silence all correlation Telegram pings (e.g. during a backfill).
+# When set to '1', the inbox correlator skips sendTelegramNotification entirely.
+# INBOX_TELEGRAM_DISABLED=1
 
 # Cron auth (required by /api/cron/* routes — Vercel injects this as Bearer header)
 CRON_SECRET=...           # Generate: node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
@@ -166,7 +171,7 @@ The `004_cron.sql` migration sets up two hourly jobs:
 
 These use `current_setting('app.settings.supabase_url')` and `current_setting('app.settings.secret_key')`. Set these in **Supabase Dashboard > Project Settings > Database > Custom configuration**.
 
-`016_inbox_sync_cron.sql` adds two pg_cron jobs that POST to `/api/inbox/sync` every 15 min for each Fastmail account (jb, wes — staggered by 1 min).
+`016_inbox_sync_cron.sql` originally added two per-account pg_cron jobs at 15-min cadence. Migration `034_inbox_sync_cron_hourly.sql` supersedes that: it unschedules both legacy jobs and registers a single `sync-inbox` job at **hourly** cadence (`0 * * * *`) that POSTs an empty body to `/api/inbox/sync`. The route iterates every configured identity in one pass, each using its own `FASTMAIL_API_KEY_<HANDLE>`.
 
 ### Vercel Cron jobs
 
@@ -198,7 +203,9 @@ Set these in **Vercel Dashboard > Project Settings > Environment Variables** (Pr
 | `APOLLO_API_KEY` | Apollo.io API key |
 | `PERPLEXITY_API_KEY` | Perplexity Sonar API key |
 | `GEMINI_API_KEY` | Google Gemini API key |
-| `FASTMAIL_API_KEY` | Fastmail JMAP API key |
+| `FASTMAIL_API_KEY_JB` | Fastmail JMAP token scoped to jb@gofpblock.com's account (inbox sync + reply send) |
+| `FASTMAIL_API_KEY_WES` | Fastmail JMAP token scoped to wes@gofpblock.com's account (inbox sync + reply send) |
+| `INBOX_TELEGRAM_DISABLED` | Optional. Set to `1` to suppress all correlation Telegram pings (used during historical backfills). |
 | `CRON_SECRET` | Bearer token Vercel injects on `/api/cron/*` triggers; required by gated cron routes |
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot API token |
 | `TELEGRAM_CHAT_ID` | Telegram chat ID for notifications |

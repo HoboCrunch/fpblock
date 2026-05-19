@@ -20,6 +20,7 @@ This document covers only Next.js route handlers. When a route is a thin wrapper
 - Several long-running handlers extend the serverless timeout via `export const maxDuration`:
   - `app/api/enrich/organizations/route.ts:5` — 300s
   - `app/api/enrich/persons/route.ts:6` — 300s
+  - `app/api/inbox/recorrelate/route.ts` — 300s
   - `app/api/enrich/route.ts:4` — 60s (legacy contacts table)
   - `app/api/sequences/generate/route.ts:19` — 60s
   - `app/api/sequences/send/route.ts:5` — 60s
@@ -61,8 +62,9 @@ The SendGrid webhook (`app/api/webhooks/sendgrid/route.ts`) verifies ECDSA signa
 - `lib/supabase/server.ts` — cookie-bound server client (anon key, RLS enforced).
 - `lib/supabase/client.ts` — browser client.
 - `lib/sendgrid.ts` — `sendEmail()` and `verifyWebhookSignature()` (ECDSA via `@sendgrid/eventwebhook` + ±300s freshness; requires `SENDGRID_WEBHOOK_PUBLIC_KEY` env).
-- `lib/fastmail.ts` — `fetchEmails(apiKey, account, sinceId)` for inbox polling.
-- `lib/inbox-correlator.ts` — `correlateAndNotify(supabase, email)` does email→person matching (exact email then domain) and dispatches Telegram notifications.
+- `lib/fastmail.ts` — `fetchEmails(apiKey, managedIdentities[], sinceId?, limit?)` for inbox polling, `fetchSentEmails(...)` for Sent-mailbox ingest, `submitEmail(...)` for JMAP-based reply send, `getMessageIdHeader(apiKey, jmapId)` for resolving rfc822 headers.
+- `lib/inbox-sync.ts` — `runInboxSync(supabase, identities?)` is the entry point all sync routes share; `getInboxIdentities()` maps env vars to identities.
+- `lib/inbox-correlator.ts` — `correlateAndNotify(supabase, email, { notify? })` does email→person matching (exact email then domain) and dispatches Telegram notifications. Honors `INBOX_TELEGRAM_DISABLED=1` as a global kill switch.
 - `lib/telegram.ts` — Telegram bot notifications.
 - `lib/template-renderer.ts` — `buildContext`, `extractAiBlocks`, `renderTemplate` for sequence templates with embedded `{{ai:...}}` blocks.
 - `lib/enrichment/pipeline.ts` — `runBatchEnrichment` (org enrichment via Apollo + Perplexity + Gemini, plus People Finder).
@@ -73,7 +75,7 @@ The SendGrid webhook (`app/api/webhooks/sendgrid/route.ts`) verifies ECDSA signa
 
 ## 2. Route catalog
 
-Counts: 17 route files, 18 handlers (one file exposes both `GET` and `POST`).
+Counts: 18 route files, 19 handlers (one file exposes both `GET` and `POST`).
 
 ### 2.1 Enrichment
 
@@ -90,7 +92,6 @@ Counts: 17 route files, 18 handlers (one file exposes both `GET` and `POST`).
   organizationIds?: string[];           // explicit IDs; takes precedence
   stages?: Array<"apollo"|"perplexity"|"gemini"|"full"|"people_finder">; // default ["full"]
   eventId?: string;                     // resolves orgs via event_participations
-  initiativeId?: string;                // resolves via initiative_enrollments
   icpBelow?: number;                    // orgs where icp_score IS NULL OR icp_score < N
   failedIncomplete?: boolean;           // enrichment_status in (failed, partial)
   peopleFinderConfig?: {                // only used when stage includes people_finder
@@ -101,7 +102,7 @@ Counts: 17 route files, 18 handlers (one file exposes both `GET` and `POST`).
 }
 ```
 
-Filter precedence (first match wins): `organizationIds` → `eventId` → `initiativeId` → `failedIncomplete` → `icpBelow` → default (orgs with `icp_score IS NULL`, capped at 200).
+Filter precedence (first match wins): `organizationIds` → `eventId` → `failedIncomplete` → `icpBelow` → default (orgs with `icp_score IS NULL`, capped at 200).
 
 **Response:**
 ```ts
@@ -314,33 +315,40 @@ Mappings:
 
 #### 2.3.2 `POST /api/sequences/send`
 
-**File:** `app/api/sequences/send/route.ts:29`
-**Purpose:** Email dispatcher. Picks up `interactions` where `status = "scheduled"` and `scheduled_at <= now()`, sends via SendGrid, updates status, retries with backoff.
+**File:** `app/api/sequences/send/route.ts`
+**Purpose:** Email dispatcher. Sweeps stuck rows, atomically claims due `interactions`, sends via SendGrid, classifies failures, batches a Telegram notification.
 **Auth:** Cookie-bound SSR client.
-**Timeout:** 60s. Hard cap of 50 interactions per call (`route.ts:40`).
+**Timeout:** 60s. Hard cap of 50 interactions per call (`CLAIM_LIMIT`).
 
 **Body:** None.
 
-**Response:** `{ sent, failed, skipped, deferred }`.
+**Response:** `{ sent, failed, skipped, deferred, swept }`.
 
-**Send flow per row:**
-1. Skip if `persons.email` is null → mark `failed` with `detail.error`.
-2. Skip if `sequences.sender_profiles` is null → mark `failed`.
-3. **Pre-send parameter gates** (each gracefully skipped when the field is undefined):
-   - `quiet_hours_local`: defer until next non-quiet hour (zoned via `Intl.DateTimeFormat`).
-   - `throttle_per_day`: defer +60m if today's send count for this sequence ≥ cap.
-   - `daily_send_cap_global`: defer +60m if today's send count across all sequences ≥ cap.
-   - `min_interval_minutes`: defer if a send to this person occurred within the window.
-4. Mark `sending`.
-5. Call `sendEmail` (`lib/sendgrid.ts`).
-6. On success: status `sent`, `occurred_at = now`, store `detail.sendgrid_message_id` (used by webhook).
-7. On failure: increment `detail.retry_count`. If < 3, reschedule with `retry_count * 5min` linear backoff and status `scheduled`. Else mark `failed`.
+**Send flow:**
+1. **Sweep**: `rpc('reclaim_stuck_interactions', { p_stuck_minutes: 10 })` reverts any `sending` row older than 10 minutes back to `scheduled` with `retry_count++` and `detail.last_error='sweeper: stuck in sending state'`. Defined in migration `028_sequence_send_atomic_claim.sql`.
+2. **Claim**: `rpc('claim_due_interactions', { p_limit: 50 })` runs a single `UPDATE ... FROM (SELECT ... FOR UPDATE SKIP LOCKED) RETURNING *` that atomically flips up to 50 due rows from `scheduled` to `sending`. Overlapping cron invocations claim disjoint sets.
+3. **Hydrate**: SELECT joined `persons`, `sequences`, `sender_profiles` by the claimed ids.
+4. Per-row:
+   - Skip if `persons.email` is null → mark `failed` with `detail.error` (logged as terminal failure for the Telegram batch).
+   - Skip if `sequences.sender_profiles` is null → mark `failed` (same).
+   - **Pre-send parameter gates** (each gracefully skipped when the field is undefined):
+     - `quiet_hours_local`: defer until next non-quiet hour (zoned via `Intl.DateTimeFormat`).
+     - `throttle_per_day`: defer +60m if today's send count for this sequence ≥ cap.
+     - `daily_send_cap_global`: defer +60m if today's send count across all sequences ≥ cap.
+     - `min_interval_minutes`: defer if a send to this person occurred within the window.
+     - Defer flips status back to `scheduled` and updates `scheduled_at` (the row is already `sending` from the claim).
+   - Call `sendEmail` (`lib/sendgrid.ts`). `SendEmailResult` now surfaces `statusCode`.
+   - On success: status `sent`, `occurred_at = now`, store `detail.sendgrid_message_id` (used by webhook).
+   - On failure: classify by HTTP status:
+     - **Permanent** (4xx except 408/429): immediate `failed`, `detail.terminal_reason='permanent_4xx'`.
+     - **Transient** (5xx, 408, 429, network/timeout — no statusCode): reschedule with `[5, 30, 120]` minute backoff. After 3 attempts → `failed` with `detail.terminal_reason='retries_exhausted'`.
+     - `detail.last_status_code` is recorded.
+5. **Notify**: end-of-run, if any terminal failures, stuck-row sweeps, or config-gap skips happened, sends a single batched Telegram message via `lib/telegram.ts` (uses `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`; no-ops if unset). Links to `/admin/sequences/failures`.
 
 **Caveats:**
 - Channel-agnostic field name `interactions.body` is sent as `html` to SendGrid. If LinkedIn/Twitter interactions ever land in this query, they would be emailed in HTML — but this query doesn't filter by channel, only by status. Verify upstream code only schedules emails.
-- "Sending" rows are not unwound on crash.
 - 50-row cap and 60s timeout means this needs to be invoked frequently (cron) for high volume.
-- No locking — two concurrent invocations can pick up the same row before either has updated to `sending`.
+- Stuck rows are auto-recovered every 5 minutes via the sweeper. Force-recover via `SELECT * FROM reclaim_stuck_interactions(0);`.
 
 #### 2.3.3 `GET /api/sequences/[id]/messages`
 
@@ -424,60 +432,113 @@ Mappings:
 
 ### 2.4 Inbox
 
+All inbox routes flow through the shared `runInboxSync()` helper in `lib/inbox-sync.ts`, which iterates every configured identity (read from env via `getInboxIdentities()`) and, for each, syncs Inbox + Sent in parallel using that identity's own JMAP token.
+
 #### 2.4.1 `GET /api/inbox`
 
-**File:** `app/api/inbox/route.ts:12`
+**File:** `app/api/inbox/route.ts`
 **Purpose:** Two unrelated jobs in one handler:
 1. **Person search** — when `?type=persons&search=…`, return up to 20 persons matching by name or email (used by the "Link to Person" modal).
-2. **Inbox sync** — otherwise, poll Fastmail for both accounts in `ACCOUNTS = ["jb@gofpblock.com", "wes@gofpblock.com"]`, store new `inbound_emails`, run correlation + Telegram notification.
-**Auth:** Cookie-bound SSR client.
+2. **Inbox sync** — otherwise, runs `runInboxSync` over every configured Fastmail identity. Each identity uses its own JMAP token.
+
+**Auth:** Service role for the sync branch (so a single button click can advance shared state); cookie-bound for the search branch.
 
 **Side effects (sync branch):**
-- Fastmail HTTP fetches (`lib/fastmail.ts`) per account.
-- Inserts new rows into `inbound_emails` (skips existing by `(message_id, account_email)`).
-- For each newly inserted email, calls `correlateAndNotify(supabase, email)` which: matches person by exact email, then domain; updates the email row; sends Telegram alert.
-- Upserts `inbox_sync_state` per account with `last_email_id`, `last_sync_at`, `status`, and `error_message`.
+- One JMAP session per identity — `fetchEmails` over the Inbox + `fetchSentEmails` over the Sent mailbox, in parallel per identity.
+- Inserts new rows into `inbound_emails` (deduped on the global `UNIQUE(message_id)` constraint). Outbound rows are tagged `direction='outbound'` and skip `correlateAndNotify`.
+- For each new inbound row, runs `correlateAndNotify(supabase, row)` — person match (exact email → domain), interaction status flip to `replied`, Telegram notification (unless `INBOX_TELEGRAM_DISABLED=1`).
+- For each new outbound row, runs `reconcileOutboundToInteraction(supabase, row)` — finds a matching person by `to_address`, then inserts an `interactions` row tagged `detail.source = 'sent_folder_reconciler'` unless a row within ±2 minutes with the same normalized subject already exists.
+- Upserts `inbox_sync_state` per identity with `last_email_id`, `last_sent_email_id`, `last_sync_at`, `unread_count` (recomputed from inbound + unread rows), `status`, `error_message`.
 
 **Caveats:**
-- The two branches (search and sync) sharing one handler is unusual — **see §4**.
-- ACCOUNTS list is hardcoded.
-- No `maxDuration` set; full 2-account sync may exceed the platform default.
+- The search + sync branches sharing one handler is unusual.
+- Identity list isn't hard-coded in the route — it's read from `getInboxIdentities()` and driven by `FASTMAIL_API_KEY_<HANDLE>` env vars.
 
 #### 2.4.2 `POST /api/inbox`
 
-**File:** `app/api/inbox/route.ts:141`
-**Purpose:** Manual user actions on inbound emails:
+**File:** `app/api/inbox/route.ts`
+**Purpose:** Manual user actions on inbox rows:
 - `action: "mark_read"` + `emailId` → set `is_read = true`.
-- Default (no `action`): requires `emailId` and `personId` → link email to person, set `correlation_type: "manual"`, log to `job_log`.
-**Auth:** Cookie-bound SSR client.
+- Default (no `action`): requires `emailId` and `personId` → link the email's thread to a person, set `correlation_type: "manual"`, log to `job_log`.
 
+**Auth:** Cookie-bound SSR client.
 **Response:** `{ success: true, person? }`.
 
 #### 2.4.3 `POST /api/inbox/sync`
 
-**File:** `app/api/inbox/sync/route.ts:12`
-**Purpose:** Sync a **single** account on demand (vs. `GET /api/inbox` which syncs both).
-**Auth:** **Service role** (bypasses RLS — `route.ts:42`). Publicly callable.
+**File:** `app/api/inbox/sync/route.ts`
+**Purpose:** Trigger a full inbox sync across every configured identity. Used by the admin UI's Sync button and the bot's `inbox:sync` action.
 
-**Body:** `{ accountEmail: string }`.
-**Response:** `{ success: true, account, new_emails, correlated, synced_at }` or `{ error, details }, 500`.
+**Auth:** **Service role** (bypasses RLS). Publicly callable.
 
-**Side effects:** Same as the sync branch of `GET /api/inbox` but for one account. Also sets `unread_count` (the GET handler doesn't).
+**Body:** Ignored. The previous `{ accountEmail }` shape is no longer required — one POST covers every identity.
+
+**Response:** `{ success: true, new_emails, correlated, per_identity: [{ identity, new_inbound, new_outbound, correlated, error? }], synced_at }`.
 
 **Caveats:**
-- Two ways to sync (GET-all vs POST-one) with subtly different write behaviors. Recommend consolidating.
-- Service-role usage means a leaked URL pattern lets anyone trigger Fastmail polling and Telegram blasts. Add an auth check.
+- Service-role usage means a leaked URL pattern lets anyone trigger Fastmail polling and Telegram pings. Set `INBOX_TELEGRAM_DISABLED=1` if abuse becomes a concern; long-term, add an auth check.
 
-#### 2.4.4 `GET /api/cron/inbox-sync`
+#### 2.4.4 `POST /api/inbox/recorrelate`
+
+**File:** `app/api/inbox/recorrelate/route.ts`
+**Purpose:** One-off retroactive re-correlation. Walks every `inbound_emails` row where `direction='inbound'`, re-runs `correlateAndNotify(..., { notify: false })` against each, and returns a summary of what changed. Intended to be called once after running `scripts/backfill_script_sends.ts` (Stage 1) or any time the correlator logic or interaction data changes and you want to re-evaluate historical inbound mail.
+**Auth:** Service-role client (no explicit auth check — same gap as §4.1). Admin-trigger only.
+**Timeout:** `maxDuration = 300`.
+
+**Body:** None.
+
+**Response:**
+```ts
+{ processed: number; flipped: number }
+```
+`flipped` is the count of rows where `correlated_interaction_id` was newly set (a reply that now maps to an outbound interaction). Telegram notifications are suppressed (`notify: false`) — historical replays must not spam the chat.
+
+**Notes:**
+- Safe to run multiple times; `correlateAndNotify` is idempotent — it writes the best match found, so re-running after data changes is harmless.
+- For large datasets prefer the script equivalent (`scripts/recorrelate_inbound.ts`) which pages in batches and prints per-100 progress.
+
+#### 2.4.5 `GET /api/cron/inbox-sync`
 
 **File:** `app/api/cron/inbox-sync/route.ts`
-**Purpose:** Vercel-cron-ready inbox sync. Loops both Fastmail accounts (`jb@`, `wes@gofpblock.com`) in one pass, dedups, correlates, notifies — same logic as `POST /api/inbox/sync` but for both accounts and gated for unattended use.
+**Purpose:** Vercel-cron-ready inbox sync. Calls `runInboxSync` over every configured identity in one pass. Same logic as `POST /api/inbox/sync`, just gated for unattended use.
 **Auth:** Bearer token — requires `Authorization: Bearer $CRON_SECRET`. Vercel injects this automatically when the path is declared in `vercel.json`'s `crons`. Returns `401` on mismatch, `500` if `CRON_SECRET` env var is unset.
 **Supabase client:** Service role (`NEXT_SUPABASE_SECRET_KEY`).
 
-**Response:** `{ success: true, accounts: { [email]: { new_emails, correlated, error? } }, synced_at }`.
+**Response:** Same shape as `POST /api/inbox/sync`.
 
-**Cadence:** Currently not scheduled in `vercel.json`. To enable, add `{ "path": "/api/cron/inbox-sync", "schedule": "*/5 * * * *" }` to `vercel.json:crons`. Provides an alternative to the pg_cron approach in `supabase/migrations/016_inbox_sync_cron.sql` (which polls `/api/inbox/sync` per account every 15 min).
+**Cadence:** Currently not scheduled in `vercel.json`. To enable, add `{ "path": "/api/cron/inbox-sync", "schedule": "*/5 * * * *" }` to `vercel.json:crons`. Provides an alternative to the pg_cron approach in `supabase/migrations/016_inbox_sync_cron.sql`.
+
+#### 2.4.6 `POST /api/inbox/reply`
+
+**File:** `app/api/inbox/reply/route.ts`
+**Purpose:** Send an email reply via JMAP from one of the configured Fastmail identities. Used by the inbox UI's inline reply composer.
+
+**Auth:** No explicit auth check. The route only sends from identities present in `getInboxIdentities()` (i.e., identities the server has a JMAP token for), so the abuse surface is the same shape as `/api/inbox/sync`.
+
+**Body:**
+```ts
+{
+  identity: string;              // must match a configured FASTMAIL_API_KEY_*
+  to: { email: string; name?: string }[];
+  cc?: { email: string; name?: string }[];
+  bcc?: { email: string; name?: string }[];
+  subject: string;
+  bodyText: string;
+  bodyHtml?: string | null;      // auto-generated from bodyText if omitted
+  replyToJmapId?: string | null; // inbound_emails.message_id of the message we're replying to
+}
+```
+
+**Response:** `{ ok: true, message_id, submission_id }` on success, or `{ error, details }, 400/500`.
+
+**Side effects:**
+- Looks up the original message's rfc822 `Message-Id` + `References` via `getMessageIdHeader(apiKey, replyToJmapId)` so the reply chains its threading headers correctly. Failure here is non-fatal — the send still proceeds, but the reply may not link in recipients' email clients.
+- Calls `submitEmail()`: creates a draft in JMAP, calls `EmailSubmission/set` with `onSuccessUpdateEmail` to atomically move draft → Sent. Threading uses the first-class `inReplyTo` / `references` Email properties (Fastmail rejects `header:In-Reply-To:asMessageIds`).
+- After a successful submit, best-effort triggers `runInboxSync` for that single identity so the new outbound row materializes in `inbound_emails` immediately (and `sent_folder_reconciler` adds an `interactions` row).
+
+**Caveats:**
+- HTML body is auto-generated from `bodyText` if not supplied, using a minimal `<div style="white-space:pre-wrap;…">` wrapper with HTML-escaped content. Rich-text editing is not implemented.
+- `from` is fixed to the supplied `identity`. The route does not allow custom From addresses outside the managed-identity set.
 
 ---
 
@@ -608,7 +669,7 @@ Only the enrichment pipeline supports cancellation. `POST /api/enrich/cancel` fl
 ### 3.7 Idempotency
 
 - `sequences/generate` checks `(sequence_id, person_id, sequence_step)` before inserting (good).
-- `sequences/send` has no row-level lock; concurrent invocations can double-send.
+- `sequences/send` uses an atomic claim RPC (`claim_due_interactions` from migration 028) — `FOR UPDATE SKIP LOCKED` ensures overlapping cron invocations claim disjoint sets. Stranded `sending` rows are recovered every 5 minutes by the `reclaim_stuck_interactions` sweeper.
 - `messages/send` does not check status before invoking edge function — re-running can re-send rows that just transitioned to `sent`.
 - `webhooks/sendgrid` uses status priority comparison to prevent downgrade. No explicit replay protection (e.g. event ID dedupe).
 - Inbox sync uses `(message_id, account_email)` unique-ish check before insert.
@@ -647,15 +708,20 @@ This section flags inconsistencies and concrete risks. Each item references file
 ### 4.6 No transactions around multi-step state changes
 
 - `correlations/merge`: RPC then status update — if the second fails the first sticks.
-- `messages/send`: `interactions.status = sending` then edge function — if edge invocation fails the row is stuck in `sending`.
-- `sequences/send`: same pattern around SendGrid call.
+- `messages/send`: `interactions.status = sending` then edge function — if edge invocation fails the row is stuck in `sending`. (Legacy route; the modern `sequences/send` has a 10-min sweeper that recovers these.)
+- `sequences/send`: **resolved** — see §4.7.
 - `inbox` POST link-to-person: update + job_log insert — partial state on failure.
 
 Use a Postgres function or, where invoking external APIs, a "claim → process → confirm" state machine with timeout-based reaper.
 
-### 4.7 No row-level locking in `sequences/send`
+### 4.7 Row-level locking in `sequences/send` (resolved)
 
-`app/api/sequences/send/route.ts:33-40` selects 50 scheduled rows. Two concurrent invocations will both pick up the same rows and double-send. Use `SELECT ... FOR UPDATE SKIP LOCKED` via an RPC, or a state transition that acts as the lock (`UPDATE ... WHERE status='scheduled' RETURNING ...`).
+Previously `sequences/send` did a non-atomic `SELECT ... LIMIT 50` followed by a separate `UPDATE status='sending'`, leaving a race window where overlapping cron invocations could double-send. Migration `028_sequence_send_atomic_claim.sql` resolves this:
+
+- `claim_due_interactions(p_limit)` — atomic `UPDATE ... FROM (SELECT ... FOR UPDATE SKIP LOCKED) RETURNING *`. Concurrent callers claim disjoint sets.
+- `reclaim_stuck_interactions(p_stuck_minutes)` — companion sweeper invoked at the top of every send-route run (10-minute threshold). Reverts any row stranded in `sending` back to `scheduled` with retry_count++.
+
+Stuck rows are also surfaced in the end-of-run Telegram batch and on the `/admin/sequences/failures` triage page.
 
 ### 4.8 Ad-hoc input validation, no schema layer
 
@@ -702,6 +768,7 @@ Consider env vars or config.
 | GET | `/api/inbox` | `app/api/inbox/route.ts` |
 | POST | `/api/inbox` | `app/api/inbox/route.ts` |
 | POST | `/api/inbox/sync` | `app/api/inbox/sync/route.ts` |
+| POST | `/api/inbox/recorrelate` | `app/api/inbox/recorrelate/route.ts` |
 | GET | `/api/cron/inbox-sync` | `app/api/cron/inbox-sync/route.ts` |
 | POST | `/api/correlations/merge` | `app/api/correlations/merge/route.ts` |
 | POST | `/api/webhooks/sendgrid` | `app/api/webhooks/sendgrid/route.ts` |

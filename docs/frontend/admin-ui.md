@@ -75,12 +75,10 @@ Sidebar nav data is declared in `components/admin/sidebar.tsx:30-47`:
 | Section | URL | Icon (lucide) | File(s) |
 |---|---|---|---|
 | Dashboard | `/admin` | `LayoutDashboard` | `app/admin/page.tsx` |
-| Persons | `/admin/persons` | `Users` | `app/admin/persons/page.tsx` + `persons-table-client.tsx` |
+| Contacts | `/admin/contacts?tab=persons\|organizations` | `Users` | `app/admin/contacts/{page.tsx,contacts-tabs-client.tsx}` — hosts both `<PersonsTableClient>` and `<OrganizationsTableClient>` behind a tab toggle. Legacy `/admin/persons` and `/admin/organizations` list routes redirect here. |
 | Lists | `/admin/lists` (index) + `/admin/lists/[id]` (detail) | `List` | `app/admin/lists/page.tsx` (index, 218 LOC) + `app/admin/lists/[id]/{page.tsx,list-detail-client.tsx,list-members-table.tsx,list-matches-table.tsx}` |
-| Organizations | `/admin/organizations` | `Building2` | `app/admin/organizations/page.tsx` + `organizations-table-client.tsx` |
 | Events | `/admin/events` | `Calendar` (sub-items: events list inline) | `app/admin/events/page.tsx` + `events-table-client.tsx` |
 | Pipeline | `/admin/pipeline` | `Kanban` | `app/admin/pipeline/page.tsx` (renders `PipelineView`) |
-| Initiatives | `/admin/initiatives` | `Rocket` | `app/admin/initiatives/page.tsx` + `initiatives-list-client.tsx` |
 | Sequences | `/admin/sequences` | `GitBranch` | `app/admin/sequences/page.tsx` (thin) → `sequence-list-client.tsx` |
 | Inbox | `/admin/inbox` | `Mail` | `app/admin/inbox/page.tsx` + `inbox-client.tsx` |
 | Enrichment | `/admin/enrichment` | `Sparkles` | `app/admin/enrichment/page.tsx` (Suspense wrapper) → `enrichment-shell.tsx` (988 LOC) |
@@ -138,9 +136,10 @@ app/admin/layout.tsx (server)
 
 ### `components/admin/breadcrumb.tsx`
 
-- Maps URL segments to labels via the `labelMap` dictionary at `tsx:10-26`.
+- Maps URL segments to labels via the `labelMap` dictionary.
 - Skips the leading `admin` segment so breadcrumbs start at the section level.
-- Detail pages (UUIDs) fall through to `decodeURIComponent(segment)` — long IDs render as raw UUIDs in the crumb. (Minor UX issue, not addressed by the breadcrumb itself.)
+- UUID segments under a known collection (`events`, `persons`, `organizations`, `lists`) are resolved to the entity's display name via `useEntityName` (`lib/queries/use-entity-name.ts`) — see [data-layer.md → `useEntityName`](./data-layer.md#useentityname). React Query caches the lookup (5min stale), so revisiting a detail page shows the name immediately. Falls back to the raw UUID while loading or if the lookup fails. Names are truncated to 40 chars.
+- Supports exactly one resolved entity per crumb trail — the first UUID segment under a `NAMEABLE_PARENTS` collection wins. Nested detail routes (e.g. `/admin/events/{eventId}/something/{otherUuid}`) would need this logic extended.
 
 ---
 
@@ -183,42 +182,46 @@ The Enrichment shell makes this explicit:
 - Uses local `STATUS_RANK` and `statusToStage` helpers (`page.tsx:9-35`) to compute the most-advanced status per person.
 - Note: dashboard does NOT use `useDashboardStats` even though that hook exists at `lib/queries/use-dashboard-stats.ts` — server-side fetching is preferred here for the initial page paint.
 
-### Persons — `/admin/persons`
+### Contacts — `/admin/contacts`
 
-- Server page (`app/admin/persons/page.tsx`) does heavy data prep (paginated `fetchAll` + batched event participations + correlations) and hands a `PersonRow[]` to `<PersonsTableClient>`.
-- Client (`persons-table-client.tsx`, 898 LOC):
-  - Uses `useVirtualizer` (`tsx:321`) over a CSS-grid layout. Grid cols exported as `PERSON_GRID_COLS` from `person-table-row.tsx`.
+Unified host for the two list views. The route accepts `?tab=persons|organizations` (default `persons`; unknown values fall back to `persons`). Legacy `/admin/persons` and `/admin/organizations` list routes are reduced to one-line `redirect()` files that point at the new route with the appropriate tab.
+
+- Server page (`app/admin/contacts/page.tsx`) parses `tab` from `searchParams`, then `Promise.all`s `loadPersonRows(supabase)` (`lib/data/load-person-rows.ts`) and `loadOrgRows(supabase)` (`lib/data/load-org-rows.ts`, extracted from the former `organizations/page.tsx`). Both data sets are fetched on every visit — the trade-off is a slightly slower initial paint for instant tab toggles with state preservation.
+- Client (`contacts-tabs-client.tsx`):
+  - Segmented tab control at the top with row counts (`Persons (237)`, `Organizations (412)`).
+  - Tab state is local, mirrored to the URL via `router.replace('/admin/contacts?tab=…', { scroll: false })` for deep-linking and back/forward.
+  - Both `<PersonsTableClient>` and `<OrganizationsTableClient>` are mounted; the inactive one is wrapped in a `hidden` div. This is intentional: filters, search, sort, scroll position, and selection survive tab toggles without lifting any state out of the existing table clients.
+- Breadcrumb: the `persons` and `organizations` segments on detail routes map to "Contacts" with href `/admin/contacts?tab=…` (`components/admin/breadcrumb.tsx`), so `/admin/persons/{id}` reads `Admin > Contacts > {Name}`.
+
+#### Persons tab
+
+- Hosted via `<PersonsTableClient>` (`app/admin/persons/persons-table-client.tsx`, 489 LOC) — unchanged by the merge.
+  - Uses `useVirtualizer` over a CSS-grid layout. Grid cols exported as `PERSON_GRID_COLS` from `person-table-row.tsx`.
   - Filters: ICP range, has-email, last-interaction status, event scope, organization. Event scope uses `<EventRelationToggle>` (`components/admin/event-relation-toggle.tsx`).
-  - Selection: in-place `GlassCheckbox` (re-imported from `person-table-row.tsx:29`).
+  - Selection: in-place `GlassCheckbox` (re-imported from `person-table-row.tsx`).
   - Detail panel: `<PersonPreviewPanel>` (`person-preview-panel.tsx`) on hover.
-- Detail page: `app/admin/persons/[id]/page.tsx` + the local `notes-editor.tsx`, `add-to-list-dropdown.tsx` clients.
+- Detail page: `app/admin/persons/[id]/page.tsx` + the local `notes-editor.tsx`, `add-to-list-dropdown.tsx` clients. URL unchanged.
 
-### Organizations — `/admin/organizations`
+#### Organizations tab
 
-- Server page: `app/admin/organizations/page.tsx`. Fetches `organizations`, batched `event_participations`, signal counts, and an event propagation count via `useOrgEventPropagation` indirectly.
-- Client (`organizations-table-client.tsx`, 661 LOC):
-  - `useVirtualizer` at `tsx:292`, `ORG_GRID_COLS` at `org-table-row.tsx`.
+- Hosted via `<OrganizationsTableClient>` (`app/admin/organizations/organizations-table-client.tsx`, 660 LOC) — unchanged by the merge. The page-level data prep that used to live in `organizations/page.tsx` is now in `lib/data/load-org-rows.ts` so it can be called side-by-side with `loadPersonRows()`.
+  - `useVirtualizer` over the CSS-grid layout, `ORG_GRID_COLS` from `org-table-row.tsx`.
   - Sortable columns; sort state is local.
   - Hover preview: `<OrgPreviewCard>` (`org-preview-card.tsx`).
-  - Pulls supplemental data via React Query: `useOrgEventPropagation()` (`tsx:24`).
-- Detail page: `app/admin/organizations/[id]/page.tsx` (server) → `client.tsx` (client). The detail page renders `<table>` HTML for sub-grids (signals, people roster, events) — these are small lists where virtualization isn't required.
+  - Pulls supplemental data via React Query: `useOrgEventPropagation()`.
+- Detail page: `app/admin/organizations/[id]/page.tsx` (server) → `client.tsx` (client). The detail page renders `<table>` HTML for sub-grids (signals, people roster, events) — small lists where virtualization isn't required. URL unchanged.
 
 ### Events — `/admin/events`
 
 - Server page builds a list of events with role counts.
 - Client (`events-table-client.tsx`) renders through `<DataTable>` with `EVENT_COLS` grid template. SortHeader returns a `<HeaderCell>` carrying the same chevron sort indicators as the persons/orgs grids. Center-aligned counts use `<NumericCell className="justify-center">`.
-- Detail page: `app/admin/events/[id]/page.tsx` — five-tab interface (Speakers, Sponsors, Org-affiliated, Schedule, Initiatives).
+- Detail page: `app/admin/events/[id]/page.tsx` — four-tab interface (Speakers, Sponsors, Org-affiliated, Schedule). The Speakers, Sponsors, and Org-affiliated tabs surface the same row shape as the list views (`/admin/persons` and `/admin/organizations`): photo/logo + name + secondary line, ICP badge, channel icons for people, and ICP / signals / total-events / `<OrgStatusIcons>` for orgs. Speaker org lookup is **filtered to the event's speaker person IDs** (`person_organization` `.in("person_id", …)`) rather than fetched globally — a previous global query was silently truncated at Supabase's 1000-row default and dropped speaker orgs. See [admin-panel.md → Event Detail](../admin-panel.md#event-detail) for tab-by-tab column lists.
 
 ### Pipeline — `/admin/pipeline`
 
 - Server page (`app/admin/pipeline/page.tsx`) maps statuses to stages (`statusToStage`), then renders `<PipelineView>` (`components/admin/pipeline-view.tsx`).
 - Two views: Kanban (`<KanbanBoard>` + `<KanbanColumn>` using `@hello-pangea/dnd`) and Table (`<PipelineTable>`).
 - `actions.ts` server actions move persons between stages.
-
-### Initiatives — `/admin/initiatives`
-
-- Server page → `<InitiativesListClient>` → `<InitiativeTable>` (`components/admin/initiative-table.tsx`).
-- Detail page: `app/admin/initiatives/[id]/page.tsx`.
 
 ### Sequences — `/admin/sequences`
 
@@ -232,6 +235,7 @@ The Enrichment shell makes this explicit:
 - **Segment builder** (`components/admin/segment-builder.tsx`): the "Build Segment" tab on the enrollment modal. Composes filters into a `SegmentSpec` (`lib/segments.ts`), debounce-calls `previewSegment` to display match count + 5-row sample, then `enrollFromSegment` to commit. Presets persist to localStorage. Sequence-level guards (`exclude_bounced`, `exclude_already_enrolled`) are applied server-side in `applySequenceEnrollFilters` regardless of which enrollment path the UI uses.
 - **Message queue** (`app/admin/sequences/[id]/messages/message-queue-client.tsx`): per-row approve / approve_at / reschedule / cancel / reject (with reason) / retry / edit. Bulk equivalents via the action bar. 12s react-query polling; counts derived in-memory via `useMemo` from the cached list. Approval-mode banner renders when `sequence.send_mode === "approval"`. In-house `<ToastViewport>` lives in `components/ui/toast.tsx` (no third-party toast lib).
 - **Step editor** (`components/admin/step-editor.tsx`): blocks save on validation errors (delay 0–365, non-empty body, action_type sequencing); warns on duplicates; `Preview` button per step calls `/api/sequences/[id]/preview` and renders through `<MessagePreviewModal>`.
+- **Failures triage** (`app/admin/sequences/failures/page.tsx` + `failures-client.tsx`): cross-sequence view of `failed` / `bounced` interactions (up to 500 most recent). Server component fetches via Supabase + flattens `detail.last_error`, `detail.last_status_code`, `detail.terminal_reason` for display. Client provides search, status filter (all / failed / bounced with counts), and per-row + bulk **Requeue** that resets `status='scheduled'`, `retry_count=0`, `scheduled_at=now()` via the `retryFailedInteractions` server action. Eligibility enforced server-side (only `failed` / `bounced` accepted). The send dispatcher's Telegram notifications deep-link here. The `failures` static segment beats `[id]` in Next's App Router, so `/admin/sequences/<uuid>` routing is unaffected.
 
 ### Inbox — `/admin/inbox`
 
@@ -255,7 +259,7 @@ app/admin/enrichment/page.tsx                    (server, Suspense)
     └── components/summary-strip.tsx             (results summary)
 ```
 
-- React Query hooks consumed: `useEnrichmentJobs`, `useEnrichmentItems`, `useEvents`, `useInitiatives`, `useEventPersonIds` (`enrichment-shell.tsx:13-18`).
+- React Query hooks consumed: `useEnrichmentJobs`, `useEnrichmentItems`, `useEvents`, `useEventPersonIds` (`enrichment-shell.tsx:13-18`).
 - Polls `enrichment.jobs` at 5s while any job is processing (`use-enrichment-jobs.ts:361-368`).
 - Two tabs: Person Enrichment / Organization Enrichment. Tab switch resets selection and forces target to `selected`.
 - Stage selector (Apollo / Perplexity / Gemini / People Finder / Full Pipeline) — independently toggleable; Full Pipeline is just an additive composite, not a special mode.
@@ -278,9 +282,13 @@ Per-row queued / processing styling (the `opacity-40` for not-yet-processed rows
 
 ### Uploads — `/admin/uploads`
 
-- Single client component (`app/admin/uploads/page.tsx`).
-- Components: `<FileDropzone>`, `<ColumnMapper>`, `Papa` (papaparse) for CSV parsing.
-- `actions.ts` exports `importCsvData`.
+Single client page built around one editable table. Three entry paths (empty, CSV, paste) normalize into the same shape: `ImportTableState = { mode, columns: ImportColumn[], rows: string[][] }`.
+
+- **`app/admin/uploads/page.tsx`** owns mode (`persons | organizations`), the table state, duplicate handling, CSV ingestion (papaparse), the event-resolution flow, and the upload history.
+- **`components/admin/import-table.tsx`** — the editable table. Headers are `<GlassSelect>` field-binding dropdowns; cells are editable text inputs; supports paste expansion and per-row/per-column remove. Maintains a "ghost row" invariant — `ensureGhostRow()` wraps every mutation so there is always one trailing empty row available for paste or further typing. No `+ Row` button; only `+ Column`. The trailing ghost row hides its Remove control and renders at reduced opacity. Subtle vertical separators (`border-l border-[var(--glass-border)]/40`) make empty columns visible.
+- **`components/admin/event-detect-modal.tsx`** — pre-import gate. For each unique unknown event name in the `event` column, the user picks Create (with optional `date_start`) / Map to existing / Skip. Confirm batch-creates events via `findOrCreateEvents` and proceeds.
+- **`lib/uploads/`** — pure helpers: `field-sets.ts` (`PERSON_FIELDS`, `ORGANIZATION_FIELDS`, `fieldSetForMode`, `isValidFieldForMode`), `auto-match.ts` (`autoMatchHeader` per mode), `paste-parser.ts` (`parseClipboard` — TSV preferred, falls back to CSV), `event-detect.ts` (`normalizeEventName`, `partitionEventNames`).
+- **`actions.ts`** exports `listUnknownEvents`, `findOrCreateEvents`, `importPersons`, `importOrganizations`, and the row/decision types. Persons dedupe by email; orgs by case-insensitive name. Both write an `uploads` row with status + counts. The legacy `importCsvData` and `<ColumnMapper>` are retired.
 
 ### Lists — `/admin/lists` (index) + `/admin/lists/[id]` (detail)
 

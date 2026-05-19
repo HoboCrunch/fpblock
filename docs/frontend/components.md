@@ -134,7 +134,6 @@ All admin tables (sequences, events, organizations, persons, pipeline, enrichmen
 
 | File | Purpose |
 |---|---|
-| `initiative-table.tsx` | Initiatives list table. |
 | `pipeline-table.tsx` | Pipeline view's table mode — `DataTable` invocation with `TextCell`/`PillCell` columns. Alternative to the kanban view. |
 | `message-row.tsx` | Single message row in the sequence message queue. **Exception**: the message queue keeps an HTML `<table>` (with `table-fixed` + `<colgroup>`) because expandable detail rows don't fit `DataTable`'s fixed-height virtualization. |
 | `sequence-row.tsx` | Returns grid children consumed by `<DataTable>` in `sequence-list-client.tsx`. |
@@ -152,7 +151,7 @@ All admin tables (sequences, events, organizations, persons, pipeline, enrichmen
 ### Detail / timelines
 | File | Purpose |
 |---|---|
-| `interactions-timeline.tsx` | Reusable chronological feed embedded on Person/Org/Event/Initiative detail (294 LOC). |
+| `interactions-timeline.tsx` | Reusable chronological feed embedded on Person/Org/Event detail (294 LOC). |
 | `signals-timeline.tsx` | Signals (organization_signals) chronological feed. |
 | `activity-feed.tsx` | Recent job_log entries on Dashboard. |
 | `activity-log.tsx` | Verbose activity rendering. |
@@ -166,7 +165,8 @@ All admin tables (sequences, events, organizations, persons, pipeline, enrichmen
 | `composable-template-editor.tsx` | Block-based template editor (subject/body) (221 LOC). |
 | `ai-block-editor.tsx` | Single AI-generated text block. |
 | `variable-picker.tsx` | Insert `{{variable}}` chooser. |
-| `column-mapper.tsx` | CSV header → DB field mapping UI. |
+| `import-table.tsx` | Editable import table at `/admin/uploads`. Header dropdowns bind columns to canonical fields, cells are editable, paste auto-expands, ghost row always trails. Replaces the retired `column-mapper.tsx`. |
+| `event-detect-modal.tsx` | Pre-import resolution modal. Lists unknown event names with Create / Map / Skip per row. |
 | `file-dropzone.tsx` | Drag-drop file dropzone for uploads. |
 | `event-relation-toggle.tsx` | Two-checkbox `Speaker` / `Org-affiliated` toggle. Tightly coupled to `useEventPersonIds(eventId, relation)`. |
 
@@ -216,7 +216,7 @@ From `PERFORMANCE.md` §2 and observed in code:
 
 The pattern across the app:
 
-- `app/admin/<section>/page.tsx` is a **server component** when it does heavy data prep (orgs, persons, events, initiatives, inbox, dashboard). It awaits `createClient()` from `lib/supabase/server.ts`, runs parallel `fetchAll` calls, and passes serialized props down.
+- `app/admin/<section>/page.tsx` is a **server component** when it does heavy data prep (orgs, persons, events, inbox, dashboard). It awaits `createClient()` from `lib/supabase/server.ts`, runs parallel `fetchAll` calls, and passes serialized props down.
 - `app/admin/<section>/<section>-table-client.tsx` (or `-list-client.tsx`) is the corresponding **client component** that owns interactive state, filters, and selection.
 - The shell (`admin-shell.tsx`) and `<QueryProvider>` mount once at `app/admin/layout.tsx`.
 - Some pages are 100% client (`/admin/lists` index, `/admin/settings`, `/admin/uploads`) — these own their data fetching directly. They predate the React Query convention and have **not** been migrated. The `/admin/lists/[id]` detail route, by contrast, _is_ a server-component shell that loads `loadPersonRows()` server-side and hands it to a client.
@@ -261,7 +261,7 @@ See [admin-ui.md → Selection model](./admin-ui.md#selection-model). The compon
 
 The major admin list pages (sequences, events, organizations, persons, pipeline, enrichment) all migrated to `<DataTable>` in 2026-04. Two HTML-table holdouts remain, both intentional:
 
-- `app/admin/organizations/[id]/page.tsx` (org detail) uses HTML `<table>` for small sub-grids (signals, people roster, events, initiatives). Acceptable: each is tiny and never warrants virtualization, but worth migrating for consistency if the surrounding page is ever rewritten.
+- `app/admin/organizations/[id]/page.tsx` (org detail) uses HTML `<table>` for small sub-grids (signals, people roster, events). Acceptable: each is tiny and never warrants virtualization, but worth migrating for consistency if the surrounding page is ever rewritten.
 - `app/admin/sequences/[id]/messages/message-queue-client.tsx` keeps HTML `<table>` because each row has an expandable detail row (`<td colSpan>`), which doesn't fit `DataTable`'s fixed-height virtualization. The table has `table-fixed` + `<colgroup>` to lock column widths.
 
 ### 3. Pages bypassing React Query

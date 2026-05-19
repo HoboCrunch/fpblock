@@ -74,7 +74,6 @@ All functions handle OPTIONS preflight and return JSON responses.
 ```json
 {
   "person_ids": ["uuid1", "uuid2"],
-  "initiative_id": "uuid",
   "channels": ["cold_linkedin", "cold_email"],  // optional, defaults to both
   "sequence_number": 1,                          // optional, default 1
   "prompt_template_id": "uuid",                 // optional override
@@ -84,12 +83,11 @@ All functions handle OPTIONS preflight and return JSON responses.
 ```
 
 **Behavior:**
-1. Loads initiative config for defaults (sender, CTA, prompt template)
-2. For each person:
+1. For each person:
    - Loads person + primary organization + recent signals
    - Loads previous interaction if follow-up (sequence_number > 1)
    - For each channel:
-     - Resolves prompt template (explicit override > channel-specific > initiative default)
+     - Resolves prompt template (explicit override > channel-specific default)
      - Fills template variables (`{{person.full_name}}`, `{{organization.context}}`, etc.)
      - Calls Gemini with system + user prompts
      - Parses email subject if channel is "cold_email"
@@ -203,7 +201,6 @@ Organization enrichment pipeline orchestrator. Runs a five-stage enrichment with
 {
   "organizationIds": ["uuid1", "uuid2"],
   "eventId": "uuid",
-  "initiativeId": "uuid",
   "icpBelow": 50,
   "stages": ["apollo", "perplexity", "gemini", "people_finder", "full"],
   "peopleFinderConfig": {
@@ -252,13 +249,12 @@ Organization enrichment pipeline orchestrator. Runs a five-stage enrichment with
 
 **Path:** `app/api/messages/generate/route.ts`
 
-Generates draft interactions for selected persons within an initiative. Creates interactions of type `cold_email`, `cold_linkedin`, etc. in the `interactions` table.
+Generates draft interactions for selected persons. Creates interactions of type `cold_email`, `cold_linkedin`, etc. in the `interactions` table.
 
 **Input:**
 ```json
 {
   "personIds": ["uuid1", "uuid2"],
-  "initiativeId": "uuid",
   "channels": ["cold_email", "cold_linkedin"]
 }
 ```
@@ -359,7 +355,8 @@ Additional secrets (set via `npx supabase secrets set`):
 | `APOLLO_API_KEY` | /api/enrich, /api/enrich/organizations |
 | `PERPLEXITY_API_KEY` | /api/enrich/organizations (Perplexity Sonar deep research) |
 | `GEMINI_API_KEY` | /api/enrich/organizations (Gemini synthesis + ICP scoring) |
-| `FASTMAIL_API_KEY` | /api/inbox (JMAP auth) |
+| `FASTMAIL_API_KEY_JB`, `FASTMAIL_API_KEY_WES` | /api/inbox, /api/inbox/sync, /api/inbox/reply (one JMAP token per managed identity) |
+| `INBOX_TELEGRAM_DISABLED` (optional) | lib/inbox-correlator.ts — set to `1` to suppress correlation Telegram pings |
 | `TELEGRAM_BOT_TOKEN` | lib/telegram.ts (Bot API) |
 | `TELEGRAM_CHAT_ID` | lib/telegram.ts (notification target) |
 
