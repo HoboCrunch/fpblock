@@ -183,6 +183,15 @@ export function PipelineTable({ contacts }: { contacts: PipelineContact[] }) {
                 <Badge className={cn("text-xs", stageDef.className)}>
                   {stageDef.label}
                 </Badge>
+                {contact.source && (
+                  <span className="ml-2 inline-block rounded bg-white/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-white/50">
+                    {contact.source === "script_backfill" || contact.source === "script_send"
+                      ? "script"
+                      : contact.source === "sent_folder_reconciler"
+                        ? "manual"
+                        : contact.source}
+                  </span>
+                )}
               </PillCell>
 
               {/* Last Updated */}

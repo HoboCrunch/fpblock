@@ -48,7 +48,7 @@ const STATUS_RANK: Record<string, number> = {
 export default async function PipelinePage({
   searchParams,
 }: {
-  searchParams: Promise<{ stage?: string; initiative?: string }>;
+  searchParams: Promise<{ stage?: string }>;
 }) {
   const params = await searchParams;
   const supabase = await createClient();
@@ -83,14 +83,8 @@ export default async function PipelinePage({
 
   const allInteractions = await fetchAllRows(
     "interactions",
-    "id, person_id, status, channel, event_id, initiative_id, created_at"
+    "id, person_id, status, channel, event_id, created_at, sequence_id, detail"
   );
-
-  // Fetch initiatives for the filter dropdown
-  const { data: initiatives } = await supabase
-    .from("initiatives")
-    .select("id, name, status")
-    .order("name", { ascending: true });
 
   // Fetch events for the filter dropdown
   const { data: events } = await supabase
@@ -98,15 +92,9 @@ export default async function PipelinePage({
     .select("*")
     .order("date_start", { ascending: false });
 
-  // If initiative filter is active, scope interactions to that initiative
-  const initiativeFilter = params.initiative || null;
-  const filteredInteractions = initiativeFilter
-    ? allInteractions.filter((i: any) => i.initiative_id === initiativeFilter)
-    : allInteractions;
-
   // Build lookup: interactions by person_id
-  const interactionsByPerson = new Map<string, typeof filteredInteractions>();
-  for (const interaction of filteredInteractions) {
+  const interactionsByPerson = new Map<string, typeof allInteractions>();
+  for (const interaction of allInteractions) {
     const existing = interactionsByPerson.get(interaction.person_id) || [];
     existing.push(interaction);
     interactionsByPerson.set(interaction.person_id, existing);
@@ -127,7 +115,7 @@ export default async function PipelinePage({
       let bestRank = -1;
       let bestChannel: string | null = null;
       let bestEventId: string | null = null;
-      let bestInitiativeId: string | null = null;
+      let bestSource: PipelineContact["source"] = null;
       let lastUpdated: string | null = null;
 
       for (const interaction of interactions) {
@@ -137,16 +125,26 @@ export default async function PipelinePage({
           bestStatus = interaction.status;
           bestChannel = interaction.channel;
           bestEventId = interaction.event_id;
-          bestInitiativeId = interaction.initiative_id;
+          const detailSource = (interaction.detail as { source?: string } | null)?.source ?? null;
+          if (
+            detailSource === "script_backfill" ||
+            detailSource === "script_send" ||
+            detailSource === "sent_folder_reconciler" ||
+            detailSource === "sequence" ||
+            detailSource === "manual"
+          ) {
+            bestSource = detailSource;
+          } else if (interaction.sequence_id) {
+            bestSource = "sequence";
+          } else {
+            bestSource = null;
+          }
         }
         const interactionDate = interaction.created_at;
         if (!lastUpdated || interactionDate > lastUpdated) {
           lastUpdated = interactionDate;
         }
       }
-
-      // If initiative filter is active and person has no interactions, skip them
-      if (initiativeFilter && interactions.length === 0) continue;
 
       pipelineContacts.push({
         id: person.id,
@@ -156,9 +154,9 @@ export default async function PipelinePage({
         channel: bestChannel,
         pipeline_stage: statusToStage(bestStatus),
         last_updated: lastUpdated || person.created_at,
-        initiative_id: bestInitiativeId,
         event_id: bestEventId,
         event_name: null,
+        source: bestSource,
       });
     }
   }
@@ -167,9 +165,7 @@ export default async function PipelinePage({
     <PipelineView
       contacts={pipelineContacts}
       events={events || []}
-      initiatives={initiatives || []}
       initialStageFilter={params.stage || null}
-      initialInitiativeFilter={initiativeFilter}
     />
   );
 }

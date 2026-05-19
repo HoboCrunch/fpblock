@@ -59,6 +59,15 @@ export function DragCard({ contact, isDragging }: Props) {
             <span className="text-[10px] capitalize">{contact.channel}</span>
           </div>
         )}
+        {contact.source && (
+          <span className="mt-1.5 inline-block rounded bg-white/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-white/50">
+            {contact.source === "script_backfill" || contact.source === "script_send"
+              ? "script"
+              : contact.source === "sent_folder_reconciler"
+                ? "manual"
+                : contact.source}
+          </span>
+        )}
       </div>
     </Link>
   );
