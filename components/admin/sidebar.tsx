@@ -6,7 +6,6 @@ import { memo, useState, useEffect, useCallback } from "react";
 import {
   LayoutDashboard,
   Users,
-  Building2,
   Calendar,
   Kanban,
   GitBranch,
@@ -17,7 +16,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Rocket,
   GitMerge,
   List as ListIcon,
   X,
@@ -29,12 +27,10 @@ import type { NavItemData } from "./nav-item";
 
 const mainNavItems: NavItemData[] = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Persons", href: "/admin/persons", icon: Users },
+  { label: "Contacts", href: "/admin/contacts", icon: Users },
   { label: "Lists", href: "/admin/lists", icon: ListIcon },
-  { label: "Organizations", href: "/admin/organizations", icon: Building2 },
   { label: "Events", href: "/admin/events", icon: Calendar, hasSubItems: true },
   { label: "Pipeline", href: "/admin/pipeline", icon: Kanban },
-  { label: "Initiatives", href: "/admin/initiatives", icon: Rocket },
   { label: "Sequences", href: "/admin/sequences", icon: GitBranch },
   { label: "Inbox", href: "/admin/inbox", icon: Mail },
   { label: "Enrichment", href: "/admin/enrichment", icon: Sparkles },
@@ -46,6 +42,18 @@ const bottomNavItems: NavItemData[] = [
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
+/* Returns "Mmm Dd" (e.g. "Jul 21") for an event date, or null if unparseable. */
+function formatEventDatePill(date: string | null): string | null {
+  if (!date) return null;
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 /* ── main sidebar export ─────────────────────────────────── */
 
 export const Sidebar = memo(function Sidebar({
@@ -54,7 +62,7 @@ export const Sidebar = memo(function Sidebar({
   onClose,
   pathname,
 }: {
-  events: { id: string; name: string }[];
+  events: { id: string; name: string; date_start: string | null }[];
   mobileOpen: boolean;
   onClose: () => void;
   pathname: string;
@@ -204,19 +212,34 @@ export const Sidebar = memo(function Sidebar({
                         {events.map((event) => {
                           const eventHref = `/admin/events/${event.id}`;
                           const eventActive = pathname === eventHref;
+                          const dateLabel = formatEventDatePill(event.date_start);
                           return (
                             <Link
                               key={event.id}
                               href={eventHref}
                               onClick={handleNavClick}
                               className={cn(
-                                "text-xs px-2.5 py-1.5 rounded-md transition-all duration-200 truncate",
+                                "flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-md transition-all duration-200",
                                 eventActive
                                   ? "text-[var(--accent-orange)] bg-[var(--accent-orange)]/[0.08] font-medium"
                                   : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/[0.03]"
                               )}
                             >
-                              {event.name}
+                              <span className="flex-1 min-w-0 truncate">
+                                {event.name}
+                              </span>
+                              {dateLabel && (
+                                <span
+                                  className={cn(
+                                    "shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium tabular-nums tracking-wide",
+                                    eventActive
+                                      ? "bg-[var(--accent-orange)]/[0.16] text-[var(--accent-orange)]"
+                                      : "bg-white/[0.04] text-white/45 group-hover:text-white/60"
+                                  )}
+                                >
+                                  {dateLabel}
+                                </span>
+                              )}
                             </Link>
                           );
                         })}
