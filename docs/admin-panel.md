@@ -152,6 +152,9 @@ Persons linked to the event indirectly because an org they belong to participate
 #### Schedule
 Lightweight day/track/slot grid view assembled from event_participation metadata (time_slot, track, room, talk_title). Grouped by day, sorted by time within track.
 
+#### Create list (per-tab action)
+The Speakers and Org-affiliated tabs each surface a **Create list** button right-aligned on the tab-bar row (via the `<Tabs>` per-tab `action` slot). It opens a modal (name prefilled `"{event} – Speakers"` / `"{event} – Org-affiliated"`, optional description) that creates a `person_list` and seeds it with **exactly the persons shown in that tab** — Speakers injects the deduped speaker person IDs; Org-affiliated injects `relatedContactRows` — then navigates to `/admin/lists/{id}`. Lists are person-only, so the Sponsors (organizations) and Schedule tabs have no action. Component: `components/admin/create-list-button.tsx`.
+
 ## Interactions Timeline
 
 Reusable component embedded on Person, Organization, and Event detail views.

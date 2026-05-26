@@ -14,6 +14,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { Tabs } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { OrgStatusIcons } from "@/app/admin/enrichment/components/status-icons";
+import { CreateListButton } from "@/components/admin/create-list-button";
 import type {
   Event,
   Organization,
@@ -442,6 +443,12 @@ export default async function EventPage({
             {
               id: "speakers",
               label: `Speakers (${speakers.length})`,
+              action: (
+                <CreateListButton
+                  personIds={speakerPersonIds}
+                  defaultName={`${(event as Event).name} – Speakers`}
+                />
+              ),
               content: (
                 <div className="p-3">
                   {speakers.length === 0 ? (
@@ -721,6 +728,12 @@ export default async function EventPage({
             {
               id: "related",
               label: `Org-affiliated (${relatedContactRows.length})`,
+              action: (
+                <CreateListButton
+                  personIds={relatedContactRows.map((r) => r.person.id)}
+                  defaultName={`${(event as Event).name} – Org-affiliated`}
+                />
+              ),
               content: (
                 <div className="p-3">
                   {relatedContactRows.length === 0 ? (

@@ -224,7 +224,7 @@ Unified host for the two list views. The route accepts `?tab=persons|organizatio
 
 - Server page builds a list of events with role counts.
 - Client (`events-table-client.tsx`) renders through `<DataTable>` with `EVENT_COLS` grid template. SortHeader returns a `<HeaderCell>` carrying the same chevron sort indicators as the persons/orgs grids. Center-aligned counts use `<NumericCell className="justify-center">`.
-- Detail page: `app/admin/events/[id]/page.tsx` — four-tab interface (Speakers, Sponsors, Org-affiliated, Schedule). The Speakers, Sponsors, and Org-affiliated tabs surface the same row shape as the list views (`/admin/persons` and `/admin/organizations`): photo/logo + name + secondary line, ICP badge, channel icons for people, and ICP / signals / total-events / `<OrgStatusIcons>` for orgs. Speaker org lookup is **filtered to the event's speaker person IDs** (`person_organization` `.in("person_id", …)`) rather than fetched globally — a previous global query was silently truncated at Supabase's 1000-row default and dropped speaker orgs. See [admin-panel.md → Event Detail](../admin-panel.md#event-detail) for tab-by-tab column lists.
+- Detail page: `app/admin/events/[id]/page.tsx` — four-tab interface (Speakers, Sponsors, Org-affiliated, Schedule). The Speakers, Sponsors, and Org-affiliated tabs surface the same row shape as the list views (`/admin/persons` and `/admin/organizations`): photo/logo + name + secondary line, ICP badge, channel icons for people, and ICP / signals / total-events / `<OrgStatusIcons>` for orgs. Speaker org lookup is **filtered to the event's speaker person IDs** (`person_organization` `.in("person_id", …)`) rather than fetched globally — a previous global query was silently truncated at Supabase's 1000-row default and dropped speaker orgs. The Speakers and Org-affiliated tabs each carry a **Create list** action (via `<Tabs>`'s per-tab `action` slot → `<CreateListButton>`) that spins up a `person_list` seeded with that tab's persons and navigates to it; the org-based Sponsors tab has none (lists are person-only). See [admin-panel.md → Event Detail](../admin-panel.md#event-detail) for tab-by-tab column lists.
 
 ### Pipeline — `/admin/pipeline`
 
@@ -314,7 +314,7 @@ Single client page built around one editable table. Three entry paths (empty, CS
 
 ### Lists — `/admin/lists` (index) + `/admin/lists/[id]` (detail)
 
-Lists organize persons into buckets used by enrichment, sequences, pipeline, and `/admin/persons` views. Membership is concrete rows in `person_list_items`; a list optionally carries a saved `PersonFilterRules` (column added in `027_person_lists_filter_rules.sql`) that powers the filter sidebar but never auto-mutates membership.
+Lists organize persons into buckets used by enrichment, sequences, pipeline, and `/admin/persons` views. Membership is concrete rows in `person_list_items`; a list optionally carries a saved `PersonFilterRules` (column added in `027_person_lists_filter_rules.sql`) that powers the filter sidebar but never auto-mutates membership. Lists can be created from the index-page New List modal, or seeded in one step from an event's Speakers / Org-affiliated tab via `<CreateListButton>` (see [Events](#events--adminevents)).
 
 **Index page** (`app/admin/lists/page.tsx`, ~218 LOC, client):
 - Renders the roster of lists with member count, "saved filter" pill when `filter_rules !== null`, and a New List modal.

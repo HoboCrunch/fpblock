@@ -89,7 +89,7 @@ Stateless (or local-state-only) presentational primitives.
 | `glass-select.tsx` | `<GlassSelect>` native `<select>` with custom chevron. **Single-select only**; for multi-select use `MultiSelectField` (see `components/admin/`). |
 | `badge.tsx` | `<Badge variant>` pill. The `variants` map defines 24 named variants — every interaction status, sponsor tier, seniority, and a few "glass" variants (`glass`, `glass-orange`, `glass-indigo`). Children render inside an internal `<span class="truncate min-w-0">` so badges with `max-w-*` ellipsis cleanly. Optional `title` prop for the tooltip on truncated text. |
 | `stat-card.tsx` | `<StatCard label value icon accentColor>` — large numeric display with icon. Used on the Dashboard. |
-| `tabs.tsx` | `<Tabs tabs={[{id,label,content}]} defaultTab>` — local-state tab switcher. Used by Settings. **Limitation:** state is internal — not URL-synced. |
+| `tabs.tsx` | `<Tabs tabs={[{id,label,content,action?}]} defaultTab>` — local-state tab switcher. Used by Settings and Event detail. Each tab may carry an optional `action: React.ReactNode` rendered right-aligned on the tab-bar row when that tab is active (used for the Event-detail "Create list" button). Pass elements, **not** functions — `Tabs` is a client component and a server-component parent (e.g. Event detail) cannot pass a function prop across the boundary. **Limitation:** state is internal — not URL-synced. |
 | `data-table.tsx` | **Canonical table primitive.** `<DataTable<T>>` wraps `@tanstack/react-virtual` over a CSS-Grid layout. Props: `rows`, `gridTemplate`, `header`, `renderRow`, `getRowKey`, plus optional `onRowClick`, `isRowSelected`, `onRowMouseEnter`/`Leave`, `rowClassName`, `estimateRowHeight`, `scrollHeight`, `minWidth`, `emptyMessage`. Sticky header inside the scroll container. Used by sequences, events, organizations, persons, pipeline, enrichment. |
 | `data-cell.tsx` | Cell variants for `DataTable`'s `renderRow`/`header`: `TextCell` (truncated), `NumericCell` (tabular-nums, right-aligned), `PillCell` (overflow-hidden flex container for badges), `DateCell` (whitespace-nowrap, muted), `HeaderCell` (column header with built-in uppercase tracking). All consume the shared `--cell-px` / `--cell-py` / `--cell-py-header` CSS tokens defined in `globals.css :root` so header padding lines up with row padding across surfaces. |
 
@@ -183,6 +183,7 @@ All admin tables (sequences, events, organizations, persons, pipeline, enrichmen
 | File | Purpose |
 |---|---|
 | `add-to-list-dropdown.tsx` | "Add to list" popover used by row actions (also a copy at `app/admin/persons/[id]/add-to-list-dropdown.tsx` — duplicated). |
+| `create-list-button.tsx` | `<CreateListButton personIds defaultName>` — inline button + modal that creates a `person_list` and seeds it with the supplied person IDs in one step (`createList` → `addToList`), then navigates to `/admin/lists/{id}`. Disabled (with tooltip) when `personIds` is empty. Wired into the Event-detail tab `action` slot for the Speakers and Org-affiliated tabs. Modal mirrors the index-page `NewListModal`. |
 | `message-preview-modal.tsx` | Modal preview of a generated message (162 LOC). |
 
 ---
