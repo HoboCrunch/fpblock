@@ -192,8 +192,8 @@ The Wes pool is calmer/peer-to-peer; the JB pool opens "Hey {first} —" more of
 
 - `consensus/send_day_1.csv` … `send_day_5.csv` — Mon–Fri schedule produced by `chunk-employee-sends.ts`. Operator runs `send-outreach.ts --csv consensus/send_day_N.csv --yes` once per day. **Not automated** — the script is interactive.
 - `vercel.json` schedules `/api/sequences/send` every 5 minutes — that is a separate pipeline (Sequences feature) for ongoing drips, not the campaign-day batch script.
-- `supabase/migrations/034_inbox_sync_cron_hourly.sql` schedules inbox sync via pg_cron (single `sync-inbox` job at `0 * * * *`). Replaces the per-account 15-min jobs from `016_inbox_sync_cron.sql` (both unscheduled by 034). One POST covers every configured identity.
-- `app/api/cron/inbox-sync/route.ts` is a Vercel-cron-ready alternative gated by `CRON_SECRET`. Add to `vercel.json:crons` to enable; first unschedule the pg_cron `sync-inbox` job to avoid double-pulling.
+- `supabase/migrations/034_inbox_sync_cron_hourly.sql` unschedules the legacy per-account pg_cron jobs from `016_inbox_sync_cron.sql` (`sync-inbox-jb`, `sync-inbox-wes`) — never functional (unfilled `https://YOUR_APP_URL` placeholder). It registers no replacement.
+- `app/api/cron/inbox-sync/route.ts` is the active inbox-sync mechanism: a Vercel cron (`vercel.json:crons` → `/api/cron/inbox-sync`, every 5 min) gated by `CRON_SECRET`. One pass covers every configured identity.
 
 ---
 

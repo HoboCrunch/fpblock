@@ -276,7 +276,7 @@ Toggled by the Reply button. Inline at the bottom of the conversation card.
 Sent replies live in the actual Fastmail Sent folder under the sending identity — recipients see normal mail from `jb@…` / `wes@…`, and `sent_folder_reconciler` (see [sequences-messaging](backend/sequences-messaging.md)) materializes a matching `interactions` row.
 
 ### Auto-Sync
-A pg_cron job (`034_inbox_sync_cron_hourly.sql`, replacing the per-account jobs from `016_inbox_sync_cron.sql`) POSTs to `/api/inbox/sync` once per hour at `:00`. The route iterates every configured identity in one pass — no per-account staggering is needed. A Vercel-cron-ready equivalent (`/api/cron/inbox-sync`, gated by `CRON_SECRET`) is available as an alternative.
+Inbox sync runs via a Vercel cron (`/api/cron/inbox-sync`, gated by `CRON_SECRET`, every 5 min) — the route iterates every configured identity in one pass, no per-account staggering. The legacy per-account pg_cron jobs from `016_inbox_sync_cron.sql` never worked (unfilled `https://YOUR_APP_URL` placeholder) and were unscheduled by `034_inbox_sync_cron_hourly.sql`; there is no pg_cron inbox job now.
 
 ### Auto-Correlation
 Only inbound rows correlate (outbound skips this step). For each new inbound message:

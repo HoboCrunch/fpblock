@@ -171,7 +171,7 @@ The `004_cron.sql` migration sets up two hourly jobs:
 
 These use `current_setting('app.settings.supabase_url')` and `current_setting('app.settings.secret_key')`. Set these in **Supabase Dashboard > Project Settings > Database > Custom configuration**.
 
-`016_inbox_sync_cron.sql` originally added two per-account pg_cron jobs at 15-min cadence. Migration `034_inbox_sync_cron_hourly.sql` supersedes that: it unschedules both legacy jobs and registers a single `sync-inbox` job at **hourly** cadence (`0 * * * *`) that POSTs an empty body to `/api/inbox/sync`. The route iterates every configured identity in one pass, each using its own `FASTMAIL_API_KEY_<HANDLE>`.
+`016_inbox_sync_cron.sql` originally added two per-account pg_cron jobs at 15-min cadence, but they were never functional (an unfilled `https://YOUR_APP_URL` placeholder, so they POSTed to a non-existent host). Migration `034_inbox_sync_cron_hourly.sql` unschedules both and registers no replacement: inbox sync runs via the Vercel cron `/api/cron/inbox-sync` (`vercel.json`, every 5 min, gated by `CRON_SECRET`), which iterates every configured identity in one pass, each using its own `FASTMAIL_API_KEY_<HANDLE>`.
 
 ### Vercel Cron jobs
 

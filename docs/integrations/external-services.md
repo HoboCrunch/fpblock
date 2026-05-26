@@ -131,7 +131,7 @@ If the team wants in-app Claude calls, that integration does not yet exist.
 - `app/api/inbox/sync/route.ts` — `POST` sync endpoint, body ignored. Iterates every configured identity in one pass.
 - `app/api/cron/inbox-sync/route.ts` — `GET`, same single-pass logic, gated by `Authorization: Bearer $CRON_SECRET`.
 - `app/api/inbox/reply/route.ts` — `POST` reply send. Body: `{ identity, to[], cc?[], bcc?[], subject, bodyText, bodyHtml?, replyToJmapId? }`. Resolves the right JMAP token from the identity, looks up the original's rfc822 Message-Id when replying, submits, then triggers a per-identity sync so the new outbound row ingests immediately.
-- `supabase/migrations/034_inbox_sync_cron_hourly.sql` — current pg_cron schedule: one `sync-inbox` job hitting `/api/inbox/sync` hourly at `:00`. Supersedes the 15-min per-account jobs from migration 016 (the original two jobs are unscheduled by 034).
+- `supabase/migrations/034_inbox_sync_cron_hourly.sql` — unschedules the legacy per-account pg_cron jobs from migration 016 (`sync-inbox-jb`, `sync-inbox-wes`), which never worked (unfilled `https://YOUR_APP_URL` placeholder). No pg_cron replacement: inbox sync runs via the Vercel cron `/api/cron/inbox-sync` (every 5 min, gated by `CRON_SECRET`).
 
 ---
 

@@ -31,7 +31,7 @@ If anything here disagrees with the migrations on disk, the migrations win — f
 | 013 | `supabase/migrations/013_crm_drop_old_tables.sql` | Drops `contact_event`, `company_event`, `contact_company`, `messages`, `contacts`, `companies`, `events_old`. |
 | 014 | `supabase/migrations/014_crm_upsert_constraints.sql` | `organizations_name_unique` UNIQUE constraint. Rewrites correlation fns to use proper jsonb array filtering (the original used invalid `jsonb - 'null'::jsonb`). |
 | 015 | `supabase/migrations/015_crm_enrollment_constraint_and_correlation_fix.sql` | Re-adds partial unique indexes on `initiative_enrollments` for upsert support (later dropped by 029). `initiatives_name_unique` (later dropped by 029). Final correlation fn rewrite (proper VALUES + WHERE filter). |
-| 016 | `supabase/migrations/016_inbox_sync_cron.sql` | Cron jobs `sync-inbox-jb` (`*/15 * * * *`) and `sync-inbox-wes` (`1-59/15 * * * *`) that POST to the Next.js `/api/inbox/sync` route. **Hardcoded `https://YOUR_APP_URL` placeholder must be replaced post-deploy.** Superseded by 034. |
+| 016 | `supabase/migrations/016_inbox_sync_cron.sql` | Cron jobs `sync-inbox-jb` (`*/15 * * * *`) and `sync-inbox-wes` (`1-59/15 * * * *`) that POST to the Next.js `/api/inbox/sync` route. **Never functional — the `https://YOUR_APP_URL` placeholder was never filled, so it POSTed to a non-existent host.** Unscheduled by 034. |
 | 017 | `supabase/migrations/017_fix_persons_with_icp_view.sql` | Rewrites `persons_with_icp` view with `DISTINCT ON (p.id)` ORDER BY `po.created_at DESC` to deduplicate when a person has multiple `is_primary = true` rows. |
 | 019 | `supabase/migrations/019_company_context.sql` | Singleton `company_context` table + RLS + seeded with default ICP framework, positioning, language rules. |
 | 020 | `supabase/migrations/020_person_lists.sql` | `person_lists`, `person_list_items` (saved lists for targeting). RLS on both. |
@@ -48,7 +48,7 @@ If anything here disagrees with the migrations on disk, the migrations win — f
 | 031 | `supabase/migrations/031_interactions_message_id_index.sql` | Partial unique index `uniq_interactions_sendgrid_message_id` on `interactions ((detail->>'sendgrid_message_id')) WHERE (detail->>'sendgrid_message_id') IS NOT NULL`. Enforces idempotency for SendGrid-routed sends and the script-backfill pipeline — inserting a duplicate `sendgrid_message_id` is a conflict, not a silent duplicate. See `docs/backend/sequences-messaging.md` §4a for the `detail.source` enum that distinguishes sequence-sends from script-backfill vs. sent-folder-reconciler rows. |
 | 032 | `supabase/migrations/032_active_conversations_rpc.sql` | RPC `active_conversations_count(window_days int DEFAULT 14)` — see §4 below. |
 | 033 | `supabase/migrations/033_dashboard_rpcs.sql` | Additional dashboard RPCs. |
-| 034 | `supabase/migrations/034_inbox_sync_cron_hourly.sql` | Replaces the per-account 15-min pg_cron jobs from 016 with a single `sync-inbox` job at hourly cadence (`0 * * * *`). One POST to `/api/inbox/sync` covers every configured identity; body is ignored. Drops `sync-inbox-jb` and `sync-inbox-wes`. |
+| 034 | `supabase/migrations/034_inbox_sync_cron_hourly.sql` | Unschedules the legacy per-account pg_cron jobs from 016 (`sync-inbox-jb`, `sync-inbox-wes`) — never functional (unfilled `YOUR_APP_URL` placeholder). Registers no replacement; inbox sync runs via the Vercel cron `/api/cron/inbox-sync` (every 5 min). |
 
 Numbers 006 and 018 are skipped intentionally — no files exist in `supabase/migrations/`.
 
@@ -705,7 +705,7 @@ Originally created on tables now dropped (kept here for completeness):
 
 ## 7. Cron jobs
 
-Both jobs use `pg_cron` with `pg_net` HTTP POST. Three scheduled jobs total.
+These use `pg_cron` with `pg_net` HTTP POST. Two scheduled jobs total — inbox sync was removed from pg_cron by migration 034 and now runs via a Vercel cron (see below).
 
 ### `send-scheduled` (`004_cron.sql:14`)
 - Schedule: `0 * * * *` (top of every hour)
@@ -716,11 +716,9 @@ Both jobs use `pg_cron` with `pg_net` HTTP POST. Three scheduled jobs total.
 - Schedule: `30 * * * *` (every hour at :30)
 - Action: `POST {SUPABASE_URL}/functions/v1/sync-status`
 
-### `sync-inbox` (`034_inbox_sync_cron_hourly.sql`)
-- Schedule: `0 * * * *` (once per hour, on the hour)
-- Action: `POST https://YOUR_APP_URL/api/inbox/sync` body `{}` — the route iterates every configured identity using its own `FASTMAIL_API_KEY_<HANDLE>`.
-- **Hardcoded `YOUR_APP_URL` placeholder** — must be updated post-deploy.
-- Supersedes the per-account jobs from 016 (`sync-inbox-jb`, `sync-inbox-wes`); 034 unschedules both before registering the consolidated entry. All three `cron.unschedule(...)` calls are guarded by `WHERE EXISTS` so 034 is idempotent.
+### Inbox sync — no pg_cron job (`034_inbox_sync_cron_hourly.sql`)
+- Inbox sync runs via the **Vercel cron** `/api/cron/inbox-sync` (`vercel.json`, every 5 min, gated by `CRON_SECRET`) — see `app/api/cron/inbox-sync/route.ts`. It iterates every configured identity using its own `FASTMAIL_API_KEY_<HANDLE>`.
+- The legacy per-account pg_cron jobs from 016 (`sync-inbox-jb`, `sync-inbox-wes`) were never functional — migration 016 left an unfilled `https://YOUR_APP_URL` placeholder, so they POSTed to a non-existent host. Migration 034 unschedules them (each `cron.unschedule(...)` guarded by `WHERE EXISTS`, so it is idempotent) and registers no replacement.
 
 ---
 
