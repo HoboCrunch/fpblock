@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { sendEmail } from "@/lib/sendgrid";
 import { sendTelegramNotification } from "@/lib/telegram";
 import type { SequenceSchedule } from "@/lib/types/database";
@@ -104,8 +104,42 @@ function isPermanentFailure(statusCode: number | undefined): boolean {
 /** Backoff schedule for transient failures, in minutes. */
 const RETRY_BACKOFFS_MINUTES = [5, 30, 120];
 
-export async function POST() {
-  const supabase = await createClient();
+// ─── Cron auth + service client ──────────────────────────────────────────────
+// Invoked unattended by Vercel Cron (GET). The atomic-claim RPCs and the
+// interactions table are not reachable by the anon role, so we use a
+// service-role client gated by CRON_SECRET (matching cron/inbox-sync).
+
+function authorized(req: Request): boolean {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return false;
+  return req.headers.get("authorization") === `Bearer ${secret}`;
+}
+
+function serviceClient() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_SUPABASE_SECRET_KEY!,
+    { auth: { persistSession: false } }
+  );
+}
+
+type ServiceClient = ReturnType<typeof serviceClient>;
+
+export async function GET(req: Request) {
+  if (!authorized(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return runSend(serviceClient());
+}
+
+export async function POST(req: Request) {
+  if (!authorized(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return runSend(serviceClient());
+}
+
+async function runSend(supabase: ServiceClient) {
 
   const terminalFailures: TerminalFailure[] = [];
 

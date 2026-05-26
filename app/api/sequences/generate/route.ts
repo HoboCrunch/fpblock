@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import {
   buildContext,
   renderTemplate,
@@ -162,10 +162,47 @@ function isDue(
   }
 }
 
+// ─── Cron auth + service client ──────────────────────────────────────────────
+// This route is invoked unattended (Vercel Cron, GET) and by scoped manual
+// runs (POST). Both paths need to bypass RLS — the anon/cookie client returns
+// nothing without a logged-in session — so we use a service-role client gated
+// by CRON_SECRET, matching app/api/cron/inbox-sync/route.ts.
+
+function authorized(req: Request): boolean {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return false;
+  return req.headers.get("authorization") === `Bearer ${secret}`;
+}
+
+function serviceClient() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_SUPABASE_SECRET_KEY!,
+    { auth: { persistSession: false } }
+  );
+}
+
+type ServiceClient = ReturnType<typeof serviceClient>;
+
 // ─── Main handler ────────────────────────────────────────────────────────────
 
+export async function GET(req: Request) {
+  if (!authorized(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  try {
+    const result = await runGenerate(serviceClient());
+    return NextResponse.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function POST(req: Request) {
-  const supabase = await createClient();
+  if (!authorized(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   // Parse optional scope filters
   let sequenceId: string | undefined;
@@ -178,6 +215,20 @@ export async function POST(req: Request) {
     // Body absent or invalid JSON — proceed without filters
   }
 
+  try {
+    const result = await runGenerate(serviceClient(), sequenceId, stepFilter);
+    return NextResponse.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function runGenerate(
+  supabase: ServiceClient,
+  sequenceId?: string,
+  stepFilter?: number
+) {
   // Build the base query
   let query = supabase
     .from("sequence_enrollments")
@@ -196,7 +247,7 @@ export async function POST(req: Request) {
   const { data: enrollments, error: fetchError } = await query;
 
   if (fetchError) {
-    return NextResponse.json({ error: fetchError.message }, { status: 500 });
+    throw new Error(fetchError.message);
   }
 
   const rows = (enrollments ?? []) as unknown as EnrollmentRow[];
@@ -447,5 +498,5 @@ export async function POST(req: Request) {
       .eq("id", enrollment.id);
   }
 
-  return NextResponse.json({ generated, failed, skipped, errors });
+  return { generated, failed, skipped, errors };
 }

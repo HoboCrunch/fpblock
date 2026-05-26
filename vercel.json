@@ -1,5 +1,6 @@
 {
   "crons": [
+    { "path": "/api/sequences/generate", "schedule": "*/5 * * * *" },
     { "path": "/api/sequences/send", "schedule": "*/5 * * * *" },
     { "path": "/api/cron/inbox-sync", "schedule": "*/5 * * * *" }
   ]
