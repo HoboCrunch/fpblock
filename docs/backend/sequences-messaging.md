@@ -167,13 +167,17 @@ the enrollment to `bounced` so future steps are skipped
         ↓
 [Set status='active']                actions.ts:49                    updateSequenceStatus
         ↓
-[Enroll persons]                     actions.ts:65  enrollPersons
-                                     actions.ts:83  enrollFromEvent (uses getPersonIdsForEvent)
-                                     actions.ts:221 enrollFromSegment (uses lib/segments.ts)
-                                     ↳ all three pass through applySequenceEnrollFilters
+[Enroll persons]                     actions.ts  enrollPersons
+                                     actions.ts  enrollFromEvent (uses getPersonIdsForEvent)
+                                     actions.ts  enrollFromSegment (uses lib/segments.ts)
+                                     actions.ts  enrollFromList (reads person_list_items)
+                                     ↳ all four pass through applySequenceEnrollFilters
                                        which honors schedule.exclude_bounced /
                                        exclude_already_enrolled before insert.
                                      ↳ status='active', current_step=0
+                                     ↳ removal: unenrollPerson (single enrollment id),
+                                       unenrollFromList (deletes enrollments for a list's
+                                       static members)
         ↓
 [Cron: /api/sequences/generate]      app/api/sequences/generate/route.ts (POST)
    per active enrollment in active sequence:
@@ -906,8 +910,9 @@ person. Since migration 026 added `persons.email_bounced_at`, the webhook
 also stamps the person row, and `schedule_config.exclude_bounced` reads it at
 enroll time. There is still no `do_not_contact` *flag* — the column is the
 signal. UIs that compose new enrollments without going through the standard
-actions (`enrollPersons` / `enrollFromEvent` / `enrollFromSegment`) will bypass
-the guard.
+actions (`enrollPersons` / `enrollFromEvent` / `enrollFromSegment` /
+`enrollFromList`) will bypass the guard. `enrollFromList` delegates to
+`enrollPersons`, so it inherits the guard for free.
 
 ### `replied` only catches the most recent outbound
 

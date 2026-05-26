@@ -216,11 +216,15 @@ Layout puts the step composer in the spotlight; sequence-level configuration is 
 - **Step editor (main column, hero)** — vertical timeline of glass cards. Each card has a step-number bubble, action-type badge, "Day +N" label, and compact controls: a fixed-width Delay stepper (–/+ with `d` suffix, hidden for step 1) and a 3-button Action Type segmented control. Subject (email) and Body composable editors take the dominant width. Per-step actions: Preview, Up, Down, Delete. "Add step" is an inline pill at the bottom of the timeline.
 - **Sidebar:**
   - **Configuration card** — sender summary, inline send-mode segmented toggle (Auto / Approval), one-line schedule summary, channel + stop-rule chips, "Edit" → opens the settings sheet.
-  - **Enrollment card** — counts (Active / Completed / Paused / Bounced) + Enroll and Messages buttons.
+  - **Enrollment card** — counts (Active / Completed / Paused / Bounced) + Enroll and Messages buttons. "Enroll" opens the Enroll modal.
   - **Performance card** — Sent, Delivered, Opened, Clicked, Replied, Bounced with percentages (only renders once anything has been sent).
   - **Activity card** — recent enrollment status changes.
 - **Settings slide-over** — right-side sheet with the full parameter set: Delivery (sender + send-mode tiles) → Schedule → Pacing (`throttle_per_day` only) → Stop Rules (`stop_on_reply`, `stop_on_click`) → Audience (`exclude_already_enrolled`). Esc or backdrop click closes it.
-- **Enroll from Event** — modal launched from the enrollment panel. Event picker + the same `Speaker` / `Org-affiliated` toggle. Bulk-enrolls every person matching `getPersonIdsForEvent(event, relation)` via the `enrollFromEvent` server action, which upserts into `sequence_enrollments` with `onConflict: sequence_id,person_id` (safe to re-run).
+- **Enroll modal** — launched from the Enrollment card. A **People | Lists** toggle:
+  - *People* — search by name/email to add individuals (Enroll); with no search active, shows the currently-enrolled roster with a per-person remove (✕).
+  - *Lists* — each saved list (with member count) has **Enroll** and **Remove**, acting on the list's static members. An inline result line reports how many were enrolled (and skipped) or removed. Enrollment is a one-time snapshot; later additions to the list are not auto-enrolled.
+  - All enrollment paths upsert into `sequence_enrollments` with `onConflict: sequence_id,person_id` (safe to re-run) and pass through `applySequenceEnrollFilters` (always drops bounced).
+- **Enroll from Event / Build Segment** — *not currently surfaced.* The `enrollFromEvent` and `enrollFromSegment` server actions still exist (and the `segment-builder.tsx` / `enrollment-panel.tsx` components remain in the tree), but the 2026-05 "make steps the hero" refactor replaced that panel with the Enroll modal above and no longer renders them.
 
 Controls dropped in May 2026 (no UI surface; legacy values still honored by the send pipeline if present): `daily_send_cap_global`, `min_interval_minutes`, `quiet_hours_local`, and the `exclude_bounced` toggle (now always-on).
 
