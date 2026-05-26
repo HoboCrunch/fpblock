@@ -179,6 +179,28 @@ export async function unenrollPerson(enrollmentId: string) {
   return { success: true };
 }
 
+export async function unenrollFromList(sequenceId: string, listId: string) {
+  const supabase = await createClient();
+  const { data: items, error: itemsError } = await supabase
+    .from("person_list_items")
+    .select("person_id")
+    .eq("list_id", listId);
+  if (itemsError) return { success: false as const, error: itemsError.message };
+  const personIds = (items ?? []).map((i) => i.person_id);
+  if (personIds.length === 0) {
+    return { success: true as const, removed: 0 };
+  }
+  const { data: deleted, error } = await supabase
+    .from("sequence_enrollments")
+    .delete()
+    .eq("sequence_id", sequenceId)
+    .in("person_id", personIds)
+    .select("id");
+  if (error) return { success: false as const, error: error.message };
+  revalidatePath(`/admin/sequences/${sequenceId}`);
+  return { success: true as const, removed: deleted?.length ?? 0 };
+}
+
 export async function searchPersons(query: string) {
   const supabase = await createClient();
   const { data } = await supabase

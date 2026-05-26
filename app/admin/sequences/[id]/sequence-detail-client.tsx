@@ -14,6 +14,8 @@ import {
   updateSequenceSteps,
   enrollPersons,
   enrollFromList,
+  unenrollPerson,
+  unenrollFromList,
   searchPersons,
 } from "../actions";
 import { getLists } from "../../lists/actions";
@@ -25,7 +27,7 @@ import { TwoPanelLayout } from "@/components/admin/two-panel-layout";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassInput } from "@/components/ui/glass-input";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Play, Pause, Check, ChevronDown, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Play, Pause, Check, ChevronDown, Save, Loader2, X } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -53,9 +55,10 @@ interface EnrollList {
 
 type EnrollTab = "people" | "lists";
 
-interface ListEnrollResult {
+interface ListActionResult {
   listName: string;
-  enrolled: number;
+  action: "enrolled" | "removed";
+  count: number;
   skipped: number;
 }
 
@@ -101,7 +104,7 @@ export function SequenceDetailClient({ sequenceId }: Props) {
   const [enrollResults, setEnrollResults] = useState<EnrollSearchResult[]>([]);
   const [enrollModalOpen, setEnrollModalOpen] = useState(false);
   const [enrollTab, setEnrollTab] = useState<EnrollTab>("people");
-  const [listResult, setListResult] = useState<ListEnrollResult | null>(null);
+  const [listResult, setListResult] = useState<ListActionResult | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
 
@@ -162,12 +165,33 @@ export function SequenceDetailClient({ sequenceId }: Props) {
         const requested = res.requested ?? list.person_list_items?.[0]?.count ?? 0;
         setListResult({
           listName: list.name,
-          enrolled: res.enrolled,
+          action: "enrolled",
+          count: res.enrolled,
           skipped: Math.max(0, requested - res.enrolled),
         });
         invalidate();
       }
     },
+  });
+
+  const unenrollListMutation = useMutation({
+    mutationFn: (list: EnrollList) => unenrollFromList(sequenceId, list.id),
+    onSuccess: (res, list) => {
+      if (res.success) {
+        setListResult({
+          listName: list.name,
+          action: "removed",
+          count: res.removed,
+          skipped: 0,
+        });
+        invalidate();
+      }
+    },
+  });
+
+  const unenrollMutation = useMutation({
+    mutationFn: (enrollmentId: string) => unenrollPerson(enrollmentId),
+    onSuccess: invalidate,
   });
 
   function closeEnrollModal() {
@@ -568,43 +592,91 @@ export function SequenceDetailClient({ sequenceId }: Props) {
                   onChange={(e) => handleEnrollSearch(e.target.value)}
                   autoFocus
                 />
-                <div className="mt-3 max-h-60 overflow-y-auto space-y-1">
-                  {enrollResults.map((p) => {
-                    const already = data.enrollments.some((e) => e.person_id === p.id);
-                    return (
-                      <div key={p.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/[0.03]">
-                        <div>
-                          <p className="text-sm text-white">{p.full_name}</p>
-                          {p.email && <p className="text-xs text-[var(--text-muted)]">{p.email}</p>}
+                {enrollSearch.length >= 2 ? (
+                  /* Search → add flow */
+                  <div className="mt-3 max-h-60 overflow-y-auto space-y-1">
+                    {enrollResults.map((p) => {
+                      const already = data.enrollments.some((e) => e.person_id === p.id);
+                      return (
+                        <div key={p.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/[0.03]">
+                          <div>
+                            <p className="text-sm text-white">{p.full_name}</p>
+                            {p.email && <p className="text-xs text-[var(--text-muted)]">{p.email}</p>}
+                          </div>
+                          {already ? (
+                            <Check className="h-4 w-4 text-emerald-400" />
+                          ) : (
+                            <button
+                              onClick={() => enrollMutation.mutate([p.id])}
+                              className="text-xs px-3 py-1 rounded-lg bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25"
+                            >
+                              Enroll
+                            </button>
+                          )}
                         </div>
-                        {already ? (
-                          <Check className="h-4 w-4 text-emerald-400" />
-                        ) : (
-                          <button
-                            onClick={() => enrollMutation.mutate([p.id])}
-                            className="text-xs px-3 py-1 rounded-lg bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25"
-                          >
-                            Enroll
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {enrollSearch.length >= 2 && enrollResults.length === 0 && (
-                    <p className="text-xs text-[var(--text-muted)] px-3 py-2">No results found.</p>
-                  )}
-                  {enrollSearch.length < 2 && (
-                    <p className="text-xs text-[var(--text-muted)] px-3 py-2">Type to search...</p>
-                  )}
-                </div>
+                      );
+                    })}
+                    {enrollResults.length === 0 && (
+                      <p className="text-xs text-[var(--text-muted)] px-3 py-2">No results found.</p>
+                    )}
+                  </div>
+                ) : (
+                  /* Default → currently enrolled, with remove */
+                  <>
+                    <p className="mt-3 mb-1 px-1 text-[11px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                      Enrolled · {data.enrollments.length}
+                    </p>
+                    <div className="max-h-60 overflow-y-auto space-y-1">
+                      {data.enrollments.length === 0 ? (
+                        <p className="text-xs text-[var(--text-muted)] px-3 py-2">
+                          No one enrolled yet. Search above to add people.
+                        </p>
+                      ) : (
+                        data.enrollments.map((e) => {
+                          const removing =
+                            unenrollMutation.isPending &&
+                            unenrollMutation.variables === e.id;
+                          return (
+                            <div key={e.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.03] group">
+                              <div className="min-w-0">
+                                <p className="text-sm text-white truncate">
+                                  {e.person?.full_name ?? "Unknown person"}
+                                </p>
+                                {e.person?.email && (
+                                  <p className="text-xs text-[var(--text-muted)] truncate">{e.person.email}</p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => unenrollMutation.mutate(e.id)}
+                                disabled={removing}
+                                title="Remove from sequence"
+                                className="shrink-0 inline-flex items-center justify-center h-6 w-6 rounded-md text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                {removing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </>
+                )}
               </>
             ) : (
               <>
                 {listResult && (
-                  <div className="mb-3 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">
-                    Enrolled <span className="font-semibold tabular-nums">{listResult.enrolled}</span> from{" "}
+                  <div
+                    className={cn(
+                      "mb-3 px-3 py-2 rounded-lg border text-xs",
+                      listResult.action === "enrolled"
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+                        : "bg-white/[0.04] border-[var(--glass-border)] text-white/80"
+                    )}
+                  >
+                    {listResult.action === "enrolled" ? "Enrolled" : "Removed"}{" "}
+                    <span className="font-semibold tabular-nums">{listResult.count}</span> from{" "}
                     <span className="font-medium">{listResult.listName}</span>
-                    {listResult.skipped > 0 && (
+                    {listResult.action === "enrolled" && listResult.skipped > 0 && (
                       <span className="text-emerald-300/70">
                         {" · "}{listResult.skipped} skipped (bounced / already enrolled)
                       </span>
@@ -626,9 +698,13 @@ export function SequenceDetailClient({ sequenceId }: Props) {
                   ) : (
                     lists.map((list) => {
                       const count = list.person_list_items?.[0]?.count ?? 0;
-                      const pending =
+                      const enrolling =
                         enrollListMutation.isPending &&
                         enrollListMutation.variables?.id === list.id;
+                      const removing =
+                        unenrollListMutation.isPending &&
+                        unenrollListMutation.variables?.id === list.id;
+                      const busy = enrolling || removing;
                       return (
                         <div key={list.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.03]">
                           <div className="min-w-0">
@@ -638,14 +714,25 @@ export function SequenceDetailClient({ sequenceId }: Props) {
                               {list.description ? ` · ${list.description}` : ""}
                             </p>
                           </div>
-                          <button
-                            onClick={() => enrollListMutation.mutate(list)}
-                            disabled={pending || count === 0}
-                            className="shrink-0 inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-lg bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25 disabled:opacity-40 disabled:cursor-not-allowed"
-                          >
-                            {pending && <Loader2 className="h-3 w-3 animate-spin" />}
-                            {pending ? "Enrolling..." : "Enroll"}
-                          </button>
+                          <div className="shrink-0 flex items-center gap-1.5">
+                            <button
+                              onClick={() => enrollListMutation.mutate(list)}
+                              disabled={busy || count === 0}
+                              className="inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-lg bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              {enrolling && <Loader2 className="h-3 w-3 animate-spin" />}
+                              {enrolling ? "Enrolling..." : "Enroll"}
+                            </button>
+                            <button
+                              onClick={() => unenrollListMutation.mutate(list)}
+                              disabled={busy || count === 0}
+                              title="Remove this list's members from the sequence"
+                              className="inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-lg text-[var(--text-muted)] border border-[var(--glass-border)] hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              {removing && <Loader2 className="h-3 w-3 animate-spin" />}
+                              {removing ? "Removing..." : "Remove"}
+                            </button>
+                          </div>
                         </div>
                       );
                     })
