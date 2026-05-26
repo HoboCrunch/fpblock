@@ -11,6 +11,7 @@ import {
   type SegmentSpec,
   type SamplePerson,
 } from "@/lib/segments";
+import { triggerSequenceGeneration } from "@/lib/sequences/trigger-generation";
 
 export async function updateSequenceSteps(
   sequenceId: string,
@@ -66,6 +67,11 @@ export async function updateSequenceStatus(id: string, status: string) {
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) return { success: false, error: error.message };
+  // Eagerly generate messages when transitioning to active (draft→active,
+  // paused→active). The generate cron is the backstop if this fails.
+  if (status === "active") {
+    await triggerSequenceGeneration(id);
+  }
   return { success: true };
 }
 
@@ -97,6 +103,18 @@ export async function enrollPersons(
     .from("sequence_enrollments")
     .upsert(rows, { onConflict: "sequence_id,person_id" });
   if (error) return { success: false as const, error: error.message };
+  // Eagerly generate only when enrolling into an already-active sequence;
+  // enrolling into a draft does nothing until activation.
+  if (filtered.ids.length > 0) {
+    const { data: seq } = await supabase
+      .from("sequences")
+      .select("status")
+      .eq("id", sequenceId)
+      .single();
+    if (seq?.status === "active") {
+      await triggerSequenceGeneration(sequenceId);
+    }
+  }
   return {
     success: true as const,
     enrolled: filtered.ids.length,
@@ -133,6 +151,17 @@ export async function enrollFromEvent(
     .from("sequence_enrollments")
     .upsert(rows, { onConflict: "sequence_id,person_id" });
   if (error) return { success: false as const, error: error.message };
+  // Eagerly generate only when enrolling into an already-active sequence.
+  if (filtered.ids.length > 0) {
+    const { data: seq } = await supabase
+      .from("sequences")
+      .select("status")
+      .eq("id", sequenceId)
+      .single();
+    if (seq?.status === "active") {
+      await triggerSequenceGeneration(sequenceId);
+    }
+  }
   return {
     success: true as const,
     enrolled: filtered.ids.length,

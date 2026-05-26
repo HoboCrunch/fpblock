@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { useSequenceMessages, type SequenceMessage } from "@/lib/queries/use-sequence-messages";
 import { useSequenceDetail } from "@/lib/queries/use-sequence-detail";
 import { queryKeys } from "@/lib/queries/query-keys";
+import { createClient } from "@/lib/supabase/client";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Badge } from "@/components/ui/badge";
 import { MessageRow } from "@/components/admin/message-row";
@@ -98,6 +99,30 @@ export function MessageQueueClient({ sequenceId }: MessageQueueClientProps) {
 
   const { data: messages = [], isLoading } = useSequenceMessages(sequenceId, filters);
   const { data: sequence } = useSequenceDetail(sequenceId);
+
+  // Generation progress — relational, not JSONB. A sequence is still generating
+  // while any of its enrollments remain status='active' (runGenerate flips each
+  // to 'completed' once all its step rows exist). useSequenceDetail does not
+  // poll and takes no options arg, so we add a minimal local count query that
+  // polls every 12s (matching useSequenceMessages) without touching the shared
+  // hook. The banner clears automatically once the count reaches 0.
+  const { data: activeEnrollmentCount = 0 } = useQuery({
+    queryKey: [...queryKeys.sequences.detail(sequenceId), "active-enrollment-count"],
+    enabled: !!sequenceId,
+    refetchInterval: 12_000,
+    queryFn: async (): Promise<number> => {
+      const supabase = createClient();
+      const { count, error } = await supabase
+        .from("sequence_enrollments")
+        .select("id", { count: "exact", head: true })
+        .eq("sequence_id", sequenceId)
+        .eq("status", "active");
+      if (error) throw new Error(error.message);
+      return count ?? 0;
+    },
+  });
+
+  const showGeneratingBanner = sequence?.status === "active" && activeEnrollmentCount > 0;
 
   // Derive stats from the cached messages list. We pull the unfiltered list
   // (no filters applied) so stats reflect the whole sequence regardless of
@@ -362,6 +387,18 @@ export function MessageQueueClient({ sequenceId }: MessageQueueClientProps) {
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
             <span className="font-medium text-white">This sequence requires approval before sending.</span>{" "}
             Drafts are queued here — review and approve to send.
+          </p>
+        </div>
+      )}
+
+      {/* Generation-in-progress banner — shows while the sequence is active and
+          at least one enrollment is still pending generation. Clears via the 12s poll. */}
+      {showGeneratingBanner && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-white/[0.04] border border-[var(--glass-border)] px-3 py-2.5">
+          <Loader2 className="h-4 w-4 animate-spin text-[var(--accent-indigo)] shrink-0" />
+          <p className="text-sm text-[var(--text-secondary)]">
+            <span className="font-medium text-white">Generating messages…</span>{" "}
+            {activeEnrollmentCount} enrollment{activeEnrollmentCount === 1 ? "" : "s"} remaining
           </p>
         </div>
       )}
