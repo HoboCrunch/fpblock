@@ -11,7 +11,6 @@ import { useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { queryKeys } from "@/lib/queries/query-keys";
-import { useEnrichmentJobs } from "@/lib/queries/use-enrichment-jobs";
 import { useEnrichmentItems } from "@/lib/queries/use-enrichment-items";
 import { useEvents } from "@/lib/queries/use-events";
 import { useEventsPersonIds } from "@/lib/queries/use-event-affiliations";
@@ -35,8 +34,6 @@ import {
   EMPTY_FILTERS_PERSONS,
   EMPTY_FILTERS_ORGS,
 } from "./components/filter-panel";
-import { JobHistoryDrawer } from "./components/job-history-drawer";
-import { JobHistory } from "./components/job-history";
 import { applyFilter } from "@/lib/enrichment/apply-filter";
 import type { OrgRow, PersonRow, OrgProgress } from "./components/entity-table";
 import type { SummaryStripProps } from "./components/summary-strip";
@@ -91,15 +88,6 @@ export function EnrichmentShell() {
   ]);
   const [pfDepartments, setPfDepartments] = useState<string[]>([]);
 
-  // ---- Drawer ----
-  const [historyOpen, setHistoryOpen] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("enrichment.history.open") === "true";
-  });
-  useEffect(() => {
-    localStorage.setItem("enrichment.history.open", String(historyOpen));
-  }, [historyOpen]);
-
   // ---- Running ----
   const [isRunning, setIsRunning] = useState(false);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -118,7 +106,6 @@ export function EnrichmentShell() {
   // ---- Results ----
   const [resultStats, setResultStats] = useState<SummaryStripProps["stats"] | undefined>();
   const [resultOutcomes, setResultOutcomes] = useState<Map<string, "enriched" | "failed" | "skipped">>(new Map());
-  const [viewingJobId, setViewingJobId] = useState<string | null>(null);
 
   // ---- Sorting ----
   const [sortKey, setSortKey] = useState("name");
@@ -131,7 +118,6 @@ export function EnrichmentShell() {
   // React Query data
   // =========================================================================
 
-  const { data: jobs = [] } = useEnrichmentJobs();
   const { data: itemsData, isLoading: itemsLoading } = useEnrichmentItems({ tab: activeTab });
   const { data: eventsRaw = [] } = useEvents();
 
@@ -299,11 +285,11 @@ export function EnrichmentShell() {
 
   const displayItems = useMemo(() => {
     if (centerState === "progress" && queuedItems.length > 0) return queuedItems;
-    if (centerState === "results" && viewingJobId && resultOutcomes.size > 0) {
+    if (centerState === "results" && resultOutcomes.size > 0) {
       return sortedItems.filter((item) => resultOutcomes.has(item.id));
     }
     return sortedItems;
-  }, [sortedItems, centerState, queuedItems, viewingJobId, resultOutcomes]);
+  }, [sortedItems, centerState, queuedItems, resultOutcomes]);
 
   function handleSort(key: string) {
     if (key === sortKey) {
@@ -348,7 +334,6 @@ export function EnrichmentShell() {
     setCenterState("list");
     setSelectedIds(new Set());
     prevVisibleIdsRef.current = new Set();
-    setViewingJobId(null);
     setResultStats(undefined);
     setResultOutcomes(new Map());
     setSortKey(tab === "organizations" ? "name" : "full_name");
@@ -367,7 +352,6 @@ export function EnrichmentShell() {
 
   function handleBackToList() {
     setCenterState("list");
-    setViewingJobId(null);
     setResultStats(undefined);
     setResultOutcomes(new Map());
     setQueuedItems([]);
@@ -397,7 +381,6 @@ export function EnrichmentShell() {
     setActiveStages(new Map());
     setResultStats(undefined);
     setResultOutcomes(new Map());
-    setViewingJobId(null);
 
     const ids = Array.from(selectedIds);
     setProgressTotal(ids.length);
@@ -633,72 +616,6 @@ export function EnrichmentShell() {
   }, [isRunning, jobStartTime, activeTab]);
 
   // =========================================================================
-  // Historical job loading
-  // =========================================================================
-
-  const handleSelectJob = useCallback(async (jobId: string) => {
-    setViewingJobId(jobId);
-    setCenterState("results");
-
-    const supabase = createClient();
-
-    const { data: parentJob } = await supabase
-      .from("job_log")
-      .select("*")
-      .eq("id", jobId)
-      .single();
-
-    if (!parentJob) return;
-
-    const meta = (parentJob.metadata ?? {}) as Record<string, unknown>;
-
-    if (parentJob.metadata) {
-      setResultStats({
-        processed: (meta.org_count as number) ?? (meta.contacts_processed as number) ?? 0,
-        enriched: (meta.orgs_enriched as number) ?? (meta.enriched as number) ?? 0,
-        signals: meta.signals_created as number | undefined,
-        avgIcp: meta.avg_icp as number | undefined,
-        peopleFound: meta.people_found as number | undefined,
-        newPersons: meta.people_created as number | undefined,
-      });
-    } else {
-      setResultStats(undefined);
-    }
-
-    const itemIds = (meta.organization_ids as string[]) ?? (meta.person_ids as string[]);
-
-    if (itemIds && itemIds.length > 0) {
-      const { data: childJobs } = await supabase
-        .from("job_log")
-        .select("target_id, status")
-        .in("target_id", itemIds)
-        .in("job_type", [
-          "enrichment_full", "enrichment_apollo", "enrichment_perplexity",
-          "enrichment_gemini", "enrichment_people_finder", "enrichment_person",
-        ])
-        .gte("created_at", parentJob.created_at)
-        .not("target_id", "is", null);
-
-      const outcomes = new Map<string, "enriched" | "failed" | "skipped">();
-      if (childJobs) {
-        for (const j of childJobs) {
-          const tid = (j as Record<string, unknown>).target_id as string;
-          const status = (j as Record<string, unknown>).status as string;
-          if (tid && !outcomes.has(tid)) {
-            outcomes.set(tid, status === "completed" ? "enriched" : status === "failed" ? "failed" : "enriched");
-          }
-        }
-      }
-      for (const id of itemIds) {
-        if (!outcomes.has(id)) outcomes.set(id, "skipped");
-      }
-      setResultOutcomes(outcomes);
-    } else {
-      setResultOutcomes(new Map());
-    }
-  }, []);
-
-  // =========================================================================
   // Render
   // =========================================================================
 
@@ -878,32 +795,11 @@ export function EnrichmentShell() {
                 onRun={handleRun}
                 onStop={handleStop}
               />
-
-              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-                <JobHistory
-                  jobs={jobs}
-                  activeJobId={activeJobId}
-                  viewingJobId={viewingJobId}
-                  onSelectJob={(id) => {
-                    handleSelectJob(id);
-                    setSidebarOpen(false);
-                  }}
-                />
-              </div>
             </div>
           </>
         )}
       </div>
 
-      {/* ---- Desktop Job History Drawer ---- */}
-      <JobHistoryDrawer
-        open={historyOpen}
-        onToggle={() => setHistoryOpen((o) => !o)}
-        jobs={jobs}
-        activeJobId={activeJobId}
-        viewingJobId={viewingJobId}
-        onSelectJob={handleSelectJob}
-      />
     </div>
   );
 }

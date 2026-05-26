@@ -1,14 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import {
+  importPersonRow,
+  importOrgRow,
+  type ImportConfig,
+} from "./import-runner";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 // ---------------------------------------------------------------------------
 // Supabase client mock
 // ---------------------------------------------------------------------------
-// A chainable query-builder that records every write (insert/update) per table
-// and lets each test control what the existence-check selects return.
+// A chainable query-builder that records every write (insert/update/upsert) per
+// table and lets each test control what the existence-check selects return.
 //
-// Call shapes exercised by the import actions:
-//   - uploads:               .insert().select().single()    (insertUploadRow)
-//                            .update().eq()                 (finalizeUploadRow)
+// Call shapes exercised by the per-row import helpers:
 //   - organizations:         .select().ilike().maybeSingle()  (dedupe)
 //                            .insert().select().single()      (create)
 //   - persons:               .select().eq().maybeSingle()     (dedupe)
@@ -33,7 +37,6 @@ function makeClient(opts: {
   existingPerson?: { id: string } | null;
 }) {
   const records: Recorded[] = [];
-  let uploadInsertCount = 0;
   let orgInsertCount = 0;
   let personInsertCount = 0;
 
@@ -60,10 +63,6 @@ function makeClient(opts: {
     });
 
     builder.single = vi.fn(async () => {
-      if (table === "uploads") {
-        uploadInsertCount++;
-        return { data: { id: `upload-${uploadInsertCount}` }, error: null };
-      }
       if (table === "organizations") {
         orgInsertCount++;
         return { data: { id: `org-new-${orgInsertCount}` }, error: null };
@@ -100,27 +99,16 @@ function makeClient(opts: {
   }
 
   return {
-    client: { from: vi.fn(from) } as unknown,
+    client: { from: vi.fn(from) } as unknown as SupabaseClient,
     records,
   };
 }
-
-// Hoisted mock state so the createClient mock can read the current client.
-const state = vi.hoisted(() => ({
-  current: null as unknown,
-}));
-
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn(async () => state.current),
-}));
-
-import { importPersons, importOrganizations } from "./actions";
 
 function participationWrites(records: Recorded[]) {
   return records.filter((r) => r.table === "event_participations");
 }
 
-describe("importPersons — forcedEvent", () => {
+describe("importPersonRow — forcedEvent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -130,16 +118,18 @@ describe("importPersons — forcedEvent", () => {
       existingPerson: null,
       existingParticipation: null,
     });
-    state.current = client;
 
-    await importPersons(
-      [{ full_name: "Ada Lovelace", email: "ada@example.com", event: "Some Other Event" }],
-      {
-        duplicateHandling: "create_new",
-        eventMap: { "Some Other Event": "event-from-column" },
-        forcedEvent: { id: "forced-event-id", role: "speaker" },
-      },
-      "people.csv",
+    const config: ImportConfig = {
+      mode: "persons",
+      duplicateHandling: "create_new",
+      eventMap: { "Some Other Event": "event-from-column" },
+      forcedEvent: { id: "forced-event-id", role: "speaker" },
+    };
+
+    await importPersonRow(
+      client,
+      { full_name: "Ada Lovelace", email: "ada@example.com", event: "Some Other Event" },
+      config,
     );
 
     const writes = participationWrites(records);
@@ -160,16 +150,18 @@ describe("importPersons — forcedEvent", () => {
       existingPerson: { id: "existing-person-1" },
       existingParticipation: null,
     });
-    state.current = client;
 
-    await importPersons(
-      [{ full_name: "Ada Lovelace", email: "ada@example.com" }],
-      {
-        duplicateHandling: "skip",
-        eventMap: {},
-        forcedEvent: { id: "forced-event-id", role: "panelist" },
-      },
-      "people.csv",
+    const config: ImportConfig = {
+      mode: "persons",
+      duplicateHandling: "skip",
+      eventMap: {},
+      forcedEvent: { id: "forced-event-id", role: "panelist" },
+    };
+
+    await importPersonRow(
+      client,
+      { full_name: "Ada Lovelace", email: "ada@example.com" },
+      config,
     );
 
     const writes = participationWrites(records);
@@ -183,7 +175,7 @@ describe("importPersons — forcedEvent", () => {
   });
 });
 
-describe("importOrganizations — forcedEvent", () => {
+describe("importOrgRow — forcedEvent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -193,17 +185,15 @@ describe("importOrganizations — forcedEvent", () => {
       existingOrg: null,
       existingParticipation: null,
     });
-    state.current = client;
 
-    await importOrganizations(
-      [{ name: "Acme Corp", event: "Ignored Event" }],
-      {
-        duplicateHandling: "create_new",
-        eventMap: { "Ignored Event": "event-from-column" },
-        forcedEvent: { id: "forced-event-id", role: "partner", sponsorTier: "gold" },
-      },
-      "orgs.csv",
-    );
+    const config: ImportConfig = {
+      mode: "organizations",
+      duplicateHandling: "create_new",
+      eventMap: { "Ignored Event": "event-from-column" },
+      forcedEvent: { id: "forced-event-id", role: "partner", sponsorTier: "gold" },
+    };
+
+    await importOrgRow(client, { name: "Acme Corp", event: "Ignored Event" }, config);
 
     const writes = participationWrites(records);
     expect(writes).toHaveLength(1);
@@ -222,17 +212,15 @@ describe("importOrganizations — forcedEvent", () => {
       existingOrg: null,
       existingParticipation: null,
     });
-    state.current = client;
 
-    await importOrganizations(
-      [{ name: "Beta Inc" }],
-      {
-        duplicateHandling: "create_new",
-        eventMap: {},
-        forcedEvent: { id: "forced-event-id", role: "exhibitor" },
-      },
-      "orgs.csv",
-    );
+    const config: ImportConfig = {
+      mode: "organizations",
+      duplicateHandling: "create_new",
+      eventMap: {},
+      forcedEvent: { id: "forced-event-id", role: "exhibitor" },
+    };
+
+    await importOrgRow(client, { name: "Beta Inc" }, config);
 
     const writes = participationWrites(records);
     expect(writes).toHaveLength(1);
@@ -254,16 +242,18 @@ describe("upsert behavior (insert vs update)", () => {
       existingPerson: null,
       existingParticipation: null,
     });
-    state.current = client;
 
-    await importPersons(
-      [{ full_name: "New Person", email: "new@example.com" }],
-      {
-        duplicateHandling: "create_new",
-        eventMap: {},
-        forcedEvent: { id: "forced-event-id", role: "attendee" },
-      },
-      "people.csv",
+    const config: ImportConfig = {
+      mode: "persons",
+      duplicateHandling: "create_new",
+      eventMap: {},
+      forcedEvent: { id: "forced-event-id", role: "attendee" },
+    };
+
+    await importPersonRow(
+      client,
+      { full_name: "New Person", email: "new@example.com" },
+      config,
     );
 
     const writes = participationWrites(records);
@@ -277,17 +267,15 @@ describe("upsert behavior (insert vs update)", () => {
       // existence check for event_participations finds a matching row
       existingParticipation: { id: "participation-1" },
     });
-    state.current = client;
 
-    await importOrganizations(
-      [{ name: "Acme Corp" }],
-      {
-        duplicateHandling: "skip",
-        eventMap: {},
-        forcedEvent: { id: "forced-event-id", role: "sponsor", sponsorTier: "platinum" },
-      },
-      "orgs.csv",
-    );
+    const config: ImportConfig = {
+      mode: "organizations",
+      duplicateHandling: "skip",
+      eventMap: {},
+      forcedEvent: { id: "forced-event-id", role: "sponsor", sponsorTier: "platinum" },
+    };
+
+    await importOrgRow(client, { name: "Acme Corp" }, config);
 
     const writes = participationWrites(records);
     // One update, zero inserts on the participations table.

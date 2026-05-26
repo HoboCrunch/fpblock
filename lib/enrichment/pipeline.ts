@@ -118,6 +118,7 @@ async function logJob(
     status: string;
     error?: string | null;
     metadata?: Record<string, unknown> | null;
+    parent_job_id?: string | null;
   }
 ): Promise<string | null> {
   const { data, error } = await supabase
@@ -129,6 +130,7 @@ async function logJob(
       status: opts.status,
       error: opts.error ?? null,
       metadata: opts.metadata ?? null,
+      parent_job_id: opts.parent_job_id ?? null,
     })
     .select("id")
     .single();
@@ -149,6 +151,27 @@ async function updateJob(
     .from("job_log")
     .update(updates)
     .eq("id", jobId);
+}
+
+/**
+ * Atomically increment progress counters on a parent job row.
+ * Uses in-memory running totals written back as absolute values so that
+ * concurrent concurrency-3 org updates stay consistent without RPC.
+ * updated_at is set by the DB BEFORE UPDATE trigger — do NOT pass it.
+ */
+async function updateParentProgress(
+  supabase: SupabaseClient,
+  parentJobId: string,
+  completed: number,
+  failed: number,
+  phase?: string
+) {
+  const update: Record<string, unknown> = {
+    progress_completed: completed,
+    progress_failed: failed,
+  };
+  if (phase !== undefined) update.phase = phase;
+  await supabase.from("job_log").update(update).eq("id", parentJobId);
 }
 
 /**
@@ -455,7 +478,8 @@ async function insertPeopleFromOrg(
  */
 export async function runApolloEnrichment(
   supabase: SupabaseClient,
-  orgId: string
+  orgId: string,
+  opts?: { parentJobId?: string | null }
 ): Promise<{ success: boolean; data?: ApolloOrgResult }> {
   const org = await fetchOrg(supabase, orgId);
   if (!org) return { success: false };
@@ -466,6 +490,7 @@ export async function runApolloEnrichment(
     target_id: orgId,
     status: "processing",
     metadata: { org_name: org.name },
+    parent_job_id: opts?.parentJobId ?? null,
   });
 
   try {
@@ -530,7 +555,8 @@ export async function runApolloEnrichment(
  */
 export async function runPerplexityEnrichment(
   supabase: SupabaseClient,
-  orgId: string
+  orgId: string,
+  opts?: { parentJobId?: string | null }
 ): Promise<{ success: boolean; data?: PerplexityOrgResult }> {
   const org = await fetchOrg(supabase, orgId);
   if (!org) return { success: false };
@@ -541,6 +567,7 @@ export async function runPerplexityEnrichment(
     target_id: orgId,
     status: "processing",
     metadata: { org_name: org.name },
+    parent_job_id: opts?.parentJobId ?? null,
   });
 
   try {
@@ -585,7 +612,8 @@ export async function runGeminiSynthesis(
   supabase: SupabaseClient,
   orgId: string,
   apolloData?: ApolloOrgResult | null,
-  perplexityData?: PerplexityOrgResult | null
+  perplexityData?: PerplexityOrgResult | null,
+  opts?: { parentJobId?: string | null }
 ): Promise<{ success: boolean; data?: GeminiSynthesisResult }> {
   const org = await fetchOrg(supabase, orgId);
   if (!org) return { success: false };
@@ -607,6 +635,7 @@ export async function runGeminiSynthesis(
       has_apollo: !!apollo,
       has_perplexity: !!perplexity,
     },
+    parent_job_id: opts?.parentJobId ?? null,
   });
 
   try {
@@ -675,7 +704,8 @@ export async function runGeminiSynthesis(
 export async function runPeopleFinderEnrichment(
   supabase: SupabaseClient,
   orgId: string,
-  config: PeopleFinderConfig = DEFAULT_PEOPLE_FINDER_CONFIG
+  config: PeopleFinderConfig = DEFAULT_PEOPLE_FINDER_CONFIG,
+  opts?: { parentJobId?: string | null }
 ): Promise<{ success: boolean; data?: PeopleFinderResult; stats?: { found: number; created: number; merged: number; correlationCandidates: number } }> {
   const org = await fetchOrg(supabase, orgId);
   if (!org) return { success: false };
@@ -686,6 +716,7 @@ export async function runPeopleFinderEnrichment(
     target_id: orgId,
     status: "processing",
     metadata: { org_name: org.name, config },
+    parent_job_id: opts?.parentJobId ?? null,
   });
 
   try {
@@ -739,7 +770,8 @@ export async function runPeopleFinderEnrichment(
 export async function runFullEnrichment(
   supabase: SupabaseClient,
   orgId: string,
-  peopleFinderConfig?: PeopleFinderConfig | null
+  peopleFinderConfig?: PeopleFinderConfig | null,
+  opts?: { parentJobId?: string | null }
 ): Promise<EnrichmentResult> {
   const org = await fetchOrg(supabase, orgId);
   if (!org) {
@@ -782,6 +814,7 @@ export async function runFullEnrichment(
     target_id: orgId,
     status: "processing",
     metadata: { org_name: org.name },
+    parent_job_id: opts?.parentJobId ?? null,
   });
 
   try {
@@ -890,7 +923,7 @@ export async function runFullEnrichment(
       stageResults.perplexity = { status: 'completed', at: new Date().toISOString(), found: perplexityResult?.description || perplexityResult?.products ? 1 : 0 };
     }
 
-    // Log individual stage results
+    // Log individual stage results (children of the enrichment_full job row)
     await Promise.all([
       logJob(supabase, {
         job_type: "enrichment_apollo",
@@ -898,6 +931,7 @@ export async function runFullEnrichment(
         target_id: orgId,
         status: "completed",
         metadata: { org_name: org.name, result: apolloResult },
+        parent_job_id: jobId ?? null,
       }),
       logJob(supabase, {
         job_type: "enrichment_perplexity",
@@ -905,6 +939,7 @@ export async function runFullEnrichment(
         target_id: orgId,
         status: "completed",
         metadata: { org_name: org.name, result: perplexityResult },
+        parent_job_id: jobId ?? null,
       }),
     ]);
 
@@ -1032,6 +1067,7 @@ export async function runFullEnrichment(
         signals_created: signalsCreated,
         fields_updated: Object.keys(geminiUpdates),
       },
+      parent_job_id: jobId ?? null,
     });
 
     // Step 5: Run People Finder if config provided (with stage-skip support)
@@ -1042,7 +1078,7 @@ export async function runFullEnrichment(
         stageResults.people_finder = { status: 'completed', at: (existingStages.people_finder as Record<string, string>).at ?? new Date().toISOString(), found: (existingStages.people_finder as Record<string, unknown>)?.found as number ?? 0 };
       } else {
         const pfResult = await withTimeout(
-          () => runPeopleFinderEnrichment(supabase, orgId, peopleFinderConfig),
+          () => runPeopleFinderEnrichment(supabase, orgId, peopleFinderConfig, { parentJobId: jobId }),
           45000,
           org.name + ": People Finder"
         );
@@ -1161,9 +1197,14 @@ export async function runBatchEnrichment(
 ): Promise<BatchEnrichmentResult> {
   const stages = options?.stages ?? ["full"];
   const concurrency = options?.concurrency ?? 1;
+  const parentJobId = options?.parentJobId;
   const total = orgIds.length;
   const results: EnrichmentResult[] = [];
   let completed = 0;
+  // In-memory running totals for parent progress (concurrency-safe: written after
+  // each org using absolute values; last-write-wins is fine at concurrency 3).
+  let progressCompleted = 0;
+  let progressFailed = 0;
   const batchStartTime = Date.now();
 
   // Clean up any orphaned processing jobs before starting
@@ -1179,9 +1220,14 @@ export async function runBatchEnrichment(
           let result: EnrichmentResult;
 
           if (stages.includes("full")) {
-            result = await runFullEnrichment(supabase, orgId, options?.peopleFinderConfig);
+            result = await runFullEnrichment(
+              supabase,
+              orgId,
+              options?.peopleFinderConfig,
+              { parentJobId }
+            );
           } else {
-            // Run individual stages sequentially
+            // Run individual stages sequentially — child rows are direct children of the batch parent
             let apolloData: ApolloOrgResult | null = null;
             let perplexityData: PerplexityOrgResult | null = null;
             let geminiData: GeminiSynthesisResult | null = null;
@@ -1193,13 +1239,13 @@ export async function runBatchEnrichment(
             const orgName = org?.name ?? "unknown";
 
             if (stages.includes("apollo")) {
-              const res = await runApolloEnrichment(supabase, orgId);
+              const res = await runApolloEnrichment(supabase, orgId, { parentJobId });
               if (res.success) apolloData = res.data ?? null;
               else lastError = "Apollo enrichment failed";
             }
 
             if (stages.includes("perplexity")) {
-              const res = await runPerplexityEnrichment(supabase, orgId);
+              const res = await runPerplexityEnrichment(supabase, orgId, { parentJobId });
               if (res.success) perplexityData = res.data ?? null;
               else lastError = "Perplexity enrichment failed";
             }
@@ -1209,7 +1255,8 @@ export async function runBatchEnrichment(
                 supabase,
                 orgId,
                 apolloData,
-                perplexityData
+                perplexityData,
+                { parentJobId }
               );
               if (res.success) {
                 geminiData = res.data ?? null;
@@ -1223,7 +1270,8 @@ export async function runBatchEnrichment(
               const res = await runPeopleFinderEnrichment(
                 supabase,
                 orgId,
-                options?.peopleFinderConfig ?? DEFAULT_PEOPLE_FINDER_CONFIG
+                options?.peopleFinderConfig ?? DEFAULT_PEOPLE_FINDER_CONFIG,
+                { parentJobId }
               );
               if (res.success && res.stats) {
                 peopleFinderStats = res.stats;
@@ -1246,6 +1294,12 @@ export async function runBatchEnrichment(
           }
 
           completed++;
+          // Increment parent progress counters (success path)
+          if (!result.success) progressFailed++;
+          else progressCompleted++;
+          if (parentJobId) {
+            await updateParentProgress(supabase, parentJobId, progressCompleted, progressFailed);
+          }
           options?.onProgress?.(completed, total, result.orgName);
 
           return result;
@@ -1261,6 +1315,10 @@ export async function runBatchEnrichment(
           } catch { /* ignore */ }
 
           completed++;
+          progressFailed++;
+          if (parentJobId) {
+            await updateParentProgress(supabase, parentJobId, progressCompleted, progressFailed);
+          }
           const failResult: EnrichmentResult = {
             orgId,
             orgName,

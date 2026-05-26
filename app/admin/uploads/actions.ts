@@ -23,6 +23,7 @@ export interface PersonImportRow {
   title?: string;
   seniority?: string;
   department?: string;
+  photo_url?: string;
   organization_name?: string;
   event?: string;
   context?: string;
@@ -42,6 +43,7 @@ export interface OrganizationImportRow {
   hq_location?: string;
   funding_total?: string;
   latest_funding_stage?: string;
+  logo_url?: string;
   event?: string;
 }
 

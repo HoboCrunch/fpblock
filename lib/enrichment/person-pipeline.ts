@@ -114,6 +114,7 @@ async function logJob(
     status: string;
     error?: string | null;
     metadata?: Record<string, unknown> | null;
+    parent_job_id?: string | null;
   }
 ): Promise<string | null> {
   const { data, error } = await supabase
@@ -125,6 +126,7 @@ async function logJob(
       status: opts.status,
       error: opts.error ?? null,
       metadata: opts.metadata ?? null,
+      parent_job_id: opts.parent_job_id ?? null,
     })
     .select("id")
     .single();
@@ -136,15 +138,20 @@ async function logJob(
   return data?.id ?? null;
 }
 
-async function updateJob(
+/**
+ * Write absolute progress counters to a parent job row.
+ * updated_at is handled by the DB BEFORE UPDATE trigger — do NOT pass it.
+ */
+async function updateParentProgress(
   supabase: SupabaseClient,
-  jobId: string,
-  updates: { status: string; error?: string | null; metadata?: Record<string, unknown> | null }
+  parentJobId: string,
+  completed: number,
+  failed: number
 ) {
   await supabase
     .from("job_log")
-    .update(updates)
-    .eq("id", jobId);
+    .update({ progress_completed: completed, progress_failed: failed })
+    .eq("id", parentJobId);
 }
 
 /**
@@ -181,7 +188,8 @@ async function cleanupStaleJobs(supabase: SupabaseClient, staleCutoffMinutes: nu
  */
 export async function runPersonEnrichment(
   supabase: SupabaseClient,
-  personId: string
+  personId: string,
+  opts?: { parentJobId?: string | null }
 ): Promise<PersonEnrichmentResult> {
   const failResult = (error: string): PersonEnrichmentResult => ({
     personId,
@@ -263,6 +271,7 @@ export async function runPersonEnrichment(
         status: "failed",
         error: "Insufficient identifiers for match",
         metadata: { person_name: personName },
+        parent_job_id: opts?.parentJobId ?? null,
       });
 
       return {
@@ -376,6 +385,7 @@ export async function runPersonEnrichment(
           org_created: false,
           note: "No Apollo match found",
         },
+        parent_job_id: opts?.parentJobId ?? null,
       });
 
       return {
@@ -630,6 +640,7 @@ export async function runPersonEnrichment(
         org_created: orgCreated,
         org_id: linkedOrgId ?? null,
       },
+      parent_job_id: opts?.parentJobId ?? null,
     });
 
     console.log(
@@ -663,6 +674,7 @@ export async function runPersonEnrichment(
         status: "failed",
         error: message,
         metadata: { person_id: personId },
+        parent_job_id: opts?.parentJobId ?? null,
       });
     } catch { /* ignore cleanup errors */ }
 
@@ -695,8 +707,12 @@ export async function runBatchPersonEnrichment(
   }
 ): Promise<BatchPersonEnrichmentResult> {
   const total = personIds.length;
+  const parentJobId = options?.parentJobId;
   const results: PersonEnrichmentResult[] = [];
   let completed = 0;
+  // In-memory running totals for parent progress writes
+  let progressCompleted = 0;
+  let progressFailed = 0;
   const batchStartTime = Date.now();
 
   // Validate API key upfront
@@ -725,10 +741,15 @@ export async function runBatchPersonEnrichment(
   // Process persons sequentially (parent job is created by the API route)
   for (const personId of personIds) {
     try {
-      const result = await runPersonEnrichment(supabase, personId);
+      const result = await runPersonEnrichment(supabase, personId, { parentJobId });
       results.push(result);
 
       completed++;
+      if (result.success) progressCompleted++;
+      else progressFailed++;
+      if (parentJobId) {
+        await updateParentProgress(supabase, parentJobId, progressCompleted, progressFailed);
+      }
       options?.onProgress?.(completed, total, result.personName);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -745,15 +766,19 @@ export async function runBatchPersonEnrichment(
       });
 
       completed++;
+      progressFailed++;
+      if (parentJobId) {
+        await updateParentProgress(supabase, parentJobId, progressCompleted, progressFailed);
+      }
       options?.onProgress?.(completed, total, "unknown");
     }
 
     // Check if job was cancelled between persons
-    if (options?.parentJobId) {
+    if (parentJobId) {
       const { data: jobCheck } = await supabase
         .from("job_log")
         .select("status")
-        .eq("id", options.parentJobId)
+        .eq("id", parentJobId)
         .single();
 
       if (jobCheck?.status === "cancelled") {

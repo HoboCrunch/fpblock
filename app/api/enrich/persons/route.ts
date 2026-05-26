@@ -124,6 +124,10 @@ export async function POST(request: NextRequest) {
       job_type: "enrichment_batch_persons",
       target_table: "persons",
       status: "processing",
+      label: `Enrich ${personIds.length} contact${personIds.length === 1 ? "" : "s"}`,
+      progress_total: personIds.length,
+      progress_completed: 0,
+      progress_failed: 0,
       metadata: {
         person_count: personIds.length,
         person_ids: personIds.length <= 500 ? personIds : null,

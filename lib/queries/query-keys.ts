@@ -45,4 +45,9 @@ export const queryKeys = {
     personIdsForEvents: (eventIds: string[], relation: string) =>
       ["event-affiliations", "events", [...eventIds].sort().join(","), "ids", relation] as const,
   },
+  jobs: {
+    all: ["jobs"] as const,
+    detail: (id: string) => ["jobs", "detail", id] as const,
+    children: (parentId: string) => ["jobs", "children", parentId] as const,
+  },
 } as const;

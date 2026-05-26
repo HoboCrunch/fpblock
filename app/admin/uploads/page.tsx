@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useTransition, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Papa from "papaparse";
-import { Upload as UploadIcon, CheckCircle, AlertCircle } from "lucide-react";
+import { Upload as UploadIcon } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { Badge } from "@/components/ui/badge";
@@ -21,8 +21,7 @@ import {
 } from "@/lib/uploads/field-sets";
 import { autoMatchHeader } from "@/lib/uploads/auto-match";
 import {
-  importPersons,
-  importOrganizations,
+  createImportJob,
   listUnknownEvents,
   findOrCreateEvents,
   type DuplicateHandling,
@@ -30,6 +29,7 @@ import {
   type PersonImportRow,
   type OrganizationImportRow,
 } from "./actions";
+import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Upload, Event } from "@/lib/types/database";
@@ -104,13 +104,7 @@ export default function UploadsPage() {
   const [events, setEvents] = useState<Pick<Event, "id" | "name">[]>([]);
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [duplicateHandling, setDuplicateHandling] = useState<DuplicateHandling>("skip");
-  const [isPending, startTransition] = useTransition();
-  const [result, setResult] = useState<{
-    personsCreated: number;
-    organizationsCreated: number;
-    skipped: number;
-    errors: string[];
-  } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingEventResolution, setPendingEventResolution] = useState<{
     unknown: string[];
     known: Record<string, string>;
@@ -163,7 +157,6 @@ export default function UploadsPage() {
   }
 
   function handleCsv(file: File) {
-    setResult(null);
     setFilename(file.name);
     Papa.parse(file, {
       header: false,
@@ -219,43 +212,80 @@ export default function UploadsPage() {
       setPendingEventResolution(null);
       await runImport(dropEmptyRows(state), eventMap);
     } catch (err) {
-      setResult({
-        personsCreated: 0,
-        organizationsCreated: 0,
-        skipped: 0,
-        errors: [err instanceof Error ? err.message : "Unknown error creating events"],
-      });
+      toast.error(err instanceof Error ? err.message : "Unknown error creating events");
       setPendingEventResolution(null);
     }
   }
 
-  function runImport(
+  async function runImport(
     validRows: string[][],
     eventMap: Record<string, string | null>,
     forcedEvent?: { id: string; role: ParticipationRole; sponsorTier?: SponsorTier | null },
   ) {
-    return new Promise<void>((resolve) => {
-      startTransition(async () => {
-        const records = validRows.map((row) => rowToRecord(state.columns, row));
-        const res =
-          mode === "persons"
-            ? await importPersons(records as PersonImportRow[], { duplicateHandling, eventMap, forcedEvent }, filename)
-            : await importOrganizations(records as OrganizationImportRow[], { duplicateHandling, eventMap, forcedEvent }, filename);
-        setResult({
-          personsCreated: res.personsCreated,
-          organizationsCreated: res.organizationsCreated,
-          skipped: res.skipped,
-          errors: res.errors,
-        });
-        const supabase = createClient();
-        const { data } = await supabase
-          .from("uploads")
-          .select("*")
-          .order("created_at", { ascending: false });
-        if (data) setUploads(data as Upload[]);
-        resolve();
+    setIsSubmitting(true);
+    try {
+      const records = validRows.map((row) => rowToRecord(state.columns, row));
+
+      // 1. Create the job_log row + get a signed upload URL (server action)
+      const { jobId, path, token } = await createImportJob({
+        mode,
+        filename,
+        rowCount: records.length,
+        config: {
+          duplicateHandling,
+          eventMap,
+          forcedEvent: forcedEvent ?? null,
+        },
       });
-    });
+
+      // 2. Upload the resolved rows JSON to Storage via the signed URL
+      const supabase = createClient();
+      const payload = JSON.stringify({
+        mode,
+        rows: records as PersonImportRow[] | OrganizationImportRow[],
+        config: {
+          mode,
+          duplicateHandling,
+          eventMap,
+          forcedEvent: forcedEvent ?? null,
+        },
+      });
+      const { error: uploadError } = await supabase.storage
+        .from("csv-imports")
+        .uploadToSignedUrl(path, token, new Blob([payload], { type: "application/json" }));
+
+      if (uploadError) {
+        toast.error(`Failed to upload import data: ${uploadError.message}`);
+        return;
+      }
+
+      // 3. Fire-and-forget: kick off the processor (cron will resume if this fails)
+      fetch("/api/uploads/process", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId }),
+      }).catch(() => {
+        // Failures are surfaced via job_log / Process Details drawer.
+      });
+
+      // 4. Notify, reset form
+      toast.success("Import started — track progress in Process Details");
+      setState(emptyStateFor(mode));
+      setFilename("manual-import.csv");
+      setJourneyEvent(null);
+      setSponsorTier("");
+
+      // Refresh uploads table
+      const { data } = await supabase
+        .from("uploads")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (data) setUploads(data as Upload[]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to start import");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const totalValidRows = dropEmptyRows(state).length;
@@ -305,7 +335,6 @@ export default function UploadsPage() {
               onClick={() => {
                 setState(emptyStateFor(mode));
                 setFilename("manual-import.csv");
-                setResult(null);
               }}
               className="px-3 py-2 text-sm rounded-lg border border-[var(--glass-border)] text-[var(--text-secondary)] hover:text-white"
             >
@@ -334,43 +363,20 @@ export default function UploadsPage() {
             />
             <button
               onClick={handleSubmit}
-              disabled={isPending || !hasMappedField || totalValidRows === 0}
+              disabled={isSubmitting || !hasMappedField || totalValidRows === 0}
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
                 "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20",
                 "hover:bg-[var(--accent-orange)]/25",
-                (isPending || !hasMappedField || totalValidRows === 0) &&
+                (isSubmitting || !hasMappedField || totalValidRows === 0) &&
                   "opacity-50 cursor-not-allowed",
               )}
             >
               <UploadIcon className="h-4 w-4" />
-              {isPending
-                ? "Importing..."
-                : journeyEvent
-                  ? `Import ${totalValidRows} row${totalValidRows === 1 ? "" : "s"} into ${journeyEvent.name} as ${listRole}`
-                  : `Import ${totalValidRows} row${totalValidRows === 1 ? "" : "s"}`}
+              {isSubmitting ? "Starting..." : `Import ${totalValidRows} row${totalValidRows === 1 ? "" : "s"}`}
             </button>
           </div>
         </div>
-        {result && (
-          <div className="mt-3 flex items-center gap-2 text-sm">
-            {result.errors.length === 0 ? (
-              <>
-                <CheckCircle className="h-4 w-4 text-emerald-400" />
-                <span className="text-emerald-400">
-                  {result.personsCreated} persons, {result.organizationsCreated} organizations created. {result.skipped} skipped.
-                </span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="h-4 w-4 text-yellow-400" />
-                <span className="text-yellow-400">
-                  {result.personsCreated + result.organizationsCreated} created, {result.errors.length} errors
-                </span>
-              </>
-            )}
-          </div>
-        )}
       </GlassCard>
 
       {/* New-event-list banner */}

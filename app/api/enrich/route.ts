@@ -28,12 +28,16 @@ export async function POST(request: NextRequest) {
   }
 
   // Create a job_log entry with status 'processing'
+  // progress_total is set after contacts are resolved below (backfilled via UPDATE)
   const { data: job, error: jobError } = await supabase
     .from("job_log")
     .insert({
       job_type: "enrichment",
       target_table: "contacts",
       status: "processing",
+      progress_total: 0,
+      progress_completed: 0,
+      progress_failed: 0,
       metadata: {
         source,
         fields,
@@ -66,7 +70,7 @@ export async function POST(request: NextRequest) {
       .from("contact_event")
       .select("contact_id")
       .eq("event_id", eventId);
-    const ids = (eventContacts || []).map((ec: any) => ec.contact_id);
+    const ids = ((eventContacts || []) as { contact_id: string }[]).map((ec) => ec.contact_id);
     if (ids.length > 0) contactQuery = contactQuery.in("id", ids);
   } else {
     contactQuery = contactQuery.is("apollo_id", null);
@@ -79,6 +83,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ jobId: job.id, status: "completed", processed: 0 });
   }
 
+  // Now that we know the count, backfill progress_total and label
+  await supabase
+    .from("job_log")
+    .update({
+      label: `Enrich ${contacts.length} contact${contacts.length === 1 ? "" : "s"}`,
+      progress_total: contacts.length,
+    })
+    .eq("id", job.id);
+
   const APOLLO_API_KEY = process.env.APOLLO_API_KEY;
   if (!APOLLO_API_KEY) {
     await supabase.from("job_log").update({ status: "failed", error: "APOLLO_API_KEY not configured" }).eq("id", job.id);
@@ -89,7 +102,7 @@ export async function POST(request: NextRequest) {
 
   for (const contact of contacts) {
     try {
-      const company = (contact as any).contact_company?.[0]?.company;
+      const company = (contact as { contact_company?: { company?: { name?: string; website?: string } }[] }).contact_company?.[0]?.company;
       const matchBody: Record<string, string> = {};
       if (contact.first_name) matchBody.first_name = contact.first_name;
       if (contact.last_name) matchBody.last_name = contact.last_name;
@@ -115,7 +128,7 @@ export async function POST(request: NextRequest) {
       const person = data.person;
       if (!person) continue;
 
-      const updates: Record<string, any> = { apollo_id: person.id };
+      const updates: Record<string, unknown> = { apollo_id: person.id };
       if (fields.includes("email") && person.email && !contact.email) { updates.email = person.email; emailsFound++; }
       if (fields.includes("linkedin") && person.linkedin_url && !contact.linkedin) { updates.linkedin = person.linkedin_url; linkedinFound++; }
       if (fields.includes("twitter") && person.twitter_url && !contact.twitter) { updates.twitter = person.twitter_url; twitterFound++; }
@@ -125,6 +138,11 @@ export async function POST(request: NextRequest) {
 
       await supabase.from("contacts").update(updates).eq("id", contact.id);
       contactsProcessed++;
+      // Write incremental progress to job row (updated_at set by DB trigger)
+      await supabase
+        .from("job_log")
+        .update({ progress_completed: contactsProcessed })
+        .eq("id", job.id);
       await new Promise(r => setTimeout(r, 500)); // Rate limit
     } catch (err) {
       console.error(`Apollo error for ${contact.full_name}:`, err);

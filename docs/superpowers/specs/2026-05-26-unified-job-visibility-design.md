@@ -51,6 +51,7 @@ nullable columns (existing rows default cleanly):
 | `progress_failed` | `int default 0` | Failed count |
 | `phase` | `text` | Current phase — "Apollo", "Parsing rows", "Linking events" |
 | `updated_at` | `timestamptz default now()` | Last progress write; drives stall detection |
+| `parent_job_id` | `uuid references job_log(id)` | Links child stage rows to their parent batch (replaces fragile time-window matching) so the drawer can fetch a job's children reliably |
 
 - A `BEFORE UPDATE` trigger sets `updated_at = now()` on every write (mirror of the
   existing name-parts trigger style) — chosen over caller-set timestamps so stall

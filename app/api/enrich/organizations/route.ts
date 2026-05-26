@@ -119,6 +119,10 @@ export async function POST(request: NextRequest) {
       job_type: "enrichment_batch_organizations",
       target_table: "organizations",
       status: "processing",
+      label: `Enrich ${orgIds.length} organization${orgIds.length === 1 ? "" : "s"}`,
+      progress_total: orgIds.length,
+      progress_completed: 0,
+      progress_failed: 0,
       metadata: {
         stages,
         org_count: orgIds.length,
