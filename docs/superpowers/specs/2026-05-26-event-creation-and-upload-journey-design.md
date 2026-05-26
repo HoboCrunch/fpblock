@@ -24,7 +24,10 @@ We need:
 - New-event-list journey forces all imported rows onto the newly created event,
   ignoring any `event` column (no `EventDetectModal` in this flow).
 - Role picker per import mode: persons and organizations.
-- Re-importing a list must not throw on duplicate participations.
+- An entity may participate in many events; every distinct `(event, entity, role)` is
+  a separate participation and must be preserved. An existing person/org added to a new
+  event gets a new participation row appended. Re-importing the **same** `(event, entity,
+  role)` upserts (updates the existing row), never throws.
 
 ## Non-Goals
 
@@ -56,9 +59,13 @@ SponsorTier = "presented_by" | "platinum" | "diamond" | "emerald" | "gold"
 ```
 
 `slug` is `UNIQUE` (nullable). `event_participations` has unique indexes per
-`(event, entity, role)`, so the current bare `.insert` in the import actions throws
-on a duplicate participation. The forced-event journey makes re-imports likely, so
-participation writes must become duplicate-safe.
+`(event, entity, role)`. Multi-event participation is expected and desired: the same
+person/org legitimately appears across many events, and an existing entity added to a
+new event must get a **new** participation row (different `event_id` → never a
+conflict). The unique index only collides when the exact same `(event, entity, role)`
+is re-imported. The current bare `.insert` throws in that one case; the forced-event
+journey makes such re-imports likely, so participation writes must become **upserts**:
+insert when absent, update the existing row when present.
 
 ## Architecture
 
@@ -181,25 +188,31 @@ config: {
 ```
 
 `importPersons`:
-- After resolving `personId`, attach event participation:
+- After resolving `personId` (set even when an existing person is "skipped" for field
+  updates — so existing persons still get linked to the event), attach participation:
   - If `forcedEvent` set → `event_id = forcedEvent.id`, `role = forcedEvent.role`.
   - Else (existing) → resolve from `row.event` via `eventMap`, `role = "attendee"`.
-- Write participation **duplicate-safe** (see below).
+- Write participation via the **upsert helper** (see below).
 
 `importOrganizations`:
-- After resolving `organizationId`, attach event participation:
+- After resolving `organizationId`, attach participation:
   - If `forcedEvent` set → `event_id = forcedEvent.id`, `role = forcedEvent.role`,
     `sponsor_tier = forcedEvent.sponsorTier ?? null`.
   - Else (existing) → resolve from `row.event`, `role = "sponsor"`,
     `sponsor_tier` unset.
-- Write participation duplicate-safe.
+- Write participation via the upsert helper.
 
-**Duplicate-safe participation write** (shared helper, e.g.
+**Upsert participation helper** (shared, e.g.
 `upsertParticipation(supabase, { event_id, person_id|organization_id, role, sponsor_tier? })`):
-- Query for an existing participation matching `(event_id, entity_id, role)`.
-- If none, insert. If found, skip (optionally update `sponsor_tier` if provided and
-  currently null — keep minimal: skip on conflict).
-- This removes the current per-row duplicate-insert error on re-import.
+- Query for an existing row matching `(event_id, role)` AND the entity id
+  (`person_id` or `organization_id`). A different `event_id` (entity in another event)
+  yields no match → a new row is inserted, preserving multi-event participation.
+- If no match → `insert` the new participation.
+- If a match exists → `update` it with the provided mergeable fields (set
+  `sponsor_tier` when provided). Never throw on the existing-row case.
+- Note: the unique indexes are **partial** (`WHERE person_id IS NOT NULL` /
+  `WHERE organization_id IS NOT NULL`), which makes PostgREST `onConflict` inference
+  unreliable — hence the explicit select-then-insert/update rather than `.upsert()`.
 
 ### 6. Data flow
 
@@ -220,7 +233,10 @@ Uploads page: New event list → EventCreateModal → createEvent
   - persons with `forcedEvent` → participation has the chosen role, `event_id` forced,
     `row.event`/`eventMap` ignored.
   - organizations with `forcedEvent` → role + `sponsor_tier` set.
-  - duplicate participation is skipped, not thrown (existence check path).
+  - same entity added to a **different** event → a new participation row is inserted
+    (multi-event preserved), not blocked.
+  - re-importing the **same** `(event, entity, role)` → updates the existing row
+    (upsert), does not throw.
 - `EventCreateModal` test (testing-library, mirroring `event-detect-modal.test.tsx`):
   submit disabled with empty name; calls `onCreated` after successful create
   (mock `createEvent`).

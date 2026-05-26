@@ -13,6 +13,7 @@ import {
   type ImportColumn,
 } from "@/components/admin/import-table";
 import { EventDetectModal } from "@/components/admin/event-detect-modal";
+import { EventCreateModal } from "@/components/admin/event-create-modal";
 import {
   fieldSetForMode,
   isValidFieldForMode,
@@ -32,9 +33,39 @@ import {
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Upload, Event } from "@/lib/types/database";
+import type { ParticipationRole, SponsorTier } from "@/lib/types/database";
 
 const DEFAULT_PERSON_COLUMNS = ["full_name", "email", "linkedin", "title", "event"];
 const DEFAULT_ORG_COLUMNS = ["name", "website", "category", "linkedin_url", "event"];
+
+const PERSON_ROLES: ParticipationRole[] = [
+  "speaker",
+  "panelist",
+  "mc",
+  "attendee",
+  "organizer",
+  "media",
+];
+const ORG_ROLES: ParticipationRole[] = ["sponsor", "partner", "exhibitor"];
+const SPONSOR_TIERS: SponsorTier[] = [
+  "presented_by",
+  "platinum",
+  "diamond",
+  "emerald",
+  "gold",
+  "silver",
+  "bronze",
+  "copper",
+  "community",
+];
+
+function defaultRoleForMode(m: ImportMode): ParticipationRole {
+  return m === "persons" ? "speaker" : "sponsor";
+}
+
+function isValidRoleForMode(role: ParticipationRole, m: ImportMode): boolean {
+  return (m === "persons" ? PERSON_ROLES : ORG_ROLES).includes(role);
+}
 
 function makeColumnId(): string {
   return `col_${Math.random().toString(36).slice(2, 9)}`;
@@ -84,6 +115,10 @@ export default function UploadsPage() {
     unknown: string[];
     known: Record<string, string>;
   } | null>(null);
+  const [journeyEvent, setJourneyEvent] = useState<{ id: string; name: string } | null>(null);
+  const [showEventCreate, setShowEventCreate] = useState(false);
+  const [listRole, setListRole] = useState<ParticipationRole>("speaker");
+  const [sponsorTier, setSponsorTier] = useState<SponsorTier | "">("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -116,6 +151,7 @@ export default function UploadsPage() {
       return;
     }
     setMode(next);
+    setListRole((prev) => (isValidRoleForMode(prev, next) ? prev : defaultRoleForMode(next)));
     setState((prev) => ({
       ...prev,
       mode: next,
@@ -151,6 +187,17 @@ export default function UploadsPage() {
     const validRows = dropEmptyRows(state);
     if (validRows.length === 0) return;
 
+    // New-event-list journey: bind every row to the chosen event/role, skip
+    // event-column detection entirely.
+    if (journeyEvent) {
+      await runImport(validRows, {}, {
+        id: journeyEvent.id,
+        role: listRole,
+        sponsorTier: mode === "organizations" ? (sponsorTier || null) : null,
+      });
+      return;
+    }
+
     // Extract event-column values
     const eventColIndex = state.columns.findIndex((c) => c.field === "event");
     const rawEventNames =
@@ -185,14 +232,15 @@ export default function UploadsPage() {
   function runImport(
     validRows: string[][],
     eventMap: Record<string, string | null>,
+    forcedEvent?: { id: string; role: ParticipationRole; sponsorTier?: SponsorTier | null },
   ) {
     return new Promise<void>((resolve) => {
       startTransition(async () => {
         const records = validRows.map((row) => rowToRecord(state.columns, row));
         const res =
           mode === "persons"
-            ? await importPersons(records as PersonImportRow[], { duplicateHandling, eventMap }, filename)
-            : await importOrganizations(records as OrganizationImportRow[], { duplicateHandling, eventMap }, filename);
+            ? await importPersons(records as PersonImportRow[], { duplicateHandling, eventMap, forcedEvent }, filename)
+            : await importOrganizations(records as OrganizationImportRow[], { duplicateHandling, eventMap, forcedEvent }, filename);
         setResult({
           personsCreated: res.personsCreated,
           organizationsCreated: res.organizationsCreated,
@@ -263,6 +311,12 @@ export default function UploadsPage() {
             >
               Reset table
             </button>
+            <button
+              onClick={() => setShowEventCreate(true)}
+              className="px-3 py-2 text-sm rounded-lg border border-[var(--glass-border)] text-[var(--text-secondary)] hover:text-white"
+            >
+              New event list
+            </button>
           </div>
 
           <div className="flex items-center gap-2 ml-auto">
@@ -290,7 +344,11 @@ export default function UploadsPage() {
               )}
             >
               <UploadIcon className="h-4 w-4" />
-              {isPending ? "Importing..." : `Import ${totalValidRows} row${totalValidRows === 1 ? "" : "s"}`}
+              {isPending
+                ? "Importing..."
+                : journeyEvent
+                  ? `Import ${totalValidRows} row${totalValidRows === 1 ? "" : "s"} into ${journeyEvent.name} as ${listRole}`
+                  : `Import ${totalValidRows} row${totalValidRows === 1 ? "" : "s"}`}
             </button>
           </div>
         </div>
@@ -315,6 +373,56 @@ export default function UploadsPage() {
         )}
       </GlassCard>
 
+      {/* New-event-list banner */}
+      {journeyEvent && (
+        <GlassCard className="border-[var(--accent-orange)]/30">
+          <div className="flex flex-wrap items-center gap-4">
+            <p className="text-sm text-[var(--text-secondary)]">
+              Importing into{" "}
+              <span className="font-semibold text-[var(--accent-orange)]">
+                {journeyEvent.name}
+              </span>
+            </p>
+
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-[var(--text-muted)]">Import as</label>
+              <GlassSelect
+                options={(mode === "persons" ? PERSON_ROLES : ORG_ROLES).map((r) => ({
+                  value: r,
+                  label: r,
+                }))}
+                value={listRole}
+                onChange={(e) => setListRole(e.target.value as ParticipationRole)}
+              />
+            </div>
+
+            {mode === "organizations" && (
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-[var(--text-muted)]">Sponsor tier</label>
+                <GlassSelect
+                  options={[
+                    { value: "", label: "No tier" },
+                    ...SPONSOR_TIERS.map((t) => ({ value: t, label: t })),
+                  ]}
+                  value={sponsorTier}
+                  onChange={(e) => setSponsorTier(e.target.value as SponsorTier | "")}
+                />
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                setJourneyEvent(null);
+                setSponsorTier("");
+              }}
+              className="ml-auto px-3 py-2 text-sm rounded-lg border border-[var(--glass-border)] text-[var(--text-secondary)] hover:text-white"
+            >
+              Exit list mode
+            </button>
+          </div>
+        </GlassCard>
+      )}
+
       {/* Drop target */}
       <FileDropzone onFile={handleCsv} />
 
@@ -332,6 +440,20 @@ export default function UploadsPage() {
           existingEvents={events}
           onConfirm={resolveEventsAndImport}
           onCancel={() => setPendingEventResolution(null)}
+        />
+      )}
+
+      {/* New event creation (starts the new-event-list journey) */}
+      {showEventCreate && (
+        <EventCreateModal
+          onCreated={(event) => {
+            setJourneyEvent(event);
+            setShowEventCreate(false);
+            setListRole((prev) =>
+              isValidRoleForMode(prev, mode) ? prev : defaultRoleForMode(mode),
+            );
+          }}
+          onCancel={() => setShowEventCreate(false)}
         />
       )}
 

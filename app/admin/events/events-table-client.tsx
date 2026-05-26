@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Search,
   ChevronDown,
@@ -11,8 +12,10 @@ import {
   Globe,
   ExternalLink,
   Check,
+  Plus,
 } from "lucide-react";
 import { TwoPanelLayout } from "@/components/admin/two-panel-layout";
+import { EventCreateModal } from "@/components/admin/event-create-modal";
 import { FilterGroup } from "@/components/admin/filter-group";
 import { ActiveFilters } from "@/components/admin/active-filters";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -113,6 +116,11 @@ function GlassCheckbox({ checked, onChange, onClick }: { checked: boolean; onCha
 // ─── Component ───────────────────────────────────────────────────────
 
 export function EventsTableClient({ events, eventTypes, locations }: Props) {
+  const router = useRouter();
+
+  // Create modal
+  const [showCreate, setShowCreate] = useState(false);
+
   // Filters
   const [search, setSearch] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -366,6 +374,16 @@ export function EventsTableClient({ events, eventTypes, locations }: Props) {
   // ─── Sidebar ───────────────────────────────────────────────────────
   const sidebar = (
     <div className="space-y-4">
+      {/* New Event */}
+      <button
+        type="button"
+        onClick={() => setShowCreate(true)}
+        className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/30 hover:bg-[var(--accent-orange)]/25 transition-all duration-150"
+      >
+        <Plus className="w-4 h-4" />
+        New Event
+      </button>
+
       {/* Search */}
       <GlassInput
         icon={Search}
@@ -671,6 +689,16 @@ export function EventsTableClient({ events, eventTypes, locations }: Props) {
           </p>
         </div>
       </GlassCard>
+
+      {showCreate && (
+        <EventCreateModal
+          onCreated={() => {
+            setShowCreate(false);
+            router.refresh();
+          }}
+          onCancel={() => setShowCreate(false)}
+        />
+      )}
     </TwoPanelLayout>
   );
 }
