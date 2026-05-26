@@ -244,7 +244,8 @@ Unified host for the two list views. The route accepts `?tab=persons|organizatio
 
 ### Inbox — `/admin/inbox`
 
-- Server page (`app/admin/inbox/page.tsx`) fetches sync state + last 200 inbound emails + person/org joins.
+- Server page (`app/admin/inbox/page.tsx`) fetches sync state + recent inbound emails + person/org joins, then builds conversation threads via `groupIntoThreads()` in `lib/inbox/group-threads.ts`.
+- Grouping key is `(JMAP threadId, external counterparty)`, not `threadId` alone — Fastmail subject-threads a same-subject outreach blast into one `threadId`, so we split it back per prospect. See [admin-panel.md → Conversation grouping](../admin-panel.md#conversation-grouping).
 - Client: `inbox-client.tsx`. Two-column layout (email list + email detail).
 - Auto-correlation logic is server-side (`/api/inbox/sync` + pg_cron); the client is read/triage only.
 

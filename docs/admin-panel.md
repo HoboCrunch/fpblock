@@ -228,7 +228,10 @@ Controls dropped in May 2026 (no UI surface; legacy values still honored by the 
 
 **URL:** `/admin/inbox`
 
-Threaded 2-way email client over the two managed Fastmail identities (`jb@gofpblock.com`, `wes@gofpblock.com`). Inbox + Sent are both synced per identity using its own JMAP token; rows are grouped into conversations by JMAP `threadId`.
+Threaded 2-way email client over the two managed Fastmail identities (`jb@gofpblock.com`, `wes@gofpblock.com`). Inbox + Sent are both synced per identity using its own JMAP token; rows are grouped into conversations by `groupIntoThreads()` in `lib/inbox/group-threads.ts`.
+
+### Conversation grouping
+The bucket key is **`(JMAP threadId, external counterparty)`** — *not* `threadId` alone. Fastmail's JMAP threading keys on the normalized subject, so a bulk cold-outreach blast (the same subject line sent to many prospects) collapses every reply into a single `threadId`. Grouping by `threadId` alone therefore renders one giant conversation mixing dozens of unrelated prospects. Because this inbox is a 1:1 outreach CRM, a "conversation" is really *one external counterparty ↔ one of our identities*, so we sub-partition each Fastmail thread by the other party's address (`from_address` for inbound, `to_address` for outbound). Genuinely-threaded 1:1 exchanges are unaffected; a subject-merged blast splits back into one conversation per prospect. Rows with no `threadId` stay a thread of one. Covered by `lib/inbox/group-threads.test.ts`.
 
 ### Toolbar
 Single **Sync** button in the top-left, replacing the per-identity status pills. If any identity's last sync errored, a muted red note appears inline next to it. The sync runs every configured identity in one pass.

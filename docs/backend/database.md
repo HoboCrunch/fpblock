@@ -385,7 +385,7 @@ Holds every email message we sync from Fastmail — both directions. The name is
 | `id` | uuid PK | NO | `gen_random_uuid()` | |
 | `account_email` | text | NO | — | The managed identity this row is attributed to (jb or wes). For inbound: the recipient identity in To/Cc/Bcc. For outbound: the sending identity. |
 | `message_id` | text | NO | — | UNIQUE — JMAP email ID, dedup key |
-| `thread_id` | text | YES | — | JMAP `threadId` (added in 030). Used by the inbox UI to group messages into conversations. Indexed. |
+| `thread_id` | text | YES | — | JMAP `threadId` (added in 030). The inbox UI groups conversations by `(thread_id, external counterparty)` — not `thread_id` alone, since Fastmail subject-threads same-subject outreach blasts together (see `lib/inbox/group-threads.ts`). Indexed. |
 | `direction` | text | NO | `'inbound'` | CHECK in (`inbound`,`outbound`). Added in 030. Outbound rows come from each identity's Sent mailbox during the same sync pass. |
 | `from_address` | text | NO | — | |
 | `from_name` | text | YES | — | |

@@ -110,7 +110,9 @@ If the team wants in-app Claude calls, that integration does not yet exist.
 
 ## Fastmail (JMAP)
 
-**Purpose** — full 2-way email integration with two managed identities. Pulls inbound + Sent for each identity, threads them by JMAP `threadId`, runs correlation against pipeline persons, and sends replies via `EmailSubmission/set`. Pairs with `inbox-correlator.ts` for inbound matching and `lib/inbox-sync.ts → reconcileOutboundToInteraction` for outbound interaction reconciliation.
+**Purpose** — full 2-way email integration with two managed identities. Pulls inbound + Sent for each identity, runs correlation against pipeline persons, and sends replies via `EmailSubmission/set`. Pairs with `inbox-correlator.ts` for inbound matching and `lib/inbox-sync.ts → reconcileOutboundToInteraction` for outbound interaction reconciliation.
+
+> **Threading caveat:** Fastmail's JMAP `threadId` keys on the normalized subject, so a bulk cold-outreach blast (one subject, many recipients) collapses into a single `threadId`. The inbox UI therefore does **not** group by `threadId` alone — it sub-partitions each Fastmail thread by external counterparty in `lib/inbox/group-threads.ts`. See [admin-panel.md → Inbox → Conversation grouping](../admin-panel.md#conversation-grouping).
 
 **Auth** — `Authorization: Bearer <token>` per identity to JMAP session URL `https://api.fastmail.com/jmap/session`. Each managed identity (`jb@gofpblock.com`, `wes@gofpblock.com`) lives in its **own** Fastmail account and authenticates with its own token. Identities are NOT pooled under a single JMAP account.
 
