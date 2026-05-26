@@ -100,6 +100,7 @@ app/admin/layout.tsx (server)
               │     └── <NavItem> components/admin/nav-item.tsx       (memo)
               │           └── <NavTooltip> components/admin/nav-tooltip.tsx (memo)
               ├── <Header>        components/admin/header.tsx          (memo)
+              │     ├── <RouteProgressBar> components/admin/route-progress-bar.tsx
               │     └── <Breadcrumb> components/admin/breadcrumb.tsx
               └── <main>{children}</main>
 ```
@@ -128,11 +129,19 @@ app/admin/layout.tsx (server)
 - Renders the active orange bar indicator (`tsx:52-57`) and an icon glow when active (`tsx:60-67`).
 - When collapsed/tablet, the label width animates to 0 and `<NavTooltip>` shows on hover.
 
-### `components/admin/header.tsx:27-157`
+### `components/admin/header.tsx:27-161`
 
 - Memo'd. 14-row sticky header. Receives `pathname` from `AdminShell` and forwards to `<Breadcrumb>` (`tsx:69`).
-- Mobile menu button (`tsx:63-68`) wired to `onMenuToggle`.
-- User avatar + dropdown with sign-out (calls `supabase.auth.signOut()` at `tsx:42`, then `router.push("/login")` + `router.refresh()`).
+- Renders `<RouteProgressBar>` as its first child (the sticky `<header>` is the positioning context for the bar's `absolute top-0`).
+- Mobile menu button wired to `onMenuToggle`.
+- User avatar + dropdown with sign-out (calls `supabase.auth.signOut()`, then `router.push("/login")` + `router.refresh()`).
+
+### `components/admin/route-progress-bar.tsx`
+
+- Slim accent-orange loading bar pinned to the header's top edge (`absolute top-0 inset-x-0 h-[2px]`, soft glow, `z-20`, `pointer-events-none`).
+- Visualizes **in-app navigation** (not data fetching): a capture-phase `document` click listener starts it on eligible internal-link clicks, it trickles toward 90% during the load, then snaps to 100% and fades when `usePathname()` changes.
+- Click eligibility is the pure `shouldStartNavigation()` helper in `lib/navigation/should-start-navigation.ts` (unit-tested): left-click only, same-origin, http(s), path actually changes; ignores ⌘/ctrl/shift/alt clicks, `target=_blank`, `download`, `mailto:`/`tel:`, and same-path query/hash changes (so `?tab=` toggles don't flicker it).
+- 8s safety timeout auto-completes if no route commits; honors `prefers-reduced-motion` (no trickle).
 
 ### `components/admin/breadcrumb.tsx`
 

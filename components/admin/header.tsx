@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Breadcrumb } from "./breadcrumb";
+import { RouteProgressBar } from "./route-progress-bar";
 import { LogOut, Menu, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { memo, useState, useRef, useEffect } from "react";
@@ -58,6 +59,9 @@ export const Header = memo(function Header({
 
   return (
     <header className="h-14 bg-[var(--glass-bg)]/80 backdrop-blur-xl border-b border-[var(--glass-border)] px-4 md:px-6 flex items-center justify-between shrink-0 sticky top-0 z-10">
+      {/* top-of-header route loading bar */}
+      <RouteProgressBar />
+
       {/* ── left: menu + breadcrumbs ──────────────────────── */}
       <div className="flex items-center gap-3">
         <button

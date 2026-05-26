@@ -111,7 +111,8 @@ Roughly 40 components organized by purpose.
 | `sidebar.tsx` | Main sidebar (270 LOC). Memo'd. Owns `collapsed`/`eventsOpen`/`isTablet` state. Renders `mainNavItems` + `bottomNavItems` declared inline at top of file. |
 | `nav-item.tsx` | Single nav row. Memo'd. Renders icon + label + active bar; on collapsed/tablet shows `<NavTooltip>` on hover. |
 | `nav-tooltip.tsx` | Memo'd portal-anchored tooltip for collapsed sidebar. |
-| `header.tsx` | Top bar (157 LOC). Memo'd. Mobile menu, breadcrumb, search hint button (non-functional placeholder), user dropdown with sign-out. |
+| `header.tsx` | Top bar (161 LOC). Memo'd. Renders `<RouteProgressBar>` at its top edge, then mobile menu, breadcrumb, search hint button (non-functional placeholder), user dropdown with sign-out. |
+| `route-progress-bar.tsx` | Slim accent-orange loading bar pinned to the header's top edge. Visualizes in-app navigation: a capture-phase document click listener starts it on eligible internal-link clicks (decided by the pure `shouldStartNavigation` helper in `lib/navigation/`), trickles to 90%, completes on `usePathname()` change. 8s safety auto-complete; honors `prefers-reduced-motion`. |
 | `breadcrumb.tsx` | URL → label list. Drives `<Header>` left side. |
 
 ### Layout helpers
