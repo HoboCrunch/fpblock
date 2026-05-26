@@ -140,6 +140,35 @@ export async function enrollFromEvent(
   };
 }
 
+export async function enrollFromList(sequenceId: string, listId: string) {
+  const supabase = await createClient();
+  const { data: items, error: itemsError } = await supabase
+    .from("person_list_items")
+    .select("person_id")
+    .eq("list_id", listId);
+  if (itemsError) return { success: false as const, error: itemsError.message };
+  const personIds = (items ?? []).map((i) => i.person_id);
+  if (personIds.length === 0) {
+    return {
+      success: true as const,
+      enrolled: 0,
+      requested: 0,
+      dropped: { bounced: 0, already_in_active_sequence: 0 },
+    };
+  }
+  const result = await enrollPersons(sequenceId, personIds);
+  if (!result.success) {
+    return { success: false as const, error: result.error ?? "Enrollment failed" };
+  }
+  revalidatePath(`/admin/sequences/${sequenceId}`);
+  return {
+    success: true as const,
+    enrolled: result.enrolled,
+    requested: result.requested,
+    dropped: result.dropped,
+  };
+}
+
 export async function unenrollPerson(enrollmentId: string) {
   const supabase = await createClient();
   const { error } = await supabase

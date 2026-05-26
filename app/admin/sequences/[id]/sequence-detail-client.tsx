@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useSequenceDetail } from "@/lib/queries/use-sequence-detail";
@@ -11,10 +11,13 @@ import {
   updateSequenceSendMode,
   updateSequenceSender,
   updateSequenceSchedule,
+  updateSequenceSteps,
   enrollPersons,
+  enrollFromList,
   searchPersons,
 } from "../actions";
-import { StepEditor } from "@/components/admin/step-editor";
+import { getLists } from "../../lists/actions";
+import { StepEditor, validateSteps } from "@/components/admin/step-editor";
 import { SequenceConfigCard } from "@/components/admin/sequence-config-card";
 import { SequenceSettingsSheet } from "@/components/admin/sequence-settings-sheet";
 import { ActivityLog } from "@/components/admin/activity-log";
@@ -22,11 +25,11 @@ import { TwoPanelLayout } from "@/components/admin/two-panel-layout";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassInput } from "@/components/ui/glass-input";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Play, Pause, Check, ChevronDown } from "lucide-react";
+import { ArrowLeft, Play, Pause, Check, ChevronDown, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import type { SequenceSchedule, SenderProfile } from "@/lib/types/database";
+import type { SequenceSchedule, SenderProfile, SequenceStep } from "@/lib/types/database";
 
 const STATUS_META: Record<string, { label: string; dot: string; bg: string }> = {
   draft: { label: "Draft", dot: "bg-yellow-400", bg: "text-yellow-300" },
@@ -39,6 +42,32 @@ interface EnrollSearchResult {
   id: string;
   full_name: string;
   email: string | null;
+}
+
+interface EnrollList {
+  id: string;
+  name: string;
+  description: string | null;
+  person_list_items: { count: number }[];
+}
+
+type EnrollTab = "people" | "lists";
+
+interface ListEnrollResult {
+  listName: string;
+  enrolled: number;
+  skipped: number;
+}
+
+function useLists(enabled: boolean) {
+  return useQuery({
+    queryKey: ["person_lists"],
+    enabled,
+    queryFn: async () => {
+      const { data } = await getLists();
+      return (data ?? []) as EnrollList[];
+    },
+  });
 }
 
 function useSenderProfiles() {
@@ -71,8 +100,19 @@ export function SequenceDetailClient({ sequenceId }: Props) {
   const [enrollSearch, setEnrollSearch] = useState("");
   const [enrollResults, setEnrollResults] = useState<EnrollSearchResult[]>([]);
   const [enrollModalOpen, setEnrollModalOpen] = useState(false);
+  const [enrollTab, setEnrollTab] = useState<EnrollTab>("people");
+  const [listResult, setListResult] = useState<ListEnrollResult | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+
+  // Step editing state lives here (lifted from StepEditor) so the Save button
+  // can sit in the page header next to the Activate/Pause action. `steps` is
+  // null until the first local edit; render derives from data.steps until then
+  // (see effectiveSteps below), so a post-save refetch never clobbers edits.
+  const [steps, setSteps] = useState<SequenceStep[] | null>(null);
+  const [stepsSaved, setStepsSaved] = useState(false);
+  const [stepsSaveError, setStepsSaveError] = useState<string | null>(null);
+  const [savingSteps, startSaveTransition] = useTransition();
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: queryKeys.sequences.detail(sequenceId) });
@@ -103,6 +143,8 @@ export function SequenceDetailClient({ sequenceId }: Props) {
     onSuccess: invalidate,
   });
 
+  const { data: lists = [], isLoading: listsLoading } = useLists(enrollModalOpen);
+
   const enrollMutation = useMutation({
     mutationFn: (personIds: string[]) => enrollPersons(sequenceId, personIds),
     onSuccess: () => {
@@ -112,6 +154,28 @@ export function SequenceDetailClient({ sequenceId }: Props) {
       invalidate();
     },
   });
+
+  const enrollListMutation = useMutation({
+    mutationFn: (list: EnrollList) => enrollFromList(sequenceId, list.id),
+    onSuccess: (res, list) => {
+      if (res.success) {
+        const requested = res.requested ?? list.person_list_items?.[0]?.count ?? 0;
+        setListResult({
+          listName: list.name,
+          enrolled: res.enrolled,
+          skipped: Math.max(0, requested - res.enrolled),
+        });
+        invalidate();
+      }
+    },
+  });
+
+  function closeEnrollModal() {
+    setEnrollModalOpen(false);
+    setEnrollSearch("");
+    setEnrollResults([]);
+    setListResult(null);
+  }
 
   async function handleEnrollSearch(q: string) {
     setEnrollSearch(q);
@@ -153,6 +217,35 @@ export function SequenceDetailClient({ sequenceId }: Props) {
         <button onClick={() => router.back()} className="underline">Go back</button>
       </div>
     );
+  }
+
+  // Editable steps (falls back to the loaded value until the init effect runs).
+  const effectiveSteps = steps ?? data.steps;
+  const stepValidation = validateSteps(effectiveSteps);
+  const stepsBlocked = stepValidation.errorCount > 0;
+
+  function handleStepsChange(next: SequenceStep[]) {
+    setSteps(next);
+    setStepsSaved(false);
+    setStepsSaveError(null);
+  }
+
+  function handleSaveSteps() {
+    if (stepsBlocked) return;
+    // Re-normalize step_number defensively (the editor controls ordering).
+    const normalized = effectiveSteps.map((s, i) => ({ ...s, step_number: i + 1 }));
+    startSaveTransition(async () => {
+      const result = await updateSequenceSteps(sequenceId, normalized);
+      if (result.success) {
+        setSteps(normalized);
+        setStepsSaved(true);
+        setStepsSaveError(null);
+        setTimeout(() => setStepsSaved(false), 2000);
+        invalidate();
+      } else {
+        setStepsSaveError(result.error ?? "Save failed");
+      }
+    });
   }
 
   const enrollmentCounts = data.enrollments.reduce(
@@ -371,29 +464,53 @@ export function SequenceDetailClient({ sequenceId }: Props) {
               </div>
             </div>
 
-            {primaryActionLabel && (
+            <div className="flex items-center gap-2 shrink-0">
               <button
-                onClick={handlePrimaryAction}
-                disabled={data.status === "draft" && !canActivate}
-                title={data.status === "draft" && !canActivate ? "Need ≥1 step, ≥1 enrollment, and a sender" : undefined}
+                onClick={handleSaveSteps}
+                disabled={savingSteps || stepsBlocked}
+                title={stepsBlocked ? "Fix step errors before saving" : undefined}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed",
-                  data.status === "active"
-                    ? "bg-orange-500/15 text-orange-400 border border-orange-500/20 hover:bg-orange-500/25"
-                    : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25"
+                  stepsSaved
+                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
+                    : "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25"
                 )}
               >
-                {primaryActionIcon}
-                {primaryActionLabel}
+                {savingSteps ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {savingSteps ? "Saving..." : stepsSaved ? "Saved!" : "Save"}
               </button>
-            )}
+
+              {primaryActionLabel && (
+                <button
+                  onClick={handlePrimaryAction}
+                  disabled={data.status === "draft" && !canActivate}
+                  title={data.status === "draft" && !canActivate ? "Need ≥1 step, ≥1 enrollment, and a sender" : undefined}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed",
+                    data.status === "active"
+                      ? "bg-orange-500/15 text-orange-400 border border-orange-500/20 hover:bg-orange-500/25"
+                      : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25"
+                  )}
+                >
+                  {primaryActionIcon}
+                  {primaryActionLabel}
+                </button>
+              )}
+            </div>
           </div>
         </header>
 
         {/* STEP EDITOR — the hero of this page */}
         <StepEditor
           sequenceId={sequenceId}
-          initialSteps={data.steps}
+          steps={effectiveSteps}
+          onStepsChange={handleStepsChange}
+          validation={stepValidation}
+          saveError={stepsSaveError}
           channel={data.channel}
           stepStats={data.step_stats}
         />
@@ -417,48 +534,129 @@ export function SequenceDetailClient({ sequenceId }: Props) {
         <>
           <div
             className="fixed inset-0 bg-black/50 z-40"
-            onClick={() => setEnrollModalOpen(false)}
+            onClick={closeEnrollModal}
           />
           <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md p-6 rounded-2xl bg-[#0f0f13] border border-[var(--glass-border)]">
-            <h2 className="text-lg font-semibold text-white mb-4">Enroll Persons</h2>
-            <GlassInput
-              placeholder="Search by name or email..."
-              value={enrollSearch}
-              onChange={(e) => handleEnrollSearch(e.target.value)}
-              autoFocus
-            />
-            <div className="mt-3 max-h-60 overflow-y-auto space-y-1">
-              {enrollResults.map((p) => {
-                const already = data.enrollments.some((e) => e.person_id === p.id);
-                return (
-                  <div key={p.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/[0.03]">
-                    <div>
-                      <p className="text-sm text-white">{p.full_name}</p>
-                      {p.email && <p className="text-xs text-[var(--text-muted)]">{p.email}</p>}
-                    </div>
-                    {already ? (
-                      <Check className="h-4 w-4 text-emerald-400" />
-                    ) : (
-                      <button
-                        onClick={() => enrollMutation.mutate([p.id])}
-                        className="text-xs px-3 py-1 rounded-lg bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25"
-                      >
-                        Enroll
-                      </button>
+            <h2 className="text-lg font-semibold text-white mb-4">Enroll</h2>
+
+            {/* Source toggle: individual people vs. a saved list */}
+            <div className="flex p-0.5 mb-4 rounded-lg bg-white/[0.04] border border-[var(--glass-border)]">
+              {([
+                ["people", "People"],
+                ["lists", "Lists"],
+              ] as [EnrollTab, string][]).map(([value, label]) => (
+                <button
+                  key={value}
+                  onClick={() => setEnrollTab(value)}
+                  className={cn(
+                    "flex-1 text-xs font-medium py-1.5 rounded-md transition-colors",
+                    enrollTab === value
+                      ? "bg-[var(--accent-orange)]/15 text-[var(--accent-orange)]"
+                      : "text-[var(--text-muted)] hover:text-white"
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {enrollTab === "people" ? (
+              <>
+                <GlassInput
+                  placeholder="Search by name or email..."
+                  value={enrollSearch}
+                  onChange={(e) => handleEnrollSearch(e.target.value)}
+                  autoFocus
+                />
+                <div className="mt-3 max-h-60 overflow-y-auto space-y-1">
+                  {enrollResults.map((p) => {
+                    const already = data.enrollments.some((e) => e.person_id === p.id);
+                    return (
+                      <div key={p.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/[0.03]">
+                        <div>
+                          <p className="text-sm text-white">{p.full_name}</p>
+                          {p.email && <p className="text-xs text-[var(--text-muted)]">{p.email}</p>}
+                        </div>
+                        {already ? (
+                          <Check className="h-4 w-4 text-emerald-400" />
+                        ) : (
+                          <button
+                            onClick={() => enrollMutation.mutate([p.id])}
+                            className="text-xs px-3 py-1 rounded-lg bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25"
+                          >
+                            Enroll
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {enrollSearch.length >= 2 && enrollResults.length === 0 && (
+                    <p className="text-xs text-[var(--text-muted)] px-3 py-2">No results found.</p>
+                  )}
+                  {enrollSearch.length < 2 && (
+                    <p className="text-xs text-[var(--text-muted)] px-3 py-2">Type to search...</p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                {listResult && (
+                  <div className="mb-3 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">
+                    Enrolled <span className="font-semibold tabular-nums">{listResult.enrolled}</span> from{" "}
+                    <span className="font-medium">{listResult.listName}</span>
+                    {listResult.skipped > 0 && (
+                      <span className="text-emerald-300/70">
+                        {" · "}{listResult.skipped} skipped (bounced / already enrolled)
+                      </span>
                     )}
                   </div>
-                );
-              })}
-              {enrollSearch.length >= 2 && enrollResults.length === 0 && (
-                <p className="text-xs text-[var(--text-muted)] px-3 py-2">No results found.</p>
-              )}
-              {enrollSearch.length < 2 && (
-                <p className="text-xs text-[var(--text-muted)] px-3 py-2">Type to search...</p>
-              )}
-            </div>
+                )}
+                <div className="max-h-60 overflow-y-auto space-y-1">
+                  {listsLoading ? (
+                    <div className="flex items-center gap-2 px-3 py-4 text-xs text-[var(--text-muted)]">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading lists...
+                    </div>
+                  ) : lists.length === 0 ? (
+                    <p className="text-xs text-[var(--text-muted)] px-3 py-2">
+                      No lists yet.{" "}
+                      <Link href="/admin/lists" className="text-[var(--accent-orange)] hover:underline">
+                        Create one →
+                      </Link>
+                    </p>
+                  ) : (
+                    lists.map((list) => {
+                      const count = list.person_list_items?.[0]?.count ?? 0;
+                      const pending =
+                        enrollListMutation.isPending &&
+                        enrollListMutation.variables?.id === list.id;
+                      return (
+                        <div key={list.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.03]">
+                          <div className="min-w-0">
+                            <p className="text-sm text-white truncate">{list.name}</p>
+                            <p className="text-xs text-[var(--text-muted)]">
+                              {count} member{count === 1 ? "" : "s"}
+                              {list.description ? ` · ${list.description}` : ""}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => enrollListMutation.mutate(list)}
+                            disabled={pending || count === 0}
+                            className="shrink-0 inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-lg bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20 hover:bg-[var(--accent-orange)]/25 disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {pending && <Loader2 className="h-3 w-3 animate-spin" />}
+                            {pending ? "Enrolling..." : "Enroll"}
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </>
+            )}
+
             <div className="mt-4 flex justify-end">
               <button
-                onClick={() => setEnrollModalOpen(false)}
+                onClick={closeEnrollModal}
                 className="text-sm text-[var(--text-muted)] hover:text-white"
               >
                 Close
