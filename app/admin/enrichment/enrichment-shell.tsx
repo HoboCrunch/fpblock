@@ -459,8 +459,8 @@ export function EnrichmentShell() {
         if (data.jobId) setActiveJobId(data.jobId);
 
         setResultStats({
-          processed: data.contacts_processed ?? 0,
-          enriched: data.enriched ?? 0,
+          processed: data.persons_processed ?? 0,
+          enriched: data.persons_enriched ?? 0,
         });
 
         const outcomes = new Map<string, "enriched" | "failed" | "skipped">();
@@ -593,7 +593,7 @@ export function EnrichmentShell() {
           .from("job_log")
           .select("id, target_id, status, metadata")
           .eq("target_table", "persons")
-          .eq("job_type", "enrichment_person")
+          .eq("job_type", "enrichment_person_match")
           .gte("created_at", jobStartTime)
           .limit(500);
 

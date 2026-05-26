@@ -31,4 +31,5 @@ export const CHILD_JOB_TYPES = [
   "enrichment_perplexity",
   "enrichment_gemini",
   "enrichment_people_finder",
+  "enrichment_person_match",
 ] as const;

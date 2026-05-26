@@ -18,7 +18,6 @@ export function useEnrichmentJobs() {
           "enrichment",
           "enrichment_batch_organizations",
           "enrichment_batch_persons",
-          "enrichment_person",
         ])
         .order("created_at", { ascending: false })
         .limit(50);

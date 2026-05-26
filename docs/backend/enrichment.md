@@ -400,7 +400,14 @@ Job types written by the pipelines:
 
 ## 8. Known gotchas / anti-patterns
 
-1. **Person job_type mismatch.** The person pipeline writes `job_type = 'enrichment_person_match'` ([`person-pipeline.ts:622`](../../lib/enrichment/person-pipeline.ts)) but the live-progress poller in the shell queries `job_type = 'enrichment_person'` ([`enrichment-shell.tsx:662`](../../app/admin/enrichment/enrichment-shell.tsx)) and the historical results loader includes `'enrichment_person'` instead of `'enrichment_person_match'` ([`enrichment-shell.tsx:726`](../../app/admin/enrichment/enrichment-shell.tsx)). The query hook in [`use-enrichment-jobs.ts:21`](../../lib/queries/use-enrichment-jobs.ts) also uses `'enrichment_person'`. Net effect: person enrichment progress and history never display in the UI for individual persons. Either rename the writes to `enrichment_person` or update the readers.
+1. **Person job_type mismatch — RESOLVED 2026-05-26.** The person pipeline writes `job_type = 'enrichment_person_match'` ([`person-pipeline.ts`](../../lib/enrichment/person-pipeline.ts)), but several readers queried the non-existent `'enrichment_person'`, so person batches sat at `0/N` progress and `Processed/Enriched: 0`. Fixed by pointing every reader at the value the pipeline actually writes:
+   - Live-progress poller in the shell now counts `enrichment_person_match` children ([`enrichment-shell.tsx`](../../app/admin/enrichment/enrichment-shell.tsx)).
+   - `enrichment_person_match` added to `CHILD_JOB_TYPES` ([`lib/jobs/types.ts`](../../lib/jobs/types.ts)) so the Process Details drawer collapses per-contact rows into a single parent row with live x/x instead of listing every match.
+   - Dead `'enrichment_person'` entry removed from the history hook ([`use-enrichment-jobs.ts`](../../lib/queries/use-enrichment-jobs.ts)); the batch parent `enrichment_batch_persons` is what surfaces in history.
+   - Result stats now read `persons_processed`/`persons_enriched` (the keys `/api/enrich/persons` actually returns) rather than `contacts_processed`/`enriched`.
+   - The drawer expand view is now person-aware ([`enrichment-renderer.tsx`](../../components/admin/job-renderers/enrichment-renderer.tsx)): one row per contact showing the match outcome (fields filled / failed / org linked), not org stage icons.
+
+   **Lesson:** every symptom here was string/field-name drift across a boundary the type system doesn't span — poll literals and untyped JSON response keys. A shared `PersonBatchResult` type imported by both `/api/enrich/persons` and the shell would turn these into compile errors.
 
 2. **No Unipile in enrichment.** The project memory says "Apollo + Unipile data enrichment". Verified: Unipile is only used in inbox/messaging, not enrichment. The phrase is misleading.
 
