@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState, useCallback } from "react";
-import { Plus, Sparkles, Type, X } from "lucide-react";
+import { Sparkles, Type, X } from "lucide-react";
 import { VariablePicker } from "./variable-picker";
 import { AiBlockEditor } from "./ai-block-editor";
 import type { ComposableTemplate, TemplateBlock } from "@/lib/types/database";
@@ -37,8 +37,14 @@ export function ComposableTemplateEditor({
     );
   }
 
-  // Track inline variable picker state per block
-  const [inlinePicker, setInlinePicker] = useState<{ index: number; pos: { top: number; left: number } } | null>(null);
+  // Track inline variable picker state per block. `triggerStart` is the index
+  // of the "{" the user typed to open the picker, so selecting a variable can
+  // replace it rather than insert after it (which would produce "{{var}}").
+  const [inlinePicker, setInlinePicker] = useState<{
+    index: number;
+    pos: { top: number; left: number };
+    triggerStart: number;
+  } | null>(null);
   const textareaRefs = useRef<(HTMLTextAreaElement | HTMLInputElement | null)[]>([]);
 
   function emit(newBlocks: TemplateBlock[]) {
@@ -68,13 +74,17 @@ export function ComposableTemplateEditor({
   }
 
   const insertVariable = useCallback(
-    (index: number, variable: string) => {
+    (index: number, variable: string, replaceRange?: [number, number]) => {
       const el = textareaRefs.current[index];
       const block = blocks[index];
       if (!block || block.type !== "text") return;
 
-      const start = el?.selectionStart ?? block.content.length;
-      const end = el?.selectionEnd ?? block.content.length;
+      const start = replaceRange
+        ? replaceRange[0]
+        : el?.selectionStart ?? block.content.length;
+      const end = replaceRange
+        ? replaceRange[1]
+        : el?.selectionEnd ?? block.content.length;
       const newContent =
         block.content.slice(0, start) + variable + block.content.slice(end);
       updateBlock(index, { type: "text", content: newContent });
@@ -101,12 +111,15 @@ export function ComposableTemplateEditor({
       const el = e.currentTarget;
       const rect = el.getBoundingClientRect();
       const containerRect = el.closest(".composable-editor-root")?.getBoundingClientRect();
+      // keydown fires before the "{" is inserted, so selectionStart is the
+      // index where it will land.
       setInlinePicker({
         index,
         pos: {
           top: rect.bottom - (containerRect?.top ?? 0) + 4,
           left: rect.left - (containerRect?.left ?? 0),
         },
+        triggerStart: el.selectionStart ?? el.value.length,
       });
     } else {
       setInlinePicker(null);
@@ -174,7 +187,11 @@ export function ComposableTemplateEditor({
                   trigger="inline"
                   position={inlinePicker.pos}
                   onSelect={(variable) => {
-                    insertVariable(i, variable);
+                    // Replace the triggering "{" so we get "{var}" not "{{var}}".
+                    insertVariable(i, variable, [
+                      inlinePicker.triggerStart,
+                      inlinePicker.triggerStart + 1,
+                    ]);
                     setInlinePicker(null);
                   }}
                   onClose={() => setInlinePicker(null)}
