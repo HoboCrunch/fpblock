@@ -126,7 +126,7 @@ with:
 - `interaction_type ∈ {'cold_email','cold_linkedin','cold_twitter',...}`
   derived from channel inside `app/api/sequences/generate/route.ts`.
 - `direction = 'outbound'`
-- `status ∈ InteractionStatus` (10 values; see below)
+- `status ∈ InteractionStatus` (11 values; see below)
 - `sequence_id`, `sequence_step` for traceability
 - `detail` JSONB for vendor metadata (`sendgrid_message_id`, `retry_count`,
   `last_error`, `ai_blocks_used`, `generated_at`)
@@ -136,8 +136,10 @@ with:
 ```
 draft → scheduled → sending → sent → delivered → opened → clicked → replied
                             ↘
-                              failed (terminal)
+                              failed (terminal — delivery problem)
                               bounced (terminal — also bounces enrollment)
+
+draft / scheduled → rejected (terminal — human decision, NOT a delivery failure)
 ```
 
 Priority ordering is encoded in
@@ -148,13 +150,30 @@ Priority ordering is encoded in
 the enrollment to `bounced` so future steps are skipped
 (`app/api/webhooks/sendgrid/route.ts:124-145`).
 
+`rejected` (added migration `036_interaction_rejected_status.sql`) is written
+when a human rejects a draft/scheduled message via the message-queue
+`reject` action. It is deliberately distinct from `failed`/`bounced` so
+intentional rejections don't pollute the Failed tab, the failures page, or the
+dashboard failure count. `interactions.status` has no CHECK constraint, so the
+new value needed only a data backfill, no DDL. The state machine lives in the
+pure, unit-tested `buildUpdate()` in
+`lib/sequences/message-transitions.ts` (consumed by both the per-message PATCH
+route and the bulk route).
+
 ### Send mode — `Sequence.send_mode`
 
-- `approval` — `generate` writes interactions with `status='draft'`. A human
-  approves via `/api/messages/actions` (`approve` → `scheduled`) or the
-  per-sequence `/api/sequences/[id]/messages/bulk` endpoint.
-- `auto` — `generate` computes `scheduled_at` from
-  `nextSendWindowTime(schedule)` and writes `status='scheduled'` directly.
+Both modes **pre-generate a row for every step up front** (see §3) so the whole
+sequence is visible immediately; the drip cadence is carried by each row's
+`scheduled_at` (computed by `computeStepScheduledAt`, `lib/sequences/schedule.ts`).
+
+- `approval` — `generate` writes each step as `status='draft'` **with its planned
+  `scheduled_at` populated** (so the queue shows when each step is due). A human
+  approves via `/api/sequences/[id]/messages/[msgId]` (PATCH, `approve` →
+  `scheduled`) or the bulk endpoint. **Approve preserves a future planned
+  `scheduled_at`** (later steps keep their delay) and only falls back to `now()`
+  when the planned time is already past or absent.
+- `auto` — `generate` writes each step as `status='scheduled'` with the same
+  computed `scheduled_at`; the sender dispatches each when due.
 
 ---
 
@@ -179,21 +198,26 @@ the enrollment to `bounced` so future steps are skipped
                                        unenrollFromList (deletes enrollments for a list's
                                        static members)
         ↓
-[Cron: /api/sequences/generate]      app/api/sequences/generate/route.ts (POST)
+[Cron: /api/sequences/generate]      app/api/sequences/generate/route.ts (GET cron / POST manual)
    per active enrollment in active sequence:
      • already past last step? → mark completed, skip
-     • interaction already exists for (sequence, person, step)? → skip (idempotency)
-     • not yet due (per timing_mode)? → skip
-     • render templates: AI blocks via supabase.functions.invoke('generate-messages'),
-       then text substitution via lib/template-renderer.ts
-     • insert interaction:
-         status = 'scheduled' (if auto) | 'draft' (if approval)
-         scheduled_at = nextSendWindowTime() (if auto) | null
-     • increment enrollment.current_step
+     • fetch org/event/sender + build context ONCE per enrollment
+     • for EACH remaining step (current_step … last):
+         - interaction already exists for (sequence, person, step)? → skip (idempotency)
+         - render templates: AI blocks via supabase.functions.invoke('generate-messages'),
+           then text substitution via lib/template-renderer.ts
+         - scheduled_at = computeStepScheduledAt(enrolled_at, steps, stepIndex, schedule)
+           (cumulative delay / anchor → clamp to ≥ now → snap into send window)
+         - insert interaction:
+             status = 'scheduled' (if auto) | 'draft' (if approval)
+             scheduled_at = <planned time>  (populated for BOTH modes)
+     • set enrollment.current_step = steps.length, status = 'completed'
+       (all steps generated; scheduled_at gates the actual sends — see note in §9)
         ↓
-[(Approval mode only) human approves]  /api/messages/actions   (action='approve')
+[(Approval mode only) human approves]  /api/sequences/[id]/messages/[msgId] (PATCH, action='approve')
                                        /api/sequences/[id]/messages/bulk
-                                       /api/sequences/[id]/messages/[msgId] (PATCH)
+   approve → 'scheduled', KEEPING the planned scheduled_at when it's in the future
+   (later steps keep their drip cadence); falls back to now() if past/absent.
         ↓
 [Cron: /api/sequences/send]            vercel.json:3 — */5 * * * *
    1. SWEEP: rpc('reclaim_stuck_interactions', { p_stuck_minutes: 10 })
@@ -253,30 +277,39 @@ the enrollment to `bounced` so future steps are skipped
 
 #### A. Sequence-driven (current) — `app/api/sequences/generate/route.ts`
 
-Per active enrollment:
+Per active enrollment — supporting records and context are resolved **once**,
+then the route loops over every remaining step:
 
-1. Fetch person + sequence + steps (joined select at line 152-160).
-2. Resolve primary org via `person_organizations` (`is_primary=true`)
-   — line 232-243.
-3. Resolve event + sender_profile if FKs are set — lines 246-265.
+1. Fetch person + sequence + steps (joined select).
+2. Resolve primary org via `person_organizations` (`is_primary=true`).
+3. Resolve event + sender_profile if FKs are set.
 4. Build `TemplateContext` with `buildContext(person, org, event, sender)`
    from `lib/template-renderer.ts:84-121`. Exposes namespaces
    `person.*`, `org.*`, `event.*`, `sender.*` (each whitelisted).
-5. **Extract AI blocks** from subject_template and body_template
-   (`extractAiBlocks`, `lib/template-renderer.ts:59-79`). Variable interpolation
-   is done at extraction time so the prompt the LLM receives already has
-   `{person.first_name}` etc. resolved.
-6. **Generate** each AI block by invoking the Supabase Edge Function
-   `generate-messages` (`generate/route.ts:289-358`). The body is
-   `{ system_prompt: aiBlock.tone || default, user_prompt: aiBlock.prompt }`
-   — i.e. ad-hoc raw prompts, not the templated path described below.
-7. Render the template with AI results filled in
-   (`renderTemplate`, `lib/template-renderer.ts:32-53`); unresolved
-   AI blocks become `[AI_BLOCK_PENDING]`.
-8. Insert into `interactions` with `status='scheduled'` (auto) or
-   `'draft'` (approval). On AI failure, insert a `failed` interaction with
-   `detail.error` and skip enrollment advance.
-9. Advance `enrollment.current_step` (and complete if last).
+5. **For each step** from `current_step` to the last (a scoped manual run with
+   `step` targets just that one):
+   a. Skip if an interaction already exists for `(sequence, person, step)`
+      (idempotency).
+   b. **Extract AI blocks** from subject_template and body_template
+      (`extractAiBlocks`, `lib/template-renderer.ts:59-79`). Variable
+      interpolation happens at extraction time so the prompt already has
+      `{person.first_name}` etc. resolved.
+   c. **Generate** each AI block by invoking the Supabase Edge Function
+      `generate-messages`. The body is
+      `{ system_prompt: aiBlock.tone || default, user_prompt: aiBlock.prompt }`
+      — ad-hoc raw prompts, not the templated path described below.
+   d. Render the template with AI results filled in
+      (`renderTemplate`); unresolved AI blocks become `[AI_BLOCK_PENDING]`.
+   e. Compute `scheduled_at = computeStepScheduledAt(...)` (`lib/sequences/schedule.ts`):
+      cumulative `delay_days` from `enrolled_at` (relative/window) or
+      `anchor_date ± delay` (anchor), clamped to ≥ now, then snapped forward into
+      the `send_window` if one is configured.
+   f. Insert into `interactions` with `status='scheduled'` (auto) or `'draft'`
+      (approval), **`scheduled_at` populated for both modes**. On AI failure,
+      insert a `failed` interaction with `detail.error` and move on to the next
+      step (the rest of the sequence is unaffected).
+6. After the loop, set `enrollment.current_step = steps.length`, `status='completed'`
+   (a scoped step run leaves the cursor untouched).
 
 #### B. Edge function `generate-messages` — `supabase/functions/generate-messages/index.ts`
 
@@ -393,17 +426,23 @@ integration.
 
 ### Scheduling vs immediate
 
-- `send_mode='auto'`: `scheduled_at` set at generate-time via
-  `nextSendWindowTime(schedule)` (`generate/route.ts:373`); honors window/timezone.
-- `send_mode='approval'`: `scheduled_at` set when user clicks Approve (now()) or
-  Reschedule (custom timestamp) via `messages/[msgId]/route.ts:38-55` or
-  `messages/bulk/route.ts:44-65`.
+- **Generate-time (both modes)**: `scheduled_at` is computed per step by
+  `computeStepScheduledAt` (`lib/sequences/schedule.ts`) — cumulative
+  `delay_days` (or `anchor_date ± delay`), clamped to ≥ now, snapped into the
+  `send_window`. Auto rows are inserted `scheduled`; approval rows are inserted
+  `draft` but **carry the same planned `scheduled_at`** so the queue shows when
+  each step is due.
+- `send_mode='approval'`: Approve **preserves** that planned `scheduled_at` when
+  it's in the future (later steps keep their drip delay), else `now()`. Reschedule
+  sets a custom timestamp. See `buildUpdate` in
+  `lib/sequences/message-transitions.ts` (per-message PATCH) and the bulk route,
+  which backfills only rows that have no planned time.
 
 ### Idempotency / dedup
 
-- **Generate-side**: `generate/route.ts:202-213` checks for an existing
-  interaction at `(sequence_id, person_id, sequence_step)` and skips if present.
-  This is the primary idempotency guarantee.
+- **Generate-side**: for each step, the route checks for an existing interaction
+  at `(sequence_id, person_id, sequence_step)` and skips if present. This is the
+  primary idempotency guarantee and makes re-running generation safe.
 - **Send-side**: the atomic claim RPC (`claim_due_interactions`, migration 028)
   flips `scheduled → sending` via `FOR UPDATE SKIP LOCKED` in a single statement
   — overlapping invocations claim disjoint sets, no double-send. The
@@ -726,11 +765,14 @@ curl -X POST $APP_URL/api/inbox/sync \
    WHERE sequence_id = '<seq_id>' AND person_id = '<person_id>'
    ORDER BY sequence_step;
    ```
-   The generate route is idempotent on `(sequence, person, step)`; if a row
-   exists, the enrollment will not advance past that step until that row exists.
-4. Check timing — for `relative` mode, due time is
-   `enrolled_at + sum(delay_days[0..current_step]) * 1 day`
-   (`generate/route.ts:111-117`). For `anchor` mode, see line 119-128.
+   The generate route is idempotent on `(sequence, person, step)`; a row that
+   already exists is never regenerated.
+4. Check timing — each row's `scheduled_at` is computed at generate-time by
+   `computeStepScheduledAt` (`lib/sequences/schedule.ts`): for `relative`/`window`
+   mode it is `enrolled_at + sum(delay_days[0..stepIndex]) * 1 day`; for `anchor`
+   mode it is `anchor_date ± delay_days[stepIndex]`. The value is then clamped to
+   ≥ now and snapped into the `send_window`. A future `scheduled_at` is the
+   expected reason a generated row hasn't sent yet.
 
 ### Replay a sequence step
 
@@ -781,6 +823,9 @@ For bulk: `POST /api/sequences/[id]/messages/bulk` with
 person / sequence / error, and per-row + bulk **Requeue** that resets
 `status='scheduled'`, `retry_count=0`, `scheduled_at=now()`. Only `failed`
 and `bounced` rows are eligible — the server action enforces this.
+Human-rejected drafts now carry the dedicated `rejected` status, so they no
+longer appear here (or in the per-sequence message queue's Failed tab) — they
+live under the queue's **Rejected** tab instead.
 
 Telegram notifications from the send dispatcher (`maybeNotify` at the end
 of `/api/sequences/send`) deep-link to this page when terminal failures
@@ -896,11 +941,12 @@ This is a real bug to flag.
   the `claim_due_interactions` RPC, and a sweeper (`reclaim_stuck_interactions`,
   10-min threshold) reverts any row left stranded in `sending`. Overlapping
   cron invocations claim disjoint sets.
-- `/api/sequences/generate` — still uses the older "check then insert" pattern.
-  The optimistic check before insert (line 202-213) is not transactional with
-  the subsequent insert — two concurrent generate jobs could both pass the
-  check. Lower-impact than the send race (worst case: a duplicate `draft`
-  interaction; the unique constraint can be added or generate can be moved
+- `/api/sequences/generate` — still uses the older "check then insert" pattern,
+  now per step inside the pre-generation loop. The optimistic existence check
+  before insert is not transactional with the subsequent insert — two concurrent
+  generate jobs could both pass the check. Lower-impact than the send race (worst
+  case: a duplicate `draft` interaction; the unique constraint can be added or
+  generate can be moved
   behind a claim RPC similar to send).
 
 ### `bounced` cascade — historical note
@@ -957,7 +1003,20 @@ probably fine, but worth noting.
 
 If a sequence is edited to remove steps, an existing enrollment may have
 `current_step` past the array. The generate route handles this by marking
-`completed` (line 186-193), but no notification is sent.
+`completed`, but no notification is sent.
+
+### Enrollment `completed` now means "fully generated", not "fully sent"
+
+Because generation pre-creates every step's row in one pass, the route sets the
+enrollment to `current_step = steps.length` / `status='completed'` immediately
+after generating — **while the messages may still be `draft`/`scheduled` and
+unsent**. Consequence: the sequence detail page's Active/Completed enrollment
+counts flip to Completed as soon as generation runs, not when sends finish. The
+**message queue is the source of truth for actual send progress.** A enrollment
+that is `completed` with steps added *later* won't be reconsidered (the generate
+query filters `status='active'`); re-activate it manually to pick up new steps.
+If completion should track sends instead, drive it from the send worker — see
+the design discussion in the change that introduced pre-generation.
 
 ---
 

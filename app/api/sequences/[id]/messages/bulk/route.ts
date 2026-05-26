@@ -27,18 +27,15 @@ function buildPayload(
 ): { ok: true; payload: Record<string, unknown> } | { ok: false; error: string } {
   switch (action) {
     case "approve":
-      return {
-        ok: true,
-        payload: {
-          status: "scheduled",
-          scheduled_at: scheduledAt ?? new Date().toISOString(),
-        },
-      };
+      // Approve preserves each row's planned scheduled_at (so later steps keep
+      // their drip cadence); see the special-cased handling in POST. The
+      // payload here only flips the status.
+      return { ok: true, payload: { status: "scheduled" } };
     case "reject":
       return {
         ok: true,
         payload: {
-          status: "failed",
+          status: "rejected",
           scheduled_at: null,
           detail: { rejected: true, reason: reason ?? "rejected" },
         },
@@ -126,6 +123,19 @@ export async function POST(
       { succeeded: [], failed, error: "No eligible messages" },
       { status: 409 }
     );
+  }
+
+  // Approve keeps each row's planned scheduled_at; only rows that never got one
+  // (e.g. legacy drafts) are backfilled to "now" so they aren't stuck unsent.
+  if (body.action === "approve") {
+    const { error: backfillError } = await supabase
+      .from("interactions")
+      .update({ scheduled_at: scheduledAt ?? new Date().toISOString() })
+      .in("id", valid)
+      .is("scheduled_at", null);
+    if (backfillError) {
+      return NextResponse.json({ error: backfillError.message }, { status: 500 });
+    }
   }
 
   const { error: updateError } = await supabase

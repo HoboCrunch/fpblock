@@ -25,9 +25,10 @@ import Link from "next/link";
 const STATUS_TABS = [
   { label: "All", value: "" },
   { label: "Pending", value: "draft" },
-  { label: "Approved", value: "scheduled" },
+  { label: "Queued", value: "scheduled,sending" },
   { label: "Sent", value: "sent,delivered,opened,clicked,replied" },
   { label: "Failed", value: "failed,bounced" },
+  { label: "Rejected", value: "rejected" },
 ] as const;
 
 type BulkAction = "approve" | "reject" | "reschedule" | "retry";
@@ -45,17 +46,21 @@ const TAB_EMPTY_COPY: Record<string, { title: string; hint: string }> = {
     title: "No drafts pending",
     hint: "Generate messages on the sequence detail page or wait for the next scheduled batch.",
   },
-  scheduled: {
-    title: "Nothing scheduled",
-    hint: "Approve drafts to queue them for sending.",
+  "scheduled,sending": {
+    title: "Nothing queued",
+    hint: "Approve drafts to queue them for sending. In-flight sends also appear here.",
   },
   "sent,delivered,opened,clicked,replied": {
     title: "Nothing sent yet",
-    hint: "Approved messages will appear here once delivered.",
+    hint: "Queued messages will appear here once delivered.",
   },
   "failed,bounced": {
     title: "No failures — clean run",
     hint: "Failed or bounced messages will surface here so you can retry.",
+  },
+  rejected: {
+    title: "Nothing rejected",
+    hint: "Drafts you reject land here, kept separate from delivery failures.",
   },
 };
 
@@ -112,17 +117,23 @@ export function MessageQueueClient({ sequenceId }: MessageQueueClientProps) {
     const openRate =
       total > 0 ? Math.round(((opened + clicked + replied) / total) * 100) : 0;
     const replyRate = total > 0 ? Math.round((replied / total) * 100) : 0;
+    // "Sent" counts every row that reached at least the sent state, matching
+    // the Sent tab's filter (sent + delivered + opened + clicked + replied).
+    const sentTotal = sent + delivered + opened + clicked + replied;
     return {
       total,
       draft: counts.draft ?? 0,
       scheduled: counts.scheduled ?? 0,
+      sending: counts.sending ?? 0,
       sent,
       delivered,
       opened,
       clicked,
       replied,
+      sentTotal,
       bounced: counts.bounced ?? 0,
       failed: counts.failed ?? 0,
+      rejected: counts.rejected ?? 0,
       openRate,
       replyRate,
     };
@@ -270,13 +281,15 @@ export function MessageQueueClient({ sequenceId }: MessageQueueClientProps) {
         <div className="space-y-2 text-sm">
           {[
             ["Total", stats.total],
-            ["Draft / Pending", stats.draft],
-            ["Scheduled", stats.scheduled],
-            ["Sent", stats.sent + stats.delivered],
+            ["Pending", stats.draft],
+            ["Queued", stats.scheduled],
+            ["Sending", stats.sending],
+            ["Sent", stats.sentTotal],
             ["Opened", `${stats.openRate}%`],
             ["Replied", `${stats.replyRate}%`],
             ["Bounced", stats.bounced],
             ["Failed", stats.failed],
+            ["Rejected", stats.rejected],
           ].map(([label, value]) => (
             <div key={String(label)} className="flex justify-between">
               <span className="text-[var(--text-muted)]">{label}</span>

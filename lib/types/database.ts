@@ -7,7 +7,7 @@
 export type InteractionType = "cold_email" | "cold_linkedin" | "cold_twitter" | "warm_intro" | "meeting" | "call" | "event_encounter" | "note" | "research";
 export type InteractionChannel = "email" | "linkedin" | "twitter" | "telegram" | "in_person" | "phone";
 export type InteractionDirection = "outbound" | "inbound" | "internal";
-export type InteractionStatus = "draft" | "scheduled" | "sending" | "sent" | "delivered" | "opened" | "clicked" | "replied" | "bounced" | "failed";
+export type InteractionStatus = "draft" | "scheduled" | "sending" | "sent" | "delivered" | "opened" | "clicked" | "replied" | "bounced" | "failed" | "rejected";
 export type ParticipationRole = "speaker" | "attendee" | "organizer" | "panelist" | "mc" | "sponsor" | "partner" | "exhibitor" | "media";
 export type SponsorTier = "presented_by" | "platinum" | "diamond" | "emerald" | "gold" | "silver" | "bronze" | "copper" | "community";
 

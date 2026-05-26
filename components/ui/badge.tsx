@@ -11,6 +11,7 @@ const variants: Record<string, string> = {
   replied: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   bounced: "bg-red-500/10 text-red-400 border-red-500/20",
   failed: "bg-red-500/10 text-red-500 border-red-500/20",
+  rejected: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
   approved: "bg-purple-500/10 text-purple-400 border-purple-500/20",
   processing: "bg-orange-500/10 text-orange-400 border-orange-500/20",
   superseded: "bg-gray-500/10 text-gray-500 border-gray-500/20",

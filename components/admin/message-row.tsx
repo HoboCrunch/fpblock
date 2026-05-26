@@ -27,6 +27,7 @@ const STATUS_VARIANTS: Record<string, string> = {
   replied: "replied",
   bounced: "bounced",
   failed: "failed",
+  rejected: "rejected",
 };
 
 function formatDateTime(iso: string | null): string {
@@ -92,6 +93,7 @@ export const MessageRow = React.memo(function MessageRow({
   const isDraft = message.status === "draft";
   const isScheduled = message.status === "scheduled";
   const isFailed = message.status === "failed" || message.status === "bounced";
+  const isRejected = message.status === "rejected";
   const canEdit = isDraft || isScheduled;
 
   const detail = (message.detail as Record<string, unknown> | null) ?? null;
@@ -101,6 +103,8 @@ export const MessageRow = React.memo(function MessageRow({
       : typeof detail?.reason === "string"
       ? (detail.reason as string)
       : null;
+  const rejectionReason =
+    typeof detail?.reason === "string" ? (detail.reason as string) : null;
 
   function handleSaveEdit() {
     onAction("edit", { body: editBody, subject: editSubject });
@@ -229,7 +233,7 @@ export const MessageRow = React.memo(function MessageRow({
             {isDraft && (
               <button
                 onClick={() => onAction("approve")}
-                title="Approve & schedule now"
+                title="Approve (sends at the planned time, or now if already due)"
                 className="p-1 rounded text-green-400 hover:bg-green-500/15 transition-colors"
                 aria-label="Approve"
               >
@@ -267,6 +271,16 @@ export const MessageRow = React.memo(function MessageRow({
                 <div className="flex items-start gap-2 rounded-lg bg-red-500/10 border border-red-500/30 p-2.5">
                   <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
                   <p className="text-xs text-red-300 leading-relaxed">{errorText}</p>
+                </div>
+              )}
+
+              {/* Rejection banner — an intentional decision, kept distinct from failures */}
+              {isRejected && (
+                <div className="flex items-start gap-2 rounded-lg bg-zinc-500/10 border border-zinc-500/30 p-2.5">
+                  <AlertTriangle className="h-4 w-4 text-zinc-400 mt-0.5 shrink-0" />
+                  <p className="text-xs text-zinc-300 leading-relaxed">
+                    Rejected{rejectionReason && rejectionReason !== "rejected" ? `: ${rejectionReason}` : ""}
+                  </p>
                 </div>
               )}
 

@@ -42,6 +42,8 @@ function describeEntry(entry: ActivityEntry): string {
       return `Message bounced${step}`;
     case "failed":
       return `Send failed${step}`;
+    case "rejected":
+      return `Draft rejected${step}`;
     case "scheduled":
       return `Message scheduled${step}`;
     default:

@@ -290,28 +290,26 @@ Mappings:
 
 ### 2.3 Sequences
 
-#### 2.3.1 `POST /api/sequences/generate`
+#### 2.3.1 `GET (cron) / POST (manual) /api/sequences/generate`
 
-**File:** `app/api/sequences/generate/route.ts:137`
-**Purpose:** The "modern" sequence step generator. Walks active enrollments in active sequences, checks delay/window, renders `ComposableTemplate` blocks (resolving `{{ai:...}}` blocks via the `generate-messages` edge function), creates an `interactions` row, advances the enrollment.
-**Auth:** Cookie-bound SSR client.
+**File:** `app/api/sequences/generate/route.ts`
+**Purpose:** The "modern" sequence step generator. Walks active enrollments in active sequences and **pre-generates a row for every remaining step** (resolving `{{ai:...}}` blocks via the `generate-messages` edge function and rendering `ComposableTemplate` blocks). Each row's `scheduled_at` carries the drip cadence; the enrollment is then marked completed.
+**Auth:** Service-role client gated by `Authorization: Bearer $CRON_SECRET` (Vercel Cron is GET; manual scoped runs use POST). The anon/cookie client is RLS-blocked here.
 **Timeout:** 60s.
 
-**Body (optional):** `{ sequenceId?: string; step?: number }`. If body is missing or invalid JSON, runs across all active enrollments.
+**Body (optional, POST):** `{ sequenceId?: string; step?: number }`. If body is missing or invalid JSON, runs across all active enrollments. `step` scopes to a single step and leaves the enrollment cursor untouched.
 
 **Response:** `{ generated, failed, skipped, errors }`.
 
-**Side effects (per due enrollment):**
-- May insert a `failed` interaction row if any AI block call throws or returns no result (`route.ts:303-357`).
-- Inserts an outbound interaction with `status: "scheduled"` (when `sequences.send_mode = "auto"`) or `"draft"`.
-- Advances `sequence_enrollments.current_step`. Marks `completed` when past last step.
-- Multiple AI block invocations per step (one edge function call per `{{ai:...}}` block, sequentially — not parallel). This adds up — verify timeouts on long sequences.
+**Side effects (per enrollment):**
+- Supporting records (org/event/sender) + template context are resolved **once**, then the route loops over every remaining step.
+- Per step: may insert a `failed` interaction row if any AI block call throws or returns no result; otherwise inserts an outbound interaction with `status: "scheduled"` (when `send_mode="auto"`) or `"draft"` (approval) — **`scheduled_at` is populated for both modes**.
+- After the loop, sets `current_step = steps.length`, `status="completed"` (a scoped `step` run does not advance the cursor).
+- Multiple AI block invocations per step (one edge function call per `{{ai:...}}` block, sequentially — not parallel), now across all steps in one run. This adds up — verify timeouts on long sequences.
 
-**Scheduling:**
-- `nextSendWindowTime` walks 30-min candidates forward (≤7 days) using `Intl.DateTimeFormat` to derive the zoned hour and weekday — DST-correct.
-- `isDue` supports `relative`, `window`, and `anchor` timing modes.
+**Scheduling:** `computeStepScheduledAt` (`lib/sequences/schedule.ts`) computes each step's planned time — cumulative `delay_days` from `enrolled_at` (`relative`/`window`) or `anchor_date ± delay` (`anchor`), clamped to ≥ now, then `snapToSendWindow` walks 30-min candidates forward (≤7 days) via `Intl.DateTimeFormat` (DST-correct) to land inside the configured window. Unit-tested in `lib/sequences/schedule.test.ts`.
 
-**Idempotency:** Checks for existing `interactions` row matching `(sequence_id, person_id, sequence_step)` before inserting (`route.ts:202-213`). Skips if found.
+**Idempotency:** For each step, checks for an existing `interactions` row matching `(sequence_id, person_id, sequence_step)` before inserting. Skips if found, so re-running is safe.
 
 #### 2.3.2 `POST /api/sequences/send`
 
@@ -381,7 +379,8 @@ Mappings:
 }
 ```
 
-Action gates (server-side, by current status):
+Action gates (server-side, by current status) — the state machine is the
+unit-tested `buildUpdate()` in `lib/sequences/message-transitions.ts`:
 
 | current status | allowed actions                                      |
 | -------------- | ---------------------------------------------------- |
@@ -389,16 +388,17 @@ Action gates (server-side, by current status):
 | scheduled      | reschedule, cancel, reject, edit                    |
 | failed / bounced | retry / resend (failed only), reschedule (failed) |
 | sent / delivered / opened / clicked / replied | (read-only)         |
+| rejected       | (terminal — not retryable)                          |
 
 Mappings:
-- `approve` → `status: "scheduled"`, `scheduled_at: now()`.
+- `approve` → `status: "scheduled"`, **preserving the row's planned `scheduled_at` when it's in the future** (later steps keep their drip cadence); falls back to `now()` when past/absent.
 - `approve_at` / `reschedule` → `status: "scheduled"`, `scheduled_at: <provided>`.
 - `cancel` → `status: "draft"`, `scheduled_at: null`.
-- `reject` → `status: "failed"`, `detail.reason` set.
+- `reject` → `status: "rejected"` (a dedicated status, **not** `failed`), `scheduled_at: null`, `detail.rejected=true` + `detail.reason`.
 - `retry` / `resend` → `status: "scheduled"`, `scheduled_at: now()`, retry_count preserved.
 - `edit` → patch `subject` / `body`. 400 if neither provided.
 
-**Notes:** Verifies `msgId` belongs to `sequence_id = id` before updating.
+**Notes:** Verifies `msgId` belongs to `sequence_id = id` before updating, and reads the row's current `scheduled_at` so `approve` can preserve it.
 
 #### 2.3.5 `POST /api/sequences/[id]/messages/bulk`
 
@@ -410,9 +410,9 @@ Mappings:
 **Response:** `{ succeeded: string[]; failed: Array<{ id: string; error: string }> }`.
 
 **Caveats:**
-- `reschedule` / `approve` with future time requires `scheduled_at`.
-- `reject` may include `reason`.
-- Per-row eligibility check applied (a `retry` only succeeds for failed rows; a `reject` only for drafts/scheduled). Rows that fail validation appear in `failed[]` with an `error` string.
+- `reschedule` requires `scheduled_at`. `approve` preserves each row's planned `scheduled_at` and backfills only rows that have none (to `now()` or a provided time) — so bulk-approving a multi-step sequence keeps each step's drip date instead of blasting them all at once.
+- `reject` may include `reason`; it writes the dedicated `rejected` status (not `failed`).
+- Per-row eligibility check applied (a `retry` only succeeds for failed/bounced rows; a `reject` only for drafts/scheduled). Rows that fail validation appear in `failed[]` with an `error` string.
 
 #### 2.3.6 `POST /api/sequences/[id]/preview`
 
@@ -759,8 +759,8 @@ Consider env vars or config.
 | POST | `/api/messages/generate` | `app/api/messages/generate/route.ts` |
 | POST | `/api/messages/send` | `app/api/messages/send/route.ts` |
 | POST | `/api/messages/actions` | `app/api/messages/actions/route.ts` |
-| POST | `/api/sequences/generate` | `app/api/sequences/generate/route.ts` |
-| POST | `/api/sequences/send` | `app/api/sequences/send/route.ts` |
+| GET / POST | `/api/sequences/generate` | `app/api/sequences/generate/route.ts` |
+| GET / POST | `/api/sequences/send` | `app/api/sequences/send/route.ts` |
 | GET | `/api/sequences/[id]/messages` | `app/api/sequences/[id]/messages/route.ts` |
 | PATCH | `/api/sequences/[id]/messages/[msgId]` | `app/api/sequences/[id]/messages/[msgId]/route.ts` |
 | POST | `/api/sequences/[id]/messages/bulk` | `app/api/sequences/[id]/messages/bulk/route.ts` |

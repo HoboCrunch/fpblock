@@ -49,6 +49,8 @@ If anything here disagrees with the migrations on disk, the migrations win — f
 | 032 | `supabase/migrations/032_active_conversations_rpc.sql` | RPC `active_conversations_count(window_days int DEFAULT 14)` — see §4 below. |
 | 033 | `supabase/migrations/033_dashboard_rpcs.sql` | Additional dashboard RPCs. |
 | 034 | `supabase/migrations/034_inbox_sync_cron_hourly.sql` | Unschedules the legacy per-account pg_cron jobs from 016 (`sync-inbox-jb`, `sync-inbox-wes`) — never functional (unfilled `YOUR_APP_URL` placeholder). Registers no replacement; inbox sync runs via the Vercel cron `/api/cron/inbox-sync` (every 5 min). |
+| 035 | `supabase/migrations/035_person_name_parts.sql` | BEFORE INSERT/UPDATE trigger + one-time backfill that derives `persons.first_name`/`last_name` from `full_name` (first token / rest) when both parts are null. Has a `.verify.sql`. |
+| 036 | `supabase/migrations/036_interaction_rejected_status.sql` | Backfills legacy human-rejected rows (`status='failed'` + `detail.rejected`) to the dedicated `status='rejected'`. Data-only — `interactions.status` has no CHECK constraint. Has a `.verify.sql`. |
 
 Numbers 006 and 018 are skipped intentionally — no files exist in `supabase/migrations/`.
 
@@ -335,7 +337,7 @@ Replaces the original `messages` table. Single timeline for cold emails, LinkedI
 | `direction` | text | YES | — | `outbound \| inbound \| internal` |
 | `subject` | text | YES | — | |
 | `body` | text | YES | — | |
-| `status` | text | YES | `'draft'` | `draft → scheduled → sending → sent → delivered → opened → clicked → replied`; terminal `bounced`/`failed` |
+| `status` | text | YES | `'draft'` | `draft → scheduled → sending → sent → delivered → opened → clicked → replied`; terminal `bounced`/`failed` (delivery problems) and `rejected` (human decision, `draft`/`scheduled` → `rejected`, added in `036`). No CHECK constraint — values enforced in app code (`lib/sequences/message-transitions.ts`). |
 | `handled_by` | text | YES | — | Genzio team member |
 | `sender_profile_id` | uuid | YES | — | FK `sender_profiles(id)` SET NULL |
 | `sequence_id` | uuid | YES | — | FK `sequences(id)` SET NULL (added at the bottom of 010) |
