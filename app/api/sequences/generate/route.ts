@@ -5,6 +5,7 @@ import {
   renderTemplate,
   extractAiBlocks,
 } from "@/lib/template-renderer";
+import { computeStepScheduledAt } from "@/lib/sequences/schedule";
 import type {
   Sequence,
   SequenceEnrollment,
@@ -28,138 +29,6 @@ interface EnrollmentRow extends SequenceEnrollment {
 interface PersonOrgRow {
   organization_id: string;
   organizations: Organization | null;
-}
-
-// ─── Send-window helpers ─────────────────────────────────────────────────────
-
-type DayKey = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
-
-const WEEKDAY_SHORT_TO_KEY: Record<string, DayKey> = {
-  Sun: "sun",
-  Mon: "mon",
-  Tue: "tue",
-  Wed: "wed",
-  Thu: "thu",
-  Fri: "fri",
-  Sat: "sat",
-};
-
-/**
- * Return the hour-of-day (0-23) for `date` as observed in `timeZone`.
- * Uses Intl.DateTimeFormat which correctly accounts for DST transitions.
- */
-function getZonedHour(date: Date, timeZone: string): number {
-  const fmt = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour12: false,
-    hour: "2-digit",
-  });
-  // en-US with hour12:false occasionally renders midnight as "24" — normalize.
-  const raw = fmt.format(date);
-  const n = parseInt(raw, 10);
-  if (Number.isNaN(n)) return 0;
-  return n % 24;
-}
-
-/**
- * Return the day-of-week key ('sun'..'sat') for `date` as observed in `timeZone`.
- */
-function getZonedDayKey(date: Date, timeZone: string): DayKey {
-  const fmt = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    weekday: "short",
-  });
-  const short = fmt.format(date);
-  return WEEKDAY_SHORT_TO_KEY[short] ?? "sun";
-}
-
-/**
- * Given a schedule_config with a send_window, return the next Date (>= now)
- * that falls within the window. Falls back to now if no window is configured.
- *
- * Iterates forward in 30-minute steps for up to 7 days, checking each
- * candidate against the configured timezone via Intl.DateTimeFormat — so DST
- * transitions (e.g., America/New_York switching between -5 and -4) are handled
- * correctly without manual offset math.
- */
-function nextSendWindowTime(schedule: SequenceSchedule): Date {
-  const { send_window } = schedule;
-  if (!send_window) return new Date();
-
-  const { days, start_hour, end_hour, timezone } = send_window;
-  const allowedDays = new Set<DayKey>(days as DayKey[]);
-
-  const now = new Date();
-
-  // If we're already inside a valid window, return now.
-  const nowDay = getZonedDayKey(now, timezone);
-  const nowHour = getZonedHour(now, timezone);
-  if (
-    allowedDays.has(nowDay) &&
-    nowHour >= start_hour &&
-    nowHour < end_hour
-  ) {
-    return now;
-  }
-
-  // Walk forward in 30-minute increments for up to 7 days.
-  const STEP_MS = 30 * 60 * 1000;
-  const MAX_STEPS = (7 * 24 * 60) / 30; // 336 steps
-
-  // Snap to next 30-min boundary so the result is tidy.
-  let cursor = new Date(
-    Math.ceil(now.getTime() / STEP_MS) * STEP_MS
-  );
-
-  for (let i = 0; i < MAX_STEPS; i++) {
-    const day = getZonedDayKey(cursor, timezone);
-    const hour = getZonedHour(cursor, timezone);
-    if (allowedDays.has(day) && hour >= start_hour && hour < end_hour) {
-      return cursor;
-    }
-    cursor = new Date(cursor.getTime() + STEP_MS);
-  }
-
-  // No window found within 7 days — fall back to now
-  return new Date();
-}
-
-// ─── Delay / due-date helpers ────────────────────────────────────────────────
-
-function isDue(
-  enrollment: SequenceEnrollment,
-  steps: SequenceStep[],
-  schedule: SequenceSchedule
-): boolean {
-  const now = new Date();
-  const enrolledAt = new Date(enrollment.enrolled_at);
-  const currentStepIndex = enrollment.current_step;
-
-  switch (schedule.timing_mode) {
-    case "relative":
-    case "window": {
-      const cumulativeDelayDays = steps
-        .slice(0, currentStepIndex + 1)
-        .reduce((sum, s) => sum + (s.delay_days || 0), 0);
-      const dueDate = new Date(
-        enrolledAt.getTime() + cumulativeDelayDays * 24 * 60 * 60 * 1000
-      );
-      return now >= dueDate;
-    }
-    case "anchor": {
-      if (!schedule.anchor_date) return true; // no anchor — treat as due
-      const anchor = new Date(schedule.anchor_date);
-      const step = steps[currentStepIndex];
-      const delayMs = (step?.delay_days || 0) * 24 * 60 * 60 * 1000;
-      const dueDate =
-        schedule.anchor_direction === "before"
-          ? new Date(anchor.getTime() - delayMs)
-          : new Date(anchor.getTime() + delayMs);
-      return now >= dueDate;
-    }
-    default:
-      return true;
-  }
 }
 
 // ─── Cron auth + service client ──────────────────────────────────────────────
@@ -273,40 +142,26 @@ async function runGenerate(
       continue;
     }
 
-    // ── Optional step filter ───────────────────────────────────────────────
-    if (stepFilter !== undefined && enrollment.current_step !== stepFilter) {
-      skipped++;
-      continue;
-    }
-
-    // ── Check if interaction already exists for this enrollment+step ───────
-    const { data: existing } = await supabase
-      .from("interactions")
-      .select("id")
-      .eq("sequence_id", enrollment.sequence_id)
-      .eq("person_id", enrollment.person_id)
-      .eq("sequence_step", enrollment.current_step)
-      .limit(1);
-
-    if (existing && existing.length > 0) {
-      skipped++;
-      continue;
-    }
-
-    // ── Timing check ───────────────────────────────────────────────────────
     const schedule: SequenceSchedule = sequence.schedule_config ?? {
       timing_mode: "relative",
     };
+    const enrolledAt = new Date(enrollment.enrolled_at);
 
-    if (!isDue(enrollment, steps, schedule)) {
+    // ── Which steps to generate ────────────────────────────────────────────
+    // Pre-generate a row for every remaining step up front so reviewers see the
+    // whole sequence immediately. The drip cadence is carried by each row's
+    // scheduled_at (computed below), not by *when* the row is created — the
+    // sender only dispatches rows whose scheduled_at <= now. A scoped manual run
+    // (stepFilter) targets a single step instead.
+    if (stepFilter !== undefined && enrollment.current_step > stepFilter) {
       skipped++;
       continue;
     }
+    const startStep =
+      stepFilter !== undefined ? stepFilter : enrollment.current_step;
+    const endStep = stepFilter !== undefined ? stepFilter + 1 : steps.length;
 
-    // ── Fetch supporting records ───────────────────────────────────────────
-    const step = steps[enrollment.current_step] as SequenceStep;
-
-    // Primary org
+    // ── Fetch supporting records (once per enrollment) ─────────────────────
     let primaryOrg: Organization | null = null;
     let organizationId: string | null = null;
 
@@ -353,39 +208,92 @@ async function runGenerate(
       sender
     );
 
-    // ── Extract and resolve AI blocks ──────────────────────────────────────
-    const subjectAiBlocks = extractAiBlocks(step.subject_template, ctx);
-    const bodyAiBlocks = extractAiBlocks(step.body_template, ctx);
+    // ── Generate each missing step ─────────────────────────────────────────
+    for (let stepIndex = startStep; stepIndex < endStep; stepIndex++) {
+      const step = steps[stepIndex];
+      if (!step) continue;
 
-    const allAiBlocks = [
-      ...subjectAiBlocks.map((b) => ({ ...b, source: "subject" as const })),
-      ...bodyAiBlocks.map((b) => ({ ...b, source: "body" as const })),
-    ];
+      // Skip if a row already exists for this enrollment+step.
+      const { data: existing } = await supabase
+        .from("interactions")
+        .select("id")
+        .eq("sequence_id", enrollment.sequence_id)
+        .eq("person_id", enrollment.person_id)
+        .eq("sequence_step", stepIndex)
+        .limit(1);
 
-    const subjectAiResults = new Map<number, string>();
-    const bodyAiResults = new Map<number, string>();
-    const hasAiBlocks = allAiBlocks.length > 0;
-    let aiFailed = false;
+      if (existing && existing.length > 0) {
+        skipped++;
+        continue;
+      }
 
-    for (const aiBlock of allAiBlocks) {
-      try {
-        const { data: aiResult, error: aiError } =
-          await supabase.functions.invoke("generate-messages", {
-            body: {
-              system_prompt:
-                aiBlock.tone || "You are a helpful outreach assistant.",
-              user_prompt: aiBlock.prompt,
-            },
-          });
+      // ── Extract and resolve AI blocks for this step ──────────────────────
+      const subjectAiBlocks = extractAiBlocks(step.subject_template, ctx);
+      const bodyAiBlocks = extractAiBlocks(step.body_template, ctx);
 
-        if (aiError || !aiResult) {
-          const errMsg = aiError?.message ?? "AI generation returned no result";
-          // Create failed interaction and skip this enrollment
+      const allAiBlocks = [
+        ...subjectAiBlocks.map((b) => ({ ...b, source: "subject" as const })),
+        ...bodyAiBlocks.map((b) => ({ ...b, source: "body" as const })),
+      ];
+
+      const subjectAiResults = new Map<number, string>();
+      const bodyAiResults = new Map<number, string>();
+      const hasAiBlocks = allAiBlocks.length > 0;
+      let aiFailed = false;
+
+      for (const aiBlock of allAiBlocks) {
+        try {
+          const { data: aiResult, error: aiError } =
+            await supabase.functions.invoke("generate-messages", {
+              body: {
+                system_prompt:
+                  aiBlock.tone || "You are a helpful outreach assistant.",
+                user_prompt: aiBlock.prompt,
+              },
+            });
+
+          if (aiError || !aiResult) {
+            const errMsg =
+              aiError?.message ?? "AI generation returned no result";
+            // Record a failed row for this step, then move to the next step.
+            await supabase.from("interactions").insert({
+              person_id: enrollment.person_id,
+              organization_id: organizationId,
+              sequence_id: enrollment.sequence_id,
+              sequence_step: stepIndex,
+              interaction_type: "cold_email",
+              channel: sequence.channel,
+              direction: "outbound",
+              status: "failed",
+              detail: {
+                error: errMsg,
+                ai_block_index: aiBlock.index,
+                generated_at: new Date().toISOString(),
+              },
+            });
+            errors.push(
+              `AI generation failed for enrollment ${enrollment.id}, step ${stepIndex}, block ${aiBlock.index}: ${errMsg}`
+            );
+            failed++;
+            aiFailed = true;
+            break;
+          }
+
+          const generatedText: string =
+            aiResult?.body ?? aiResult?.text ?? String(aiResult);
+
+          if (aiBlock.source === "subject") {
+            subjectAiResults.set(aiBlock.index, generatedText);
+          } else {
+            bodyAiResults.set(aiBlock.index, generatedText);
+          }
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
           await supabase.from("interactions").insert({
             person_id: enrollment.person_id,
             organization_id: organizationId,
             sequence_id: enrollment.sequence_id,
-            sequence_step: enrollment.current_step,
+            sequence_step: stepIndex,
             interaction_type: "cold_email",
             channel: sequence.channel,
             direction: "outbound",
@@ -397,105 +305,81 @@ async function runGenerate(
             },
           });
           errors.push(
-            `AI generation failed for enrollment ${enrollment.id}, block ${aiBlock.index}: ${errMsg}`
+            `AI generation threw for enrollment ${enrollment.id}, step ${stepIndex}, block ${aiBlock.index}: ${errMsg}`
           );
           failed++;
           aiFailed = true;
           break;
         }
+      }
 
-        const generatedText: string =
-          aiResult?.body ?? aiResult?.text ?? String(aiResult);
+      // A failed AI block already recorded a 'failed' row for this step.
+      if (aiFailed) continue;
 
-        if (aiBlock.source === "subject") {
-          subjectAiResults.set(aiBlock.index, generatedText);
-        } else {
-          bodyAiResults.set(aiBlock.index, generatedText);
-        }
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        await supabase.from("interactions").insert({
+      // ── Render templates ───────────────────────────────────────────────────
+      const renderedSubject = renderTemplate(
+        step.subject_template,
+        ctx,
+        subjectAiResults
+      );
+      const renderedBody = renderTemplate(
+        step.body_template,
+        ctx,
+        bodyAiResults
+      );
+
+      // Each step's planned send time carries the drip cadence. Drafts (approval
+      // mode) store it too so the queue shows when each step is due to go out,
+      // and approval preserves it.
+      const scheduledAt = computeStepScheduledAt({
+        enrolledAt,
+        steps,
+        stepIndex,
+        schedule,
+      });
+
+      // ── Create the interaction ───────────────────────────────────────────
+      const { error: interactionError } = await supabase
+        .from("interactions")
+        .insert({
           person_id: enrollment.person_id,
           organization_id: organizationId,
           sequence_id: enrollment.sequence_id,
-          sequence_step: enrollment.current_step,
+          sequence_step: stepIndex,
           interaction_type: "cold_email",
           channel: sequence.channel,
           direction: "outbound",
-          status: "failed",
+          subject: renderedSubject || null,
+          body: renderedBody || null,
+          status: sequence.send_mode === "auto" ? "scheduled" : "draft",
+          scheduled_at: scheduledAt,
           detail: {
-            error: errMsg,
-            ai_block_index: aiBlock.index,
+            ai_blocks_used: hasAiBlocks,
             generated_at: new Date().toISOString(),
           },
         });
+
+      if (interactionError) {
         errors.push(
-          `AI generation threw for enrollment ${enrollment.id}, block ${aiBlock.index}: ${errMsg}`
+          `Failed to create interaction for enrollment ${enrollment.id}, step ${stepIndex}: ${interactionError.message}`
         );
         failed++;
-        aiFailed = true;
-        break;
+        continue;
       }
+
+      generated++;
     }
-
-    if (aiFailed) continue;
-
-    // ── Render templates ───────────────────────────────────────────────────
-    const renderedSubject = renderTemplate(
-      step.subject_template,
-      ctx,
-      subjectAiResults
-    );
-    const renderedBody = renderTemplate(step.body_template, ctx, bodyAiResults);
-
-    // ── Calculate scheduled_at for auto mode ───────────────────────────────
-    let scheduledAt: string | null = null;
-    if (sequence.send_mode === "auto") {
-      scheduledAt = nextSendWindowTime(schedule).toISOString();
-    }
-
-    // ── Create the interaction ─────────────────────────────────────────────
-    const { error: interactionError } = await supabase
-      .from("interactions")
-      .insert({
-        person_id: enrollment.person_id,
-        organization_id: organizationId,
-        sequence_id: enrollment.sequence_id,
-        sequence_step: enrollment.current_step,
-        interaction_type: "cold_email",
-        channel: sequence.channel,
-        direction: "outbound",
-        subject: renderedSubject || null,
-        body: renderedBody || null,
-        status: sequence.send_mode === "auto" ? "scheduled" : "draft",
-        scheduled_at: scheduledAt,
-        detail: {
-          ai_blocks_used: hasAiBlocks,
-          generated_at: new Date().toISOString(),
-        },
-      });
-
-    if (interactionError) {
-      errors.push(
-        `Failed to create interaction for enrollment ${enrollment.id}: ${interactionError.message}`
-      );
-      failed++;
-      continue;
-    }
-
-    generated++;
 
     // ── Advance enrollment ─────────────────────────────────────────────────
-    const nextStep = enrollment.current_step + 1;
-    const isLastStep = nextStep >= steps.length;
-
-    await supabase
-      .from("sequence_enrollments")
-      .update({
-        current_step: nextStep,
-        ...(isLastStep ? { status: "completed" } : {}),
-      })
-      .eq("id", enrollment.id);
+    // All remaining steps now have rows; their scheduled_at gates actual
+    // sending, so the enrollment is done being generated. (A scoped step run
+    // leaves the enrollment position untouched.)
+    if (stepFilter === undefined) {
+      await supabase
+        .from("sequence_enrollments")
+        .update({ current_step: steps.length, status: "completed" })
+        .eq("id", enrollment.id);
+    }
   }
 
   return { generated, failed, skipped, errors };
