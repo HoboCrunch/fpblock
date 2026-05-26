@@ -343,7 +343,9 @@ export function SequenceListClient() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-white/90 mb-1.5">Name</label>
+                <label className="block text-xs font-medium text-white/90 mb-1.5">
+                  Name <span className="text-[var(--accent-orange)]">*</span>
+                </label>
                 <GlassInput
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
@@ -420,6 +422,7 @@ export function SequenceListClient() {
               <button
                 onClick={handleCreate}
                 disabled={!newName.trim()}
+                title={!newName.trim() ? "Enter a name to create the sequence" : undefined}
                 className={cn(
                   "px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
                   "bg-[var(--accent-orange)] text-white hover:bg-[var(--accent-orange)]/90",
