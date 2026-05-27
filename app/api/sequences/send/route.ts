@@ -104,6 +104,25 @@ function isPermanentFailure(statusCode: number | undefined): boolean {
 /** Backoff schedule for transient failures, in minutes. */
 const RETRY_BACKOFFS_MINUTES = [5, 30, 120];
 
+/**
+ * Fail-safe guard: a row is only sendable if it has a non-empty subject AND a
+ * non-empty body (whitespace doesn't count). Generation records a 'failed' row
+ * with no subject/body when AI generation fails; if such a row is ever retried
+ * back to 'scheduled', this guard stops the sender from shipping a blank email
+ * to a real contact.
+ */
+export function hasSendableContent(
+  subject: string | null,
+  body: string | null
+): boolean {
+  return (
+    typeof subject === "string" &&
+    subject.trim().length > 0 &&
+    typeof body === "string" &&
+    body.trim().length > 0
+  );
+}
+
 // ─── Cron auth + service client ──────────────────────────────────────────────
 // Invoked unattended by Vercel Cron (GET). The atomic-claim RPCs and the
 // interactions table are not reachable by the anon role, so we use a
@@ -311,6 +330,35 @@ async function runSend(supabase: ServiceClient) {
       continue;
     }
 
+    // ── Empty-content guard (FIX A) ─────────────────────────────────────────
+    // Never dispatch a blank email. A 'failed' generation row carries no
+    // subject/body; if it was retried back to 'scheduled', stop here and mark
+    // it failed terminally rather than shipping an empty message to a contact.
+    if (!hasSendableContent(interaction.subject, interaction.body)) {
+      await supabase
+        .from("interactions")
+        .update({
+          status: "failed",
+          occurred_at: new Date().toISOString(),
+          detail: {
+            ...(interaction.detail ?? {}),
+            error: "Empty subject or body — not sent",
+            terminal_reason: "empty_content",
+          },
+        })
+        .eq("id", interaction.id);
+      skipped++;
+      terminalFailures.push({
+        interactionId: interaction.id,
+        personName: person.full_name,
+        personEmail: person.email,
+        sequenceName: interaction.sequences?.name ?? null,
+        reason: "Empty subject or body — message not sent",
+        kind: "send_failure",
+      });
+      continue;
+    }
+
     // ── Throttle / pacing checks (back-compat: skip if fields undefined) ────
     if (schedule) {
       // Quiet hours (local to schedule timezone)
@@ -396,8 +444,9 @@ async function runSend(supabase: ServiceClient) {
     const result = await sendEmail({
       to: person.email,
       from: { email: senderProfile.email, name: senderProfile.name },
-      subject: interaction.subject || "(no subject)",
-      html: interaction.body || "",
+      // Guaranteed non-empty by hasSendableContent above.
+      subject: interaction.subject as string,
+      html: interaction.body as string,
       replyTo: senderProfile.email,
     });
 

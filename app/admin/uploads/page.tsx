@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Papa from "papaparse";
 import { Upload as UploadIcon } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -98,6 +99,7 @@ function dropEmptyRows(state: ImportTableState): string[][] {
 }
 
 export default function UploadsPage() {
+  const router = useRouter();
   const [mode, setMode] = useState<ImportMode>("persons");
   const [state, setState] = useState<ImportTableState>(() => emptyStateFor("persons"));
   const [filename, setFilename] = useState("manual-import.csv");
@@ -281,6 +283,14 @@ export default function UploadsPage() {
         .select("*")
         .order("created_at", { ascending: false });
       if (data) setUploads(data as Upload[]);
+
+      // New-event-list journey: navigate to the freshly-targeted event so the
+      // imported rows become visible. The event page is a server component and
+      // will fetch fresh participations on navigation (the cron / process route
+      // drains the async import shortly after).
+      if (forcedEvent) {
+        router.push(`/admin/events/${forcedEvent.id}`);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to start import");
     } finally {

@@ -100,7 +100,14 @@ export function buildUpdate(
       if (status !== "scheduled") {
         return { ok: false, error: `Cannot cancel from status "${status}"`, code: 409 };
       }
-      return { ok: true, payload: { status: "draft", scheduled_at: null } };
+      // Preserve the planned send time on the draft so re-approving a future
+      // drip step keeps its original cadence instead of firing immediately.
+      // `approve` reads existingScheduledAt and restores it; only fall back to
+      // clearing it when there is no usable existing time.
+      return {
+        ok: true,
+        payload: { status: "draft", scheduled_at: existingScheduledAt ?? null },
+      };
     }
     case "reject": {
       if (status !== "draft" && status !== "scheduled") {

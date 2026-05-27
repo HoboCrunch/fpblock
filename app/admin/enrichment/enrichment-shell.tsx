@@ -39,6 +39,53 @@ import type { OrgRow, PersonRow, OrgProgress } from "./components/entity-table";
 import type { SummaryStripProps } from "./components/summary-strip";
 
 // ---------------------------------------------------------------------------
+// Pure selection re-seed logic (exported for unit testing)
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute the next selection after the visible row-set changed.
+ *
+ * Rules:
+ *  - Keep prior selections for rows that are still visible (prev ∩ nextVisible).
+ *  - Auto-check rows that newly entered the visible set (nextVisible \ prevVisible)
+ *    ONLY when the filter/tab genuinely changed AND the user did not just Clear.
+ *  - When the visible id-set is unchanged by content and the filter did not
+ *    change (e.g. a background refetch handed us a new array identity), return
+ *    the prior selection untouched so a Clear stays cleared.
+ */
+export function reseedSelection({
+  prevSelected,
+  prevVisible,
+  nextVisible,
+  filterChanged,
+  suppressAutoAdd,
+}: {
+  prevSelected: Set<string>;
+  prevVisible: Set<string>;
+  nextVisible: Set<string>;
+  filterChanged: boolean;
+  suppressAutoAdd: boolean;
+}): Set<string> {
+  const sameVisibleSet =
+    nextVisible.size === prevVisible.size &&
+    [...nextVisible].every((id) => prevVisible.has(id));
+
+  // Pure refetch / re-render with identical visible rows and filter: leave the
+  // user's selection (including a fresh Clear) exactly as-is.
+  if (sameVisibleSet && !filterChanged) return prevSelected;
+
+  const next = new Set<string>();
+  // (prev ∩ nextVisible) — keep deselections from being lost on no-op refilters
+  for (const id of prevSelected) if (nextVisible.has(id)) next.add(id);
+  // (nextVisible \ prevVisible) — newly visible rows auto-check, but only when
+  // the filter genuinely changed and the user didn't just clear.
+  if (filterChanged && !suppressAutoAdd) {
+    for (const id of nextVisible) if (!prevVisible.has(id)) next.add(id);
+  }
+  return next;
+}
+
+// ---------------------------------------------------------------------------
 // Shell Component
 // ---------------------------------------------------------------------------
 
@@ -78,6 +125,14 @@ export function EnrichmentShell() {
   // ---- Selection (refined by user) ----
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const prevVisibleIdsRef = useRef<Set<string>>(new Set());
+  // Serialized filter signal — the auto-check-newly-visible behavior must fire
+  // ONLY when the user actually changes the filter/tab, never when allItems just
+  // gets a new array identity from a background refetch.
+  const prevFilterKeyRef = useRef<string | null>(null);
+  // Explicit "user cleared" intent: when the user clicks Clear, suppress the very
+  // next auto-re-add so the cleared rows stay unchecked across the refetch/re-render
+  // that the run (or any background invalidation) triggers.
+  const suppressNextAutoAddRef = useRef(false);
 
   // ---- Run config (unchanged) ----
   const [stages, setStages] = useState<OrgStage[]>(["apollo", "perplexity", "gemini"]);
@@ -230,6 +285,19 @@ export function EnrichmentShell() {
     });
   }, [allItems, activeTab, filterPersons, filterOrgs, affiliatedPersonIdsSet]);
 
+  // Serialized signal that changes only when the user changes the filter/tab —
+  // NOT when allItems gets a new identity from a refetch. Used to gate the
+  // auto-check-newly-visible behavior so background refetches never re-check
+  // rows the user has cleared.
+  const filterKey = useMemo(
+    () =>
+      JSON.stringify([
+        activeTab,
+        activeTab === "persons" ? filterPersons : filterOrgs,
+      ]),
+    [activeTab, filterPersons, filterOrgs]
+  );
+
   // =========================================================================
   // Sorting
   // =========================================================================
@@ -265,19 +333,34 @@ export function EnrichmentShell() {
   useEffect(() => {
     const nextVisible = new Set<string>(filteredItems.map((i) => i.id));
     const prevVisible = prevVisibleIdsRef.current;
+
+    // Did the FILTER (or tab) actually change since the last run? Auto-checking
+    // newly-visible rows is only the user's intent in that case. A background
+    // refetch re-runs this effect (filteredItems gets a new identity) without
+    // any filter change — we must NOT auto-add then, or it would undo a Clear.
+    const filterChanged = prevFilterKeyRef.current !== filterKey;
+    prevFilterKeyRef.current = filterKey;
+
+    // Honor an explicit Clear: skip auto-add for this one cycle so just-cleared
+    // rows stay unchecked.
+    const suppressAutoAdd = suppressNextAutoAddRef.current;
+    suppressNextAutoAddRef.current = false;
+
     // Write the ref synchronously before setSelectedIds so that a second
     // rapid firing of this effect (React 19 concurrent mode) sees the
     // updated ref rather than the stale one.
     prevVisibleIdsRef.current = nextVisible;
-    setSelectedIds((prev) => {
-      const next = new Set<string>();
-      // (prev ∩ nextVisible) — keep deselections from being lost on no-op refilters
-      for (const id of prev) if (nextVisible.has(id)) next.add(id);
-      // (nextVisible \ prevVisible) — newly visible rows auto-check
-      for (const id of nextVisible) if (!prevVisible.has(id)) next.add(id);
-      return next;
-    });
-  }, [filteredItems]);
+
+    setSelectedIds((prev) =>
+      reseedSelection({
+        prevSelected: prev,
+        prevVisible,
+        nextVisible,
+        filterChanged,
+        suppressAutoAdd,
+      })
+    );
+  }, [filteredItems, filterKey]);
 
   // =========================================================================
   // Display items
@@ -317,6 +400,9 @@ export function EnrichmentShell() {
   }, [filteredItems]);
 
   const handleClearVisible = useCallback(() => {
+    // Record explicit intent so the next diff effect (e.g. from a background
+    // refetch) does NOT auto-re-add the rows the user just cleared.
+    suppressNextAutoAddRef.current = true;
     setSelectedIds((prev) => {
       const next = new Set(prev);
       for (const item of filteredItems) next.delete(item.id);
@@ -334,6 +420,7 @@ export function EnrichmentShell() {
     setCenterState("list");
     setSelectedIds(new Set());
     prevVisibleIdsRef.current = new Set();
+    suppressNextAutoAddRef.current = false;
     setResultStats(undefined);
     setResultOutcomes(new Map());
     setSortKey(tab === "organizations" ? "name" : "full_name");
@@ -686,6 +773,10 @@ export function EnrichmentShell() {
               totalCount={totalCount}
               selectedIds={selectedIds}
               onSelectionChange={handleSelectionChange}
+              filteredCount={filteredItems.length}
+              selectedCount={selectedIds.size}
+              onSelectAllVisible={handleSelectAllVisible}
+              onClearVisible={handleClearVisible}
               progressData={progressData}
               activeStages={activeStages}
               progressCompleted={progressCompleted}
@@ -717,8 +808,6 @@ export function EnrichmentShell() {
             sources={sources}
             filteredCount={filteredItems.length}
             selectedCount={selectedIds.size}
-            onSelectAllVisible={handleSelectAllVisible}
-            onClearVisible={handleClearVisible}
             disabled={isRunning}
           />
 
@@ -772,8 +861,6 @@ export function EnrichmentShell() {
                 sources={sources}
                 filteredCount={filteredItems.length}
                 selectedCount={selectedIds.size}
-                onSelectAllVisible={handleSelectAllVisible}
-                onClearVisible={handleClearVisible}
                 disabled={isRunning}
               />
 

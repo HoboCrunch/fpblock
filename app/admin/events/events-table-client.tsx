@@ -113,6 +113,45 @@ function GlassCheckbox({ checked, onChange, onClick }: { checked: boolean; onCha
   );
 }
 
+// ─── Sort header component ────────────────────────────────────────────
+
+function SortHeader({
+  label,
+  field,
+  sortField,
+  sortDir,
+  onSort,
+  className,
+}: {
+  label: string;
+  field: SortField;
+  sortField: SortField;
+  sortDir: "asc" | "desc";
+  onSort: (field: SortField) => void;
+  className?: string;
+}) {
+  const isActive = sortField === field;
+  return (
+    <HeaderCell className={className}>
+      <button
+        onClick={() => onSort(field)}
+        className="inline-flex items-center gap-1 hover:text-white transition-colors"
+      >
+        {label}
+        {isActive ? (
+          sortDir === "desc" ? (
+            <ChevronDown className="w-3.5 h-3.5 text-[var(--accent-orange)]" />
+          ) : (
+            <ChevronUp className="w-3.5 h-3.5 text-[var(--accent-orange)]" />
+          )
+        ) : (
+          <ChevronsUpDown className="w-3 h-3 opacity-40" />
+        )}
+      </button>
+    </HeaderCell>
+  );
+}
+
 // ─── Component ───────────────────────────────────────────────────────
 
 export function EventsTableClient({ events, eventTypes, locations }: Props) {
@@ -338,38 +377,6 @@ export function EventsTableClient({ events, eventTypes, locations }: Props) {
   }, [events]);
 
   const hoveredEvent = hoveredId ? eventMap.get(hoveredId) ?? null : null;
-
-  // ─── Sort header component ────────────────────────────────────────
-  function SortHeader({
-    label,
-    field,
-    className,
-  }: {
-    label: string;
-    field: SortField;
-    className?: string;
-  }) {
-    const isActive = sortField === field;
-    return (
-      <HeaderCell className={className}>
-        <button
-          onClick={() => toggleSort(field)}
-          className="inline-flex items-center gap-1 hover:text-white transition-colors"
-        >
-          {label}
-          {isActive ? (
-            sortDir === "desc" ? (
-              <ChevronDown className="w-3.5 h-3.5 text-[var(--accent-orange)]" />
-            ) : (
-              <ChevronUp className="w-3.5 h-3.5 text-[var(--accent-orange)]" />
-            )
-          ) : (
-            <ChevronsUpDown className="w-3 h-3 opacity-40" />
-          )}
-        </button>
-      </HeaderCell>
-    );
-  }
 
   // ─── Sidebar ───────────────────────────────────────────────────────
   const sidebar = (
@@ -610,14 +617,14 @@ export function EventsTableClient({ events, eventTypes, locations }: Props) {
           getRowKey={(event) => event.id}
           header={
             <>
-              <SortHeader label="Name" field="name" />
-              <SortHeader label="Type" field="event_type" />
-              <SortHeader label="Dates" field="date_start" />
-              <SortHeader label="Location" field="location" />
-              <SortHeader label="Speakers" field="speaker_count" className="justify-center" />
-              <SortHeader label="Sponsors" field="sponsor_count" className="justify-center" />
-              <SortHeader label="Contacts" field="contact_count" className="justify-center" />
-              <SortHeader label="Orgs" field="org_count" className="justify-center" />
+              <SortHeader label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+              <SortHeader label="Type" field="event_type" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+              <SortHeader label="Dates" field="date_start" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+              <SortHeader label="Location" field="location" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+              <SortHeader label="Speakers" field="speaker_count" sortField={sortField} sortDir={sortDir} onSort={toggleSort} className="justify-center" />
+              <SortHeader label="Sponsors" field="sponsor_count" sortField={sortField} sortDir={sortDir} onSort={toggleSort} className="justify-center" />
+              <SortHeader label="Contacts" field="contact_count" sortField={sortField} sortDir={sortDir} onSort={toggleSort} className="justify-center" />
+              <SortHeader label="Orgs" field="org_count" sortField={sortField} sortDir={sortDir} onSort={toggleSort} className="justify-center" />
               <HeaderCell>Coverage</HeaderCell>
             </>
           }

@@ -1153,8 +1153,11 @@ export async function runFullEnrichment(
 // ---------------------------------------------------------------------------
 
 /**
- * Mark any "processing" jobs older than the given threshold as failed.
- * This catches jobs orphaned by server crashes or timeouts.
+ * Mark any "processing" jobs whose last heartbeat (updated_at) is older than
+ * the given threshold as failed. This catches jobs orphaned by server crashes
+ * or timeouts WITHOUT killing healthy long-running batches: updated_at is
+ * refreshed on every progress write, so an actively-running 20-minute batch
+ * keeps a fresh heartbeat and is never reclaimed mid-run.
  */
 async function cleanupStaleJobs(supabase: SupabaseClient, staleCutoffMinutes: number = 15) {
   const cutoff = new Date(Date.now() - staleCutoffMinutes * 60 * 1000).toISOString();
@@ -1166,7 +1169,7 @@ async function cleanupStaleJobs(supabase: SupabaseClient, staleCutoffMinutes: nu
       error: "Marked as failed: job was still processing after " + staleCutoffMinutes + " minutes (likely server timeout)",
     })
     .eq("status", "processing")
-    .lt("created_at", cutoff)
+    .lt("updated_at", cutoff)
     .select("id, job_type, target_id");
 
   if (data && data.length > 0) {

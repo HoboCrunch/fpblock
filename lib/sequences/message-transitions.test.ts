@@ -81,7 +81,44 @@ describe("buildUpdate", () => {
       expect(r.ok).toBe(true);
       if (r.ok) {
         expect(r.payload.status).toBe("draft");
-        expect(r.payload.scheduled_at).toBeNull();
+      }
+    });
+
+    // FIX B — cancel must preserve a future planned send time so a later
+    // re-approve does not fire a drip step early. Previously cancel set
+    // scheduled_at: null, and approve then fell through to "send now".
+    it("preserves the future planned scheduled_at when cancelling", () => {
+      const r = buildUpdate("cancel", "scheduled", {
+        existingScheduledAt: FUTURE,
+      });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.payload.status).toBe("draft");
+        expect(r.payload.scheduled_at).toBe(FUTURE);
+      }
+    });
+  });
+
+  // FIX B — full round-trip: cancel a future-scheduled drip step, then
+  // re-approve. It must remain scheduled for the original future time, not
+  // jump to "send immediately".
+  describe("cancel → approve round-trip", () => {
+    it("re-approving a cancelled future step keeps the original time (not now)", () => {
+      const cancel = buildUpdate("cancel", "scheduled", {
+        existingScheduledAt: FUTURE,
+      });
+      expect(cancel.ok).toBe(true);
+      if (!cancel.ok) return;
+
+      // The cancelled row is now a draft carrying the preserved scheduled_at.
+      const preserved = cancel.payload.scheduled_at as string | null;
+      const approve = buildUpdate("approve", "draft", {
+        existingScheduledAt: preserved,
+      });
+      expect(approve.ok).toBe(true);
+      if (approve.ok) {
+        expect(approve.payload.status).toBe("scheduled");
+        expect(approve.payload.scheduled_at).toBe(FUTURE);
       }
     });
   });

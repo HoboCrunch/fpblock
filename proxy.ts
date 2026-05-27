@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Protect admin routes — redirect to /login if no supabase auth cookie
   const hasAuthCookie = request.cookies.getAll().some(
     (c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token")

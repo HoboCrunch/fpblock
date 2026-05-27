@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { OrgStatusIcons, PersonStatusIcons } from "./status-icons";
@@ -162,11 +162,20 @@ export function EntityTable({
 }: EntityTableProps) {
   const lastClickedIndex = useRef<number | null>(null);
   const showCheckboxes = mode === "list";
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const isOrg = tab === "organizations";
 
   const allIds = useMemo(() => items.map((item) => item.id), [items]);
+
+  // Reset the shift-click anchor whenever the row ordering/identity changes
+  // (sort or refilter). Otherwise the stored index points into a now-different
+  // list and a subsequent shift-click selects the wrong range.
+  const orderKey = useMemo(() => allIds.join("|"), [allIds]);
+  useEffect(() => {
+    lastClickedIndex.current = null;
+  }, [orderKey]);
+
   const allSelected = useMemo(() => {
     if (!showCheckboxes || !selectedIds || allIds.length === 0) return false;
     if (selectedIds.size < allIds.length) return false;
@@ -266,7 +275,7 @@ export function EntityTable({
             <>
               {showCheckboxes && (
                 <HeaderCell>
-                  <GlassCheckbox checked={isPending ? !allSelected : !!allSelected} onClick={toggleSelectAll} />
+                  <GlassCheckbox checked={allSelected} onClick={toggleSelectAll} />
                 </HeaderCell>
               )}
               {isOrg ? (

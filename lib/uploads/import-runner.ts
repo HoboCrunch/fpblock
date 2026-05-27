@@ -9,6 +9,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DuplicateHandling, PersonImportRow, OrganizationImportRow } from "@/app/admin/uploads/actions";
 import type { ParticipationRole, SponsorTier } from "@/lib/types/database";
+import { STALL_MS } from "@/lib/jobs/status";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -422,13 +423,25 @@ interface CsvImportMetadata {
 async function getJobRow(
   supabase: AnySupabase,
   jobId: string,
-): Promise<{ status: string; progress_total: number; metadata: CsvImportMetadata } | null> {
+): Promise<{
+  status: string;
+  progress_total: number;
+  progress_completed: number;
+  progress_failed: number;
+  metadata: CsvImportMetadata;
+} | null> {
   const { data } = await supabase
     .from("job_log")
-    .select("status, progress_total, metadata")
+    .select("status, progress_total, progress_completed, progress_failed, metadata")
     .eq("id", jobId)
     .single();
-  return data as { status: string; progress_total: number; metadata: CsvImportMetadata } | null;
+  return data as {
+    status: string;
+    progress_total: number;
+    progress_completed: number;
+    progress_failed: number;
+    metadata: CsvImportMetadata;
+  } | null;
 }
 
 async function patchJobProgress(
@@ -476,11 +489,29 @@ export async function processImportJob(
 
   const meta = job.metadata;
 
-  // Set status → processing
-  await patchJobProgress(supabase, jobId, {
-    status: "processing",
-    phase: "Importing rows",
-  });
+  // Atomic claim: flip status → processing only if this runner wins it. A job
+  // is claimable when it is still 'pending', OR when it is 'processing' but its
+  // heartbeat (updated_at) is older than the stall window (a crashed/orphaned
+  // run). Postgres serializes the conditional UPDATE per row, so two concurrent
+  // runners (the fire-and-forget POST + the cron, or two overlapping crons)
+  // cannot both claim: the first flips pending→processing & refreshes
+  // updated_at, the second no longer matches either branch and gets 0 rows.
+  // This is the guard against double-processing, which would otherwise compound
+  // duplicate row imports under create_new.
+  const stallThreshold = new Date(
+    Date.now() - STALL_MS.csv_import,
+  ).toISOString();
+  const { data: claimed } = await supabase
+    .from("job_log")
+    .update({ status: "processing", phase: "Importing rows" })
+    .eq("id", jobId)
+    .or(`status.eq.pending,and(status.eq.processing,updated_at.lt.${stallThreshold})`)
+    .select("id");
+
+  if (!claimed || (claimed as unknown[]).length === 0) {
+    // Already being processed by another live runner — bail without doing work.
+    return;
+  }
 
   // 2. Download resolved rows from Storage
   let payload: ImportPayload;
@@ -500,11 +531,22 @@ export async function processImportJob(
       phase: "Failed",
       error: `Storage error: ${msg}`,
     });
+    // Finalize the legacy uploads row so it does not sit in 'processing'
+    // forever after a storage-download failure.
+    if (meta.uploads_row_id) {
+      await finalizeUploadRow(supabase, meta.uploads_row_id, 0, 0, [
+        `Storage error: ${msg}`,
+      ]);
+    }
     return;
   }
 
   const { rows, config } = payload;
   const startOffset = meta.processed_offset ?? 0;
+  // Progress already accumulated by prior run(s). Written counters must stay
+  // cumulative so a resume never makes the progress bar go backwards.
+  const priorCompleted = job.progress_completed ?? 0;
+  const priorFailed = job.progress_failed ?? 0;
 
   let personsCreated = 0;
   let organizationsCreated = 0;
@@ -545,32 +587,39 @@ export async function processImportJob(
         }
       }
 
-      // Write progress every PROGRESS_BATCH rows
-      if ((i - startOffset + 1) % PROGRESS_BATCH === 0) {
-        await patchJobProgress(
-          supabase,
-          jobId,
-          {
-            progress_completed: batchCompleted,
-            progress_failed: batchFailed,
-          },
-          {
-            processed_offset: i + 1,
-            recent_errors: recentErrors.slice(-MAX_RECENT_ERRORS),
-          },
-        );
-      }
+      // Checkpoint processed_offset after EVERY row so a crash resumes exactly
+      // where it left off and never re-imports an already-imported row. The
+      // heavier progress-counter / recent-errors write stays batched every
+      // PROGRESS_BATCH rows to avoid hammering job_log.
+      const isBatchBoundary = (i - startOffset + 1) % PROGRESS_BATCH === 0;
+      await patchJobProgress(
+        supabase,
+        jobId,
+        isBatchBoundary
+          ? {
+              // Cumulative counters: prior run's totals + this run's so far.
+              progress_completed: priorCompleted + batchCompleted,
+              progress_failed: priorFailed + batchFailed,
+            }
+          : {},
+        {
+          processed_offset: i + 1,
+          ...(isBatchBoundary
+            ? { recent_errors: recentErrors.slice(-MAX_RECENT_ERRORS) }
+            : {}),
+        },
+      );
     }
 
-    // Final progress write
+    // Final progress write — cumulative totals across all runs.
     await patchJobProgress(
       supabase,
       jobId,
       {
         status: "completed",
         phase: "Done",
-        progress_completed: batchCompleted,
-        progress_failed: batchFailed,
+        progress_completed: priorCompleted + batchCompleted,
+        progress_failed: priorFailed + batchFailed,
       },
       {
         processed_offset: rows.length,
@@ -599,8 +648,8 @@ export async function processImportJob(
         status: "failed",
         phase: "Failed",
         error: msg,
-        progress_completed: batchCompleted,
-        progress_failed: batchFailed,
+        progress_completed: priorCompleted + batchCompleted,
+        progress_failed: priorFailed + batchFailed,
       },
       {
         processed_offset: startOffset + batchCompleted + batchFailed,

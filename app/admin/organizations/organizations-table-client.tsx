@@ -97,6 +97,10 @@ const EMPTY_FILTERS: Filters = {
   signalType: "",
 };
 
+// Stable empty fallback so an absent propagation map doesn't create a new
+// object reference each render (which would defeat the filteredRows useMemo).
+const EMPTY_PROPAGATION: Record<string, number> = {};
+
 const EMPLOYEE_BUCKETS = [
   { value: "1-10", label: "1-10", min: 1, max: 10 },
   { value: "11-50", label: "11-50", min: 11, max: 50 },
@@ -164,7 +168,7 @@ export function OrganizationsTableClient({ rows, filterOptions, orgPeopleMap }: 
 
   // Propagation counts: org_id -> distinct event count (via person_event_affiliations)
   const { data: eventsPropagatedByOrg } = useOrgEventPropagation();
-  const propagationMap = eventsPropagatedByOrg ?? {};
+  const propagationMap = eventsPropagatedByOrg ?? EMPTY_PROPAGATION;
 
   // Debounced hover
   const handleRowMouseEnter = useCallback((id: string) => {

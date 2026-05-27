@@ -23,6 +23,11 @@ export interface CenterPanelProps {
   totalCount: number;
   selectedIds: Set<string>;
   onSelectionChange: (ids: Set<string>) => void;
+  // Select-all / Clear controls (relocated above the table)
+  filteredCount?: number;
+  selectedCount?: number;
+  onSelectAllVisible?: () => void;
+  onClearVisible?: () => void;
   // Progress state
   progressData?: Map<string, OrgProgress>;
   activeStages?: Map<string, string>;
@@ -48,6 +53,10 @@ export const CenterPanel = React.memo(function CenterPanel({
   totalCount,
   selectedIds,
   onSelectionChange,
+  filteredCount: filteredCountProp,
+  selectedCount,
+  onSelectAllVisible,
+  onClearVisible,
   progressData,
   activeStages,
   progressCompleted,
@@ -63,15 +72,37 @@ export const CenterPanel = React.memo(function CenterPanel({
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
-      {/* Count summary — above table */}
+      {/* Count summary + selection controls — above table */}
       <div className="flex items-center justify-between mb-2 text-[10px] text-[var(--text-muted)] font-[family-name:var(--font-body)]">
         <span>
           Showing {filteredCount} of {totalCount}
         </span>
-        {state === "list" && selectedIds.size > 0 && (
-          <span className="text-[var(--accent-orange)]">
-            {selectedIds.size} selected
-          </span>
+        {state === "list" && (
+          <div className="flex items-center gap-3">
+            {selectedIds.size > 0 && (
+              <span className="text-[var(--accent-orange)]">
+                {selectedCount ?? selectedIds.size} selected
+              </span>
+            )}
+            {onSelectAllVisible && (
+              <button
+                type="button"
+                onClick={onSelectAllVisible}
+                className="text-[var(--accent-orange)] hover:underline"
+              >
+                Select all{filteredCountProp !== undefined ? ` (${filteredCountProp})` : ""}
+              </button>
+            )}
+            {onClearVisible && (
+              <button
+                type="button"
+                onClick={onClearVisible}
+                className="text-[var(--text-muted)] hover:text-white"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         )}
       </div>
 
