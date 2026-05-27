@@ -149,8 +149,6 @@ export interface FilterPanelProps {
   sources: string[];
   filteredCount: number;
   selectedCount: number;
-  onSelectAllVisible: () => void;
-  onClearVisible: () => void;
   disabled?: boolean;
 }
 
@@ -168,8 +166,6 @@ export const FilterPanel = React.memo(function FilterPanel({
   sources,
   filteredCount,
   selectedCount,
-  onSelectAllVisible,
-  onClearVisible,
   disabled,
 }: FilterPanelProps) {
   const f = tab === "persons" ? filterPersons : filterOrgs;
@@ -397,19 +393,12 @@ export const FilterPanel = React.memo(function FilterPanel({
         </>
       )}
 
-      {/* Footer */}
+      {/* Footer — selection summary. Select-all / Clear controls live above the
+          table now (see CenterPanel) so they sit next to the rows they act on. */}
       <div className="mt-4 pt-3 border-t border-white/[0.04] flex items-center justify-between text-[11px]">
         <span className="text-[var(--text-muted)]">
           Filtered: {filteredCount} • Selected: {selectedCount}
         </span>
-        <div className="flex gap-2">
-          <button type="button" onClick={onSelectAllVisible} className="text-[var(--accent-orange)] hover:underline">
-            Select all
-          </button>
-          <button type="button" onClick={onClearVisible} className="text-[var(--text-muted)] hover:text-white">
-            Clear
-          </button>
-        </div>
       </div>
       </div>
     </GlassCard>

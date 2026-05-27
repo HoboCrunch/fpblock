@@ -113,11 +113,22 @@ export default async function EventPage({
 
   const speakerRoles = new Set(["speaker", "panelist", "mc"]);
   const sponsorRoles = new Set(["sponsor", "partner", "exhibitor"]);
+  // Person roles that aren't speaker-like: imported attendee/organizer/media
+  // rows land here so every imported participation is rendered somewhere.
+  const attendeeRoles = new Set(["attendee", "organizer", "media"]);
 
   const speakerPersonIds = Array.from(
     new Set(
       (participations || [])
         .filter((p: any) => speakerRoles.has(p.role) && p.person_id)
+        .map((p: any) => p.person_id as string)
+    )
+  );
+
+  const attendeePersonIds = Array.from(
+    new Set(
+      (participations || [])
+        .filter((p: any) => attendeeRoles.has(p.role) && p.person_id)
         .map((p: any) => p.person_id as string)
     )
   );
@@ -130,13 +141,18 @@ export default async function EventPage({
     )
   );
 
+  // Person IDs we need person/org details for (speakers + attendee-like rows).
+  const personDetailIds = Array.from(
+    new Set([...speakerPersonIds, ...attendeePersonIds])
+  );
+
   // ---------- Speakers: enrich from persons_with_icp view (icp_score + primary_org_name) ----------
   const speakerPersonsMap = new Map<string, any>();
-  if (speakerPersonIds.length > 0) {
+  if (personDetailIds.length > 0) {
     const { data: speakerPersons } = await supabase
       .from("persons_with_icp")
       .select("*")
-      .in("id", speakerPersonIds);
+      .in("id", personDetailIds);
     for (const p of speakerPersons || []) {
       speakerPersonsMap.set(p.id, p);
     }
@@ -144,11 +160,11 @@ export default async function EventPage({
 
   // ---------- Speakers' primary org (filtered to relevant person_ids — fixes 1000-row truncation bug) ----------
   const speakerOrgMap = new Map<string, { id: string; name: string }>();
-  if (speakerPersonIds.length > 0) {
+  if (personDetailIds.length > 0) {
     const { data: speakerOrgLinks } = await supabase
       .from("person_organization")
       .select("person_id, is_primary, organization:organizations(id, name)")
-      .in("person_id", speakerPersonIds);
+      .in("person_id", personDetailIds);
     // Prefer is_primary, fall back to any
     for (const link of speakerOrgLinks || []) {
       const org = Array.isArray((link as any).organization)
@@ -261,6 +277,36 @@ export default async function EventPage({
 
   const speakers: SpeakerRow[] = (participations || [])
     .filter((p: any) => speakerRoles.has(p.role) && p.person_id)
+    .map((p: any) => {
+      const person = speakerPersonsMap.get(p.person_id);
+      const org = speakerOrgMap.get(p.person_id) ?? null;
+      return {
+        participationId: p.id,
+        person_id: p.person_id,
+        role: p.role ?? null,
+        talk_title: p.talk_title ?? null,
+        track: p.track ?? null,
+        time_slot: p.time_slot ?? null,
+        room: p.room ?? null,
+        full_name: person?.full_name ?? "Unknown",
+        title: person?.title ?? null,
+        photo_url: person?.photo_url ?? null,
+        seniority: person?.seniority ?? null,
+        icp_score: person?.icp_score ?? null,
+        email: person?.email ?? null,
+        linkedin_url: person?.linkedin_url ?? null,
+        twitter_handle: person?.twitter_handle ?? null,
+        telegram_handle: person?.telegram_handle ?? null,
+        phone: person?.phone ?? null,
+        org: person?.primary_org_name
+          ? { id: org?.id ?? "", name: person.primary_org_name }
+          : org,
+      };
+    });
+
+  // ---------- Attendees / Other (attendee · organizer · media person rows) ----------
+  const attendees: SpeakerRow[] = (participations || [])
+    .filter((p: any) => attendeeRoles.has(p.role) && p.person_id)
     .map((p: any) => {
       const person = speakerPersonsMap.get(p.person_id);
       const org = speakerOrgMap.get(p.person_id) ?? null;
@@ -713,6 +759,146 @@ export default async function EventPage({
                                     enriched_person_count: s.enriched_person_count,
                                   }}
                                 />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              ),
+            },
+
+            // ==================== ATTENDEES / OTHER ====================
+            {
+              id: "attendees",
+              label: `Attendees / Other (${attendees.length})`,
+              action: (
+                <CreateListButton
+                  personIds={attendeePersonIds}
+                  defaultName={`${(event as Event).name} – Attendees`}
+                />
+              ),
+              content: (
+                <div className="p-3">
+                  {attendees.length === 0 ? (
+                    <p className="text-[var(--text-muted)] text-sm py-4 text-center">
+                      No attendees, organizers, or media contacts registered.
+                    </p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-[var(--text-muted)] border-b border-white/[0.06] text-[11px] uppercase tracking-wider">
+                            <th className="pb-2 pr-3 font-medium">Name</th>
+                            <th className="pb-2 pr-3 font-medium">Org</th>
+                            <th className="pb-2 pr-3 font-medium">ICP</th>
+                            <th className="pb-2 pr-3 font-medium">Channels</th>
+                            <th className="pb-2 font-medium">Role</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {attendees.map((s) => (
+                            <tr
+                              key={s.participationId}
+                              className="border-b border-white/[0.04] hover:bg-white/[0.02]"
+                            >
+                              {/* Name + photo + title */}
+                              <td className="py-2 pr-3">
+                                <Link
+                                  href={`/admin/persons/${s.person_id}`}
+                                  className="flex items-center gap-2 min-w-0 group"
+                                >
+                                  {s.photo_url ? (
+                                    <Image
+                                      src={s.photo_url}
+                                      alt=""
+                                      width={28}
+                                      height={28}
+                                      className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                                      unoptimized
+                                    />
+                                  ) : (
+                                    <div className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center text-[10px] font-medium text-[var(--text-muted)] flex-shrink-0">
+                                      {getInitials(s.full_name)}
+                                    </div>
+                                  )}
+                                  <div className="min-w-0 leading-tight">
+                                    <div className="text-xs font-medium text-white truncate group-hover:text-[var(--accent-orange)] transition-colors">
+                                      {s.full_name}
+                                    </div>
+                                    {s.title && (
+                                      <div className="text-[10px] text-[var(--text-muted)] truncate max-w-[200px]">
+                                        {s.title}
+                                      </div>
+                                    )}
+                                  </div>
+                                </Link>
+                              </td>
+                              {/* Org */}
+                              <td className="py-2 pr-3">
+                                {s.org ? (
+                                  s.org.id ? (
+                                    <Link
+                                      href={`/admin/organizations/${s.org.id}`}
+                                      className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-orange)] transition-colors truncate block max-w-[160px]"
+                                    >
+                                      {s.org.name}
+                                    </Link>
+                                  ) : (
+                                    <span className="text-xs text-[var(--text-secondary)] truncate block max-w-[160px]">
+                                      {s.org.name}
+                                    </span>
+                                  )
+                                ) : (
+                                  <span className="text-[var(--text-muted)] text-xs">&mdash;</span>
+                                )}
+                                {s.seniority && (
+                                  <Badge
+                                    variant={seniorityBadgeVariant(s.seniority)}
+                                    className="text-[9px] px-1 py-0 mt-0.5"
+                                  >
+                                    {s.seniority}
+                                  </Badge>
+                                )}
+                              </td>
+                              {/* ICP */}
+                              <td className="py-2 pr-3">
+                                {s.icp_score !== null ? (
+                                  <Badge
+                                    variant={icpBadgeVariant(s.icp_score)}
+                                    className="text-[10px] px-1.5 py-0"
+                                  >
+                                    {s.icp_score}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-[var(--text-muted)] text-xs">&mdash;</span>
+                                )}
+                              </td>
+                              {/* Channels */}
+                              <td className="py-2 pr-3">
+                                <div className="flex items-center gap-0.5">
+                                  <Mail
+                                    className={`w-3 h-3 ${s.email ? "text-[var(--text-secondary)]" : "text-white/[0.1]"}`}
+                                  />
+                                  <Linkedin
+                                    className={`w-3 h-3 ${s.linkedin_url ? "text-[var(--text-secondary)]" : "text-white/[0.1]"}`}
+                                  />
+                                  <Twitter
+                                    className={`w-3 h-3 ${s.twitter_handle ? "text-[var(--text-secondary)]" : "text-white/[0.1]"}`}
+                                  />
+                                  <Send
+                                    className={`w-3 h-3 ${s.telegram_handle ? "text-[var(--text-secondary)]" : "text-white/[0.1]"}`}
+                                  />
+                                  <Phone
+                                    className={`w-3 h-3 ${s.phone ? "text-[var(--text-secondary)]" : "text-white/[0.1]"}`}
+                                  />
+                                </div>
+                              </td>
+                              {/* Role */}
+                              <td className="py-2 text-[var(--text-muted)] text-xs capitalize">
+                                {s.role || "—"}
                               </td>
                             </tr>
                           ))}

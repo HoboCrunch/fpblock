@@ -82,6 +82,10 @@ export async function GET(request: NextRequest) {
 
   const results: Array<{ jobId: string; label: string | null; ok: boolean; error?: string }> = [];
 
+  // processImportJob performs an atomic status claim (pending/stalled →
+  // processing) before doing any work, so overlapping cron runs (or the
+  // fire-and-forget POST racing this cron) cannot double-process a job: only
+  // the runner that wins the claim proceeds, the rest bail immediately.
   for (const job of candidates) {
     try {
       await processImportJob(supabase, job.id);

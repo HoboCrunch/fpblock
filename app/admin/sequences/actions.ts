@@ -99,9 +99,13 @@ export async function enrollPersons(
     current_step: 0,
     status: "active",
   }));
+  // ignoreDuplicates: re-running an enroll (e.g. "enroll from list" over the
+  // whole list again) must NOT reset current_step/status of people already
+  // mid-sequence, paused, or completed. Only genuinely new (sequence,person)
+  // pairs are inserted; existing enrollments are left untouched. (FIX C)
   const { error } = await supabase
     .from("sequence_enrollments")
-    .upsert(rows, { onConflict: "sequence_id,person_id" });
+    .upsert(rows, { onConflict: "sequence_id,person_id", ignoreDuplicates: true });
   if (error) return { success: false as const, error: error.message };
   // Eagerly generate only when enrolling into an already-active sequence;
   // enrolling into a draft does nothing until activation.
@@ -147,9 +151,11 @@ export async function enrollFromEvent(
     current_step: 0,
     status: "active" as const,
   }));
+  // ignoreDuplicates: re-enrolling from an event must not reset the progress
+  // of people already mid-sequence; only new pairs are inserted. (FIX C)
   const { error } = await supabase
     .from("sequence_enrollments")
-    .upsert(rows, { onConflict: "sequence_id,person_id" });
+    .upsert(rows, { onConflict: "sequence_id,person_id", ignoreDuplicates: true });
   if (error) return { success: false as const, error: error.message };
   // Eagerly generate only when enrolling into an already-active sequence.
   if (filtered.ids.length > 0) {
