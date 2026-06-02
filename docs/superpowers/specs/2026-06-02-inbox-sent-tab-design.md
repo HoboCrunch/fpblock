@@ -125,9 +125,18 @@ time window).
   `inbound_emails` outbound).
 - Per-message **delivery-status chip** from `delivery_status` (delivered / opened /
   bounced / replied) when present.
-- **"Load more"** button using `nextCursor`.
+- **Infinite scroll** (the deliverable shipped this instead of a "Load more" button):
+  the client requests 100 per page and an `IntersectionObserver` watches a sentinel
+  near the bottom of the Sent list (root = the scroll container, 300px pre-load
+  margin), auto-fetching the next page via `nextCursor` until exhausted. Appended
+  threads are de-duped by `id` to avoid React key collisions at page boundaries.
+- A **count header** above the list — `Showing {N} of {total} sent` — where `total`
+  comes from the first page's response and `N` is the sum of `outbound_count` across
+  loaded threads. Makes it clear the remaining sends are paged in, not missing.
 - The existing All / Correlated / Uncorrelated correlation filter continues to apply
   within the Sent view.
+- The inbox **Sync** button shares the Inbox/Sent toggle row (right-aligned via
+  `ml-auto`) rather than occupying its own stacked row.
 
 ## Error handling & empty states
 

@@ -36,6 +36,8 @@ export interface LoadSentOptions {
 export interface SentPage {
   threads: Thread[];
   nextCursor: string | null;
+  /** Total qualifying sends (denominator for the UI count). First page only. */
+  total?: number;
 }
 
 export async function loadSentPage(
@@ -132,6 +134,33 @@ export async function loadSentPage(
     ).filter((r) => anchorKeys.has(anchorKey(r)));
   }
 
+  // Total qualifying sends across both sources — the denominator for the
+  // "showing N of M" header. Computed only on the first page (no cursor) so we
+  // don't recount on every scroll-triggered fetch.
+  let total: number | undefined;
+  if (!opts.cursor) {
+    let interCountQuery = supabase
+      .from("interactions")
+      .select("id", { count: "exact", head: true })
+      .eq("channel", "email")
+      .in("status", SEND_STATUSES)
+      .is("detail->>inbound_emails_id", null)
+      .not("occurred_at", "is", null);
+    let outCountQuery = supabase
+      .from("inbound_emails")
+      .select("id", { count: "exact", head: true })
+      .eq("direction", "outbound");
+    if (opts.q) {
+      interCountQuery = interCountQuery.ilike("subject", `%${opts.q}%`);
+      outCountQuery = outCountQuery.ilike("subject", `%${opts.q}%`);
+    }
+    const [{ count: interCount }, { count: outCount }] = await Promise.all([
+      interCountQuery,
+      outCountQuery,
+    ]);
+    total = (interCount ?? 0) + (outCount ?? 0);
+  }
+
   const threads = groupSentThreads([...anchors, ...replies]);
-  return { threads, nextCursor };
+  return { threads, nextCursor, total };
 }

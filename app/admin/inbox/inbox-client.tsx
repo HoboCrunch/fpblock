@@ -61,24 +61,31 @@ export function InboxClient({
   const [sentLoading, setSentLoading] = useState(false);
   const [sentError, setSentError] = useState<string | null>(null);
   const [sentLoaded, setSentLoaded] = useState(false);
+  const [sentTotal, setSentTotal] = useState<number | null>(null);
+  const sentScrollRef = useRef<HTMLDivElement | null>(null);
+  const sentSentinelRef = useRef<HTMLDivElement | null>(null);
 
   const loadSent = useCallback(
     async (cursor: string | null) => {
       setSentLoading(true);
       setSentError(null);
       try {
-        const qs = new URLSearchParams({ limit: "50" });
+        const qs = new URLSearchParams({ limit: "100" });
         if (cursor) qs.set("cursor", cursor);
         const res = await fetch(`/api/inbox/sent?${qs.toString()}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: { threads: Thread[]; nextCursor: string | null } =
-          await res.json();
+        const data: {
+          threads: Thread[];
+          nextCursor: string | null;
+          total?: number;
+        } = await res.json();
         setSentThreads((prev) => {
           if (!cursor) return data.threads;
           const seen = new Set(prev.map((t) => t.id));
           return [...prev, ...data.threads.filter((t) => !seen.has(t.id))];
         });
         setSentCursor(data.nextCursor);
+        if (!cursor && typeof data.total === "number") setSentTotal(data.total);
         setSentLoaded(true);
       } catch (err) {
         setSentError(err instanceof Error ? err.message : "Failed to load sent");
@@ -89,11 +96,37 @@ export function InboxClient({
     []
   );
 
+  // Sends loaded so far (counts outbound messages across loaded threads) — the
+  // numerator for the "showing N of M" header.
+  const sentLoadedCount = useMemo(
+    () => sentThreads.reduce((n, t) => n + t.outbound_count, 0),
+    [sentThreads]
+  );
+
   useEffect(() => {
     if (view === "sent" && !sentLoaded && !sentLoading) {
       loadSent(null);
     }
   }, [view, sentLoaded, sentLoading, loadSent]);
+
+  // Infinite scroll: when the sentinel near the bottom of the Sent list scrolls
+  // into view, fetch the next page. Re-armed each time the cursor advances; the
+  // observer simply stops existing once there's no nextCursor.
+  useEffect(() => {
+    if (view !== "sent" || !sentCursor) return;
+    const sentinel = sentSentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !sentLoading) {
+          loadSent(sentCursor);
+        }
+      },
+      { root: sentScrollRef.current ?? null, rootMargin: "300px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [view, sentCursor, sentLoading, loadSent]);
   const [syncing, setSyncing] = useState(false);
   const [linkModal, setLinkModal] = useState<string | null>(null);
   const [personSearch, setPersonSearch] = useState("");
@@ -232,34 +265,8 @@ export function InboxClient({
 
   return (
     <div className="space-y-4">
-      {/* Sync row + status */}
-      {/* Sync button — replaces the per-account pills */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={handleSyncAll}
-          disabled={syncing}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg",
-            "bg-white/5 border border-white/10 text-white/70",
-            "hover:bg-white/10 hover:text-white transition-all duration-200",
-            "disabled:opacity-50 disabled:cursor-not-allowed"
-          )}
-        >
-          <RefreshCw className={cn("h-3 w-3", syncing && "animate-spin")} />
-          Sync
-        </button>
-        {syncStates.some((s) => s.status === "error") && (
-          <span className="text-[11px] text-red-400">
-            {syncStates
-              .filter((s) => s.status === "error")
-              .map((s) => `${s.account_email.split("@")[0]} sync error`)
-              .join(" · ")}
-          </span>
-        )}
-      </div>
-
-      {/* Inbox / Sent view toggle */}
-      <div className="flex gap-1 border-b border-gray-800">
+      {/* Inbox / Sent view toggle + Sync (right-aligned, same row) */}
+      <div className="flex items-center gap-1 border-b border-gray-800">
         {(
           [
             ["inbox", "Inbox"],
@@ -282,6 +289,30 @@ export function InboxClient({
             {label}
           </button>
         ))}
+
+        <div className="ml-auto flex items-center gap-2 pb-1.5">
+          {syncStates.some((s) => s.status === "error") && (
+            <span className="text-[11px] text-red-400">
+              {syncStates
+                .filter((s) => s.status === "error")
+                .map((s) => `${s.account_email.split("@")[0]} sync error`)
+                .join(" · ")}
+            </span>
+          )}
+          <button
+            onClick={handleSyncAll}
+            disabled={syncing}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg",
+              "bg-white/5 border border-white/10 text-white/70",
+              "hover:bg-white/10 hover:text-white transition-all duration-200",
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+          >
+            <RefreshCw className={cn("h-3 w-3", syncing && "animate-spin")} />
+            Sync
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[380px_minmax(0,1fr)] gap-4 min-h-[60vh]">
@@ -312,7 +343,18 @@ export function InboxClient({
               </button>
             ))}
           </div>
-          <div className="space-y-1 overflow-y-auto max-h-[75vh] pr-1 min-w-0">
+          {view === "sent" && (
+            <div className="px-1 text-[11px] text-white/40">
+              {sentTotal != null
+                ? `Showing ${sentLoadedCount} of ${sentTotal} sent`
+                : `Showing ${sentLoadedCount} sent`}
+              <span className="text-white/25"> · older sends load as you scroll</span>
+            </div>
+          )}
+          <div
+            ref={sentScrollRef}
+            className="space-y-1 overflow-y-auto max-h-[75vh] pr-1 min-w-0"
+          >
           {view === "sent" && sentError && (
             <GlassCard className="text-center py-6">
               <p className="text-red-400 text-sm">Failed to load sent: {sentError}</p>
@@ -357,13 +399,16 @@ export function InboxClient({
           ))}
 
           {view === "sent" && sentCursor && (
-            <button
-              onClick={() => loadSent(sentCursor)}
-              disabled={sentLoading}
-              className="w-full mt-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50"
+            <div
+              ref={sentSentinelRef}
+              className="py-4 flex items-center justify-center text-white/40"
             >
-              {sentLoading ? "Loading…" : "Load more"}
-            </button>
+              {sentLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <span className="text-[11px]">Scroll to load more…</span>
+              )}
+            </div>
           )}
           </div>
         </div>

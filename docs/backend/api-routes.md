@@ -540,6 +540,29 @@ All inbox routes flow through the shared `runInboxSync()` helper in `lib/inbox-s
 - HTML body is auto-generated from `bodyText` if not supplied, using a minimal `<div style="white-space:pre-wrap;…">` wrapper with HTML-escaped content. Rich-text editing is not implemented.
 - `from` is fixed to the supplied `identity`. The route does not allow custom From addresses outside the managed-identity set.
 
+#### 2.4.7 `GET /api/inbox/sent`
+
+**File:** `app/api/inbox/sent/route.ts` (logic in `lib/inbox/load-sent.ts`)
+**Purpose:** One page of the inbox **Sent** view — a threaded, unified list of all outbound email. Backs the "Sent" tab on `/admin/inbox` (lazy-loaded on first switch, then paged via infinite scroll).
+
+**Auth:** Cookie-bound SSR client. Both `interactions` and `inbound_emails` carry RLS `auth.uid() IS NOT NULL`, so the route returns data only for an authenticated admin session.
+
+**Query params:** `cursor` (ISO timestamp — return sends strictly older), `limit` (default 50, capped 200; the client requests 100), `q` (subject `ilike` search).
+
+**Behavior (`loadSentPage`):**
+1. Fetches a page of sends from two sources: `interactions` (`channel='email'`, status in sent/delivered/opened/clicked/replied/bounced, `detail.inbound_emails_id IS NULL`, `occurred_at NOT NULL`) and `inbound_emails` (`direction='outbound'`), each ordered newest-first.
+2. Normalizes `interactions` rows into the `InboundEmailWithRelations` shape (synthetic `message_id = "interaction:<id>"`, `source='sendgrid'`), tags inbound_emails sends `source='inbox'`.
+3. Dedups a send appearing in both sources by `(person ?? counterparty, normalized subject, minute)`, preferring the inbox copy; sorts newest-first; slices to `limit` "anchors". `nextCursor` = the last anchor's timestamp (null when the page wasn't full).
+4. Pulls inbound replies for the anchor persons, **scoped to this page's `(party, subject)` threads** so a reply never orphans onto a page lacking its send.
+5. Groups everything via `groupSentThreads` (keyed by person ?? counterparty + normalized subject — SendGrid sends have no JMAP `thread_id`).
+6. On the first page (no cursor), also returns `total` = count of all qualifying sends across both sources (the denominator for the UI's "Showing N of M sent" header).
+
+**Response:** `{ threads: Thread[], nextCursor: string | null, total?: number }`.
+
+**Caveats:**
+- Pagination is by sends (the thread anchor); a thread whose sends straddle a page boundary can briefly render as two partials. The client de-dups appended threads by `id` on scroll to avoid React key collisions.
+- No DB migration — SendGrid sends are normalized in memory; nothing is written.
+
 ---
 
 ### 2.5 Correlations
