@@ -17,6 +17,11 @@ export type OrgRef = {
 export type InboundEmailWithRelations = InboundEmail & {
   person: { id: string; full_name: string; email: string | null } | null;
   organization?: OrgRef | null;
+  // Set only for messages built for the Sent view. Optional so the inbox path
+  // is unaffected. `source` distinguishes a SendGrid/outreach send from an
+  // inbox/Fastmail send; `delivery_status` carries the raw interactions.status.
+  source?: "sendgrid" | "inbox";
+  delivery_status?: string | null;
 };
 
 export type Participant = {
@@ -56,10 +61,6 @@ export function counterpartyOf(m: InboundEmailWithRelations): string | null {
 export function groupIntoThreads(emails: InboundEmailWithRelations[]): Thread[] {
   const buckets = new Map<string, InboundEmailWithRelations[]>();
   for (const e of emails) {
-    // Partition by (Fastmail thread, external counterparty) so a subject-merged
-    // blast thread splits back into one conversation per prospect. Rows without
-    // a thread_id stay their own thread of one (keeps the UI working before the
-    // thread_id backfill runs).
     const key = e.thread_id
       ? `${e.thread_id}::${counterpartyOf(e) ?? "?"}`
       : `solo:${e.id}`;
@@ -70,51 +71,59 @@ export function groupIntoThreads(emails: InboundEmailWithRelations[]): Thread[] 
 
   const threads: Thread[] = [];
   for (const [key, msgs] of buckets) {
-    msgs.sort(
-      (a, b) =>
-        new Date(a.received_at).getTime() - new Date(b.received_at).getTime()
-    );
-    const latest = msgs[msgs.length - 1];
-    const firstInbound = msgs.find((m) => m.direction === "inbound") || latest;
-    const subject =
-      msgs.find((m) => m.subject)?.subject?.replace(/^(Re:\s*)+/i, "") || null;
-
-    const inbound = msgs.filter((m) => m.direction === "inbound");
-    const outbound = msgs.filter((m) => m.direction === "outbound");
-
-    // Thread is "unread" if any inbound message is unread.
-    const isUnread = inbound.some((m) => !m.is_read);
-
-    // Pick the primary correlated person/org: prefer the latest inbound's
-    // person, falling back to any message that has one.
-    const correlatedSource =
-      [...inbound].reverse().find((m) => m.person_id) ||
-      msgs.find((m) => m.person_id) ||
-      null;
-
-    threads.push({
-      id: key,
-      thread_id: latest.thread_id,
-      subject,
-      messages: msgs,
-      latest,
-      first_inbound: firstInbound,
-      participants: collectParticipants(msgs),
-      message_count: msgs.length,
-      inbound_count: inbound.length,
-      outbound_count: outbound.length,
-      is_unread: isUnread,
-      account_emails: [...new Set(msgs.map((m) => m.account_email))],
-      person_id: correlatedSource?.person_id || null,
-      person: correlatedSource?.person || null,
-      organization: correlatedSource?.organization || null,
-      latest_at: latest.received_at,
-    });
+    threads.push(assembleThread(key, msgs));
   }
   threads.sort(
     (a, b) => new Date(b.latest_at).getTime() - new Date(a.latest_at).getTime()
   );
   return threads;
+}
+
+/**
+ * Build a Thread from a bucket of messages that belong together. Shared by the
+ * inbox grouper (keyed by Fastmail thread + counterparty) and the Sent grouper
+ * (keyed by person + normalized subject).
+ */
+export function assembleThread(
+  id: string,
+  msgs: InboundEmailWithRelations[]
+): Thread {
+  msgs.sort(
+    (a, b) =>
+      new Date(a.received_at).getTime() - new Date(b.received_at).getTime()
+  );
+  const latest = msgs[msgs.length - 1];
+  const firstInbound = msgs.find((m) => m.direction === "inbound") || latest;
+  const subject =
+    msgs.find((m) => m.subject)?.subject?.replace(/^(Re:\s*)+/i, "") || null;
+
+  const inbound = msgs.filter((m) => m.direction === "inbound");
+  const outbound = msgs.filter((m) => m.direction === "outbound");
+  const isUnread = inbound.some((m) => !m.is_read);
+
+  const correlatedSource =
+    [...inbound].reverse().find((m) => m.person_id) ||
+    msgs.find((m) => m.person_id) ||
+    null;
+
+  return {
+    id,
+    thread_id: latest.thread_id,
+    subject,
+    messages: msgs,
+    latest,
+    first_inbound: firstInbound,
+    participants: collectParticipants(msgs),
+    message_count: msgs.length,
+    inbound_count: inbound.length,
+    outbound_count: outbound.length,
+    is_unread: isUnread,
+    account_emails: [...new Set(msgs.map((m) => m.account_email))],
+    person_id: correlatedSource?.person_id || null,
+    person: correlatedSource?.person || null,
+    organization: correlatedSource?.organization || null,
+    latest_at: latest.received_at,
+  };
 }
 
 export function collectParticipants(

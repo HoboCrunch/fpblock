@@ -55,6 +55,45 @@ export function InboxClient({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [correlationFilter, setCorrelationFilter] =
     useState<CorrelationFilter>("all");
+  const [view, setView] = useState<"inbox" | "sent">("inbox");
+  const [sentThreads, setSentThreads] = useState<Thread[]>([]);
+  const [sentCursor, setSentCursor] = useState<string | null>(null);
+  const [sentLoading, setSentLoading] = useState(false);
+  const [sentError, setSentError] = useState<string | null>(null);
+  const [sentLoaded, setSentLoaded] = useState(false);
+
+  const loadSent = useCallback(
+    async (cursor: string | null) => {
+      setSentLoading(true);
+      setSentError(null);
+      try {
+        const qs = new URLSearchParams({ limit: "50" });
+        if (cursor) qs.set("cursor", cursor);
+        const res = await fetch(`/api/inbox/sent?${qs.toString()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: { threads: Thread[]; nextCursor: string | null } =
+          await res.json();
+        setSentThreads((prev) => {
+          if (!cursor) return data.threads;
+          const seen = new Set(prev.map((t) => t.id));
+          return [...prev, ...data.threads.filter((t) => !seen.has(t.id))];
+        });
+        setSentCursor(data.nextCursor);
+        setSentLoaded(true);
+      } catch (err) {
+        setSentError(err instanceof Error ? err.message : "Failed to load sent");
+      } finally {
+        setSentLoading(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (view === "sent" && !sentLoaded && !sentLoading) {
+      loadSent(null);
+    }
+  }, [view, sentLoaded, sentLoading, loadSent]);
   const [syncing, setSyncing] = useState(false);
   const [linkModal, setLinkModal] = useState<string | null>(null);
   const [personSearch, setPersonSearch] = useState("");
@@ -63,17 +102,22 @@ export function InboxClient({
   >([]);
   const [linking, setLinking] = useState(false);
 
-  const selectedThread = threads.find((t) => t.id === selectedId) || null;
-
   // -------------------------------------------------------------------------
   // Filters
   // -------------------------------------------------------------------------
 
-  const filtered = threads.filter((t) => {
+  const activeThreads = useMemo(
+    () => (view === "sent" ? sentThreads : threads),
+    [view, sentThreads, threads]
+  );
+
+  const filtered = activeThreads.filter((t) => {
     if (correlationFilter === "correlated" && !t.person_id) return false;
     if (correlationFilter === "uncorrelated" && t.person_id) return false;
     return true;
   });
+
+  const selectedThread = filtered.find((t) => t.id === selectedId) || null;
 
   // -------------------------------------------------------------------------
   // Sync
@@ -175,11 +219,11 @@ export function InboxClient({
 
   const totals = useMemo(
     () => ({
-      all: threads.length,
-      correlated: threads.filter((t) => t.person_id).length,
-      uncorrelated: threads.filter((t) => !t.person_id).length,
+      all: activeThreads.length,
+      correlated: activeThreads.filter((t) => t.person_id).length,
+      uncorrelated: activeThreads.filter((t) => !t.person_id).length,
     }),
-    [threads]
+    [activeThreads]
   );
 
   // -------------------------------------------------------------------------
@@ -214,6 +258,32 @@ export function InboxClient({
         )}
       </div>
 
+      {/* Inbox / Sent view toggle */}
+      <div className="flex gap-1 border-b border-gray-800">
+        {(
+          [
+            ["inbox", "Inbox"],
+            ["sent", "Sent"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => {
+              setSelectedId(null);
+              setView(id);
+            }}
+            className={cn(
+              "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+              view === id
+                ? "border-[#f58327] text-white"
+                : "border-transparent text-gray-400 hover:text-white"
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-[380px_minmax(0,1fr)] gap-4 min-h-[60vh]">
         {/* Left column: filter tabs + thread list */}
         <div className="flex flex-col gap-2 min-w-0">
@@ -243,12 +313,32 @@ export function InboxClient({
             ))}
           </div>
           <div className="space-y-1 overflow-y-auto max-h-[75vh] pr-1 min-w-0">
-          {filtered.length === 0 && (
+          {view === "sent" && sentError && (
+            <GlassCard className="text-center py-6">
+              <p className="text-red-400 text-sm">Failed to load sent: {sentError}</p>
+              <button
+                onClick={() => loadSent(null)}
+                className="mt-2 px-3 py-1.5 text-xs rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
+              >
+                Retry
+              </button>
+            </GlassCard>
+          )}
+
+          {view === "sent" && sentLoading && sentThreads.length === 0 && (
+            <div className="flex items-center justify-center py-12 text-white/40">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+          )}
+
+          {filtered.length === 0 && !(view === "sent" && (sentLoading || sentError)) && (
             <GlassCard className="text-center py-12">
               <Mail className="h-8 w-8 text-white/20 mx-auto mb-3" />
-              <p className="text-white/40 text-sm">No conversations to show</p>
+              <p className="text-white/40 text-sm">
+                {view === "sent" ? "No sent emails" : "No conversations to show"}
+              </p>
               <p className="text-white/25 text-xs mt-1">
-                Try syncing or adjusting filters
+                {view === "sent" ? "Sends will appear here" : "Try syncing or adjusting filters"}
               </p>
             </GlassCard>
           )}
@@ -265,6 +355,16 @@ export function InboxClient({
               }}
             />
           ))}
+
+          {view === "sent" && sentCursor && (
+            <button
+              onClick={() => loadSent(sentCursor)}
+              disabled={sentLoading}
+              className="w-full mt-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50"
+            >
+              {sentLoading ? "Loading…" : "Load more"}
+            </button>
+          )}
           </div>
         </div>
 
@@ -682,9 +782,15 @@ function MessageBlock({
           <div className="flex items-center gap-2 min-w-0">
             {isOutbound && (
               <span className="text-[10px] font-medium uppercase tracking-wide text-[#6e86ff]/70 shrink-0">
-                Sent
+                {message.source === "sendgrid" ? "SendGrid" : "Sent"}
               </span>
             )}
+            {message.delivery_status &&
+              message.delivery_status !== "sent" && (
+                <span className="text-[10px] font-medium uppercase tracking-wide text-emerald-400/70 shrink-0">
+                  {message.delivery_status}
+                </span>
+              )}
             <span
               className={cn(
                 "text-sm truncate",
