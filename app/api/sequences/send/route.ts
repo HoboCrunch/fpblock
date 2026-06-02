@@ -123,6 +123,25 @@ export function hasSendableContent(
   );
 }
 
+/**
+ * Find claimed rows that the hydrate query dropped.
+ *
+ * The hydrate select joins `persons!inner` / `sequences!inner`, so a claimed row
+ * whose person or sequence relation is missing (e.g. `sequence_id = null`) is
+ * silently excluded from the result. Such a row was flipped to 'sending' by the
+ * atomic claim but never enters the send loop, so it never reaches a terminal
+ * status — it sits in 'sending' until the sweeper reverts it, then is re-claimed
+ * the next run, looping forever and alerting every ~STUCK_MINUTES. Returns the
+ * claimed ids absent from the hydrated set so the caller can fail them terminally.
+ */
+export function findUnhydratedClaimedIds(
+  claimedIds: string[],
+  hydratedRows: { id: string }[]
+): string[] {
+  const present = new Set(hydratedRows.map((r) => r.id));
+  return claimedIds.filter((id) => !present.has(id));
+}
+
 // ─── Cron auth + service client ──────────────────────────────────────────────
 // Invoked unattended by Vercel Cron (GET). The atomic-claim RPCs and the
 // interactions table are not reachable by the anon role, so we use a
@@ -221,6 +240,44 @@ async function runSend(supabase: ServiceClient) {
     return NextResponse.json({ error: hydrateError.message }, { status: 500 });
   }
   const rows = (hydratedData ?? []) as unknown as JoinedInteraction[];
+
+  // ── Reconcile dropped claims ──────────────────────────────────────────────
+  // persons!inner / sequences!inner above silently drop any claimed row whose
+  // relation is missing (e.g. sequence_id = null). Those rows are 'sending' but
+  // never enter the loop, so without this they sit until the sweeper reverts
+  // them and get re-claimed every run — an infinite stuck-in-sending loop. Mark
+  // them failed terminally so a row can never loop on a missing relation again.
+  const unhydratedIds = findUnhydratedClaimedIds(claimedIds, rows);
+  if (unhydratedIds.length > 0) {
+    console.error(
+      `[sequences/send] ${unhydratedIds.length} claimed row(s) missing person/sequence relation — failing terminally:`,
+      unhydratedIds
+    );
+    const claimedById = new Map(claimed.map((c) => [c.id, c]));
+    for (const id of unhydratedIds) {
+      const prior = claimedById.get(id)?.detail ?? {};
+      await supabase
+        .from("interactions")
+        .update({
+          status: "failed",
+          occurred_at: new Date().toISOString(),
+          detail: {
+            ...prior,
+            last_error: "Claimed row missing person or sequence relation — cannot dispatch",
+            terminal_reason: "missing_relation",
+          },
+        })
+        .eq("id", id);
+      terminalFailures.push({
+        interactionId: id,
+        personName: null,
+        personEmail: null,
+        sequenceName: null,
+        reason: "Missing person or sequence relation — cannot dispatch",
+        kind: "send_failure",
+      });
+    }
+  }
 
   let sent = 0;
   let failed = 0;
