@@ -1,0 +1,24 @@
+email,type,batch,reason
+fauzi@triv.co.id,blocks,touch-1-pt1,550 5.7.1 [ESA] Sender blocked.
+tyler@gemini.com,blocks,touch-1-pt1,550 5.7.1 The user or domain that you are sending to (or from) has a policy that prohibited the mail that you sent. Please contact your domain administrator for
+dbaranowski@chatterpay.net,blocks,touch-1-pt2,error dialing remote address: dial tcp 159.183.235.50:0->216.239.34.21:25: i/o timeout
+steve@calstec.com,blocks,touch-1-pt2,error dialing remote address: dial tcp 159.183.224.105:0->15.197.240.20:25: i/o timeout
+steve.cook@form3.tech,bounces,touch-1-pt1,550 5.4.1 Recipient address rejected: Access denied. For more information see https://aka.ms/EXOSmtpErrors [DU2PEPF0001E9C4.eurprd03.prod.outlook.com 2026-06-23
+nijat.bakhshaliyev.13@ucl.ac.uk,bounces,touch-1-pt1,550 5.4.1 Recipient address rejected: Access denied. For more information see https://aka.ms/EXOSmtpErrors [DB1PEPF000509EA.eurprd03.prod.outlook.com 2026-06-23
+adam.kramer@trickgs.com,bounces,touch-1-pt2,The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. For more inf
+ray.park@layerbank.finance,bounces,wave2-verifyemail-mxok,550 5.1.1 The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. Fo
+matthew.cloete@foreverlong.io,bounces,wave2-verifyemail-mxok,550 5.1.1 The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. Fo
+dmitry.volkov@plutonai.net,bounces,wave2-verifyemail-mxok,550 5.1.0 <dmitry.volkov@plutonai.net> Recipient not found.  <https://www.secureserver.net/help/fix-rejected-email-with-a-bounce-error-40685?pl_id=3153&prog_id=
+azeez.taofeeq@gmail.com,bounces,wave2-verifyemail-mxok,550 5.1.1 The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. Fo
+charles.gong@stockcoin.ai,bounces,wave2-verifyemail-mxok,"550 verify address failed, User not found charles.gong@stockcoin.ai"
+m@metafyed.com,bounces,wave2-verifyemail-mxok,550 5.1.1 The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. Fo
+mike.wu@blockstreet.money,bounces,wave2-verifyemail-mxok,550 5.1.1 The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. Fo
+rishabh@standardmoney.com,bounces,wave2-verifyemail-mxok,550 5.1.1 The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. Fo
+kabir.sethi@bitstack-app.com,bounces,wave2-verifyemail-mxok,550 5.1.1 The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. Fo
+jake.lang@tenbinlabs.xyz,bounces,wave2-verifyemail-mxok,550 5.1.1 The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. Fo
+siddharth.ramesh@transfi.com,bounces,wave2-verifyemail-mxok,550 5.1.1 The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. Fo
+igrasso@obexrecruitment.com,bounces,wave2-verifyemail-mxok,550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipient igrasso@obexrecruitment.com not found by SMTP address lookup
+yiyang.li@aeon.xyz,bounces,wave2-verifyemail-mxok,550 5.1.1 The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. Fo
+alexander.blume@twoprime.com,bounces,wave2-verifyemail-mxok,550 5.1.1 The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. Fo
+alex.johnson@omnipact.io,bounces,wave2-verifyemail-mxok,550 5.1.0 <alex.johnson@omnipact.io> Recipient not found.  <https://www.secureserver.net/help/fix-rejected-email-with-a-bounce-error-40685?pl_id=3153&prog_id=31
+youngmin.kim@coinone.co.kr,bounces,wave2-verifyemail-mxok,550 5.1.1 The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. Fo

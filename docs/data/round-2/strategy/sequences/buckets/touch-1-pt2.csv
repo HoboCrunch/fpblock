@@ -1,0 +1,2161 @@
+email,first_name,company,contact_title,segment,tier,source,email_trust,send_readiness,from_name,from_email,reply_to,touch,send_day,subject,body
+li.fan@circle.com,Li,Arc blockchain,Chief Technology and AI Officer,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Li — I'll skip the congrats.
+
+When you're the settlement layer institutions build on, a finality bug doesn't get a hotfix — every payment that cleared on top of it is already final, and so is the mistake underneath it.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+luana@kalshi.com,Luana,Kalshi,Co-founder & CTO,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Luana — I'll skip the congrats.
+
+When a contract resolves the wrong way on a real-world event, you've paid out the loser and can't get it back — and one bad settlement on a contested outcome is the kind of thing regulators and traders never forget.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+c@spektr.com,Ciprian,Spektr,CTO & Co-founder,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Ciprian — skipping the congrats.
+
+When your AI agents auto-approve a KYC or KYB decision for a bank, a single wrong clearance is a regulated customer you can't un-onboard and a fine someone else has to eat.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+fernando@dolarapp.com,Fernando,ARQ (ex DolarApp),Co-founder & CEO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Fernando — skipping the congrats.
+
+When someone's whole dollar balance lives in your app and they send money home, a botched transfer or a frozen account isn't a support ticket to them — it's rent they can't pay, and that money is already gone.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+connor@valinordigital.com,Connor,Valinor,Co-Founder & CEO,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Connor — I'll skip the congrats.
+
+When you originate and distribute credit to institutions, a mispriced or mis-structured loan doesn't just lose money — it sits on someone's books for years, and lenders forgive a thin spread long before they forgive a deal that behaved differently than the terms said.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+mkazley@novabay.com,Michael,Stablecoin Development Corporation (SDEV),CEO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Michael — skipping the congrats.
+
+You're putting real balance-sheet money behind stablecoin rails, where a botched transfer or a payment that settles twice is gone before the books even catch up to it.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jack.sharkey@whop.com,Jack,Whop,Co-Founder and CTO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Jack — skipping the congrats.
+
+Once you're processing payments and payouts for thousands of creators, a single accounting slip stops being your bug and becomes their missing income — and they remember who held the money when it didn't show up.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jason@blackopal.finance,Jason,BlackOpal,Co-Founder & CEO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Jason — skipping the congrats.
+
+The moment investors are earning 13% off receivables you packaged, the real risk isn't the yield — it's a fund that pays out against collateral that was double-counted or already defaulted, because by the time the gap shows, the money has already moved.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+andrew@icex.id,Andrew,ICEx,CTO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Andrew — skipping the congrats.
+
+You're holding retail and institutional money in custody and matching their trades, so the day a balance is debited wrong or a withdrawal escapes, the funds are gone and the trust goes with them.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+aurelien@n3xt.io,Aurélien,N3XT,Chief Technology Officer,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Aurélien — skipping the congrats.
+
+The whole pitch of real-time, full-reserve settlement is that the money is really there and really moved; the day a transfer fires twice or settles wrong, there's no overnight batch to catch it and no bank to walk it back.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+alex@anthea.com,Alex,Anthea,Founder and CEO,RWA & Tokenization,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,auditor and a court,"Alex — skipping the congrats.
+
+Life insurance is the one product where a payout error surfaces at the worst possible moment for a grieving family — and a coverage rule that miscalculates a claim isn't a bug you patch quietly, it's a promise you failed to keep.
+
+Closing that gap is exactly what we do. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+marco@hercle.com,Marco,Hercle,"CTO, Co-founder",Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Marco — skipping the congrats.
+
+You sit between banks and digital assets moving real-time cross-border money, so a settlement that fires before the other leg clears leaves someone short with no way to claw it back.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+matt@tempo.xyz,Matt,Tempo,CEO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Matt — skipping the congrats.
+
+When you're the rails businesses settle real payroll and supplier flows on, a sequencing or finality miss doesn't bounce — the wrong amount is settled, it's final, and a Stripe-backed brand is the one explaining it.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+siggi@rapyd.net,Sigurður,Rapyd,CTO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Sigurður — skipping the congrats.
+
+Once you're the rails moving payments for businesses in dozens of countries, a settlement that fires twice or routes to the wrong account stops being your bug and becomes your customer's missing money — and at your volume, a small edge case is a very large hole.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+m@ogroup.io,Maja,FG Nexus (ex Fundamental Global),CEO and Co-Founder of Digital Assets,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Maja — I'll skip the congrats.
+
+You're a public company staking and tokenizing real assets, so a single bad mint or a staking slip turns a quiet accounting error into a permanent loss your filings have to disclose.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+bb@tracefinance.com,Bernardo,Trace Finance,CEO and Co-Founder,Payments & Stablecoins,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Bernardo — skipping the congrats.
+
+Once you're settling cross-border treasury and FX for enterprises, a single mispriced or double-sent payout lands in someone else's books before you can pull it back — and that one is on you, not them.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+edward@variational.io,Edward,Variational,Founder,Trading & DeFi,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Edward — I'll skip the congrats.
+
+Peer-to-peer leveraged trades on thin pre-launch and memecoin pairs are exactly where one mispriced fill or a late liquidation drains a position before anyone can hit cancel, and that loss never comes back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+juan@fence.finance,Juan,Fence,Founder | CEO,Payments & Stablecoins,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Juan — skipping the congrats.
+
+When you're the system of record for debt facility payments and reporting, one wrong number in a covenant calc or a missed payment run isn't a UI bug — it's a lender who funded against bad data and can't undo the wire.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+lukasz@cryptio.co,Lukasz,Cryptio,CTO,Payments & Stablecoins,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Lukasz — skipping the congrats.
+
+The moment institutions close their books on your numbers, a quiet reconciliation error stops being a display bug and becomes a misstated audit they can't walk back.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+nathan.mccauley@anchorlabs.com,Nathan,Anchorage Digital,Co-Founder and CEO,Payments & Stablecoins,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Nathan — skipping the congrats.
+
+When you hold institutional custody, a key-handling slip or a botched withdrawal isn't a bug ticket — the assets are gone and a regulated client wants answers, so that signing path has to be provably right.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+richard@numer.ai,Richard,Numerai,Founder and CEO,Payments & Stablecoins,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Richard — skipping the congrats.
+
+Once data scientists stake real money behind models and you push the aggregate into live equity positions, a scoring or payout error doesn't roll back — it costs people their stake and you the only thing that keeps them submitting.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+paul@telco.in,Paul,Telcoin,Co-Founder and CEO,Payments & Stablecoins,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Paul — skipping the congrats.
+
+When millions send remittances through telecom partners, one routing or settlement error pushes someone's wages to the wrong place and it's already final before they notice — that gap is exactly where trust lives or dies.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+zach@etherealize.com,Zach,Etherealize,Co-Founder,Payments & Stablecoins,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Zach — skipping the congrats.
+
+The first time you onboard an institution and a transaction settles differently than what you told them it would, you don't lose a feature — you lose the one thing your whole pitch rests on, and you don't get it back.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+blake@iost.io,Blake,IOST,Co-CEO,Trading & DeFi,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Blake — I'll skip the congrats.
+
+Splitting real assets into separate principal and yield pieces means one accounting mismatch lets the same value get traded or collateralized twice, and unwinding that across everyone who touched it is nearly impossible.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+nick@speedlabs.dev,Nick,Speed Labs,CEO,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Nick — I'll skip the congrats.
+
+When your engine turns a live play into a tradeable market in real time, one mis-detected event or a price that updates a beat late settles real money on the wrong side — and a settled bet can't be unwound.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+ian@mnx.fi,Ian,MNX,Cofounder & CTO,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Ian — I'll skip the congrats.
+
+The day your AI quietly places a trade on bad signals or your matching engine fires late, the order is already filled and the loss is locked in before anyone can step in.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+michael@earlyriders.com,Michael,Onramp,Chief Executive Officer,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Michael — I'll skip the congrats.
+
+You're holding Bitcoin for family offices and institutions, so the one failure that ends the company isn't a bug — it's a custody or inheritance-transfer mistake that moves coins which can never be recovered.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+nathan.crocker@checker.finance,Nathan,Checker,Co-founder & CTO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Nathan — skipping the congrats.
+
+When one API is how institutions mint and move stablecoins, a single edge case that lets a balance be spent twice becomes every client's loss at once — and money that already left can't be recalled.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+ethan@cycles.money,Ethan,Cycles,Co-founder & CEO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Ethan — skipping the congrats.
+
+Multilateral netting only works if the math is provably right — one wrong obligation in the web clears real money between parties who can't undo it, and your proofs are the only thing standing between trust and a clawback that never comes.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+patricio.molina@belo.app,Pato,Belo,CTO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Pato — skipping the congrats.
+
+For a freelancer in Argentina sending money across a border, one transfer that goes to the wrong place or gets stuck is rent they can't get back — and that single irreversible miss is what kills trust faster than any feature wins it.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+walid@xo.market,Walid,XO Market,Co-Founder & CTO,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Walid — I'll skip the congrats.
+
+The whole thing rests on resolution: settle a market wrong, or let an oracle be gamed, and you've paid out the loser as the winner — there's no taking those funds back from whoever cashed out.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+alp@inverter.network,Alp,Brix,Co-founder & CEO,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Alp — I'll skip the congrats.
+
+Once you wrap emerging-market assets into tradable tokens, a mispriced strategy or a yield that pays out differently than promised hits investors as a real, permanent loss — and institutional money never forgives that gap.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+aleksei.kulikov@thegivingblock.com,Aleksei,Cyclops,Director of Engineering,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Aleksei — skipping the congrats.
+
+Once payment providers settle stablecoin payments through your rails, a reconciliation gap between what merchants see and what actually settled stops being your bug and becomes their missing money to explain.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+greg@catapultlabs.xyz,Gregory,Catapult,Co-Founder & CTO,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Gregory — I'll skip the congrats.
+
+When you're bootstrapping liquidity and launching new tokens, a bonding curve that prices wrong or a pool that can be drained hands real money to the first person who notices — and that exit is final.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+sam@bettermoney.com,Sam,The Better Money Company (TBMC),Founder & CEO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Sam — skipping the congrats.
+
+As the clearinghouse between dollar tokens like Tether and USD Coin, a single bad swap or settlement mismatch ripples instantly across everyone you connect — and money that's already moved can't be pulled back.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+sam.lin@divit.com.hk,Sam,dtcpay,CTO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Sam — skipping the congrats.
+
+When you let businesses accept, swap, and settle money in one flow, a single swap that books at the wrong rate or a settlement that double-fires shows up as a hole in a regulated merchant's books — and that's the part worth getting provably right.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jlau@newitymarket.com,Josh,Newity,Head of Technology,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Josh — I'll skip the congrats.
+
+Once a loan is originated and the funds wire out, a mis-scored borrower or a doc error your automation missed isn't a UI fix — it's capital you may never see again, on your bank partners' books.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+nick@tbook.com,Nicholas,TBook,Co-Founder,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Nicholas — skipping the congrats.
+
+When workers hold their pay and yields as permanent records, a wrong balance or a misrouted payout isn't a display bug — it's someone's wages gone, with no support line that can quietly reverse it.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+a@pye.fi,Alberto,Pye Finance,Co-founder & CTO,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Alberto — I'll skip the congrats.
+
+Turning stake accounts into tradable bonds means the terms have to be exactly enforceable — if a bond settles differently than the contract promised, the buyer eats a loss no one can reverse, and your marketplace loses the trust it runs on.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+vini@crowndigital.xyz,Vinicius,Crown (BRL),"Co-Founder, Principal Engineer",Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Vinicius — skipping the congrats.
+
+A real-backed token only holds if every issued BRLV maps to a bond that's actually there — the day that mapping slips, redemptions stop clearing and a regulated issuer can't quietly walk it back.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+samee@rift.exchange,Samee,Rift,CEO & Founder,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Samee — I'll skip the congrats.
+
+With full self-custody and no intermediary, there's no one to call when a trade settles wrong — the Bitcoin leaves, the swap is final, and the only safety net is code that has to be right the first time.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+manish@zynk.money,Manish,Zynk,Co-Founder & CTO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Manish — skipping the congrats.
+
+Instant settlement with no pre-funding is unforgiving by design: once money leaves across currencies and banks, there's no holding period to catch a routing or balance error — it's gone before anyone notices.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+hyungkyu.choi@dsrvlabs.com,Hyung-Kyu,DSRV,Co-Founder / COO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Hyung-Kyu — skipping the congrats.
+
+Custodying $3B and running staking across 70+ networks means one signing slip or a slashing event isn't a downtime ticket — it's client principal gone, and there's no undo on assets you held in trust.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+eric.choi@satschel.com,Eric,Satschel,Co-founder & President,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Eric — skipping the congrats.
+
+When you're the identity and compliance layer others trust, a biometric false match or a wrong approval lets the wrong person move real money — and that's a breach you can't take back once funds have left.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+payam@standardeconomics.com,Payam,Standard Economics,Co-Founder & CTO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Payam — skipping the congrats.
+
+For someone unbanked relying on you to hold dollars, a single transfer sent to the wrong place is savings they never get back — and that one irreversible mistake is what decides whether they ever trust the system again.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+monchi@divine.inc,Monchi,Divine,Co-founder & CTO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Monchi — skipping the congrats.
+
+Lending undercollateralized off wallet behavior means a model that misreads a borrower hands out money with nothing to seize back — and at scale a few bad reads quietly become a hole you can't refill.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+shaaran@brine.fi,Shaaran,Multipli,Founder & CEO,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Shaaran — I'll skip the congrats.
+
+Delta-neutral only holds until it doesn't — the moment a strategy drifts or a chain hiccups mid-rebalance, depositors eat a real loss on assets they were told were safe, and there's no undo.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+800@hyperbeat.org,Kilian,Hyperbeat,Founder,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Kilian — I'll skip the congrats.
+
+The day an automated vault strategy or a borrow position settles a fraction off from what users were promised, the loss is locked in across everyone in the pool at once, and there's no undo on funds that already moved.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+connor@fun.xyz,Connor,Function (ex Ignition),CTO,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Connor — I'll skip the congrats.
+
+FBTC only works if every wrapped coin is one real Bitcoin in custody — let that one-to-one break, or a mint slip through, and the institutions holding it can't redeem, with no way to claw the difference back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+gabe@dakota.xyz,Gabe,Dakota,Co-Founder & CTO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Gabe — skipping the congrats.
+
+Once businesses park their operating cash in non-custodial accounts backed by Treasuries, a broken wire or a settlement gap isn't your error to fix — it's their payroll that didn't land, and the transfer is already gone.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+cshen@getjarsy.com,Chunyang,Jarsy,Co-Founder & CTO,Trading & DeFi,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Chunyang — I'll skip the congrats.
+
+Each token is supposed to map to real equity sitting in an SPV — the day that record and the actual shares drift apart, you're not fixing a bug, you're explaining to investors why the thing they own isn't what they thought.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jonathan.h@headline.com,Jonathan,Backseat,Founder & CEO,Payments & Stablecoins,P1,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Jonathan — skipping the congrats.
+
+You inherited custody of other people's funds when you acquired the exchange, so a withdrawal sent wrong or a balance double-counted isn't fixable in support — it's customer money out the door under a Japanese license.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+roshni.aslam@gosats.io,Roshni,GoSats,Co-Founder,Payments & Stablecoins,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Roshni — skipping the congrats.
+
+The second you start crediting and paying out real Bitcoin on every purchase, a rewards-accounting error stops being a coupon mistake and becomes you sending out money you can't recall from thousands of users at once.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+rob@cork.tech,Robert,Cork Protocol,Founder,Trading & DeFi,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Robert — I'll skip the congrats.
+
+You're selling protection on assets losing their peg, so the day a payout fires on the wrong trigger or fails to fire at all, that's not a glitch — it's the exact moment your buyers were paying you to get right, and there's no second take.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+mauricio@xmaquina.io,Mauricio,XMAQUINA,Founding Member,RWA & Tokenization,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,auditor and a court,"Mauricio — skipping the congrats.
+
+Once you tokenize a real robot and split its revenue across many owners, a single error in how machine income is tracked or paid out shorts everyone — and reversing payouts that already cleared is a nightmare.
+
+Closing that gap is exactly what we do. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+adam@bulk.com,Adam,BULK,"Founder, Owner & Chief Executive Officer",Trading & DeFi,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Adam — I'll skip the congrats.
+
+You're racing to settle perps in 400 milliseconds, but speed cuts both ways — the day a liquidation or fill lands a fraction late, the loss is already locked in and nobody can reverse it, which is the exact part worth proving right before volume finds it.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+khaled@pluralplatform.com,Khaled,Plural,Co-Founder,Payments & Stablecoins,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Khaled — skipping the congrats.
+
+Letting people put in as little as $10 means thousands of small investors, and one error in how yield or ownership of a solar project is recorded becomes a payout you can't quietly fix — it's a public dispute over real money.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+henry.zhang@digift.com.sg,Henry,DigiFT,Founder & CEO,Trading & DeFi,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Henry — I'll skip the congrats.
+
+When you tokenize Treasuries and bonds and settle them through licensed custodians, one mismatch between what's recorded and what the custodian actually holds breaks the whole claim — and that's the regulator's first question.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+sami@transak.com,Sami,Transak,Co-Founder & CEO,Payments & Stablecoins,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Sami — skipping the congrats.
+
+You sit on the seam where real bank money turns into digital assets across 155 countries, and that's exactly where a settlement or KYC slip means funds left someone's card and landed wrong — with a chargeback or fine that's yours, not theirs.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+ac@nuconstruct.xyz,Anton,NuConstruct,"Founder, CEO",Trading & DeFi,P1,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Anton — I'll skip the congrats.
+
+Sitting in the execution path slicing blocks into sealed-bid rounds, one ordering or settlement mistake doesn't get retried — it's already final for every trade that flowed through you, which is the part worth getting provably right before volume finds it.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+david@permianlabs.xyz,David,USD AI (Permian Labs),CEO and Co-founder,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"David — I'll skip the congrats.
+
+You raised to scale USD AI (Permian Labs). The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+avinash@stableyard.fi,Avinash,Stableyard,CEO & Co-Founder,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Avinash — skipping the congrats.
+
+You raised to move more money through Stableyard. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+mateusz@elastics.ai,Mateusz,Elastics,Co-Founder and CTO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Mateusz — I'll skip the congrats.
+
+You raised to scale Elastics. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+dylan@otomato.xyz,Dylan,Otomato,COO & Co-founder,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Dylan — I'll skip the congrats.
+
+You raised to scale Otomato. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+richard@commondefense.ai,Richard,AWARP (LADT),CEO,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Richard — skipping the congrats.
+
+You raised to move more money through AWARP (LADT). At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+windra@sizeprop.com,Windra,SizeProp,Founder,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Windra — I'll skip the congrats.
+
+You raised to scale SizeProp. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+ilarbi@ouinex.com,Ilies,Ouinex,CEO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Ilies — I'll skip the congrats.
+
+You raised to scale Ouinex. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+renat@utexo.com,Renat,Utexo,Co-founder & CTO,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Renat — skipping the congrats.
+
+You raised to move more money through Utexo. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+ben@omoomi.io,Ben,Libeara,Chief Technology Officer and Co-Founder,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Ben — I'll skip the congrats.
+
+You raised to scale Libeara. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+nima@mirageprivacy.com,Nima,Mirage,Founder,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Nima — skipping the congrats.
+
+You raised to move more money through Mirage. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+sungmin@heliosfinance.xyz,Michael,Helios Finance,CTO and Cofounder,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Michael — I'll skip the congrats.
+
+You raised to scale Helios Finance. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+david@stackbitcoin.co.uk,David,Stack BTC,CEO,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"David — skipping the congrats.
+
+You raised to move more money through Stack BTC. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+pedro@unblockpay.com,Pedro,UnblockPay,Co-founder & CTO,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Pedro — skipping the congrats.
+
+You raised to move more money through UnblockPay. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+lucas@lendasat.com,Lucas,Lendasat,Co-founder & CTO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Lucas — I'll skip the congrats.
+
+You raised to scale Lendasat. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+pablo.ojanguren@dextools.io,Pablo,PERPTools,CTO & Partner,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Pablo — I'll skip the congrats.
+
+You raised to scale PERPTools. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+alec@ruvo.com,Alec,Ruvo (ex Cacao),Co-Founder & CEO,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Alec — skipping the congrats.
+
+You raised to move more money through Ruvo (ex Cacao). At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jason.low@penguinsecurities.sg,Jason,Penguin Securities,Chief Technology Officer,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Jason — skipping the congrats.
+
+You raised to move more money through Penguin Securities. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+parker@apyx.fi,Parker,Apyx,Chairman and CEO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Parker — I'll skip the congrats.
+
+You raised to scale Apyx. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+corey@ego.tech,Corey,TBD,Co-Founder,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Corey — I'll skip the congrats.
+
+You raised to scale TBD. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+james.brownlee@t-0.network,James,t-0 Network,Chief Executive Officer,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"James — skipping the congrats.
+
+You raised to move more money through t-0 Network. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jf@birchhill.io,Jack,Birch Hill Holdings,CTO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Jack — I'll skip the congrats.
+
+You raised to scale Birch Hill Holdings. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+ben@superset.finance,Ben,Superset,Co-Founder & CTO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Ben — I'll skip the congrats.
+
+You raised to scale Superset. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+lewison@photonpay.com,Lewison,PhotonPay,Founder & CEO,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Lewison — skipping the congrats.
+
+You raised to move more money through PhotonPay. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+georges@euclidprotocol.io,Georges,Euclid Protocol,Founder & CEO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Georges — I'll skip the congrats.
+
+You raised to scale Euclid Protocol. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+cd@projecteleven.com,Conor,Project Eleven,Co-Founder & CTO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Conor — skipping the congrats.
+
+You raised to grow Project Eleven, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+prastut@asgardfi.com,Prastut,Asgard Finance,CEO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Prastut — I'll skip the congrats.
+
+You raised to scale Asgard Finance. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+niko.konstantakos@fidelity.com,Niko,Altura,Co-founder & CTO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Niko — I'll skip the congrats.
+
+You raised to scale Altura. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+justin@coinbax.com,Justin,Coinbax,Chief Technology Officer,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Justin — skipping the congrats.
+
+You raised to move more money through Coinbax. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+adithya@usehaven.ai,Adithya,Haven,Co-founder & CTO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Adithya — I'll skip the congrats.
+
+You raised to scale Haven. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+ramses@moto-card.com,Ramses,Moto,CTO,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Ramses — skipping the congrats.
+
+You raised to move more money through Moto. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+daniel@ezeebit.com,Daniel,Ezeebit,Co-Founder and Chief Executive Officer,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Daniel — skipping the congrats.
+
+You raised to move more money through Ezeebit. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+billy@creatorfi.finance,Billy,CreatorFi (Insomnia Labs),CEO & Co-Founder,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Billy — I'll skip the congrats.
+
+You raised to scale CreatorFi (Insomnia Labs). The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+sveat@rhuna.io,Sveatoslav,Rhuna,Co-Founder & CEO,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Sveatoslav — skipping the congrats.
+
+You raised to move more money through Rhuna. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+evan@hivemapper.com,Evan,Bee Maps,CTO and Co-Founder,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Evan — skipping the congrats.
+
+You raised to grow Bee Maps, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+steve@calstec.com,Steve,Kotani Pay,CTO,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Steve — skipping the congrats.
+
+You raised to move more money through Kotani Pay. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+justin@kinetiq.xyz,Justin,Kinetiq,Co-Founder and CTO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Justin — I'll skip the congrats.
+
+You raised to scale Kinetiq. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+mah@troolla.com,Mah,Maiga AI,Co-Founder & CTO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Mah — I'll skip the congrats.
+
+You raised to scale Maiga AI. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+surendra@openassets.to,Surendra,Pointsville,"Co-Founder, COO & CTO",RWA & Tokenization,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,auditor and a court,"Surendra — skipping the congrats.
+
+You're building Pointsville so a token stands for a real asset. That means the engineering has to hold up in front of an auditor and a court — not just on testnet.
+
+Closing that gap is exactly what we do. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+kidong@voltgroup.io,Kidong,BaseVol,Co-founder,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Kidong — I'll skip the congrats.
+
+You raised to scale BaseVol. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+michael@shiftrwa.xyz,Michael,Shift,Co-Founder & President,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Michael — I'll skip the congrats.
+
+You raised to scale Shift. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+santiago@inversioncap.com,Santiago,Inversion Capital,Founder & CEO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Santiago — skipping the congrats.
+
+You raised to grow Inversion Capital, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+walter@kaleidoswap.com,Walter,KaleidoSwap,Co-founder and CEO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Walter — I'll skip the congrats.
+
+You raised to scale KaleidoSwap. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+r.mcgregor-smith@sabien-tech.co.uk,Ranald,Satsuma Technology Plc (SATS.L),Executive Chairman,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Ranald — skipping the congrats.
+
+You raised to grow Satsuma Technology Plc (SATS.L), which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+lu@subzero.xyz,Lu,Subzero Labs (Rialo),Cofounder and CTO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Lu — skipping the congrats.
+
+You raised to grow Subzero Labs (Rialo), which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+narek@hylo.so,Narek,Hylo,Co-Founder & CEO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Narek — I'll skip the congrats.
+
+You raised to scale Hylo. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+cwalk@creditcoop.xyz,Christopher,Credit Coop,Founder & CEO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Christopher — I'll skip the congrats.
+
+You raised to scale Credit Coop. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+david@honeycoin.app,David,HoneyCoin,CEO/CTO & Founder,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"David — skipping the congrats.
+
+You raised to move more money through HoneyCoin. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+zixi.zhu@stablestock.finance,Zixi,StableStock,Founder & CEO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Zixi — I'll skip the congrats.
+
+You raised to scale StableStock. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+andrew@top.team,Andrew,The Open Platform (TOP),CEO and Founder,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Andrew — skipping the congrats.
+
+You raised to grow The Open Platform (TOP), which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+mohammed@bitzero.com,Mohammed,Bitzero,Founder & CEO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Mohammed — skipping the congrats.
+
+You raised to grow Bitzero, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jazel@bankrsolutions.com,Jazel,Bankr,Founder & CEO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Jazel — I'll skip the congrats.
+
+You raised to scale Bankr. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+greg@sphx.io,Greg,Sphinx Protocol,CEO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Greg — I'll skip the congrats.
+
+You raised to scale Sphinx Protocol. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+daniele@twyne.xyz,Daniele,Twyne,Co-Founder & Head of Research,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Daniele — I'll skip the congrats.
+
+You raised to scale Twyne. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+raghul@byzanlink.com,Raghul,Byzanlink,CTO,Payments & Stablecoins,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Raghul — skipping the congrats.
+
+You raised to move more money through Byzanlink. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+joey@nookapp.xyz,Joey,Nook,CEO,Trading & DeFi,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Joey — I'll skip the congrats.
+
+You raised to scale Nook. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+s.kuznetsov@inxy.io,Serge,INXY Payments,Co-Founder,Payments & Stablecoins,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Serge — skipping the congrats.
+
+You raised to move more money through INXY Payments. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+pritam.dutta@zoth.io,Pritam,Zoth,Founder & CEO,Trading & DeFi,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Pritam — I'll skip the congrats.
+
+You raised to scale Zoth. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+paolo@checksig.com,Paolo,CheckSig,Co-founder and Operating Officer,Payments & Stablecoins,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Paolo — skipping the congrats.
+
+You raised to move more money through CheckSig. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jeremy.ng@openeden.com,Jeremy,OpenEden,CEO,Payments & Stablecoins,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Jeremy — skipping the congrats.
+
+You raised to move more money through OpenEden. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+morrad@takadao.io,Morrad,Takadao,CEO | Co-founder at Takadao,Payments & Stablecoins,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Morrad — skipping the congrats.
+
+You raised to move more money through Takadao. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+bentzi@utila.io,Bentzi,Utila,Co-Founder & CEO,Infra & Chains,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Bentzi — skipping the congrats.
+
+You raised to grow Utila, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+yadheedhya@pearprotocol.io,Yadheedhya,Pear Protocol,Founding Engineer,Trading & DeFi,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Yadheedhya — I'll skip the congrats.
+
+You raised to scale Pear Protocol. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jonny@thefootballfunfactory.co.uk,Jonny,Football Fun,Co-Founder & Director,Trading & DeFi,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Jonny — I'll skip the congrats.
+
+You raised to scale Football Fun. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+gal@hypernative.io,Gal,Hypernative,Co-Founder and CEO,Infra & Chains,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Gal — skipping the congrats.
+
+You raised to grow Hypernative, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+alejandro.rosas@didit.me,Alejandro,Didit,Co-Founder & CTO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Alejandro — skipping the congrats.
+
+You raised to grow Didit, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+v@navalabs.ai,Vyas,Nava Labs,Co-Founder & CEO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Vyas — skipping the congrats.
+
+You raised to grow Nava Labs, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+zach@very.org,Zach,VeryAI,"Founder, CEO",Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Zach — skipping the congrats.
+
+You raised to grow VeryAI, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+roque@eurekalabs.io,Roque,Eureka Labs,"Managing Partner, CAIO & CTO",Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Roque — skipping the congrats.
+
+You raised to grow Eureka Labs, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jon.ollwerther@intrado.com,Jon,Konnex,CEO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Jon — skipping the congrats.
+
+You raised to grow Konnex, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+roie@surf.ai,Roie,Surf,CTO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Roie — skipping the congrats.
+
+You raised to grow Surf, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+dliberman@humanism.is,David,Gonka,Co-Founder & CTO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"David — skipping the congrats.
+
+You raised to grow Gonka, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+leo@cipherowl.com,Leo,CipherOwl,Co-Founder & CEO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Leo — skipping the congrats.
+
+You raised to grow CipherOwl, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+konrad.stepniak@bp.com,Konrad,Raiku,Head of Engineering,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Konrad — skipping the congrats.
+
+You raised to grow Raiku, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+paolo@freename.io,Paolo,Freename,CTO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Paolo — skipping the congrats.
+
+You raised to grow Freename, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+yatharth@clusterprotocol.io,Yatharth,Cluster Protocol,Co-Founder,Infra & Chains,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Yatharth — skipping the congrats.
+
+You raised to grow Cluster Protocol, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+daniel@spacecomputer.io,Daniel,SpaceComputer,CEO and Co-Founder,Infra & Chains,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Daniel — skipping the congrats.
+
+You raised to grow SpaceComputer, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+mary@orochi.network,Mary,Orochi Network,Chief Executive Officer,Infra & Chains,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Mary — skipping the congrats.
+
+You raised to grow Orochi Network, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jon.wilson@grassvalley.com,Jon,Grass,Chief Executive Officer,Infra & Chains,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Jon — skipping the congrats.
+
+You raised to grow Grass, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+mike@taluslabs.xyz,Michael,Talus Labs,"Founder, CEO",Infra & Chains,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Michael — skipping the congrats.
+
+You raised to grow Talus Labs, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+matt@hemi.xyz,Matthew,Hemi Labs,"Chairman of Bloq, Co-Founder of Hemi",Infra & Chains,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Matthew — skipping the congrats.
+
+You raised to grow Hemi Labs, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+bob@questflow.ai,Bob,Questflow,CEO & Co-Founder,Infra & Chains,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Bob — skipping the congrats.
+
+You raised to grow Questflow, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+vlad@thenvoi.com,Vlad,AIW3,CTO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Vlad — skipping the congrats.
+
+You raised to grow AIW3, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+vule@kaisar.io,Vu,Kaisar Network,Co-Founder & CEO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Vu — skipping the congrats.
+
+You raised to grow Kaisar Network, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+y.utsumi@extramile.jp,Yosuke,Xross Road,Founder & CEO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Yosuke — skipping the congrats.
+
+You raised to grow Xross Road, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+chris@bluprynt.com,Chris,Bluprynt,CEO & Founder,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Chris — skipping the congrats.
+
+You raised to grow Bluprynt, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+vladimir@unicity-labs.com,Vladimir,Unicity Labs,Co-founder & CTO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Vladimir — skipping the congrats.
+
+You raised to grow Unicity Labs, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+agustin@truenorth.co,Agustin,TrueNorth,Co-Founder & CTO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Agustin — skipping the congrats.
+
+You raised to grow TrueNorth, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+ameen@0xbow.io,Ameen,0xbow,CTO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Ameen — skipping the congrats.
+
+You raised to grow 0xbow, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+adam.kramer@trickgs.com,Adam,ME3 (Gacha Galaxy),COO & Acting-CTO,Infra & Chains,P2,round1,verified,bounced,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Adam — skipping the congrats.
+
+You raised to grow ME3 (Gacha Galaxy), which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+dbaranowski@chatterpay.net,Diego,ChatterPay,Co-founder & CTO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Diego — skipping the congrats.
+
+You raised to grow ChatterPay, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+mark@caesar.xyz,Mark,Caesar,Founder,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Mark — skipping the congrats.
+
+You raised to grow Caesar, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+aviramr@aui.io,Aviram,Quack AI,Co-founder & CTO,Infra & Chains,P2,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Aviram — skipping the congrats.
+
+You raised to grow Quack AI, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+lain.hancock@ibsa.com,Lain,Interstate,Chief Executive Officer,Infra & Chains,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Lain — skipping the congrats.
+
+You raised to grow Interstate, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+rsanchez@ryder.com,Robert,Ryder,Chief Executive Officer,Infra & Chains,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Robert — skipping the congrats.
+
+You raised to grow Ryder, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+tareq@fluenthealthcare.co,Tareq,Fluent Labs,Senior Software Engineer,Infra & Chains,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Tareq — skipping the congrats.
+
+You raised to grow Fluent Labs, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+rhefner@hashpower.tech,Robert,HashPower,Founder,Infra & Chains,P2,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Robert — skipping the congrats.
+
+You raised to grow HashPower, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+vishnu.patankar@payward.com,Vishnu,Payward,CTO,Payments & Stablecoins,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Vishnu — skipping the congrats.
+
+You raised to move more money through Payward. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+ukahkelechi@gmail.com,Kelechi,Novig,Co-founder & CTO,Trading & DeFi,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Kelechi — I'll skip the congrats.
+
+You raised to scale Novig. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+pritesh@real.finance,Pritesh,Real Finance,CTO,RWA & Tokenization,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,auditor and a court,"Pritesh — skipping the congrats.
+
+You're building Real Finance so a token stands for a real asset. That means the engineering has to hold up in front of an auditor and a court — not just on testnet.
+
+Closing that gap is exactly what we do. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+sebastien@future.holdings,Sebastien,Future Holdings,CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Sebastien — I'll skip the congrats.
+
+You raised to scale Future Holdings. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+mike.sumner@custodiex.com,Mike,Amdax,Co-founder & CTO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Mike — I'll skip the congrats.
+
+You raised to scale Amdax. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+samuel.briole@spiko.io,Samuel,Spiko,CTO,Trading & DeFi,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Samuel — I'll skip the congrats.
+
+You raised to scale Spiko. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+alex.cho@architect-us.com,Alex,Architect,Chief Executive Officer,Trading & DeFi,P3,round2_new,extrapolated,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Alex — I'll skip the congrats.
+
+You raised to scale Architect. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+danil.alexeyevsky@aipaywithcrypto.com,Danil,AI Pay with Crypto (APC),Chief Technology Officer,Payments & Stablecoins,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Danil — skipping the congrats.
+
+You raised to move more money through AI Pay with Crypto (APC). At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jeff.kaufman@jewelbank.com,Jeff,Jewel Bank,Chief Technology Officer,Payments & Stablecoins,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Jeff — skipping the congrats.
+
+You raised to move more money through Jewel Bank. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+sun.huang@unitas.so,Sun,Unitas Labs,"Co-Founder, Board Member and Chief Technology Officer",Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Sun — I'll skip the congrats.
+
+You raised to scale Unitas Labs. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+will.gaybrick@stripe.com,Will,Stripe,"President, Technology and Business",Payments & Stablecoins,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Will — skipping the congrats.
+
+You raised to move more money through Stripe. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+daniel@habittrade.com,Daniel,HabitTrade,Founder and CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Daniel — I'll skip the congrats.
+
+You raised to scale HabitTrade. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+nathaniel.harris@axt.fun,Nathaniel,AetheriumX,Chief Technology Officer (CTO),Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Nathaniel — I'll skip the congrats.
+
+You raised to scale AetheriumX. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+gabriel@noise.xyz,Gabriel,Noise,"Co-Founder, CEO",Trading & DeFi,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Gabriel — I'll skip the congrats.
+
+You raised to scale Noise. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+marshall@zoofi.io,Marshall,Zoo Finance (ex IndexZoo),Co-founder & CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Marshall — I'll skip the congrats.
+
+You raised to scale Zoo Finance (ex IndexZoo). The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+kevin@kbrizzle.com,Kevin,Cascade,Co-Founder and CEO,Payments & Stablecoins,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Kevin — skipping the congrats.
+
+You raised to move more money through Cascade. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+rosanna@ethgas.com,Rosanna,ETHGAS,Chief Technology Officer,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Rosanna — I'll skip the congrats.
+
+You raised to scale ETHGAS. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+leslie.alexander@kapkap.io,Leslie,KapKap,CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Leslie — I'll skip the congrats.
+
+You raised to scale KapKap. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+nick@iamnickrose.com,Nick,Fanable (Ethernal Labs),Co-founder & CEO,RWA & Tokenization,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,auditor and a court,"Nick — skipping the congrats.
+
+You're building Fanable (Ethernal Labs) so a token stands for a real asset. That means the engineering has to hold up in front of an auditor and a court — not just on testnet.
+
+Closing that gap is exactly what we do. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+vova@lab.pro,Vova,Lab,Founder & CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Vova — I'll skip the congrats.
+
+You raised to scale Lab. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+mark.berkovich@keabank.com,Mark,Kea,CEO,Payments & Stablecoins,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Mark — skipping the congrats.
+
+You raised to move more money through Kea. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+alex.chow@hyperbot.network,Chow,Hyperbot,Founder & CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Chow — I'll skip the congrats.
+
+You raised to scale Hyperbot. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+alpha.xaptra@digitalx.com,Alpha,DigitalX,Chief Technology Officer,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Alpha — I'll skip the congrats.
+
+You raised to scale DigitalX. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+gb@flutterwave.com,Olugbenga,Flutterwave,Founder & CEO,Payments & Stablecoins,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Olugbenga — skipping the congrats.
+
+You raised to move more money through Flutterwave. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+roman.drapeko@boundary.finance,Roman,Boundary,Co-Founder & CTO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Roman — I'll skip the congrats.
+
+You raised to scale Boundary. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+celinia@fortuneprotocol.io,Celinia,Fortune Protocol,Co-Founder and CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Celinia — I'll skip the congrats.
+
+You raised to scale Fortune Protocol. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+john@templedigitalgroup.com,John,Temple,Co-founder and CTO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"John — I'll skip the congrats.
+
+You raised to scale Temple. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+martin.kimani@biying.ink,Martin,Betwin Labs (BMBY),Technical Lead,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Martin — I'll skip the congrats.
+
+You raised to scale Betwin Labs (BMBY). The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+dingaling@predict.fun,dingaling,Predict fun,Founder,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"dingaling — I'll skip the congrats.
+
+You raised to scale Predict fun. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+info@caex.com.vn,Nguyen,CAEX Exchange,Chairman and CEO,Payments & Stablecoins,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Nguyen — skipping the congrats.
+
+You raised to move more money through CAEX Exchange. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+zhiguo@wooshpay.com,Zhiguo,WooshPay,Founder & CEO,Payments & Stablecoins,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Zhiguo — skipping the congrats.
+
+You raised to move more money through WooshPay. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+fudrick@robin.markets,Fudrick,Robin Markets,Founder & CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Fudrick — I'll skip the congrats.
+
+You raised to scale Robin Markets. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+james.chang@omenx.com,James,OmenX,Founder & CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"James — I'll skip the congrats.
+
+You raised to scale OmenX. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+kevin@edgex.exchange,Kevin,edgeX,CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Kevin — I'll skip the congrats.
+
+You raised to scale edgeX. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+akshayrajagopal10@gmail.com,Akshay,Fireplace,Co-Founder and CTO,Trading & DeFi,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Akshay — I'll skip the congrats.
+
+You raised to scale Fireplace. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+cyril.owona@dreamcash.xyz,Cyril,Dreamcash,CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Cyril — I'll skip the congrats.
+
+You raised to scale Dreamcash. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+vincent@pan.network,Dr.,Pan Network,CTO,Payments & Stablecoins,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Dr. — skipping the congrats.
+
+You raised to move more money through Pan Network. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+arash@bento.fun,Arash,Bento fun,Co-founder & CTO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Arash — I'll skip the congrats.
+
+You raised to scale Bento fun. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+steve.kim@42.space,Steve,42 space,CTO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Steve — I'll skip the congrats.
+
+You raised to scale 42 space. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+tarik@goblin.fi,Tarik,Goblin Finance,Founder and CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Tarik — I'll skip the congrats.
+
+You raised to scale Goblin Finance. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+bruce@hodlher.ai,Bruce,HodlHer,CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Bruce — I'll skip the congrats.
+
+You raised to scale HodlHer. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+vishudhayal0909@gmail.com,Vishvendra,Strata,Co-Founder and CEO,Trading & DeFi,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Vishvendra — I'll skip the congrats.
+
+You raised to scale Strata. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+info@nofabusinessconsulting.com,Farhad,Nofa,CEO & Founder,Trading & DeFi,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Farhad — I'll skip the congrats.
+
+You raised to scale Nofa. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+minik.kim@nexton.solutions,Minik,Nexton,Founder,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Minik — I'll skip the congrats.
+
+You raised to scale Nexton. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+peter.tan@nemesis.trade,Peter,Nemesis,Founder and CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Peter — I'll skip the congrats.
+
+You raised to scale Nemesis. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+colin@pieverse.io,Colin,Pieverse,Co-founder & CEO,Payments & Stablecoins,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Colin — skipping the congrats.
+
+You raised to move more money through Pieverse. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+joseph.abraham@finchain.global,Joseph,FinChain,Co-Founder & CEO,RWA & Tokenization,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,auditor and a court,"Joseph — skipping the congrats.
+
+You're building FinChain so a token stands for a real asset. That means the engineering has to hold up in front of an auditor and a court — not just on testnet.
+
+Closing that gap is exactly what we do. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+gabriel.lyra@blindpay.com,Gabriel,BlindPay,Co-Founder & CTO,Payments & Stablecoins,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Gabriel — skipping the congrats.
+
+You raised to move more money through BlindPay. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+rpinto@1kosmos.com,Rohan,1Kosmos,CTO & Co-founder,Infra & Chains,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Rohan — skipping the congrats.
+
+You raised to grow 1Kosmos, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+leo@e36knots.com,Léo,Suzaku,Co-founder & CTO,Trading & DeFi,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Léo — I'll skip the congrats.
+
+You raised to scale Suzaku. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+joe@mainstreet.finance,Joe,Main Street,CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Joe — I'll skip the congrats.
+
+You raised to scale Main Street. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jason@olaxbt.xyz,Jason,OlaXBT,Founder & CEO,Trading & DeFi,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Jason — I'll skip the congrats.
+
+You raised to scale OlaXBT. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+michael.li@yieldclub.io,Michael,YieldClub,CTO,Payments & Stablecoins,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Michael — skipping the congrats.
+
+You raised to move more money through YieldClub. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+randy.huang@aro.network,Randy,ARO Network,"Co-founder, Head of Research & Technology",Infra & Chains,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Randy — skipping the congrats.
+
+You raised to grow ARO Network, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+samed@tori.finance,,Tori Finance,Founder,Trading & DeFi,P3,round1,org_search_review,needs_name,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round," — I'll skip the congrats.
+
+You raised to scale Tori Finance. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jeremy.guyet@helioschain.network,Jeremy,Helios,CTO,Infra & Chains,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Jeremy — skipping the congrats.
+
+You raised to grow Helios, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+gadi.ghai@bitcoinos.build,Gadi,BitcoinOS,CTO,Infra & Chains,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Gadi — skipping the congrats.
+
+You raised to grow BitcoinOS, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+fraser@algebralabs.ai,,Nolan,Founder,Trading & DeFi,P3,round1,org_search_review,needs_name,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round," — I'll skip the congrats.
+
+You raised to scale Nolan. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+kim.seongsik@cointel.io,Kim,Cointel,CTO,Infra & Chains,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Kim — skipping the congrats.
+
+You raised to grow Cointel, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+leo.chen@psdn.ai,Leo,Poseidon,Chief Technology Officer,Infra & Chains,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Leo — skipping the congrats.
+
+You raised to grow Poseidon, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+steve.smith@acm.plus,Steve,ACM+ (AI Cross Matrix),Technical Advisor,Infra & Chains,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Steve — skipping the congrats.
+
+You raised to grow ACM+ (AI Cross Matrix), which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jeremy@sealcoin.ai,Jeremy,Sealcoin,Chief Technology Officer,Infra & Chains,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Jeremy — skipping the congrats.
+
+You raised to grow Sealcoin, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+tbd,TBD,Voran,TBD,Infra & Chains,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"TBD — skipping the congrats.
+
+You raised to grow Voran, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+harry@harryhowardai.com,Harry,Howard AI,CEO,Infra & Chains,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Harry — skipping the congrats.
+
+You raised to grow Howard AI, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+ryan.meng@blocksecx.com,Ryan,Block Security Arena,CTO,Infra & Chains,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Ryan — skipping the congrats.
+
+You raised to grow Block Security Arena, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+aaron.chan@dgrid.ai,Aaron,DGrid AI,CTO,Infra & Chains,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Aaron — skipping the congrats.
+
+You raised to grow DGrid AI, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+kerching@helalabs.com,Kerching,Hela Labs,Co-founder & CTO,Infra & Chains,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Kerching — skipping the congrats.
+
+You raised to grow Hela Labs, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+c@farworld.gg,Charlie,Remix (ex Farcade),Co-founder & CTO,AI x Crypto,P3,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,before it sets,"Charlie — skipping the congrats.
+
+You're shipping Remix (ex Farcade) fast, probably with a lot of AI in the loop. That makes execution cheap — and the wrong architectural assumption permanent before anyone notices it.
+
+We catch those before they set. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+januszgrze789@gmail.com,Janusz,Bitcoin Layers,Founder,Infra & Chains,P3,round1,sheet_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Janusz — skipping the congrats.
+
+You raised to grow Bitcoin Layers, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+bamnan.dikwal@dkloud.io,Bamnan,dKloud,Founder & CEO,Infra & Chains,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Bamnan — skipping the congrats.
+
+You raised to grow dKloud, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+gustaf.munro@arcnova.tv,Gustaf,ArcNova,Co-founder,AI x Crypto,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,before it sets,"Gustaf — skipping the congrats.
+
+You're shipping ArcNova fast, probably with a lot of AI in the loop. That makes execution cheap — and the wrong architectural assumption permanent before anyone notices it.
+
+We catch those before they set. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+risa@budcreate.xyz,Risa,Tomoland,Co-founder & CEO,AI x Crypto,P3,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,before it sets,"Risa — skipping the congrats.
+
+You're shipping Tomoland fast, probably with a lot of AI in the loop. That makes execution cheap — and the wrong architectural assumption permanent before anyone notices it.
+
+We catch those before they set. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+pijush@thepeakai.com,,PeakAI,Founding Team,Infra & Chains,P3,round1,org_search_review,needs_name,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you," — skipping the congrats.
+
+You raised to grow PeakAI, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+steven@kolect.ai,Steven,KOLect,Founder & CEO,AI x Crypto,P3,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,before it sets,"Steven — skipping the congrats.
+
+You're shipping KOLect fast, probably with a lot of AI in the loop. That makes execution cheap — and the wrong architectural assumption permanent before anyone notices it.
+
+We catch those before they set. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+mable@fsl.com,Mable,Trends,Founder,Consumer/Gaming/Social,P3,round1,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,the part you can't patch,"Mable — I'll skip the congrats.
+
+You raised to grow Trends. The pieces users actually trust — balances, ownership, payouts — are the ones where a quiet bug becomes real money or real items you can't claw back.
+
+We make those parts provably correct before they ship. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+gonzalo@charms.ai,Gonzalo,Charms,Co-founder,AI x Crypto,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,before it sets,"Gonzalo — skipping the congrats.
+
+You're shipping Charms fast, probably with a lot of AI in the loop. That makes execution cheap — and the wrong architectural assumption permanent before anyone notices it.
+
+We catch those before they set. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+taekyun.ahn@marina-protocol.com,Taekyun,Marina Protocol,Co-founder & CEO,Consumer/Gaming/Social,P3,round1,inferred_unverified,verify_email,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,the part you can't patch,"Taekyun — I'll skip the congrats.
+
+You raised to grow Marina Protocol. The pieces users actually trust — balances, ownership, payouts — are the ones where a quiet bug becomes real money or real items you can't claw back.
+
+We make those parts provably correct before they ship. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+michael.hunley@dps.gg,Michael,Distinct Possibility Studios,CTO & Founder,Consumer/Gaming/Social,P4,round1,verified,optional,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,the part you can't patch,"Michael — I'll skip the congrats.
+
+You raised to grow Distinct Possibility Studios. The pieces users actually trust — balances, ownership, payouts — are the ones where a quiet bug becomes real money or real items you can't claw back.
+
+We make those parts provably correct before they ship. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+navneet@supergaming.com,Navneet,SuperGaming,Co-Founder & CTO,Consumer/Gaming/Social,P4,round1,verified,optional,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,the part you can't patch,"Navneet — I'll skip the congrats.
+
+You raised to grow SuperGaming. The pieces users actually trust — balances, ownership, payouts — are the ones where a quiet bug becomes real money or real items you can't claw back.
+
+We make those parts provably correct before they ship. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+andrew@cade.market,Andrew,Pumpcade,Chief Technology Officer,Consumer/Gaming/Social,P4,round1,inferred_unverified,optional,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,the part you can't patch,"Andrew — I'll skip the congrats.
+
+You raised to grow Pumpcade. The pieces users actually trust — balances, ownership, payouts — are the ones where a quiet bug becomes real money or real items you can't claw back.
+
+We make those parts provably correct before they ship. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+gm@realgo.game,Parker,RealGo,Founder & CEO,Consumer/Gaming/Social,P4,round1,verified,optional,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,the part you can't patch,"Parker — I'll skip the congrats.
+
+You raised to grow RealGo. The pieces users actually trust — balances, ownership, payouts — are the ones where a quiet bug becomes real money or real items you can't claw back.
+
+We make those parts provably correct before they ship. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+james@watch.fun,James,Watch fun,Co-founder and CEO,Consumer/Gaming/Social,P4,round1,inferred_unverified,optional,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,the part you can't patch,"James — I'll skip the congrats.
+
+You raised to grow Watch fun. The pieces users actually trust — balances, ownership, payouts — are the ones where a quiet bug becomes real money or real items you can't claw back.
+
+We make those parts provably correct before they ship. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+yuki@lootgo.app,Yuki,LootGO,CEO / Co-founder,Consumer/Gaming/Social,P4,round1,verified,optional,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,the part you can't patch,"Yuki — I'll skip the congrats.
+
+You raised to grow LootGO. The pieces users actually trust — balances, ownership, payouts — are the ones where a quiet bug becomes real money or real items you can't claw back.
+
+We make those parts provably correct before they ship. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+ludovic@capybobo.io,Ludovic,CapyBobo,Co-founder & COO,Consumer/Gaming/Social,P4,round1,inferred_unverified,optional,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,the part you can't patch,"Ludovic — I'll skip the congrats.
+
+You raised to grow CapyBobo. The pieces users actually trust — balances, ownership, payouts — are the ones where a quiet bug becomes real money or real items you can't claw back.
+
+We make those parts provably correct before they ship. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+aviad@gigaverse.com,Aviad,Gigaverse (GLHF),Co-founder & Chief Technology Officer,Consumer/Gaming/Social,P4,round1,verified,optional,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,the part you can't patch,"Aviad — I'll skip the congrats.
+
+You raised to grow Gigaverse (GLHF). The pieces users actually trust — balances, ownership, payouts — are the ones where a quiet bug becomes real money or real items you can't claw back.
+
+We make those parts provably correct before they ship. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jakob@vayla.io,Jakob,Vayla,CEO / Co-Founder,Consumer/Gaming/Social,P4,round1,inferred_unverified,optional,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,the part you can't patch,"Jakob — I'll skip the congrats.
+
+You raised to grow Vayla. The pieces users actually trust — balances, ownership, payouts — are the ones where a quiet bug becomes real money or real items you can't claw back.
+
+We make those parts provably correct before they ship. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+yudong.tao@help.fun,Yudong,Help Fun,CTO,Other,P4,round1,inferred_unverified,optional,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Yudong — I'll skip the congrats.
+
+You raised to scale Help Fun. The expensive failures usually aren't the visible ones — they're the parts that move value and can't be undone once they're live.
+
+We make those parts provably correct before production does. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+simon.yu@playfirst.xyz,Simon,MoonClash (PlayFirst),CEO,Consumer/Gaming/Social,P4,round1,inferred_unverified,optional,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,the part you can't patch,"Simon — I'll skip the congrats.
+
+You raised to grow MoonClash (PlayFirst). The pieces users actually trust — balances, ownership, payouts — are the ones where a quiet bug becomes real money or real items you can't claw back.
+
+We make those parts provably correct before they ship. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+chris.yu@signalplus.com,Christy,SignalPlus,Chief Executive Officer,Trading & DeFi,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Christy — I'll skip the congrats.
+
+You raised to scale SignalPlus. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+victor@joinslash.com,Victor,Slash,"Co-Founder, CEO",Payments & Stablecoins,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Victor — skipping the congrats.
+
+You raised to move more money through Slash. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+ethan@talos.com,Ethan,Talos,Co-Founder & CTO,Trading & DeFi,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Ethan — I'll skip the congrats.
+
+You raised to scale Talos. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+joseph@rain.com,Joseph,Rain,Co-founder and CEO,Payments & Stablecoins,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Joseph — skipping the congrats.
+
+You raised to move more money through Rain. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+mario@deblock.com,Mario,Deblock,"Co-Founder, CTO",Payments & Stablecoins,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Mario — skipping the congrats.
+
+You raised to move more money through Deblock. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+dan@coinflowlabs.app,Daniel,Coinflow,CEO | Co-Founder,Payments & Stablecoins,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Daniel — skipping the congrats.
+
+You raised to move more money through Coinflow. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+edward@zerohash.com,Edward,Zerohash,CEO & Founder,Payments & Stablecoins,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Edward — skipping the congrats.
+
+You raised to move more money through Zerohash. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+dave@open-trade.io,David,OpenTrade,"Chief Executive Officer, Co-Founder",Trading & DeFi,REVIEW,round2_new,verified,verify_domain,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"David — I'll skip the congrats.
+
+You raised to scale OpenTrade. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+david@hata.io,David,Hata,Co-Founder & CEO,Payments & Stablecoins,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"David — skipping the congrats.
+
+You raised to move more money through Hata. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+patrick@megapot.io,Patrick,Megapot,Founder,Trading & DeFi,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Patrick — I'll skip the congrats.
+
+You raised to scale Megapot. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+sean@rate-x.io,Sean,RateX,Founder,Trading & DeFi,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Sean — I'll skip the congrats.
+
+You raised to scale RateX. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+magnus@fomo.no,Magnus,Fomo,Group CEO,Trading & DeFi,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Magnus — I'll skip the congrats.
+
+You raised to scale Fomo. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+francis@limitlessrec.co.uk,Francis,Limitless,Founder & Recruiter - Scaling End-to-end Digital Teams 🌎,Trading & DeFi,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Francis — I'll skip the congrats.
+
+You raised to scale Limitless. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+justin.lie@shield.com,Justin,Shield,Founder & CEO,Payments & Stablecoins,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Justin — skipping the congrats.
+
+You raised to move more money through Shield. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+adubost@oned2x.com,Anthony,D2X,Founder & Managing Director,Trading & DeFi,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Anthony — I'll skip the congrats.
+
+You raised to scale D2X. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jabrams@rails.com,Jeff,Rails,Founder | Creative Director,Trading & DeFi,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Jeff — I'll skip the congrats.
+
+You raised to scale Rails. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+simone.m@elliptic.co,Simone,Elliptic,Chief Executive Officer,Infra & Chains,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Simone — skipping the congrats.
+
+You raised to grow Elliptic, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+danial@plutus.it,Danial,Plutus,CEO & Founder,Payments & Stablecoins,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Danial — skipping the congrats.
+
+You raised to move more money through Plutus. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+kevin@doppel.com,Kevin,Doppel,Co-Founder and CEO,Infra & Chains,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Kevin — skipping the congrats.
+
+You raised to grow Doppel, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+jason@senpi.ai,Jason,Senpi,Founder and CEO,Trading & DeFi,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Jason — I'll skip the congrats.
+
+You raised to scale Senpi. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+rob@due.money,Robert,Due,"Co-Founder, CEO",Payments & Stablecoins,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,moving real money,"Robert — skipping the congrats.
+
+You raised to move more money through Due. At scale, ""close enough"" stops being a rounding error and becomes a refund you can't issue — and a compliance conversation you didn't want.
+
+We build money-movement that reconciles exactly, every time. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+evgeny@3jane.xyz,Evgeny,3Jane,Founding Full-Stack Engineer,Trading & DeFi,REVIEW,round2_new,extrapolated,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,after the round,"Evgeny — I'll skip the congrats.
+
+You raised to scale 3Jane. The part that bites usually isn't launch — it's the first liquidation or oracle path that moves money you can't claw back.
+
+We make that path provably correct before production does it for you. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+david.liu@uniblock.dev,David,Uniblock,CTO and Co-founder,Infra & Chains,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"David — skipping the congrats.
+
+You raised to grow Uniblock, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+kales@taceo.io,Daniel,Taceo,"Co-Founder, CTO",Infra & Chains,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Daniel — skipping the congrats.
+
+You raised to grow Taceo, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+steve@4pillars.io,Namwoong,Four Pillars,Co-Founder / CEO,Infra & Chains,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Namwoong — skipping the congrats.
+
+You raised to grow Four Pillars, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"
+sam@riselabs.xyz,Sam,Rise Labs,"Founder, CEO",Infra & Chains,REVIEW,round2_new,verified,ready,Aaron Contorer,aaron@gofpblock.com,aaron@gofpblock.com,1,0,when they build on you,"Sam — skipping the congrats.
+
+You raised to grow Rise Labs, which means more teams are about to build on top of you. Past a point, your edge cases become their outages — and your bugs are permanent in someone else's product.
+
+We harden infrastructure for exactly that moment. Worth a look?
+
+Aaron Contorer
+Founder & CEO, <a href=""https://fpblock.com"">FP Block</a>"

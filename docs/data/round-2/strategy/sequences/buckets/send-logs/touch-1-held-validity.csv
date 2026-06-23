@@ -1,0 +1,217 @@
+email,first_name,company,tier,send_readiness,email_trust,domain,mx_kind,mx_host,flags,verdict
+youngmin.kim@coinone.co.kr,Kim,Coinone,P3,verify_email,inferred_unverified,coinone.co.kr,mx,alt3.aspmx.l.google.com,,mx_ok
+alex.johnson@omnipact.io,Alex,OmniPact,P3,verify_email,inferred_unverified,omnipact.io,mx,mailstore1.secureserver.net,,mx_ok
+simon@zbdpay.com,Simon,ZBD (ex Zebedee),P3,verify_email,inferred_unverified,zbdpay.com,mx,smtp.google.com,,mx_ok
+geoff.byers@tenx.inc,Geoff,TenX Protocols,P3,verify_email,inferred_unverified,tenx.inc,mx,smtp.google.com,,mx_ok
+norma@ddc.xyz,Norma,DDC Enterprise,P3,verify_email,inferred_unverified,ddc.xyz,mx,ddc-xyz.mail.protection.outlook.com,,mx_ok
+mounir@finary.com,Mounir,Finary,P3,verify_email,inferred_unverified,finary.com,mx,alt4.aspmx.l.google.com,,mx_ok
+alexander.blume@twoprime.com,Alexander,Two Prime,P3,verify_email,inferred_unverified,twoprime.com,mx,smtp.google.com,,mx_ok
+igrasso@obexrecruitment.com,Ivan,Obex,P3,verify_email,extrapolated,obexrecruitment.com,mx,obexrecruitment-com.mail.protection.outlook.com,,mx_ok
+theodore@onre.finance,Theodore,OnRe Finance,P3,verify_email,sheet_unverified,onre.finance,mx,alt2.aspmx.l.google.com,,mx_ok
+yiyang.li@aeon.xyz,Yiyang,AEON,P3,verify_email,inferred_unverified,aeon.xyz,mx,aspmx.l.google.com,,mx_ok
+siddharth.ramesh@transfi.com,Siddharth,TransFi,P3,verify_email,inferred_unverified,transfi.com,mx,smtp.google.com,,mx_ok
+guilherme.gomes@bleap.finance,Guilherme,Bleap,P3,verify_email,inferred_unverified,bleap.finance,mx,alt2.aspmx.l.google.com,,mx_ok
+jake.lang@tenbinlabs.xyz,Jake,Tenbin Labs,P3,verify_email,inferred_unverified,tenbinlabs.xyz,mx,smtp.google.com,,mx_ok
+pankaj@meld.io,Pankaj,Meld,P3,verify_email,inferred_unverified,meld.io,mx,alt2.aspmx.l.google.com,,mx_ok
+kabir.sethi@bitstack-app.com,Kabir,BitStack,P3,verify_email,inferred_unverified,bitstack-app.com,mx,aspmx.l.google.com,,mx_ok
+andrew.tantomo@socialgood.inc,Andrew,SocialGood,P3,verify_email,inferred_unverified,socialgood.inc,mx,alt3.aspmx.l.google.com,,mx_ok
+rishabh@standardmoney.com,Rishabh,Standard Money,P3,verify_email,inferred_unverified,standardmoney.com,mx,alt3.aspmx.l.google.com,,mx_ok
+kai@kyo.finance,Kai,Kyo Finance,P3,verify_email,inferred_unverified,kyo.finance,mx,aspmx2.googlemail.com,,mx_ok
+mike.wu@blockstreet.money,Mike,Block Street,P3,verify_email,inferred_unverified,blockstreet.money,mx,smtp.google.com,,mx_ok
+joshua.silverman@taosynergies.com,Joshua,TAO Synergies Inc. (ex Synaptogenix),P3,verify_email,inferred_unverified,taosynergies.com,a_only,198.185.159.145,,risky_a_only
+nathan@euphoria.finance,Nathan,Euphoria,P3,verify_email,inferred_unverified,euphoria.finance,mx,alt2.aspmx.l.google.com,,mx_ok
+m@metafyed.com,Mehdi,Metafyed,P3,verify_email,inferred_unverified,metafyed.com,mx,alt3.aspmx.l.google.com,,mx_ok
+ratko.veprek@digitalasset.com,Ratko,Canton Network (Digital Asset),P3,verify_email,inferred_unverified,digitalasset.com,mx,us-smtp-inbound-1.mimecast.com,,mx_ok
+charles.gong@stockcoin.ai,Charles,Stockcoin,P3,verify_email,inferred_unverified,stockcoin.ai,mx,mx3.larksuite.com,,mx_ok
+sebastian.melendez@saturn.credit,Sebastian,Saturn Credit,P3,verify_email,inferred_unverified,saturn.credit,a_only,31.43.161.6,,risky_a_only
+mmishra@yipitdata.com,Mayank,ILITY,P3,verify_domain,verified_review_org,yipitdata.com,mx,aspmx.l.google.com,,mx_ok
+jason@superior.trade,Jason,Superior,P3,verify_email,inferred_unverified,superior.trade,mx,aspmx.l.google.com,,mx_ok
+bruce.shira@nanovitalab.com,Bruce,NanoVita,P3,verify_email,inferred_unverified,nanovitalab.com,mx,smtp.google.com,,mx_ok
+jay@legend.trade,Jay,Legend Trade,P3,verify_email,inferred_unverified,legend.trade,mx,smtp.google.com,,mx_ok
+fabio@blockinvest.finance,Fabio,BlockInvest,P3,verify_email,sheet_unverified,blockinvest.finance,mx,alt4.aspmx.l.google.com,,mx_ok
+kevin@enhanced.finance,Kevin,Enhanced,P3,verify_email,sheet_unverified,enhanced.finance,mx,smtp.google.com,,mx_ok
+star.xu@okx.com,Star,OKX,P3,verify_email,inferred_unverified,okx.com,mx,alt3.aspmx.l.google.com,,mx_ok
+loxley@myriad.markets,Loxley,Myriad,P3,verify_email,inferred_unverified,myriad.markets,mx,alt2.aspmx.l.google.com,,mx_ok
+louis@propr.xyz,Louis,Propr,P3,verify_email,inferred_unverified,propr.xyz,mx,alt3.aspmx.l.google.com,,mx_ok
+azeez.taofeeq@gmail.com,Azeez,LNT (Lightning Network Token),P3,verify_email,inferred_unverified,gmail.com,mx,gmail-smtp-in.l.google.com,free,mx_ok
+dmitry.volkov@plutonai.net,Dmitry,PlutonAI,P3,verify_email,inferred_unverified,plutonai.net,mx,mailstore1.secureserver.net,,mx_ok
+ness@hyperlend.finance,Ness,HyperLend,P3,verify_email,inferred_unverified,hyperlend.finance,mx,alt4.aspmx.l.google.com,,mx_ok
+ray.park@layerbank.finance,Ray,LayerBank,P3,verify_email,inferred_unverified,layerbank.finance,mx,alt3.aspmx.l.google.com,,mx_ok
+matthew.cloete@foreverlong.io,Matthew,Everlong,P3,verify_email,inferred_unverified,foreverlong.io,mx,aspmx.l.google.com,,mx_ok
+nass@worm.wtf,Nass,worm wtf,P3,verify_email,inferred_unverified,worm.wtf,mx,alt2.aspmx.l.google.com,,mx_ok
+michaeloved7@gmail.com,Michael,Harbor DEX,P3,verify_email,sheet_unverified,gmail.com,mx,gmail-smtp-in.l.google.com,free,mx_ok
+julien@iclaim.xyz,Julien,Incentive,P3,verify_email,inferred_unverified,iclaim.xyz,mx,mail.protonmail.ch,,mx_ok
+chung.lai@d3labs.io,Chung,Pruv Finance,P3,verify_email,inferred_unverified,d3labs.io,mx,aspmx2.googlemail.com,,mx_ok
+michael.capasso@cryptomesh.io,Michael,CryptoMesh,P3,verify_email,inferred_unverified,cryptomesh.io,mx,mx1.privateemail.com,,mx_ok
+jeremy.white@seertrading.com,Jeremy,Seer,P3,verify_email,inferred_unverified,seertrading.com,mx,aspmx3.googlemail.com,,mx_ok
+nico@reflect.money,Nico,Reflect,P3,verify_email,inferred_unverified,reflect.money,mx,smtp.google.com,,mx_ok
+steven.pack@rocksolid.network,Steven,RockSolid,P3,verify_email,inferred_unverified,rocksolid.network,mx,alt3.aspmx.l.google.com,,mx_ok
+jay@kuvi.ai,Jahāngir,Kuvi AI,P3,verify_email,inferred_unverified,kuvi.ai,mx,mail.kuvi.ai,,mx_ok
+kris.fonal@centi.ch,Kris,Centi,P3,verify_email,inferred_unverified,centi.ch,mx,alt4.aspmx.l.google.com,,mx_ok
+spike@vanish.trade,Spike,Vanish,P3,verify_email,inferred_unverified,vanish.trade,mx,smtp.google.com,,mx_ok
+ethan.chang@o1.exchange,Ethan,o1 exchange,P3,verify_email,inferred_unverified,o1.exchange,a_only,216.150.1.1,,risky_a_only
+vladimir.maslyakov@syntetika.io,Vladimir,Syntetika,P3,verify_email,inferred_unverified,syntetika.io,mx,smtp.google.com,,mx_ok
+nikola.b@makina.finance,Nikola,Makina,P3,verify_email,inferred_unverified,makina.finance,mx,alt3.aspmx.l.google.com,,mx_ok
+carlos.robles@originspro.com,Robles,Origins Network,P3,verify_email,inferred_unverified,originspro.com,mx,mailstore1.secureserver.net,,mx_ok
+matthew.lewis@testmachine.ai,Dr.,Testmachine,P3,verify_email,inferred_unverified,testmachine.ai,mx,alt4.aspmx.l.google.com,,mx_ok
+frank@nebx.io,Frank,NebX,P3,verify_email,inferred_unverified,nebx.io,a_only,172.66.149.181,,risky_a_only
+kellan@depinsim.com,Kellan,DepinSim,P3,verify_email,inferred_unverified,depinsim.com,mx,alt2.aspmx.l.google.com,,mx_ok
+graeme.scott@aigaea.net,Graeme,GAEA,P3,verify_email,inferred_unverified,aigaea.net,mx,smtp.secureserver.net,,mx_ok
+giv@zypher.network,Giv,Zypher Network,P3,verify_email,inferred_unverified,zypher.network,mx,alt2.aspmx.l.google.com,,mx_ok
+audie@w3.io,Audie,W3 io,P3,verify_email,inferred_unverified,w3.io,mx,alt1.aspmx.l.google.com,,mx_ok
+ethan.cole@sparkchain.ai,Ethan,SparkChain AI,P3,verify_email,inferred_unverified,sparkchain.ai,none,,,undeliverable_no_mx
+nishant.mitra@antiersolutions.com,Nishant,Antier,P3,verify_email,inferred_unverified,antiersolutions.com,mx,alt3.aspmx.l.googlemail.com,,mx_ok
+vaughn.yee@marscat.io,Vaughn,MarsCat,P3,verify_email,inferred_unverified,marscat.io,mx,mailstore1.secureserver.net,,mx_ok
+antonio.pitasi@wardenprotocol.org,Antonio,Warden,P3,verify_email,inferred_unverified,wardenprotocol.org,mx,aspmx2.googlemail.com,,mx_ok
+victor.leipnik@shodai.network,Victor,Shodai Network,P3,verify_email,inferred_unverified,shodai.network,mx,smtp.google.com,,mx_ok
+willwallwan@gmail.com,Yuchen,Voyage,P3,verify_email,sheet_unverified,gmail.com,mx,gmail-smtp-in.l.google.com,free,mx_ok
+media@splendor.org,Todor,Splendor Labs,P3,verify_email,sheet_unverified,splendor.org,mx,mx001.dclux.xion.oxcs.net,role,risky_role
+navin.gupta@crystalintelligence.com,Navin,Crystal Intelligence,P3,verify_email,inferred_unverified,crystalintelligence.com,mx,crystalintelligence-com.mail.protection.outlook.com,,mx_ok
+dg@pri0r1ty.com,Daniel,Pri0r1ty Intelligence Group (Pr1bit),P3,verify_email,sheet_unverified,pri0r1ty.com,mx,alt2.aspmx.l.google.com,,mx_ok
+sulaiman@bullshot.io,Sulaiman,Bullshot,P3,verify_email,inferred_unverified,bullshot.io,mx,mail.bullshot.io,,mx_ok
+jason.ching@4bsc.ai,Jason,4AI,P3,verify_email,inferred_unverified,4bsc.ai,mx,alt4.aspmx.l.google.com,,mx_ok
+thomas@2u2.ai,Thomas,2U2ai,P3,verify_email,inferred_unverified,2u2.ai,mx,mx.zoho.com,,mx_ok
+zebo@boings.ai,Zebo,Boings ai,P3,verify_email,inferred_unverified,boings.ai,mx,eforward4.registrar-servers.com,,mx_ok
+yuningyu@uweb.ai,Dr.,Uweb (University of Web3),P3,verify_email,inferred_unverified,uweb.ai,mx,mx2.larksuite.com,,mx_ok
+ctsang@bitminetech.io,Chi,BitMine,P4,optional,verified,bitminetech.io,mx,bitminetech-io.mail.protection.outlook.com,,mx_ok
+oh.seunghwan@overtake.world,Seunghwan,Overtake,P4,optional,verified,overtake.world,mx,smtp.google.com,,mx_ok
+jqh@paradigm.xyz,Joshua,Pixie Chess,P4,optional,sheet_unverified,paradigm.xyz,mx,alt1.aspmx.l.google.com,,mx_ok
+woojung.kim@verse8.io,Woojung,Verse8,P4,optional,inferred_unverified,verse8.io,mx,smtp.google.com,,mx_ok
+natasha@boysclub.vip,Natasha,Boys Club,P4,optional,verified,boysclub.vip,mx,alt3.aspmx.l.google.com,,mx_ok
+rado@noice.id,Rado,Noice,P4,optional,verified,noice.id,mx,alt3.aspmx.l.google.com,,mx_ok
+andrea@beezie.io,Andrea,Beezie (ex The Colony),P4,optional,verified,beezie.io,mx,alt4.aspmx.l.google.com,,mx_ok
+klaas@naramunz.com,Klaas,Crystalfall,P4,optional,verified,naramunz.com,mx,alt1.aspmx.l.google.com,,mx_ok
+producer@toonbox.studio,Pavel,Take My Muffin (TMM),P4,optional,inferred_unverified,toonbox.studio,mx,alt2.aspmx.l.google.com,,mx_ok
+jeremy@cidi.games,Jeremy,CiDi Games,P4,optional,inferred_unverified,cidi.games,mx,mxdm-ap-southeast-1.aliyun.com,,mx_ok
+islarose@dare.market,Isla,Dare Market,P4,optional,inferred_unverified,dare.market,mx,alt1.aspmx.l.google.com,,mx_ok
+mrh@fasset.com,Mohammad,Fasset,REVIEW,verify_domain,verified,fasset.com,mx,alt3.aspmx.l.google.com,,mx_ok
+r@kastcard.com,Raagulan,Kast,REVIEW,verify_domain,verified,kastcard.com,mx,alt2.aspmx.l.google.com,,mx_ok
+yoshi@alpaca.markets,Yoshi,Alpaca,REVIEW,verify_domain,verified,alpaca.markets,mx,alt3.aspmx.l.google.com,,mx_ok
+michael@redotpay.com,Michael,RedotPay,REVIEW,verify_domain,verified,redotpay.com,mx,smtp.google.com,,mx_ok
+trevor.rutar@kraken.com,Trevor,Kraken,REVIEW,verify_domain,verified,kraken.com,mx,smtp.google.com,,mx_ok
+al@meanwhile.agency,Alastair,Meanwhile,REVIEW,verify_domain,verified,meanwhile.agency,mx,meanwhile-agency.mail.protection.outlook.com,,mx_ok
+bonna.newman@lightyear.one,Bonna,Lightyear,REVIEW,verify_domain,verified,lightyear.one,mx,alt2.aspmx.l.google.com,,mx_ok
+ccorrigan@exponent.com,Catherine,Exponent,REVIEW,verify_domain,verified,exponent.com,mx,mxb-00195601.gslb.pphosted.com,,mx_ok
+axel@kulipa.xyz,Axel,Kulipa,REVIEW,verify_domain,verified,kulipa.xyz,mx,smtp.google.com,,mx_ok
+andrew@arklabs.to,Andrew,Ark Labs,REVIEW,verify_domain,verified,arklabs.to,mx,aspmx.l.google.com,,mx_ok
+jeff@donut.ai,Jeffrey,Donut,REVIEW,verify_domain,verified,donut.ai,mx,alt3.aspmx.l.google.com,,mx_ok
+nicolas@accountable.eu,Nicolas,Accountable,REVIEW,verify_domain,verified,accountable.eu,mx,alt2.aspmx.l.google.com,,mx_ok
+josh@turtle.design,Josh,Turtle,REVIEW,verify_domain,verified,turtle.design,mx,alt4.aspmx.l.google.com,,mx_ok
+itamar@formtitan.com,Itamar,Titan,REVIEW,verify_domain,verified,formtitan.com,mx,alt4.aspmx.l.google.com,,mx_ok
+cristian.adamo@kuru.la,Cristian,Kuru,REVIEW,verify_domain,verified,kuru.la,mx,smtp.google.com,,mx_ok
+claudio.piccoli@uniavan.edu.br,Claudio,Avantis,REVIEW,verify_domain,verified,uniavan.edu.br,mx,alt3.aspmx.l.google.com,,mx_ok
+pascal@ledger.fr,Pascal,Ledger,REVIEW,verify_domain,verified,ledger.fr,mx,alt4.aspmx.l.google.com,,mx_ok
+patrick.hizon@mudigital.net,Patrick,Mu Digital,REVIEW,verify_domain,verified,mudigital.net,mx,alt4.aspmx.l.google.com,,mx_ok
+umeshp@connetin.in,Umesh,3F Labs,REVIEW,verify_domain,verified,connetin.in,mx,connetin-in.mail.protection.outlook.com,,mx_ok
+boyuan@openmind.org,Boyuan,OpenMind,REVIEW,verify_domain,verified,openmind.org,mx,smtp.google.com,,mx_ok
+thegostep@onebalance.io,Stephane,OneBalance,REVIEW,verify_domain,verified,onebalance.io,mx,alt3.aspmx.l.google.com,,mx_ok
+sean@sqds.io,Sean,Squads,REVIEW,verify_domain,verified,sqds.io,mx,alt3.aspmx.l.google.com,,mx_ok
+dwinter@seismic.com,Doug,Seismic,REVIEW,verify_domain,verified,seismic.com,mx,seismic-com.mail.protection.outlook.com,,mx_ok
+joris@prismax.be,Joris,PrismaX,REVIEW,verify_domain,verified,prismax.be,mx,alt2.aspmx.l.google.com,,mx_ok
+sumit@inference.in,Sumit,Inference Labs,REVIEW,verify_domain,verified,inference.in,mx,inference-in.mail.protection.outlook.com,,mx_ok
+vishnu.patankar@payward.com,Vishnu,Payward,P3,verify_email,inferred_unverified,payward.com,mx,smtp.google.com,,mx_ok
+ukahkelechi@gmail.com,Kelechi,Novig,P3,verify_email,sheet_unverified,gmail.com,mx,gmail-smtp-in.l.google.com,free,mx_ok
+pritesh@real.finance,Pritesh,Real Finance,P3,verify_email,inferred_unverified,real.finance,mx,alt2.aspmx.l.google.com,,mx_ok
+sebastien@future.holdings,Sebastien,Future Holdings,P3,verify_email,inferred_unverified,future.holdings,mx,aspmx.l.google.com,,mx_ok
+mike.sumner@custodiex.com,Mike,Amdax,P3,verify_email,inferred_unverified,custodiex.com,mx,custodiex-com.mail.protection.outlook.com,,mx_ok
+samuel.briole@spiko.io,Samuel,Spiko,P3,verify_email,sheet_unverified,spiko.io,mx,smtp.google.com,,mx_ok
+alex.cho@architect-us.com,Alex,Architect,P3,verify_email,extrapolated,architect-us.com,mx,mx01.ionos.es,,mx_ok
+danil.alexeyevsky@aipaywithcrypto.com,Danil,AI Pay with Crypto (APC),P3,verify_email,inferred_unverified,aipaywithcrypto.com,mx,mailstore1.secureserver.net,,mx_ok
+jeff.kaufman@jewelbank.com,Jeff,Jewel Bank,P3,verify_email,inferred_unverified,jewelbank.com,mx,jewelbank-com.mail.protection.outlook.com,,mx_ok
+sun.huang@unitas.so,Sun,Unitas Labs,P3,verify_email,inferred_unverified,unitas.so,mx,aspmx.l.google.com,,mx_ok
+will.gaybrick@stripe.com,Will,Stripe,P3,verify_email,inferred_unverified,stripe.com,mx,aspmx2.googlemail.com,,mx_ok
+daniel@habittrade.com,Daniel,HabitTrade,P3,verify_email,inferred_unverified,habittrade.com,mx,habittrade-com.mail.protection.outlook.com,,mx_ok
+nathaniel.harris@axt.fun,Nathaniel,AetheriumX,P3,verify_email,inferred_unverified,axt.fun,mx,smtp.secureserver.net,,mx_ok
+gabriel@noise.xyz,Gabriel,Noise,P3,verify_email,sheet_unverified,noise.xyz,mx,aspmx.l.google.com,,mx_ok
+marshall@zoofi.io,Marshall,Zoo Finance (ex IndexZoo),P3,verify_email,inferred_unverified,zoofi.io,a_only,172.67.193.41,,risky_a_only
+kevin@kbrizzle.com,Kevin,Cascade,P3,verify_email,sheet_unverified,kbrizzle.com,mx,alt3.aspmx.l.google.com,,mx_ok
+rosanna@ethgas.com,Rosanna,ETHGAS,P3,verify_email,inferred_unverified,ethgas.com,mx,smtp.google.com,,mx_ok
+leslie.alexander@kapkap.io,Leslie,KapKap,P3,verify_email,inferred_unverified,kapkap.io,mx,mx2.zoho.com,,mx_ok
+nick@iamnickrose.com,Nick,Fanable (Ethernal Labs),P3,verify_email,sheet_unverified,iamnickrose.com,mx,iamnickrose-com.mail.protection.outlook.com,,mx_ok
+vova@lab.pro,Vova,Lab,P3,verify_email,inferred_unverified,lab.pro,mx,smtp.google.com,,mx_ok
+mark.berkovich@keabank.com,Mark,Kea,P3,verify_email,sheet_unverified,keabank.com,mx,alt2.aspmx.l.google.com,,mx_ok
+alex.chow@hyperbot.network,Chow,Hyperbot,P3,verify_email,inferred_unverified,hyperbot.network,mx,mx2.larksuite.com,,mx_ok
+alpha.xaptra@digitalx.com,Alpha,DigitalX,P3,verify_email,inferred_unverified,digitalx.com,mx,alt2.aspmx.l.google.com,,mx_ok
+gb@flutterwave.com,Olugbenga,Flutterwave,P3,verify_email,sheet_unverified,flutterwave.com,mx,aspmx3.googlemail.com,,mx_ok
+roman.drapeko@boundary.finance,Roman,Boundary,P3,verify_email,inferred_unverified,boundary.finance,mx,alt3.aspmx.l.google.com,,mx_ok
+celinia@fortuneprotocol.io,Celinia,Fortune Protocol,P3,verify_email,inferred_unverified,fortuneprotocol.io,mx,smtp.google.com,,mx_ok
+john@templedigitalgroup.com,John,Temple,P3,verify_email,inferred_unverified,templedigitalgroup.com,mx,smtp.google.com,,mx_ok
+martin.kimani@biying.ink,Martin,Betwin Labs (BMBY),P3,verify_email,inferred_unverified,biying.ink,mx,eforward5.registrar-servers.com,,mx_ok
+dingaling@predict.fun,dingaling,Predict fun,P3,verify_email,inferred_unverified,predict.fun,mx,alt3.aspmx.l.google.com,,mx_ok
+info@caex.com.vn,Nguyen,CAEX Exchange,P3,verify_email,sheet_unverified,caex.com.vn,mx,caex-com-vn.mail.protection.outlook.com,role,risky_role
+zhiguo@wooshpay.com,Zhiguo,WooshPay,P3,verify_email,inferred_unverified,wooshpay.com,mx,inbound-smtp.us-east-1.amazonaws.com,,mx_ok
+fudrick@robin.markets,Fudrick,Robin Markets,P3,verify_email,inferred_unverified,robin.markets,mx,smtp.google.com,,mx_ok
+james.chang@omenx.com,James,OmenX,P3,verify_email,inferred_unverified,omenx.com,mx,omenx-com.mail.protection.outlook.com,,mx_ok
+kevin@edgex.exchange,Kevin,edgeX,P3,verify_email,inferred_unverified,edgex.exchange,mx,mx3.larksuite.com,,mx_ok
+akshayrajagopal10@gmail.com,Akshay,Fireplace,P3,verify_email,sheet_unverified,gmail.com,mx,gmail-smtp-in.l.google.com,free,mx_ok
+cyril.owona@dreamcash.xyz,Cyril,Dreamcash,P3,verify_email,inferred_unverified,dreamcash.xyz,mx,alt4.aspmx.l.google.com,,mx_ok
+vincent@pan.network,Dr.,Pan Network,P3,verify_email,inferred_unverified,pan.network,mx,mx2.privateemail.com,,mx_ok
+arash@bento.fun,Arash,Bento fun,P3,verify_email,inferred_unverified,bento.fun,mx,smtp.google.com,,mx_ok
+steve.kim@42.space,Steve,42 space,P3,verify_email,inferred_unverified,42.space,mx,alt3.aspmx.l.google.com,,mx_ok
+tarik@goblin.fi,Tarik,Goblin Finance,P3,verify_email,inferred_unverified,goblin.fi,mx,smtp.google.com,,mx_ok
+bruce@hodlher.ai,Bruce,HodlHer,P3,verify_email,inferred_unverified,hodlher.ai,mx,mx2.qiye.aliyun.com,,mx_ok
+vishudhayal0909@gmail.com,Vishvendra,Strata,P3,verify_email,sheet_unverified,gmail.com,mx,gmail-smtp-in.l.google.com,free,mx_ok
+info@nofabusinessconsulting.com,Farhad,Nofa,P3,verify_email,sheet_unverified,nofabusinessconsulting.com,mx,alt3.aspmx.l.google.com,role,risky_role
+minik.kim@nexton.solutions,Minik,Nexton,P3,verify_email,inferred_unverified,nexton.solutions,mx,smtp.google.com,,mx_ok
+peter.tan@nemesis.trade,Peter,Nemesis,P3,verify_email,inferred_unverified,nemesis.trade,mx,aspmx.l.google.com,,mx_ok
+colin@pieverse.io,Colin,Pieverse,P3,verify_email,sheet_unverified,pieverse.io,mx,smtp.google.com,,mx_ok
+joseph.abraham@finchain.global,Joseph,FinChain,P3,verify_email,inferred_unverified,finchain.global,mx,mx2.larksuite.com,,mx_ok
+gabriel.lyra@blindpay.com,Gabriel,BlindPay,P3,verify_email,inferred_unverified,blindpay.com,mx,aspmx.l.google.com,,mx_ok
+rpinto@1kosmos.com,Rohan,1Kosmos,P3,verify_email,sheet_unverified,1kosmos.com,mx,1kosmos-com.mail.protection.outlook.com,,mx_ok
+leo@e36knots.com,Léo,Suzaku,P3,verify_email,sheet_unverified,e36knots.com,mx,mx2.mail.ovh.net,,mx_ok
+joe@mainstreet.finance,Joe,Main Street,P3,verify_email,inferred_unverified,mainstreet.finance,mx,mainstreet-finance.mail.protection.outlook.com,,mx_ok
+jason@olaxbt.xyz,Jason,OlaXBT,P3,verify_email,inferred_unverified,olaxbt.xyz,mx,mx10.antispam.mailspamprotection.com,,mx_ok
+michael.li@yieldclub.io,Michael,YieldClub,P3,verify_email,inferred_unverified,yieldclub.io,mx,smtp.google.com,,mx_ok
+randy.huang@aro.network,Randy,ARO Network,P3,verify_email,inferred_unverified,aro.network,mx,mxbiz1.qq.com,,mx_ok
+jeremy.guyet@helioschain.network,Jeremy,Helios,P3,verify_email,inferred_unverified,helioschain.network,mx,mx.zoho.eu,,mx_ok
+gadi.ghai@bitcoinos.build,Gadi,BitcoinOS,P3,verify_email,inferred_unverified,bitcoinos.build,mx,inbound-smtp.us-east-1.amazonaws.com,,mx_ok
+kim.seongsik@cointel.io,Kim,Cointel,P3,verify_email,inferred_unverified,cointel.io,mx,alt3.aspmx.l.google.com,,mx_ok
+leo.chen@psdn.ai,Leo,Poseidon,P3,verify_email,inferred_unverified,psdn.ai,mx,alt1.aspmx.l.google.com,,mx_ok
+steve.smith@acm.plus,Steve,ACM+ (AI Cross Matrix),P3,verify_email,inferred_unverified,acm.plus,a_only,13.248.213.45,,risky_a_only
+jeremy@sealcoin.ai,Jeremy,Sealcoin,P3,verify_email,inferred_unverified,sealcoin.ai,mx,mx1-eu1.ppe-hosted.com,,mx_ok
+harry@harryhowardai.com,Harry,Howard AI,P3,verify_email,inferred_unverified,harryhowardai.com,mx,alt3.aspmx.l.google.com,,mx_ok
+ryan.meng@blocksecx.com,Ryan,Block Security Arena,P3,verify_email,inferred_unverified,blocksecx.com,mx,mx2.zoho.com,,mx_ok
+aaron.chan@dgrid.ai,Aaron,DGrid AI,P3,verify_email,inferred_unverified,dgrid.ai,mx,mx3.larksuite.com,,mx_ok
+kerching@helalabs.com,Kerching,Hela Labs,P3,verify_email,inferred_unverified,helalabs.com,mx,smtp.google.com,,mx_ok
+januszgrze789@gmail.com,Janusz,Bitcoin Layers,P3,verify_email,sheet_unverified,gmail.com,mx,gmail-smtp-in.l.google.com,free,mx_ok
+bamnan.dikwal@dkloud.io,Bamnan,dKloud,P3,verify_email,inferred_unverified,dkloud.io,mx,alt2.aspmx.l.google.com,,mx_ok
+gustaf.munro@arcnova.tv,Gustaf,ArcNova,P3,verify_email,inferred_unverified,arcnova.tv,mx,alt1.aspmx.l.google.com,,mx_ok
+gonzalo@charms.ai,Gonzalo,Charms,P3,verify_email,inferred_unverified,charms.ai,mx,smtp.google.com,,mx_ok
+taekyun.ahn@marina-protocol.com,Taekyun,Marina Protocol,P3,verify_email,inferred_unverified,marina-protocol.com,mx,alt4.aspmx.l.google.com,,mx_ok
+michael.hunley@dps.gg,Michael,Distinct Possibility Studios,P4,optional,verified,dps.gg,mx,smtp.google.com,,mx_ok
+navneet@supergaming.com,Navneet,SuperGaming,P4,optional,verified,supergaming.com,mx,alt3.aspmx.l.google.com,,mx_ok
+andrew@cade.market,Andrew,Pumpcade,P4,optional,inferred_unverified,cade.market,mx,smtp.google.com,,mx_ok
+gm@realgo.game,Parker,RealGo,P4,optional,verified,realgo.game,mx,alt1.aspmx.l.google.com,,mx_ok
+james@watch.fun,James,Watch fun,P4,optional,inferred_unverified,watch.fun,mx,smtp.google.com,,mx_ok
+yuki@lootgo.app,Yuki,LootGO,P4,optional,verified,lootgo.app,mx,smtp.google.com,,mx_ok
+ludovic@capybobo.io,Ludovic,CapyBobo,P4,optional,inferred_unverified,capybobo.io,mx,alt4.aspmx.l.google.com,,mx_ok
+aviad@gigaverse.com,Aviad,Gigaverse (GLHF),P4,optional,verified,gigaverse.com,mx,aspmx.l.google.com,,mx_ok
+jakob@vayla.io,Jakob,Vayla,P4,optional,inferred_unverified,vayla.io,mx,alt2.aspmx.l.google.com,,mx_ok
+yudong.tao@help.fun,Yudong,Help Fun,P4,optional,inferred_unverified,help.fun,a_only,216.150.1.1,,risky_a_only
+simon.yu@playfirst.xyz,Simon,MoonClash (PlayFirst),P4,optional,inferred_unverified,playfirst.xyz,mx,mx.zoho.com.cn,,mx_ok
+chris.yu@signalplus.com,Christy,SignalPlus,REVIEW,verify_domain,verified,signalplus.com,mx,alt4.aspmx.l.google.com,,mx_ok
+victor@joinslash.com,Victor,Slash,REVIEW,verify_domain,verified,joinslash.com,mx,aspmx.l.google.com,,mx_ok
+ethan@talos.com,Ethan,Talos,REVIEW,verify_domain,verified,talos.com,mx,aspmx.l.google.com,,mx_ok
+joseph@rain.com,Joseph,Rain,REVIEW,verify_domain,verified,rain.com,mx,alt2.aspmx.l.google.com,,mx_ok
+mario@deblock.com,Mario,Deblock,REVIEW,verify_domain,verified,deblock.com,mx,ALT4.ASPMX.L.GOOGLE.com,,mx_ok
+dan@coinflowlabs.app,Daniel,Coinflow,REVIEW,verify_domain,verified,coinflowlabs.app,mx,aspmx.l.google.com,,mx_ok
+edward@zerohash.com,Edward,Zerohash,REVIEW,verify_domain,verified,zerohash.com,mx,usb-smtp-inbound-2.mimecast.com,,mx_ok
+dave@open-trade.io,David,OpenTrade,REVIEW,verify_domain,verified,open-trade.io,mx,mxa.global.inbound.cf-emailsecurity.net,,mx_ok
+david@hata.io,David,Hata,REVIEW,verify_domain,verified,hata.io,mx,alt4.aspmx.l.google.com,,mx_ok
+patrick@megapot.io,Patrick,Megapot,REVIEW,verify_domain,verified,megapot.io,mx,smtp.google.com,,mx_ok
+sean@rate-x.io,Sean,RateX,REVIEW,verify_domain,verified,rate-x.io,mx,aspmx.l.google.com,,mx_ok
+magnus@fomo.no,Magnus,Fomo,REVIEW,verify_domain,verified,fomo.no,mx,ALT1.ASPMX.L.GOOGLE.COM,,mx_ok
+francis@limitlessrec.co.uk,Francis,Limitless,REVIEW,verify_domain,verified,limitlessrec.co.uk,mx,limitlessrec-co-uk.mail.protection.outlook.com,,mx_ok
+justin.lie@shield.com,Justin,Shield,REVIEW,verify_domain,verified,shield.com,mx,alt1.aspmx.l.google.com,,mx_ok
+adubost@oned2x.com,Anthony,D2X,REVIEW,verify_domain,verified,oned2x.com,mx,oned2x-com.mail.protection.outlook.com,,mx_ok
+jabrams@rails.com,Jeff,Rails,REVIEW,verify_domain,verified,rails.com,mx,alt3.aspmx.l.google.com,,mx_ok
+simone.m@elliptic.co,Simone,Elliptic,REVIEW,verify_domain,verified,elliptic.co,mx,aspmx3.googlemail.com,,mx_ok
+danial@plutus.it,Danial,Plutus,REVIEW,verify_domain,verified,plutus.it,mx,aspmx.l.google.com,,mx_ok
+kevin@doppel.com,Kevin,Doppel,REVIEW,verify_domain,verified,doppel.com,mx,alt1.aspmx.l.google.com,,mx_ok
+jason@senpi.ai,Jason,Senpi,REVIEW,verify_domain,verified,senpi.ai,mx,alt1.aspmx.l.google.com,,mx_ok
+rob@due.money,Robert,Due,REVIEW,verify_domain,verified,due.money,mx,alt2.aspmx.l.google.com,,mx_ok
+evgeny@3jane.xyz,Evgeny,3Jane,REVIEW,verify_domain,extrapolated,3jane.xyz,mx,alt4.aspmx.l.google.com,,mx_ok
+david.liu@uniblock.dev,David,Uniblock,REVIEW,verify_domain,verified,uniblock.dev,mx,alt2.aspmx.l.google.com,,mx_ok
+kales@taceo.io,Daniel,Taceo,REVIEW,verify_domain,verified,taceo.io,mx,smtp.google.com,,mx_ok
+steve@4pillars.io,Namwoong,Four Pillars,REVIEW,verify_domain,verified,4pillars.io,mx,smtp.google.com,,mx_ok
+sam@riselabs.xyz,Sam,Rise Labs,REVIEW,verify_domain,verified,riselabs.xyz,mx,y3yfzvbqt2jv5twxuf6bnpnjhahdpn25cibc5v7cdcddv6adacuq.mx-verification.google.com,,mx_ok

@@ -363,10 +363,16 @@ without committing an interaction. AI failures here silently leave
 
 ### Email (SendGrid)
 
-- **Library**: `lib/sendgrid.ts:15-62` — wraps `POST /v3/mail/send`. Returns
-  `{ success, messageId, error }`. `messageId` comes from the
-  `x-message-id` response header (line 43); this is the base ID that SendGrid
+- **Library**: `lib/sendgrid.ts` `sendEmail()` — wraps `POST /v3/mail/send`. Returns
+  `{ success, messageId, error, statusCode }`. `messageId` comes from the
+  `x-message-id` response header; this is the base ID that SendGrid
   webhooks later report as `sg_message_id`.
+- **Request timeout**: the fetch is bounded by an `AbortController` (`SEND_TIMEOUT_MS`,
+  15s; overridable per call via `timeoutMs`). The send loop is sequential, so without
+  this a single hung connection would stall the whole batch until Vercel's 60s kill,
+  stranding in-flight rows in `sending`. On abort, `sendEmail` returns a failure with
+  **`statusCode` left undefined**, so it classifies as transient and the row is retried
+  with backoff (see Retry policy) rather than failed terminally.
 - **Cron**: `vercel.json:3` schedules `/api/sequences/send` every 5 minutes.
 - **Send loop**: `app/api/sequences/send/route.ts`
   - **Stuck-row sweep first**: `rpc('reclaim_stuck_interactions', { p_stuck_minutes: 10 })`
@@ -388,9 +394,9 @@ without committing an interaction. AI failures here silently leave
   - **Retry policy** (per-failure classification):
     - Permanent (HTTP 4xx **except** 408 timeout and 429 rate-limit) → `failed`
       immediately. Bad payloads / unauthorized / not-found won't get better on retry.
-    - Transient (5xx, 408, 429, network errors with no statusCode) → reschedule
-      with `[5, 30, 120]` minute backoff. After 3 attempts → `failed` with
-      `detail.terminal_reason='retries_exhausted'`.
+    - Transient (5xx, 408, 429, network errors / request timeouts with no
+      statusCode) → reschedule with `[5, 30, 120]` minute backoff. After 3
+      attempts → `failed` with `detail.terminal_reason='retries_exhausted'`.
     - `detail.last_status_code` and `detail.terminal_reason` are written for
       observability.
   - **Telegram notification**: at end of run, if any terminal failures, stuck-row
